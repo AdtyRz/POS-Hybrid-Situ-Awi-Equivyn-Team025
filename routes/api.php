@@ -21,7 +21,7 @@ Route::post('/iot/panggil-pelayan', function (Request $request) {
     $log = LogPanggilPelayan::create([
         'id_meja' => $meja->id,
         'jenis' => $request->jenis_panggilan,
-        'status' => 'pending' 
+        'status' => 'pending'
     ]);
 
     return response()->json([
