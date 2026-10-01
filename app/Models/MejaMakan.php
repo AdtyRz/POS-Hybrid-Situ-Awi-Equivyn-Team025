@@ -3,19 +3,43 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MejaMakan extends Model
 {
     protected $table = 'meja_makan';
+
     protected $guarded = ['id'];
 
-    public function pesanan()
+    protected function casts(): array
     {
-        return $this->hasMany(Pesanan::class, 'id_meja', 'id');
+        return [
+            'kapasitas' => 'integer',
+        ];
     }
 
-    public function logPanggil()
+    public function pesanan(): HasMany
     {
-        return $this->hasMany(LogPanggilPelayan::class, 'id_meja', 'id');
+        return $this->hasMany(Pesanan::class, 'meja_id');
+    }
+
+    public function logPanggil(): HasMany
+    {
+        return $this->hasMany(LogPanggilPelayan::class, 'meja_id');
+    }
+
+    public function pesananAktif(): HasMany
+    {
+        return $this->pesanan()->whereIn('status_pesanan', [
+            'menunggu',
+            'diproses',
+            'siap',
+            'diantar',
+        ]);
+    }
+
+    public function bisaDipakai(): bool
+    {
+        return $this->pesananAktif()->count() === 0;
     }
 }
