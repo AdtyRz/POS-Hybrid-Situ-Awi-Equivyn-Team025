@@ -4,12 +4,6 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * TABEL 2 : kategori  (FR-002, FR-004 | PB-002)
- *
- * FUNGSI: target_kds menjadi penentu routing item ke KDS Dapur atau KDS Bar
- * ketika pesanan lunas disiarkan ke KDS (FR-004).
- */
 return new class extends Migration
 {
     public function up(): void

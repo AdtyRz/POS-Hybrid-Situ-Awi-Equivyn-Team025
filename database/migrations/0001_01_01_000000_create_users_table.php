@@ -4,16 +4,6 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * TABEL 1 : users  (FR-001 | PB-001)
- *
- * CATATAN REVISI v1.1:
- * - Role 'pelanggan' (tamu QR) DITAMBAHKAN kembali. Pada versi lama enum hanya
- *   memuat 5 role sehingga FR-003 (pesanan mandiri QR) tidak dapat diimplementasikan.
- * - Kolom email & password dibuat nullable karena tamu memindai QR tanpa akun.
- *   PostgreSQL mengizinkan banyak NULL pada kolom UNIQUE.
- * - Kolom 'name' DIBERIKAN NAMA KANONIK 'nama' agar identik dengan DDL & ERD.
- */
 return new class extends Migration
 {
     public function up(): void

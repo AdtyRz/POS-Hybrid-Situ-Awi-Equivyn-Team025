@@ -7,32 +7,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
-/**
- * SEEDER DATA AWAL SITU AWI  (rev v1.1 - 20260929)
- * =================================================
- * Isi: 6 akun peran + 11 meja saung + 2 kategori + 44 menu (31 makanan, 13 minuman)
- *
- * PERBAIKAN v1.1 (seeder lama tidak akan jalan / crash terhadap skema kanonik):
- *  1. users.name           -> users.nama          (bukan 'name')
- *  2. meja_makan.nomor_meja-> meja_makan.kode_meja
- *  3. meja_makan.lokasi_area-> meja_makan.area
- *  4. meja_makan.kode_qr_token -> meja_makan.qr_token
- *  5. meal 'status_aktif'  -> DIHAPUS (kolom tidak ada di skema kanonik)
- *  6. menu 'status_tersedia' -> DIHAPUS (diturunkan dari stok_menu > 0)
- *  7. menu wajib punya 'slug' UNIQUE  -> DITAMBAHKAN (dulu tidak ada sama sekali)
- *  8. role 'pelanggan'     -> DITAMBAHKAN (FR-003 tamu QR tidak punya akun)
- *  9. kolom 'kapasitas'    -> DITAMBAHKAN (meja saung 4-6 orang)
- *
- * Catatan keamanan: password di bawah HANYA berlaku untuk demo lokal UKK.
- * Password TIDAK PERNAH ditulis sebagai hash manual; selalu lewat Hash::make().
- */
 class SituAwiSeeder extends Seeder
 {
     public function run(): void
     {
         $now = now();
 
-        // ---------------------------------------------------- 1. USERS (6 role)
         DB::table('users')->insert([
             [
                 'nama' => 'Admin Utama', 'email' => 'admin@situawi.com',
@@ -65,7 +45,7 @@ class SituAwiSeeder extends Seeder
                 'created_at' => $now, 'updated_at' => $now,
             ],
             [
-                // FR-003 : tamu memindai QR Meja, akun dibuat otomatis oleh sistem.
+
                 'nama' => 'Pelanggan Demo', 'email' => 'pelanggan@situawi.com',
                 'password' => Hash::make('password123'), 'role' => 'pelanggan',
                 'no_telp' => '081200000006', 'is_aktif' => true,
@@ -73,7 +53,6 @@ class SituAwiSeeder extends Seeder
             ],
         ]);
 
-        // ------------------------------------------- 2. MEJA MAKAN (11 saung)
         $mejas = [
             ['kode_meja' => 'LB-01', 'area' => 'Lesehan Bawah', 'kapasitas' => 6],
             ['kode_meja' => 'LB-02', 'area' => 'Lesehan Bawah', 'kapasitas' => 6],
@@ -94,13 +73,12 @@ class SituAwiSeeder extends Seeder
                 'area'       => $meja['area'],
                 'kapasitas'  => $meja['kapasitas'],
                 'qr_token'   => 'QR-' . str_replace('-', '', $meja['kode_meja']) . Str::upper(Str::random(6)),
-                'id_device'  => null, // diisi saat pairing ESP32 Table Node (FR-006)
+                'id_device'  => null,
                 'status_meja'=> 'kosong',
                 'created_at' => $now, 'updated_at' => $now,
             ]);
         }
 
-        // ------------------------------------------------ 3. KATEGORI (2 KDS)
         $idDapur = DB::table('kategori')->insertGetId([
             'nama_kategori' => 'Makanan', 'target_kds' => 'dapur',
             'deskripsi' => 'Menu yang dimasak di dapur - dikirim ke KDS Dapur',
@@ -113,7 +91,6 @@ class SituAwiSeeder extends Seeder
             'created_at' => $now, 'updated_at' => $now,
         ]);
 
-        // ------------------------------- 4. MENU : 31 MAKANAN (KDS Dapur)
         $makanan = [
             ['Paket Nasi Liwet 5 Orang', 150000],
             ['Paket Nasi Liwet 5 Orang Plus Karedok', 175000],
@@ -150,7 +127,6 @@ class SituAwiSeeder extends Seeder
 
         $this->insertMenu($idDapur, $makanan, $now);
 
-        // --------------------------------- 5. MENU : 13 MINUMAN (KDS Bar)
         $minuman = [
             ['Vietnam Drip Arabica Coffee', 10000],
             ['Vietnam Drip Robusta Coffee', 8000],
@@ -170,10 +146,6 @@ class SituAwiSeeder extends Seeder
         $this->insertMenu($idBar, $minuman, $now);
     }
 
-    /**
-     * Insert menu dengan slug unik otomatis.
-     * stok_menu diisi 50 sebagai stok pembuka untuk seluruh item.
-     */
     private function insertMenu(int $kategoriId, array $items, $now): void
     {
         foreach ($items as [$nama, $harga]) {

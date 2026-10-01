@@ -7,9 +7,7 @@ use Exception;
 
 class ConnectionHelper
 {
-    /**
-     * Memeriksa status koneksi ke database Supabase
-     */
+
     public static function checkDatabaseConnection(): array
     {
         $startTime = microtime(true);

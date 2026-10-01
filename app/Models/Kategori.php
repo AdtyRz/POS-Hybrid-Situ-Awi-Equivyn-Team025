@@ -3,13 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Menu;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Kategori extends Model
 {
-    protected $table = 'Kategori';
+    protected $table = 'kategori';
 
-    public function menu()
+    protected $guarded = ['id'];
+
+    public function menu(): HasMany
     {
         return $this->hasMany(Menu::class, 'kategori_id');
     }
