@@ -28,7 +28,7 @@
 
     {{-- Dekorasi latar --}}
     <div
-        class="pointer-events-none fixed -top-40 -left-32 w-[420px] h-[420px] rounded-full bg-[#ebe9e1] opacity-70 blur-3xl">
+        class="pointer-events-none fixed -top-40 -left-32 w-[420px] h-[420px] rounded-full bg-[#052E1B] opacity-20 blur-3xl">
     </div>
     <div
         class="pointer-events-none fixed -bottom-40 -right-32 w-[480px] h-[480px] rounded-full bg-[#fbe6bd] opacity-70 blur-3xl">
@@ -37,29 +37,9 @@
     <div class="relative min-h-screen flex flex-col items-center justify-center px-4 py-8">
         <div class="w-full max-w-[960px]">
 
-            {{-- Status bar --}}
-            <div
-                class="flex items-center justify-between gap-4 w-full max-w-[630px] mx-auto bg-[#f4f0e6] rounded-full px-4 py-2 text-[11px]">
-                <div class="flex items-center gap-2 min-w-0">
-                    <span class="w-2 h-2 rounded-full bg-[#0b3b2c] shrink-0"></span>
-                    <span class="font-bold text-[#0b3b2c] whitespace-nowrap">MQTT BROKER AKTIF</span>
-                    <span class="text-stone-400">•</span>
-                    <span class="font-mono text-stone-500 text-[11px]">192.168.1.120:1883</span>
-                </div>
-                <div class="flex items-center gap-1.5 shrink-0">
-                    <svg class="w-4 h-4 text-[#0b3b2c]" fill="currentColor" viewBox="0 0 24 24">
-                        <path
-                            d="M12 18.5a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6zM12 13c-1.9 0-3.6.7-4.9 1.9l1.7 1.7A4.9 4.9 0 0 1 12 15.9c1.2 0 2.3.4 3.2 1.2l1.7-1.7A6.9 6.9 0 0 0 12 13zm0-5.5c-3.4 0-6.5 1.4-8.8 3.6l1.7 1.7A9.9 9.9 0 0 1 12 10.4c2.7 0 5.1 1 7.1 2.7l1.7-1.7A12.4 12.4 0 0 0 12 7.5z" />
-                    </svg>
-                    <span class="font-mono font-bold text-[#0b3b2c] text-[11px]">SituAwi_CoreOps_5G</span>
-                    <span class="bg-[#b8efc6] text-[#0b3b2c] font-semibold rounded-full px-2 py-0.5 text-[10px]">PING
-                        12ms</span>
-                </div>
-            </div>
-
             {{-- Kartu utama --}}
             <div
-                class="grid lg:grid-cols-[1.4fr_1fr] rounded-[1.75rem] overflow-hidden shadow-[0_25px_60px_-20px_rgba(11,59,44,0.3)] mt-4">
+                class="grid lg:grid-cols-[1.4fr_1fr] rounded-[1.75rem] relative overflow-hidden shadow-[0_25px_60px_-20px_rgba(11,59,44,0.3)] mt-4">
 
                 {{-- ===== Panel kiri ===== --}}
                 <div class="relative overflow-hidden bg-[#f6f2e8] px-9 pt-[46px] pb-8 flex flex-col">
@@ -73,18 +53,7 @@
                     <div class="relative flex flex-col flex-1">
                         {{-- Brand --}}
                         <div class="flex items-center gap-4">
-                            <div class="w-[84px] h-[58px] shrink-0 bg-[#c8a24a] p-[2px]"
-                                style="clip-path:polygon(12% 0,88% 0,100% 50%,88% 100%,12% 100%,0 50%)">
-                                <div class="w-full h-full bg-[#0b3b2c] flex items-center justify-center"
-                                    style="clip-path:polygon(12% 0,88% 0,100% 50%,88% 100%,12% 100%,0 50%)">
-                                    <svg class="w-7 h-7 text-[#e9cf92]" fill="none" stroke="currentColor"
-                                        stroke-width="1.5" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                            d="M18 8h1a3 3 0 0 1 0 6h-1M4 8h14v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8z" />
-                                        <path stroke-linecap="round" d="M7 2v2M11 2v2M15 2v2" />
-                                    </svg>
-                                </div>
-                            </div>
+                            <img src="{{ asset('asset/Logo.png') }}" alt="Logo Situ Awi" class=" h-12">
                             <div class="min-w-0">
                                 <span
                                     class="inline-block bg-[#fde3b0] text-[#3b2e0a] text-[9px] font-bold tracking-[0.18em] rounded-full px-2.5 py-0.5">TRADISI
@@ -168,7 +137,7 @@
 
                         {{-- Kartu 3 --}}
                         <div
-                            class="bg-white rounded-xl border border-[#eee8da] shadow-[0_2px_10px_rgba(0,0,0,0.04)] p-4 mt-3 flex gap-3">
+                            class=" relative z-10 bg-white rounded-xl border border-[#eee8da] shadow-[0_2px_10px_rgba(0,0,0,0.04)] p-4 mt-3 flex gap-3">
                             <div class="w-8 h-8 shrink-0 rounded-lg bg-[#2f6b50] flex items-center justify-center">
                                 <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
                                     stroke-width="1.8" viewBox="0 0 24 24">
@@ -191,36 +160,33 @@
                                     dalam waktu maksimal 2 menit.</p>
                             </div>
                         </div>
+                        <div
+                            class="pointer-events-none absolute -bottom-40 -left-32 w-[234px] h-[234px] rounded-full bg-[#052E1B] opacity-15 blur-3xl">
+                        </div>
+
 
                         {{-- Footer panel kiri --}}
-                        <div class="flex items-center justify-between mt-auto pt-7 text-[11.5px]">
+                        <div class="flex items-center justify-center mt-auto pt-7 text-[11.5px] relative overflow-hidden">
                             <span class="flex items-center gap-2 text-stone-700">
                                 <svg class="w-4 h-4 text-[#0b3b2c]" fill="currentColor" viewBox="0 0 24 24">
                                     <path
                                         d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3zm-1.2 14.5-3.3-3.3 1.4-1.4 1.9 1.9 4.9-4.9 1.4 1.4-6.3 6.3z" />
                                 </svg>
-                                <span class="font-medium">Guard: Multi-Tenancy SaaS Perimeter</span>
+                                <span class="relative z-10 font-medium">Guard: Multi-Tenancy SaaS Perimeter</span>
                             </span>
-                            <span class="font-mono font-bold tracking-widest text-[#0b3b2c] text-[9px]">BUILD
-                                v2.4.1-L13</span>
                         </div>
                     </div>
                 </div>
 
                 {{-- ===== Panel kanan ===== --}}
-                <div class="bg-white px-[38px] pt-[37px] pb-9 flex flex-col">
-                    <div class="flex items-center justify-between gap-3">
-                        <span
-                            class="flex items-center gap-2 bg-[#b8efc6] text-[#0b3b2c] font-bold rounded-full px-3 py-1 text-[11px]">
-                            <span class="w-2 h-2 rounded-full bg-[#0b3b2c]"></span>
-                            Role: Admin / Owner
-                        </span>
-                        <span class="font-mono font-bold text-stone-600 text-[10px]">Bpk. Rodiansyah</span>
+                <div class="bg-white px-[38px] pt-[56px] pb-9 flex-col relative overflow-hidden flex">
+                    <div
+                        class="pointer-events-none absolute -top-12 -right-12 w-[224px] h-[224px] rounded-full bg-[#fbe6bd] opacity-70 blur-3xl">
                     </div>
 
-                    <h2 class="font-bold tracking-tight text-[1.65rem] leading-tight text-stone-900 mt-5">Otentikasi
+                    <h2 class="relative z-10 font-bold tracking-tight text-[1.65rem] leading-tight text-stone-900 mt-5">Otentikasi
                         Staf</h2>
-                    <p class="text-stone-600 text-[11px] mt-1.5 leading-relaxed">Masukkan kredensial terdaftar atau
+                    <p class="relative z-10 text-stone-600 text-[11px] mt-1.5 leading-relaxed">Masukkan kredensial terdaftar atau
                         pilih peran cepat di samping untuk masuk ke lingkungan kerja Saung Situ Awi.</p>
 
                     <form method="POST" action="{{ route('login') }}" class="mt-5">
@@ -269,8 +235,6 @@
                                 value="{{ app()->environment('local') ? '772910' : '' }}" required
                                 autocomplete="current-password" placeholder="Masukkan PIN operasional"
                                 class="w-full bg-transparent border-0 outline-none focus:ring-0 py-3 text-[13px] text-stone-800">
-                            <span
-                                class="bg-[#ebe8df] text-stone-600 font-mono text-[9px] font-bold rounded px-2 py-1 shrink-0">PIN-6</span>
                         </div>
                         @error('password')
                             <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
@@ -302,32 +266,19 @@
                                 d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3zm-1.2 14.5-3.3-3.3 1.4-1.4 1.9 1.9 4.9-4.9 1.4 1.4-6.3 6.3z" />
                         </svg>
                         <div class="flex-1 min-w-0">
-                            <p class="font-bold text-stone-800 text-[9px] tracking-wide">PERIMETER TERPROTEKSI TLS 1.3
+                            <p class="font-bold text-stone-800 text-[12px] tracking-wide">Masuk ke Sistem Operasional
                             </p>
-                            <p class="text-stone-600 text-[10px] whitespace-nowrap overflow-hidden">Enkripsi SHA-256
-                                Sesi Pos &amp; Hardware Node</p>
                         </div>
                         <span
-                            class="bg-[#fde3b0] text-[#5a430a] text-[9px] font-extrabold rounded-md px-2 py-1 shrink-0">RESTO-OK</span>
+                            class="bg-[#fde3b0] text-[#5a430a] text-[9px] font-extrabold rounded-md px-2 py-1 shrink-0">SITU AWI</span>
                     </div>
                     <div class="h-0 lg:h-[0px]"></div>
                 </div>
             </div>
 
             {{-- Footer halaman --}}
-            <div class="flex flex-col md:flex-row items-center justify-between gap-3 mt-5 px-2 md:px-16">
-                <div class="flex flex-wrap justify-center gap-2">
-                    <span class="bg-[#efece2] text-stone-700 font-semibold rounded-full px-3 py-1 text-[10px]">Laravel
-                        13</span>
-                    <span class="bg-[#efece2] text-stone-700 font-semibold rounded-full px-3 py-1 text-[10px]">PHP
-                        8.5.5</span>
-                    <span
-                        class="bg-[#efece2] text-stone-700 font-semibold rounded-full px-3 py-1 text-[10px]">PostgreSQL
-                        DB</span>
-                    <span class="bg-[#efece2] text-stone-700 font-semibold rounded-full px-3 py-1 text-[10px]">Session
-                        &amp; Guard Active</span>
-                </div>
-                <div class="text-center md:text-right text-[11px] leading-relaxed">
+            <div class="flex flex-col md:flex-center items-center justify-between gap-3 mt-5 px-2 md:px-16">
+                <div class="text-center md:text-center text-[11px] leading-relaxed">
                     <p class="text-stone-700">© 2026 Resto &amp; Saung Lesehan Situ Awi Ciwidey</p>
                     <p class="text-stone-400">RPL SMK Budi Bakti Ciwidey &amp; Tim Equivyn</p>
                 </div>
