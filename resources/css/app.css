@@ -1,3 +1,400 @@
+/* ==========================================================================
+   Situ Awi — Hybrid POS, Self-Service & IoT Table Node
+   resources/css/app.css  ·  Tailwind v3 + Laravel Blade
+   Design System "Warm Forest Hospitality"
+
+   Pembagian tugas:
+   - tailwind.config.js → token (warna, font, radius, shadow, easing, breakpoint)
+   - app.css            → CSS variable, base, komponen (@layer components),
+                          keyframes & kelas animasi
+   Font: pasang <link> Google Fonts di layout Blade (lihat catatan di chat).
+   ========================================================================== */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ---------- TOKEN (CSS variables, untuk komponen & kode non-Tailwind) ---- */
+:root {
+  --forest-900: #052e1b; --forest-800: #06381f; --forest-700: #0a4a28;
+  --forest-600: #0b4d2b; --forest-400: #12703f; --forest-100: #d9ebe0;
+  --gold-600: #c9982f; --gold-500: #e0b24e; --gold-300: #f3e27a; --gold-50: #fbf3dd;
+  --leaf-600: #5c7a22; --leaf-400: #8baa3f; --leaf-100: #eef3de;
+  --cream-50: #fbf8f1; --cream-100: #f3eedf;
+  --charcoal-800: #2b2a26; --charcoal-500: #6b6a63;
+  --danger-500: #c1442c; --warning-500: #e0b24e; --success-500: #2e8b57;
+
+  --brand: var(--forest-600);
+  --brand-hover: var(--forest-700);
+  --accent: var(--gold-500);
+
+  --radius-card: 16px; --radius-btn: 12px; --radius-toast: 14px;
+  --shadow-card: 0 2px 8px rgba(6, 77, 43, 0.08);
+  --shadow-card-hover: 0 8px 24px rgba(6, 77, 43, 0.08);
+  --shadow-fab: 0 4px 14px rgba(6, 77, 43, 0.25);
+  --shadow-sidebar: 2px 0 12px rgba(0, 0, 0, 0.05);
+  --shadow-toast: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-micro: 240ms; --dur-micro-fast: 200ms; --dur-page: 400ms; --dur-reveal: 800ms;
+
+  --gutter-mobile: 16px; --gutter-tablet: 24px; --gutter-desktop: 32px;
+  --sidebar-width: 240px;
+  --touch-min: 44px;
+}
+
+/* Mode "outdoor legibility": saturasi sedikit naik di mobile (§7) */
+@media (max-width: 767px) {
+  :root { --brand: #0b5a30; --accent: #e6b441; }
+}
+
+/* ---------- BASE ---------- */
+@layer base {
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body {
+    @apply bg-cream-50 text-charcoal-800 font-sans antialiased overflow-x-hidden;
+  }
+  h1, h2, h3, h4 { @apply font-sans font-bold text-forest-900; }
+  h1 { @apply text-3xl desktop:text-4xl; }
+  h2 { @apply text-2xl; }
+  h3 { @apply text-xl font-semibold; }
+  h4 { @apply text-base font-semibold; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--gold-500); outline-offset: 2px; }
+  input[type="radio"], input[type="checkbox"] { accent-color: var(--forest-600); }
+}
+
+/* ---------- KEYFRAMES (calm motion) ---------- */
+@keyframes fade-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes page-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-24px); } }
+@keyframes slide-in-right { from { opacity: 0; transform: translateX(48px); } to { opacity: 1; transform: none; } }
+@keyframes slide-down { from { opacity: 0; transform: translateY(-100%); } to { opacity: 1; transform: none; } }
+@keyframes border-pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(224, 178, 78, 0.6); }
+  50% { box-shadow: 0 0 0 2px rgba(224, 178, 78, 1), 0 0 16px rgba(243, 226, 122, 0.6); }
+}
+@keyframes badge-pop { 0% { transform: scale(0); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
+@keyframes fab-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+@keyframes check-pop { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes shake {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  20%, 60% { transform: translateX(-3px) rotate(-8deg); }
+  40%, 80% { transform: translateX(3px) rotate(8deg); }
+}
+@keyframes gold-pulse { 0%, 100% { background-color: var(--gold-50); } 50% { background-color: var(--gold-300); } }
+@keyframes ripple { from { transform: scale(0); opacity: 0.45; } to { transform: scale(4); opacity: 0; } }
+@keyframes collapse-width {
+  from { opacity: 1; max-width: 360px; margin-right: 16px; }
+  to { opacity: 0; max-width: 0; margin-right: 0; padding-inline: 0; }
+}
+@keyframes draw-in { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+
+/* ---------- KOMPONEN ---------- */
+@layer components {
+
+  /* Kelas animasi (pakai bersama utilitas Tailwind) */
+  .reveal { opacity: 0; animation: fade-up var(--dur-reveal) var(--ease) forwards; }
+  .reveal:nth-child(2) { animation-delay: 80ms; }
+  .reveal:nth-child(3) { animation-delay: 160ms; }
+  .reveal:nth-child(4) { animation-delay: 240ms; }
+  .reveal:nth-child(5) { animation-delay: 320ms; }
+  .reveal:nth-child(6) { animation-delay: 400ms; }
+
+  .scroll-reveal { opacity: 0; transform: scale(0.96); transition: opacity var(--dur-page) var(--ease), transform var(--dur-page) var(--ease); }
+  .scroll-reveal.is-visible { opacity: 1; transform: scale(1); }
+
+  .page-enter { animation: fade-up var(--dur-page) var(--ease) both; animation-delay: 100ms; }
+  .page-leave { animation: page-out 300ms var(--ease) both; }
+  .anim-slide-in-right { animation: slide-in-right var(--dur-page) var(--ease) both; }
+  .anim-pulse-border { animation: border-pulse-gold 1.6s ease-in-out 2; }
+  .anim-badge-pop { animation: badge-pop var(--dur-micro) var(--ease); }
+  .anim-fab-pulse { animation: fab-pulse var(--dur-page) var(--ease) 1; }
+  .anim-check-pop { animation: check-pop 300ms ease-out both; }
+  .anim-collapse { animation: collapse-width 250ms var(--ease) forwards; overflow: hidden; }
+  .anim-draw-in { transform-origin: bottom; animation: draw-in 700ms var(--ease) both; }
+
+  /* Tipografi khusus */
+  .display-hero { @apply font-display font-bold text-4xl text-forest-900 desktop:text-5xl; line-height: 1.1; }
+  .price, .num { @apply font-bold; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+  .price { @apply text-gold-600; }
+
+  /* Container & grid (dinamai ulang agar tidak menimpa .container / .grid Tailwind) */
+  .page-container { @apply w-full px-4 md:px-6 desktop:max-w-desktop desktop:mx-auto desktop:px-8; }
+  .layout-grid { @apply grid grid-cols-4 gap-4 md:grid-cols-8 md:gap-6 desktop:grid-cols-12 desktop:gap-8; }
+  /* Margin luar desktop = (100vw − 1280px)/2, minimal 48px */
+  .page-container--bleed { @apply desktop:max-w-none; }
+  @media (min-width: 1366px) {
+    .page-container--bleed { padding-inline: max(48px, calc((100vw - 1280px) / 2)); }
+  }
+
+  /* Tombol */
+  .btn {
+    @apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-btn
+           min-h-touch min-w-touch px-5 py-2.5 text-base font-semibold text-center leading-tight;
+    transition: background-color var(--dur-micro) var(--ease), color var(--dur-micro) var(--ease), transform var(--dur-micro-fast) var(--ease);
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn[disabled], .btn.is-disabled { @apply opacity-[0.45] pointer-events-none; }
+  .btn-primary { @apply bg-forest-600 text-cream-50 hover:bg-forest-700; }
+  .btn-secondary { @apply bg-transparent text-gold-600 border-[1.5px] border-gold-500 hover:bg-gold-50; }
+  .btn-pill { @apply rounded-full; }
+  .btn-block { @apply flex w-full; }
+  .btn .ripple {
+    position: absolute; width: 40px; height: 40px; margin: -20px 0 0 -20px;
+    border-radius: 50%; background: var(--gold-300); pointer-events: none;
+    animation: ripple 500ms var(--ease) forwards;
+  }
+  .btn-quick-add {
+    @apply relative inline-flex items-center justify-center overflow-hidden rounded-full
+           w-touch h-touch bg-forest-600 text-cream-50 text-2xl leading-none hover:bg-forest-700;
+    transition: background-color var(--dur-micro) var(--ease), transform var(--dur-micro-fast) var(--ease);
+  }
+  .btn-quick-add:active { transform: scale(0.94); }
+  .btn-quick-add[disabled] { @apply bg-charcoal-500 opacity-40 pointer-events-none; }
+
+  /* Kartu */
+  .card { @apply bg-cream-100 rounded-card shadow-card p-4; }
+  .card-premium { @apply bg-gold-50 rounded-card shadow-card p-4; }
+  .card-menu {
+    @apply flex flex-col bg-cream-100 rounded-card shadow-card overflow-hidden;
+    transition: box-shadow var(--dur-micro-fast) var(--ease);
+  }
+  .card-menu:hover { @apply shadow-card-hover; }
+  .card-menu__media { @apply relative overflow-hidden aspect-[4/3] bg-forest-100; }
+  .card-menu__media img {
+    @apply w-full h-full object-cover;
+    transition: transform var(--dur-micro-fast) var(--ease), filter var(--dur-page) var(--ease);
+  }
+  .card-menu:hover .card-menu__media img { transform: scale(1.03); }
+  .card-menu__body { @apply flex flex-col gap-1 p-3 flex-1; }
+  .card-menu__title { @apply text-base font-semibold text-forest-900; }
+  .card-menu__desc { @apply text-sm text-charcoal-500; }
+  .card-menu__foot { @apply flex items-center justify-between gap-2 mt-auto pt-2; }
+  .card-menu.is-soldout .card-menu__media img { filter: grayscale(40%); }
+  .card-menu.is-soldout .btn-quick-add { @apply bg-charcoal-500 opacity-40 pointer-events-none; }
+  .card-menu.is-soldout .badge { animation: fade-in var(--dur-page) var(--ease); }
+
+  /* Badge status */
+  .badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold text-white bg-charcoal-500; }
+  .badge-warning { @apply bg-warning text-forest-900; }   /* Menunggu Pembayaran */
+  .badge-success { @apply bg-success; }                    /* Lunas / Siap Diantarkan */
+  .badge-danger { @apply bg-danger; }                      /* Batal / Void / Stok habis */
+  .badge-process { @apply bg-forest-400; }                 /* Diproses */
+  .badge-ready { @apply bg-gold-500 text-forest-900; }     /* Siap */
+  .badge-promo { @apply bg-gold-300 text-forest-900; }
+  .badge-overlay { @apply absolute top-2 left-2; }
+
+  /* Chip */
+  .chip {
+    @apply inline-flex items-center gap-1.5 min-h-[36px] px-3.5 py-1.5 rounded-full bg-forest-100 text-forest-900 text-sm font-medium whitespace-nowrap;
+    transition: background-color var(--dur-micro) var(--ease), color var(--dur-micro) var(--ease);
+  }
+  .chip.is-active { @apply bg-forest-600 text-cream-50; }
+  .chip-row { @apply flex gap-2 overflow-x-auto py-1; scroll-snap-type: x proximity; scrollbar-width: none; }
+  .chip-row::-webkit-scrollbar { display: none; }
+  .chip-row > * { @apply flex-none; scroll-snap-align: start; }
+
+  /* Form */
+  .input, .select, .textarea {
+    @apply w-full min-h-touch px-3.5 py-2.5 bg-white text-charcoal-800 rounded-btn border-[1.5px] border-forest-100;
+    transition: border-color var(--dur-micro) var(--ease), box-shadow var(--dur-micro) var(--ease);
+  }
+  .input:focus, .select:focus, .textarea:focus {
+    @apply outline-none border-gold-500;
+    box-shadow: 0 0 0 3px rgba(224, 178, 78, 0.3);
+  }
+  .input.is-error { @apply border-danger; }
+  .field-label { @apply block text-sm font-semibold mb-1.5; }
+  .field-error { @apply text-xs text-danger mt-1; }
+
+  /* Progress */
+  .progress { @apply h-2 bg-leaf-100 rounded-full overflow-hidden; }
+  .progress__bar { @apply h-full bg-leaf-400 rounded-full; transition: width var(--dur-page) var(--ease); }
+
+  /* Tabel (dinamai .data-table agar tidak bentrok dengan utilitas `table`) */
+  .data-table { @apply w-full text-sm border-collapse; }
+  .data-table th { @apply text-left font-semibold text-charcoal-500 px-3 py-2.5 border-b border-forest-100; }
+  .data-table td { @apply px-3 py-3 border-b border-forest-100; }
+  .data-table .num { @apply text-right; }
+
+  /* Modal */
+  .backdrop { @apply fixed inset-0 z-[80]; background: rgba(5, 46, 27, 0.5); animation: fade-in var(--dur-micro) var(--ease); }
+  .modal {
+    @apply fixed inset-x-0 bottom-0 z-[90] max-h-[90vh] overflow-y-auto bg-cream-50 px-4 pt-5 pb-6 rounded-t-3xl;
+    animation: fade-up var(--dur-page) var(--ease);
+  }
+  @media (min-width: 768px) {
+    .modal { inset: 50% auto auto 50%; width: min(560px, 92vw); transform: translate(-50%, -50%); @apply rounded-card; animation: fade-in var(--dur-page) var(--ease); }
+  }
+
+  /* Header sticky: menyusut + blur saat scroll > 40px */
+  .header-sticky { @apply sticky top-0 z-50 py-5 bg-transparent; transition: padding var(--dur-page) var(--ease), background-color var(--dur-page) var(--ease); }
+  .header-sticky.is-scrolled { @apply py-3; background: color-mix(in srgb, var(--cream-50) 88%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+
+  /* ---- e-Menu tamu (single-page, tanpa navbar/bottom-nav) ---- */
+  .emenu { @apply min-h-screen pb-24; }
+  .saung-status { @apply flex items-center gap-3 p-4 bg-gold-50 rounded-card shadow-card; }
+  .menu-grid { @apply grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 desktop:grid-cols-4 desktop:gap-8; }
+  .menu-grid-5 { @apply desktop:grid-cols-5; }
+  .fav-row { @apply flex gap-3 overflow-x-auto pb-2; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .fav-row::-webkit-scrollbar { display: none; }
+  .fav-row > * { flex: 0 0 70%; scroll-snap-align: start; }
+  @media (min-width: 1366px) {
+    .fav-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); overflow: visible; gap: 32px; }
+    .fav-row > * { flex: none; }
+  }
+  .emenu-top { @apply grid grid-cols-1 gap-4 desktop:grid-cols-2 desktop:items-start desktop:gap-8; }
+  .order-tracker { @apply grid gap-2 p-4 bg-cream-100 rounded-card shadow-card; }
+
+  /* ---- FAB & keranjang ---- */
+  .fab-cart {
+    @apply fixed right-4 bottom-4 z-[60] inline-flex items-center justify-center w-14 h-14 rounded-full bg-forest-600 text-cream-50 shadow-fab hover:bg-forest-700;
+    transition: background-color var(--dur-micro) var(--ease), transform var(--dur-micro-fast) var(--ease);
+  }
+  .fab-cart:active { transform: scale(0.96); }
+  .fab-cart__count { @apply absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1.5 inline-flex items-center justify-center rounded-full bg-gold-500 text-forest-900 text-xs font-bold; }
+  .cart-dock { @apply hidden; }
+  @media (min-width: 1366px) {
+    .emenu-docked { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 32px; align-items: start; }
+    .emenu-docked .fab-cart { display: none; }
+    .cart-dock { @apply block sticky top-6 p-5 bg-cream-100 rounded-card shadow-card; }
+  }
+  .cart-line { @apply grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 py-3 border-b border-forest-100; }
+  .qty { @apply inline-flex items-center gap-1; }
+  .qty button { @apply w-touch h-touch rounded-full border-[1.5px] border-forest-100 bg-white text-forest-900 text-xl hover:bg-forest-100; transition: background-color var(--dur-micro) var(--ease); }
+  .qty output { @apply min-w-[28px] text-center font-bold; font-variant-numeric: tabular-nums; }
+
+  /* ---- Toast ---- */
+  .toast-stack { @apply fixed top-4 left-1/2 -translate-x-1/2 z-[100] grid gap-2 w-[min(92vw,420px)]; }
+  .toast { @apply flex items-center gap-3 px-4 py-3 bg-white rounded-toast shadow-toast; animation: slide-down var(--dur-page) var(--ease) both; }
+  .toast-success { @apply border-l-4 border-success; }
+  .toast-danger { @apply border-l-4 border-danger; }
+  /* Panggil pelayan: satu-satunya motion mendesak (shake 3x + gold pulse) */
+  .toast-urgent { @apply bg-gold-50 border-l-4 border-gold-500; animation: slide-down var(--dur-page) var(--ease) both, gold-pulse 1s ease-in-out 2; }
+  .toast-urgent .toast__icon { transform-origin: top center; animation: shake 600ms ease-in-out 3; }
+  .toast.is-leaving { animation: fade-out var(--dur-micro) var(--ease) forwards; }
+
+  /* ---- Pembayaran / QRIS ---- */
+  .pay-methods { @apply grid gap-3; }
+  .pay-method {
+    @apply flex items-center gap-3 min-h-[56px] px-4 py-3 bg-white rounded-btn border-[1.5px] border-forest-100;
+    transition: border-color var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease);
+  }
+  .pay-method:has(input:checked) { @apply border-gold-500 bg-gold-50; }
+  .qris { @apply grid justify-items-center gap-3 p-5 bg-white rounded-card shadow-card; }
+  .qris__code { @apply w-[min(260px,70vw)] aspect-square p-3 bg-white rounded-btn border-[1.5px] border-forest-100; }
+  .qris__code img, .qris__code svg { @apply w-full h-full; }
+  .qris__timer { @apply text-2xl font-bold text-forest-900; font-variant-numeric: tabular-nums; }
+  .qris__timer.is-low { @apply text-danger; }
+  .summary-row { @apply flex justify-between gap-3 py-1.5; }
+  .summary-row-total { @apply border-t-[1.5px] border-forest-100 mt-2 pt-3 text-xl font-bold; }
+
+  /* ---- POS Kasir: mobile = bottom sheet, desktop = dual-panel 65/35 ---- */
+  .pos { @apply min-h-screen; }
+  .pos__menu { @apply pb-24; }
+  .pos__cart {
+    @apply fixed inset-x-0 bottom-0 z-[70] max-h-[85vh] flex flex-col bg-cream-50 rounded-t-3xl;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(calc(100% - 76px)); /* collapsed: tampil total + tombol Bayar */
+    transition: transform var(--dur-page) var(--ease);
+  }
+  .pos__cart.is-expanded { transform: translateY(0); }
+  .pos__cart-handle { @apply w-10 h-1 mx-auto mt-2 rounded-full bg-forest-100; }
+  .pos__cart-head { @apply flex items-center justify-between gap-3 px-4 pt-2 pb-3; }
+  .pos__cart-body { @apply overflow-y-auto px-4 pb-4; }
+  @media (min-width: 1366px) {
+    .pos { display: grid; grid-template-columns: 65fr 35fr; height: 100vh; }
+    .pos__menu { @apply overflow-y-auto px-8 py-6 pb-6; }
+    .pos__cart { position: sticky; top: 0; max-height: none; height: 100vh; transform: none; border-radius: 0; box-shadow: -2px 0 12px rgba(0, 0, 0, 0.05); }
+    .pos__cart-handle { @apply hidden; }
+    .pos__cart-head { @apply px-6 pt-6; }
+    .pos__cart-body { @apply flex-1 px-6; }
+    .pos__cart-foot { @apply px-6 pt-4 pb-6 border-t border-forest-100; }
+  }
+
+  /* ---- KDS Dapur & Bar ----
+     Default: Light Mode (DesignV1_3). Dark permanen (docx) → tambah .kds-dark */
+  .kds {
+    --kds-bg: var(--cream-50); --kds-card: var(--forest-600); --kds-card-text: var(--cream-50);
+    --kds-head-bg: var(--cream-100); --kds-head-text: var(--forest-900);
+    @apply min-h-screen text-xl text-forest-900;
+    background: var(--kds-bg);
+  }
+  .kds-dark {
+    --kds-bg: var(--forest-900); --kds-card: var(--forest-800); --kds-head-bg: var(--forest-900); --kds-head-text: var(--cream-50);
+    @apply text-cream-50;
+  }
+  .kds__head { @apply flex items-center justify-between px-6 py-4 text-kds-md font-bold; background: var(--kds-head-bg); color: var(--kds-head-text); }
+  .kds__row { @apply flex flex-nowrap items-stretch gap-4 p-6 overflow-x-auto; scroll-snap-type: x proximity; }
+  .kds-card {
+    @apply flex flex-col gap-3 p-5 rounded-card shadow-card border-2 border-transparent select-none;
+    flex: 0 0 340px; max-width: 360px; scroll-snap-align: start;
+    background: var(--kds-card); color: var(--kds-card-text);
+    transition: border-color var(--dur-micro) var(--ease), transform var(--dur-micro-fast) var(--ease);
+  }
+  .kds-card:active { transform: scale(0.99); }
+  .kds-card__head { @apply flex items-center justify-between gap-3 text-kds-md font-bold; }
+  .kds-card__item { @apply text-xl font-semibold; }
+  .kds-card__note { @apply text-xl text-gold-300; }
+  .kds-card__time { @apply text-xl opacity-[0.85]; font-variant-numeric: tabular-nums; }
+  .kds-card.is-new { @apply border-gold-500; animation: slide-in-right var(--dur-page) var(--ease) both, border-pulse-gold 1.6s ease-in-out 2; }
+  .kds-card.is-ready { @apply border-gold-500; }
+  .kds-card.is-ready .kds-card__check { animation: check-pop 300ms ease-out both; }
+  .kds-card.is-taken { animation: collapse-width 250ms var(--ease) forwards; overflow: hidden; }
+  .kds-card__check { @apply inline-flex w-8 h-8 items-center justify-center rounded-full bg-success text-white; }
+  .kds .badge { @apply text-sm px-3.5 py-1; }
+
+  /* ---- Mobile POS Pelayan (mobile-only, max 480px di layar besar) ---- */
+  .waiter { @apply max-w-waiter mx-auto min-h-screen p-4; }
+  .waiter-order { @apply grid gap-3 p-4 bg-cream-100 rounded-card shadow-card; }
+  .waiter-order + .waiter-order { @apply mt-3; }
+
+  /* ---- Dashboard Admin: mobile = drawer, desktop = sidebar tetap 240px ---- */
+  .admin { @apply min-h-screen; }
+  .sidebar {
+    @apply fixed top-0 left-0 bottom-0 z-[90] w-[min(240px,84vw)] px-3 py-5 bg-forest-800 text-cream-50 shadow-sidebar overflow-y-auto -translate-x-full;
+    transition: transform var(--dur-page) var(--ease);
+  }
+  .sidebar.is-open { @apply translate-x-0; }
+  .sidebar__brand { @apply flex items-center gap-2.5 px-3 pb-5 pt-2 font-display font-bold text-xl text-gold-500; }
+  .sidebar__group { @apply mt-4; }
+  .sidebar__group-title { @apply px-3 py-1.5 text-xs font-semibold text-forest-100 opacity-70; }
+  .sidebar__link {
+    @apply flex items-center gap-3 min-h-touch px-3 py-2.5 rounded-btn font-medium text-cream-50 hover:bg-forest-700;
+    transition: background-color var(--dur-micro) var(--ease), color var(--dur-micro) var(--ease);
+  }
+  .sidebar__link.is-active { @apply bg-forest-600 text-gold-300; }
+  .sidebar__sub { @apply ml-6 border-l border-forest-700; }
+  .sidebar__sub .sidebar__link { @apply text-sm; }
+  .sidebar-backdrop { @apply fixed inset-0 z-[85] opacity-0 pointer-events-none; background: rgba(5, 46, 27, 0.5); transition: opacity var(--dur-page) var(--ease); }
+  .sidebar-backdrop.is-open { @apply opacity-100 pointer-events-auto; }
+  .admin__topbar { @apply flex items-center gap-3 px-4 py-3 bg-cream-50; }
+  .admin__main { @apply p-4 md:p-6 desktop:p-8; }
+  .hamburger { @apply inline-flex items-center justify-center w-touch h-touch rounded-btn bg-transparent text-forest-900; }
+  .stat-grid { @apply grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 desktop:grid-cols-4 desktop:gap-8; }
+  .stat-card { @apply p-4 bg-cream-100 rounded-card shadow-card; }
+  .stat-card__value { @apply text-3xl font-bold text-forest-900; font-variant-numeric: tabular-nums; }
+  .chart-box { @apply w-full min-h-[240px] p-4 bg-cream-100 rounded-card shadow-card overflow-hidden desktop:min-h-[320px]; }
+  @media (min-width: 1366px) {
+    .admin { display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); }
+    .sidebar { position: sticky; top: 0; height: 100vh; transform: none; z-index: 10; }
+    .sidebar-backdrop, .admin__topbar .hamburger { display: none; }
+  }
+
+  /* Login multi-role */
+  .auth-wrap { @apply min-h-screen grid place-items-center p-4 bg-forest-800; }
+  .auth-card { @apply w-[min(420px,100%)] grid gap-4 px-6 py-7 bg-cream-50 rounded-card shadow-toast; }
+}
+
+/* ---------- AKSESIBILITAS ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal, .scroll-reveal { opacity: 1; transform: none; }
+}
