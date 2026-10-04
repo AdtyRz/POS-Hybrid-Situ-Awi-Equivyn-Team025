@@ -28,7 +28,7 @@ class AuthenticatedSessionController extends Controller
         if ($user->role === 'admin') {
             return redirect()->intended('/admin/dashboard');
         } elseif ($user->role === 'kasir') {
-            return redirect()->intended('/kasir/pos');
+            return redirect()->intended('/kasir/dashboard');
         } elseif ($user->role === 'pelayan') {
             return redirect()->intended('/pelayan/panggilan');
         } elseif ($user->role === 'koki') {
