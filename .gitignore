@@ -5,6 +5,8 @@
 .env.production
 .phpactor.json
 .phpunit.result.cache
+.DesignV1_3.md
+.PRD_Situ_Awi_Hybrid_POS_IoT_System.md
 /.codex
 /.cursor/
 /.idea
