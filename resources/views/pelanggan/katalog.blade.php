@@ -1,9 +1,7 @@
 @if(!isset($isSinglePage))
     @include('pelanggan.index', ['initialStep' => 1])
 @else
-{{-- Halaman 1: Katalog e-Menu --}}
 <div class="space-y-4 pb-28">
-    {{-- Header Sapaan Wilujeng Sumping --}}
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-forest-100/60 relative overflow-hidden">
         <div class="flex items-start justify-between">
             <div class="space-y-1 pr-12">
@@ -13,16 +11,14 @@
                     </svg>
                     <span>WILUJENG SUMPING</span>
                 </div>
-                <h1 class="text-xl font-bold text-forest-900 tracking-tight flex items-center gap-1.5">
-                    Halo, Tamu Saung 02! 
-                    <span class="text-leaf-600 text-lg">🌿</span>
+                <h1 class="text-xl lg:text-2xl font-bold text-forest-900 tracking-tight flex items-center gap-1.5">
+                    Halo, Tamu {{ $meja->kode_meja }}!
                 </h1>
                 <p class="text-xs text-charcoal-500 leading-relaxed max-w-xs">
                     Nikmati sajian otentik khas bumi Parahyangan di saung tenang tepi danau.
                 </p>
             </div>
             
-            {{-- Gazebo / Saung Icon Badge --}}
             <div class="absolute right-4 top-4 w-12 h-12 rounded-2xl bg-gold-50 border border-gold-300/60 flex items-center justify-center text-forest-700 shadow-sm">
                 <svg class="w-7 h-7 text-forest-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                     <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -33,7 +29,6 @@
         </div>
     </div>
 
-    {{-- IoT Connection Status Banner --}}
     <div class="bg-gradient-to-r from-forest-800 to-forest-700 rounded-2xl p-3.5 text-cream-50 shadow-md flex items-center justify-between gap-3 border border-forest-600">
         <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-xl bg-forest-900/60 border border-forest-400/40 flex items-center justify-center shrink-0">
@@ -53,7 +48,7 @@
                     <svg class="w-3 h-3 text-gold-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path>
                     </svg>
-                    <span>IoT Node Saung 02 Online & Sinkron Dapur</span>
+                    <span>IoT Node {{ $meja->kode_meja }} Online & Sinkron Dapur</span>
                 </div>
             </div>
         </div>
@@ -68,7 +63,6 @@
         </button>
     </div>
 
-    {{-- Search Bar & Filter Button --}}
     <div class="relative flex items-center gap-2">
         <div class="relative flex-1">
             <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-500">
@@ -99,7 +93,6 @@
         </button>
     </div>
 
-    {{-- Horizontal Scrollable Category Chips --}}
     <div class="overflow-x-auto pb-1 -mx-4 px-4 scrollbar-none flex items-center gap-2">
         <template x-for="cat in categories" :key="cat.id">
             <button type="button" 
@@ -108,19 +101,16 @@
                     :class="activeCategory === cat.id 
                         ? 'bg-forest-600 text-cream-50 ring-2 ring-forest-600/30' 
                         : 'bg-white text-forest-900 border border-forest-100/80 hover:bg-cream-100'">
-                <span x-text="cat.icon" class="text-sm"></span>
                 <span x-text="cat.name"></span>
             </button>
         </template>
     </div>
 
-    {{-- Product Grid (2 columns on mobile, 4-5 on desktop) --}}
-    <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 desktop:grid-cols-4 gap-3 sm:gap-4 pt-1">
+    <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 pt-1">
         <template x-for="item in filteredMenuItems" :key="item.id">
             <div class="bg-white rounded-2xl border border-forest-100/70 overflow-hidden shadow-sm flex flex-col justify-between transition-all duration-200 hover:shadow-md"
                  :class="item.isSoldOut ? 'opacity-85' : ''">
                 <div>
-                    {{-- Media Frame with Badge --}}
                     <div class="relative aspect-[4/3] w-full overflow-hidden bg-forest-100/40">
                         <img :src="item.image" 
                              :alt="item.name" 
@@ -129,7 +119,6 @@
                              loading="lazy"
                              onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80';">
 
-                        {{-- Badge Overlay --}}
                         <div class="absolute top-2 left-2">
                             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold shadow-sm"
                                   :class="{
@@ -138,15 +127,11 @@
                                       'bg-cream-100/90 text-forest-900 border border-forest-200': item.badgeType === 'bar' || item.badgeType === 'kopi',
                                       'bg-red-600 text-white': item.badgeType === 'soldout'
                                   }">
-                                <span x-show="item.badgeType === 'bestseller'">★</span>
-                                <span x-show="item.badgeType === 'favorite'">👍</span>
-                                <span x-show="item.badgeType === 'soldout'">🚫</span>
                                 <span x-text="item.badge"></span>
                             </span>
                         </div>
                     </div>
 
-                    {{-- Body --}}
                     <div class="p-3 space-y-1">
                         <h3 class="font-bold text-xs sm:text-sm text-forest-900 line-clamp-1" 
                             :class="item.isSoldOut ? 'text-charcoal-500' : ''"
@@ -156,7 +141,6 @@
                     </div>
                 </div>
 
-                {{-- Foot (Price & Add Button) --}}
                 <div class="px-3 pb-3 pt-1 flex items-center justify-between border-t border-forest-100/40">
                     <div>
                         <div class="text-[10px] text-charcoal-500 font-medium">Harga</div>
@@ -165,7 +149,6 @@
                              x-text="formatRupiah(item.price)"></div>
                     </div>
 
-                    {{-- Action Button --}}
                     <div>
                         <template x-if="!item.isSoldOut">
                             <button type="button" 
@@ -193,7 +176,6 @@
         </template>
     </div>
 
-    {{-- Banner Butuh Bantuan Pelayan? (Sesuai Desain PDF Halaman 1) --}}
     <div class="bg-gold-50/90 rounded-2xl p-4 border border-gold-300/70 shadow-sm flex items-start gap-3 mt-4">
         <div class="w-9 h-9 rounded-full bg-amber-400 text-forest-900 flex items-center justify-center shrink-0 shadow-sm mt-0.5">
             <svg class="w-5 h-5 text-forest-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,7 +185,7 @@
         <div class="space-y-1 text-xs">
             <h4 class="font-bold text-forest-900 text-xs sm:text-sm">Butuh Bantuan Pelayan?</h4>
             <p class="text-charcoal-800 leading-relaxed">
-                Cukup sentuh sensor bulat IoT di meja Saung 02 tanpa perlu memanggil keras. Kru kami akan segera menghampiri Anda.
+                Cukup sentuh tombol di bawah tanpa perlu memanggil keras. Kru kami akan segera menghampiri meja {{ $meja->kode_meja }}.
             </p>
             <div class="pt-1">
                 <button type="button" 
@@ -216,8 +198,6 @@
         </div>
     </div>
 
-    {{-- TOMBOL MENGAMBANG LIHAT BON (HANYA MUNCUL JIKA MINIMAL 1 MENU DIPILIH) --}}
-    {{-- Default: tidak memilih apa-apa dan tidak ada tombol mengambang di bawah --}}
     <div x-show="totalCartItemsCount > 0"
          x-transition:enter="transition ease-out duration-300 transform"
          x-transition:enter-start="translate-y-24 opacity-0"
@@ -225,10 +205,9 @@
          x-transition:leave="transition ease-in duration-200 transform"
          x-transition:leave-start="translate-y-0 opacity-100"
          x-transition:leave-end="translate-y-24 opacity-0"
-         class="fixed bottom-4 inset-x-4 max-w-md mx-auto z-40">
+         class="fixed bottom-4 inset-x-4 max-w-md lg:max-w-5xl mx-auto z-40">
         <div class="bg-forest-900 text-cream-50 rounded-full px-4 py-2.5 shadow-2xl border border-forest-600/60 flex items-center justify-between gap-3">
             <div class="flex items-center gap-3">
-                {{-- Shopping Bag with Red Badge --}}
                 <div class="relative w-10 h-10 rounded-full bg-forest-800 border border-forest-600 flex items-center justify-center text-gold-400 shrink-0">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
@@ -237,17 +216,15 @@
                           x-text="totalCartItemsCount"></span>
                 </div>
                 
-                {{-- Price & Label --}}
                 <div>
                     <div class="text-[10px] uppercase font-bold tracking-wider text-gold-300">
-                        PESANAN SAUNG 02
+                        PESANAN {{ $meja->kode_meja }}
                     </div>
                     <div class="text-sm sm:text-base font-extrabold text-white"
                          x-text="formatRupiah(cartSubtotal)"></div>
                 </div>
             </div>
 
-            {{-- Button Lihat Bon --}}
             <button type="button" 
                     @click="goToStep(2)"
                     class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-gold-500 hover:bg-gold-400 text-forest-900 font-bold text-xs sm:text-sm shadow-md transition active:scale-95 shrink-0">

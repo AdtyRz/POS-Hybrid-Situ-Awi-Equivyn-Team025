@@ -2,26 +2,23 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\HealthCheckController;
 use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
 
 Route::post('/iot/panggil-pelayan', function (Request $request) {
     $request->validate([
-        'nomor_meja' => 'required',
-        'jenis_panggilan' => 'required|in:service,bill'
+        'kode_meja' => 'required|string',
     ]);
 
-    $meja = MejaMakan::where('nomor_meja', $request->nomor_meja)->first();
+    $meja = MejaMakan::where('kode_meja', $request->kode_meja)->first();
 
-    if (!$meja) {
+    if (! $meja) {
         return response()->json(['status' => 'error', 'message' => 'Meja tidak ditemukan'], 404);
     }
 
     $log = LogPanggilPelayan::create([
-        'id_meja' => $meja->id,
-        'jenis' => $request->jenis_panggilan,
-        'status' => 'pending'
+        'meja_id' => $meja->id,
+        'status_panggilan' => 'menunggu',
     ]);
 
     return response()->json([
@@ -30,5 +27,3 @@ Route::post('/iot/panggil-pelayan', function (Request $request) {
         'data' => $log
     ], 200);
 });
-
-Route::get('/health', [HealthCheckController::class, 'index']);

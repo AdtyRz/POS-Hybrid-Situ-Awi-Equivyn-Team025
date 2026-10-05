@@ -26,7 +26,6 @@
 
 <body class="min-h-screen bg-[#fdf9ef] text-stone-800 antialiased font-sans">
 
-    {{-- Dekorasi latar --}}
     <div
         class="pointer-events-none fixed -top-40 -left-32 w-[420px] h-[420px] rounded-full bg-[#052E1B] opacity-20 blur-3xl">
     </div>
@@ -37,11 +36,9 @@
     <div class="relative min-h-screen flex flex-col items-center justify-center px-4 py-8">
         <div class="w-full max-w-[960px]">
 
-            {{-- Kartu utama --}}
             <div
                 class="grid lg:grid-cols-[1.4fr_1fr] rounded-[1.75rem] relative overflow-hidden shadow-[0_25px_60px_-20px_rgba(11,59,44,0.3)] mt-4">
 
-                {{-- ===== Panel kiri ===== --}}
                 <div class="relative overflow-hidden bg-[#f6f2e8] px-9 pt-[46px] pb-8 flex flex-col">
                     <svg class="absolute inset-0 w-full h-full text-[#eadcb4] opacity-80 pointer-events-none"
                         fill="none" stroke="currentColor" stroke-width="12" viewBox="0 0 560 582"
@@ -51,7 +48,6 @@
                     </svg>
 
                     <div class="relative flex flex-col flex-1">
-                        {{-- Brand --}}
                         <div class="flex items-center gap-4">
                             <img src="{{ asset('asset/Logo.png') }}" alt="Logo Situ Awi" class=" h-12">
                             <div class="min-w-0">
@@ -65,7 +61,6 @@
                             </div>
                         </div>
 
-                        {{-- Judul panduan --}}
                         <div class="flex items-start justify-between mt-7 gap-4">
                             <div>
                                 <h2 class="font-bold tracking-wide text-stone-800 text-[14px]">PANDUAN &amp; KEBIJAKAN
@@ -85,7 +80,6 @@
                             </span>
                         </div>
 
-                        {{-- Kartu 1 --}}
                         <div
                             class="bg-white rounded-xl border border-[#eee8da] shadow-[0_2px_10px_rgba(0,0,0,0.04)] p-4 mt-4 flex gap-3">
                             <div class="w-8 h-8 shrink-0 rounded-lg bg-[#0b3b2c] flex items-center justify-center">
@@ -110,7 +104,6 @@
                             </div>
                         </div>
 
-                        {{-- Kartu 2 --}}
                         <div
                             class="bg-white rounded-xl border border-[#eee8da] shadow-[0_2px_10px_rgba(0,0,0,0.04)] p-4 mt-3 flex gap-3">
                             <div class="w-8 h-8 shrink-0 rounded-lg bg-[#7a5c0f] flex items-center justify-center">
@@ -135,7 +128,6 @@
                             </div>
                         </div>
 
-                        {{-- Kartu 3 --}}
                         <div
                             class=" relative z-10 bg-white rounded-xl border border-[#eee8da] shadow-[0_2px_10px_rgba(0,0,0,0.04)] p-4 mt-3 flex gap-3">
                             <div class="w-8 h-8 shrink-0 rounded-lg bg-[#2f6b50] flex items-center justify-center">
@@ -165,8 +157,8 @@
                         </div>
 
 
-                        {{-- Footer panel kiri --}}
-                        <div class="flex items-center justify-center mt-auto pt-7 text-[11.5px] relative overflow-hidden">
+                        <div
+                            class="flex items-center justify-center mt-auto pt-7 text-[11.5px] relative overflow-hidden">
                             <span class="flex items-center gap-2 text-stone-700">
                                 <svg class="w-4 h-4 text-[#0b3b2c]" fill="currentColor" viewBox="0 0 24 24">
                                     <path
@@ -178,15 +170,17 @@
                     </div>
                 </div>
 
-                {{-- ===== Panel kanan ===== --}}
                 <div class="bg-white px-[38px] pt-[56px] pb-9 flex-col relative overflow-hidden flex">
                     <div
                         class="pointer-events-none absolute -top-12 -right-12 w-[224px] h-[224px] rounded-full bg-[#fbe6bd] opacity-70 blur-3xl">
                     </div>
 
-                    <h2 class="relative z-10 font-bold tracking-tight text-[1.65rem] leading-tight text-stone-900 mt-5">Otentikasi
+                    <h2
+                        class="relative z-10 font-bold tracking-tight text-[1.65rem] leading-tight text-stone-900 mt-5">
+                        Otentikasi
                         Staf</h2>
-                    <p class="relative z-10 text-stone-600 text-[11px] mt-1.5 leading-relaxed">Masukkan kredensial terdaftar atau
+                    <p class="relative z-10 text-stone-600 text-[11px] mt-1.5 leading-relaxed">Masukkan kredensial
+                        terdaftar atau
                         pilih peran cepat di samping untuk masuk ke lingkungan kerja Saung Situ Awi.</p>
 
                     <form method="POST" action="{{ route('login') }}" class="mt-5">
@@ -211,8 +205,7 @@
                         @enderror
 
                         <div class="flex items-center justify-between mt-4">
-                            <label for="password" class="font-semibold text-stone-800 text-[11px]">Kata Sandi / PIN
-                                Operasional</label>
+                            <label for="password" class="font-semibold text-stone-800 text-[11px]">Kata Sandi</label>
                             <button type="button" onclick="togglePin()"
                                 class="flex items-center gap-1 text-[#0b3b2c] font-bold text-[10px]">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -230,10 +223,9 @@
                                 <rect x="4" y="10" width="16" height="10" rx="2" />
                                 <path stroke-linecap="round" d="M8 10V7a4 4 0 0 1 8 0v3" />
                             </svg>
-                            {{-- PIN demo hanya terisi di environment local --}}
                             <input id="password" type="password" name="password"
-                                value="{{ app()->environment('local') ? '772910' : '' }}" required
-                                autocomplete="current-password" placeholder="Masukkan PIN operasional"
+                                required autocomplete="current-password"
+                                placeholder="Masukkan password operasional"
                                 class="w-full bg-transparent border-0 outline-none focus:ring-0 py-3 text-[13px] text-stone-800">
                         </div>
                         @error('password')
@@ -259,7 +251,6 @@
                         </button>
                     </form>
 
-                    {{-- Kotak keamanan: menempel di bawah panel --}}
                     <div class="flex items-center gap-2.5 bg-[#faf6ec] rounded-xl px-3.5 py-3 mt-auto pt-3">
                         <svg class="w-5 h-5 text-[#7a5c0f] shrink-0" fill="currentColor" viewBox="0 0 24 24">
                             <path
@@ -270,13 +261,13 @@
                             </p>
                         </div>
                         <span
-                            class="bg-[#fde3b0] text-[#5a430a] text-[9px] font-extrabold rounded-md px-2 py-1 shrink-0">SITU AWI</span>
+                            class="bg-[#fde3b0] text-[#5a430a] text-[9px] font-extrabold rounded-md px-2 py-1 shrink-0">SITU
+                            AWI</span>
                     </div>
                     <div class="h-0 lg:h-[0px]"></div>
                 </div>
             </div>
 
-            {{-- Footer halaman --}}
             <div class="flex flex-col md:flex-center items-center justify-between gap-3 mt-5 px-2 md:px-16">
                 <div class="text-center md:text-center text-[11px] leading-relaxed">
                     <p class="text-stone-700">© 2026 Resto &amp; Saung Lesehan Situ Awi Ciwidey</p>
