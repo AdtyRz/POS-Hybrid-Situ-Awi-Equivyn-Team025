@@ -1,9 +1,7 @@
 @if(!isset($isSinglePage))
     @include('pelanggan.index', ['initialStep' => 2])
 @else
-{{-- Halaman 2: Ringkasan Pesanan --}}
 <div class="space-y-4 pb-28">
-    {{-- Navigation Sub-header (Kembali ke Menu & Order Ref) --}}
     <div class="flex items-center justify-between px-1 text-xs">
         <button type="button" 
                 @click="goToStep(1)"
@@ -20,7 +18,6 @@
         </div>
     </div>
 
-    {{-- Lokasi Meja Card --}}
     <div class="bg-white rounded-2xl p-4 border border-forest-100/70 shadow-sm flex items-start gap-3.5">
         <div class="w-10 h-10 rounded-2xl bg-forest-100 flex items-center justify-center text-forest-700 shrink-0 mt-0.5">
             <svg class="w-5 h-5 text-forest-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -32,11 +29,10 @@
             <div class="text-[10px] font-bold tracking-wider text-charcoal-500 uppercase flex items-center gap-1">
                 <span>LOKASI MEJA</span>
                 <span>•</span>
-                <span>Lantai Bawah</span>
+                <span>{{ $meja->area }}</span>
             </div>
             <h2 class="text-sm sm:text-base font-bold text-forest-900 flex items-center gap-1.5">
-                <span>Lesehan Bawah LB-02 (Saung 02)</span>
-                <span class="text-leaf-600 text-sm">🌿</span>
+                <span>{{ $meja->area }} {{ $meja->kode_meja }}</span>
             </h2>
             <p class="text-xs text-charcoal-500 leading-relaxed">
                 Pesanan terhubung otomatis ke Kitchen Display System Saung Situ Awi.
@@ -44,7 +40,6 @@
         </div>
     </div>
 
-    {{-- Detail Pesanan Section --}}
     <div class="space-y-3">
         <div class="flex items-center justify-between px-1">
             <h3 class="text-sm font-bold text-forest-900 flex items-center gap-1.5">
@@ -57,11 +52,9 @@
                   x-text="cartItems.length + ' Menu Terpilih'"></span>
         </div>
 
-        {{-- Item List --}}
         <div class="space-y-3">
             <template x-for="(item, index) in cartItems" :key="item.id">
                 <div class="bg-white rounded-2xl p-4 border border-forest-100/70 shadow-sm space-y-3">
-                    {{-- Item Header (Image, Title, Price, Delete) --}}
                     <div class="flex items-start gap-3">
                         <img :src="item.image" 
                              :alt="item.name" 
@@ -82,7 +75,6 @@
                             </div>
                             <div class="text-xs font-bold text-forest-800 mt-0.5" x-text="formatRupiah(item.price)"></div>
 
-                            {{-- Quantity Stepper --}}
                             <div class="flex items-center justify-between mt-2 pt-2 border-t border-forest-100/40">
                                 <span class="text-xs text-charcoal-500 font-medium">Kuantitas</span>
                                 <div class="flex items-center gap-2">
@@ -102,7 +94,6 @@
                         </div>
                     </div>
 
-                    {{-- Catatan Koki --}}
                     <div class="bg-cream-50/90 rounded-xl p-2.5 border border-forest-100/60">
                         <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-charcoal-500 mb-1">
                             <svg class="w-3.5 h-3.5 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -119,7 +110,6 @@
             </template>
         </div>
 
-        {{-- Tombol Tambah Menu Lainnya --}}
         <button type="button" 
                 @click="goToStep(1)"
                 class="w-full py-3 rounded-2xl bg-white border border-forest-200 border-dashed text-forest-800 hover:bg-cream-100/80 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition active:scale-98 shadow-sm">
@@ -130,7 +120,6 @@
         </button>
     </div>
 
-    {{-- Metode Pembayaran Card --}}
     <div class="bg-white rounded-2xl p-4 border border-forest-100/70 shadow-sm space-y-3">
         <div class="flex items-center justify-between">
             <h3 class="text-sm font-bold text-forest-900 flex items-center gap-1.5">
@@ -142,7 +131,6 @@
             <span class="text-[11px] text-charcoal-500">Pilih salah satu</span>
         </div>
 
-        {{-- Radio Option 1: QRIS Midtrans Instant (Selected Default) --}}
         <label class="block p-3 rounded-xl border transition cursor-pointer"
                :class="paymentMethod === 'qris' 
                    ? 'border-forest-600 bg-gold-50/40 ring-1 ring-forest-600/30' 
@@ -157,7 +145,7 @@
                 </div>
                 <div class="space-y-1 flex-1">
                     <div class="flex items-center gap-2">
-                        <span class="text-xs sm:text-sm font-bold text-forest-900">QRIS Midtrans Instant ⚡</span>
+                        <span class="text-xs sm:text-sm font-bold text-forest-900">QRIS Midtrans Instant</span>
                         <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold border border-amber-300">Rekomendasi</span>
                     </div>
                     <p class="text-[11px] text-charcoal-500 leading-relaxed">
@@ -173,7 +161,6 @@
             </div>
         </label>
 
-        {{-- Radio Option 2: Bayar Tunai di Kasir --}}
         <label class="block p-3 rounded-xl border transition cursor-pointer"
                :class="paymentMethod === 'cash' 
                    ? 'border-forest-600 bg-gold-50/40 ring-1 ring-forest-600/30' 
@@ -187,16 +174,15 @@
                            class="w-4 h-4 text-forest-600 focus:ring-forest-600">
                 </div>
                 <div class="space-y-1 flex-1">
-                    <div class="text-xs sm:text-sm font-bold text-forest-900">Bayar Tunai di Kasir 💵</div>
+                    <div class="text-xs sm:text-sm font-bold text-forest-900">Bayar Tunai di Kasir</div>
                     <p class="text-[11px] text-charcoal-500 leading-relaxed">
-                        Selesaikan pemesanan sekarang, lalu lakukan pembayaran tunai di kasir utama dengan menyebutkan nomor Saung 02.
+                        Selesaikan pemesanan sekarang, lalu lakukan pembayaran tunai di kasir utama dengan menyebutkan nomor {{ $meja->kode_meja }}.
                     </p>
                 </div>
             </div>
         </label>
     </div>
 
-    {{-- Ringkasan Biaya Card --}}
     <div class="bg-white rounded-2xl p-4 border border-forest-100/70 shadow-sm space-y-2.5">
         <h3 class="text-sm font-bold text-forest-900 flex items-center gap-1.5 pb-1 border-b border-forest-100/40">
             <svg class="w-4 h-4 text-forest-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -239,16 +225,15 @@
         </div>
     </div>
 
-    {{-- Bottom Sticky Bar (Total Akhir & Lanjut ke Pembayaran) --}}
     <div class="fixed bottom-0 inset-x-0 bg-white border-t border-forest-100 p-4 shadow-lg z-40">
-        <div class="max-w-md mx-auto flex items-center justify-between gap-4">
+        <div class="max-w-md lg:max-w-2xl mx-auto flex items-center justify-between gap-4">
             <div>
                 <div class="text-[10px] uppercase font-bold text-charcoal-500 tracking-wider">TOTAL AKHIR</div>
                 <div class="text-base sm:text-lg font-extrabold text-forest-900" x-text="formatRupiah(cartGrandTotal)"></div>
             </div>
 
-            <button type="button" 
-                    @click="goToStep(3)"
+            <button type="button"
+                    @click="kirimBon()"
                     class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-forest-700 hover:bg-forest-800 text-white font-bold text-xs sm:text-sm shadow-md transition active:scale-95">
                 <span>Lanjut ke Pembayaran</span>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
