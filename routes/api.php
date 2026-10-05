@@ -1,15 +1,14 @@
 <?php
 
-use App\Http\Controllers\EmenuController;
+use App\Http\Controllers\EMenuController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\IotController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', [HealthCheckController::class, 'index']);
 
-Route::get('/menu', [EmenuController::class, 'menu']);
-
-Route::get('/meja', [EmenuController::class, 'meja']);
+Route::get('/menu', [EMenuController::class, 'menu']);
+Route::get('/meja', [EMenuController::class, 'daftarMeja']);
 
 Route::post('/iot/panggil-pelayan', [IotController::class, 'panggilPelayan']);
 
