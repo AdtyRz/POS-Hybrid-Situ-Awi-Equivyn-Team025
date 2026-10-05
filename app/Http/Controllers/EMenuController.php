@@ -7,10 +7,9 @@ use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
-use App\Models\StokMutasi;
+use App\Services\PesananService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class EMenuController extends Controller
@@ -82,7 +81,7 @@ class EMenuController extends Controller
         ]);
     }
 
-    public function checkout(Request $request, string $meja): RedirectResponse
+    public function checkout(Request $request, string $meja, PesananService $pesananService): RedirectResponse
     {
         $mejaMakan = $this->cariMeja($meja);
 
@@ -94,61 +93,17 @@ class EMenuController extends Controller
             'metode' => ['required', 'in:tunai,qris'],
         ]);
 
-        $dipilih = collect($data['jumlah'])->filter(fn ($jumlah) => $jumlah > 0);
+        $dipilih = collect($data['jumlah'])->filter(fn ($jumlah) => $jumlah > 0)->all();
 
-        if ($dipilih->isEmpty()) {
+        if ($dipilih === []) {
             return back()->withErrors(['jumlah' => 'Pilih minimal satu menu.'])->withInput();
         }
 
-        $daftarMenu = Menu::whereIn('id', $dipilih->keys())->get()->keyBy('id');
-
-        foreach ($dipilih as $id => $jumlah) {
-            if (! isset($daftarMenu[$id]) || $daftarMenu[$id]->stok_menu < $jumlah) {
-                $nama = isset($daftarMenu[$id]) ? $daftarMenu[$id]->nama_menu : 'menu';
-                return back()->withErrors(['jumlah' => 'Stok ' . $nama . ' tidak cukup.'])->withInput();
-            }
+        try {
+            $pesanan = $pesananService->buat($mejaMakan, $dipilih, $data['catatan'] ?? []);
+        } catch (\RuntimeException $e) {
+            return back()->withErrors(['jumlah' => $e->getMessage()])->withInput();
         }
-
-        $pesanan = DB::transaction(function () use ($mejaMakan, $daftarMenu, $dipilih, $data) {
-            $subtotal = 0;
-
-            foreach ($dipilih as $id => $jumlah) {
-                $subtotal += $daftarMenu[$id]->harga * $jumlah;
-            }
-
-            $pesanan = Pesanan::create([
-                'kode_pesanan' => 'SW-' . now()->format('YmdHis') . '-' . $mejaMakan->id,
-                'meja_id' => $mejaMakan->id,
-                'total_bayar' => $subtotal + round($subtotal * 0.1),
-                'metode_pembayaran' => $data['metode'],
-            ]);
-
-            foreach ($dipilih as $id => $jumlah) {
-                $menu = $daftarMenu[$id];
-
-                $pesanan->detailPesanan()->create([
-                    'menu_id' => $menu->id,
-                    'jumlah' => $jumlah,
-                    'harga_satuan' => $menu->harga,
-                    'subtotal' => $menu->harga * $jumlah,
-                    'catatan' => $data['catatan'][$id] ?? null,
-                ]);
-
-                $menu->decrement('stok_menu', $jumlah);
-
-                StokMutasi::create([
-                    'menu_id' => $menu->id,
-                    'pesanan_id' => $pesanan->id,
-                    'jenis' => 'penjualan',
-                    'jumlah_delta' => -$jumlah,
-                    'stok_akhir' => $menu->fresh()->stok_menu,
-                ]);
-            }
-
-            $mejaMakan->update(['status_meja' => 'terisi']);
-
-            return $pesanan;
-        });
 
         return redirect()->route('emenu.status', $pesanan->kode_pesanan);
     }
