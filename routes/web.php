@@ -5,6 +5,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EMenuController;
 use App\Http\Controllers\IotController;
 use App\Http\Controllers\KdsController;
+use App\Http\Controllers\PembayaranController;
+use App\Http\Controllers\PesananController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [EMenuController::class, 'beranda'])->name('emenu.index');
@@ -20,6 +22,7 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/admin/laporan', [AdminController::class, 'index'])->name('admin.laporan');
 
     Route::get('/admin/menu', [AdminController::class, 'daftarMenu'])->name('admin.menu');
     Route::post('/admin/menu', [AdminController::class, 'simpanMenu'])->name('admin.menu.simpan');
@@ -38,17 +41,26 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 });
 
 Route::middleware(['auth', 'role:kasir'])->group(function () {
-    Route::get('/kasir/dashboard', [KdsController::class, 'daftarPesanan'])->name('kasir.dashboard');
+    Route::get('/kasir/dashboard', [PesananController::class, 'index'])->name('kasir.dashboard');
+    Route::get('/kasir/pesanan/tambah', [PesananController::class, 'create'])->name('kasir.pesanan.create');
+    Route::post('/kasir/pesanan', [PesananController::class, 'store'])->name('kasir.pesanan.store');
+    Route::get('/kasir/pembayaran/{kode}', [PembayaranController::class, 'create'])->name('kasir.pembayaran.create');
+    Route::post('/kasir/pembayaran', [PembayaranController::class, 'store'])->name('kasir.pembayaran.store');
+});
+
+Route::middleware(['auth', 'role:admin,kasir,pelayan'])->group(function () {
+    Route::get('/pesanan/{kode}', [PesananController::class, 'show'])->name('pesanan.show');
+    Route::patch('/pesanan/{kode}/status', [PesananController::class, 'ubahStatus'])->name('pesanan.status');
 });
 
 Route::middleware(['auth', 'role:koki'])->group(function () {
-    Route::get('/kds/dapur', [KdsController::class, 'dapur'])->name('kds.dapur');
-    Route::patch('/kds/dapur/{id}', [KdsController::class, 'ubahStatus'])->name('kds.dapur.ubah');
+    Route::get('/kds/dapur', [KdsController::class, 'index'])->defaults('target', 'dapur')->name('kds.dapur');
+    Route::patch('/kds/dapur/{id}', [KdsController::class, 'update'])->name('kds.dapur.ubah');
 });
 
 Route::middleware(['auth', 'role:barista'])->group(function () {
-    Route::get('/kds/bar', [KdsController::class, 'bar'])->name('kds.bar');
-    Route::patch('/kds/bar/{id}', [KdsController::class, 'ubahStatus'])->name('kds.bar.ubah');
+    Route::get('/kds/bar', [KdsController::class, 'index'])->defaults('target', 'bar')->name('kds.bar');
+    Route::patch('/kds/bar/{id}', [KdsController::class, 'update'])->name('kds.bar.ubah');
 });
 
 Route::middleware(['auth', 'role:pelayan'])->group(function () {

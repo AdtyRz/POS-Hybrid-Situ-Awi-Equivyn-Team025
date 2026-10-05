@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Kategori;
 use App\Models\MejaMakan;
 use App\Models\Menu;
+use App\Models\Pesanan;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,6 +24,46 @@ class AdminController extends Controller
             'jumlah_user' => User::count(),
             'menu_stok_habis' => Menu::whereColumn('stok_menu', '<=', 0)->count(),
         ], 200);
+    }
+
+    public function index(Request $request)
+    {
+        $laporan = $this->laporan();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'status' => 'sukses',
+                'data' => $laporan,
+            ], 200);
+        }
+
+        return view('admin.laporan', [
+            'laporan' => $laporan,
+            'menuTerlaris' => Menu::withCount('detailPesanan')
+                ->orderByDesc('detail_pesanan_count')
+                ->limit(10)
+                ->get(),
+            'stokMenipis' => Menu::whereColumn('stok_menu', '<=', 5)
+                ->orderBy('stok_menu')
+                ->get(),
+        ]);
+    }
+
+    private function laporan(): array
+    {
+        $pesananLunas = Pesanan::where('status_pembayaran', 'sudah_bayar');
+
+        return [
+            'jumlah_pesanan' => Pesanan::count(),
+            'jumlah_pesanan_lunas' => (clone $pesananLunas)->count(),
+            'total_pendapatan' => (float) (clone $pesananLunas)->sum('total_bayar'),
+            'pendapatan_hari_ini' => (float) (clone $pesananLunas)
+                ->whereDate('waktu_pesan', today())
+                ->sum('total_bayar'),
+            'jumlah_meja_terisi' => MejaMakan::where('status_meja', 'terisi')->count(),
+            'jumlah_menu' => Menu::count(),
+            'menu_stok_habis' => Menu::whereColumn('stok_menu', '<=', 0)->count(),
+        ];
     }
 
     public function daftarMenu()
