@@ -20,6 +20,34 @@ class EMenuController extends Controller
         return view('emenu.beranda');
     }
 
+    public function menu()
+    {
+        $menu = Menu::where('stok_menu', '>', 0)
+            ->with('kategori')
+            ->orderBy('kategori_id')
+            ->orderBy('nama_menu')
+            ->get();
+
+        return response()->json([
+            'status' => 'sukses',
+            'total' => $menu->count(),
+            'data' => $menu,
+        ], 200);
+    }
+
+    public function daftarMeja()
+    {
+        $meja = MejaMakan::where('status_meja', 'kosong')
+            ->orderBy('kode_meja')
+            ->get(['id', 'kode_meja', 'area', 'kapasitas', 'status_meja']);
+
+        return response()->json([
+            'status' => 'sukses',
+            'total' => $meja->count(),
+            'data' => $meja,
+        ], 200);
+    }
+
     public function aplikasi(string $meja): View
     {
         $mejaMakan = $this->cariMeja($meja);
@@ -146,12 +174,23 @@ class EMenuController extends Controller
     {
         $mejaMakan = $this->cariMeja($meja);
 
+        $sudahAda = LogPanggilPelayan::where('meja_id', $mejaMakan->id)
+            ->whereIn('status_panggilan', ['menunggu', 'ditangani'])
+            ->exists();
+
+        if ($sudahAda) {
+            return back()->with('panggilan_terkirim', true)
+                ->with('pesan', 'Meja ini sudah punya panggilan yang belum selesai.');
+        }
+
         LogPanggilPelayan::create([
             'meja_id' => $mejaMakan->id,
             'status_panggilan' => 'menunggu',
+            'waktu_panggil' => now(),
         ]);
 
-        return back()->with('panggilan_terkirim', true);
+        return back()->with('panggilan_terkirim', true)
+            ->with('pesan', 'Panggilan pelayan berhasil dikirim.');
     }
 
     private function cariMeja(string $meja): MejaMakan
