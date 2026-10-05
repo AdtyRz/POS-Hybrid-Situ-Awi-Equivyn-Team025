@@ -41,7 +41,7 @@ class KdsController extends Controller
     public function daftarPesanan()
     {
         $pesanan = Pesanan::with('meja')
-            ->whereIn('status_pesanan', ['menunggu', 'diproses', 'siap diantar'])
+            ->whereIn('status_pesanan', ['menunggu', 'diproses', 'siap', 'diantar'])
             ->orderBy('waktu_pesan')
             ->get();
 
