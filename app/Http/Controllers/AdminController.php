@@ -22,7 +22,7 @@ class AdminController extends Controller
             'jumlah_kategori' => Kategori::count(),
             'jumlah_meja' => MejaMakan::count(),
             'jumlah_user' => User::count(),
-            'menu_stok_habis' => Menu::whereColumn('stok_menu', '<=', 0)->count(),
+            'menu_stok_habis' => Menu::where('stok_menu', '<=', 0)->count(),
         ], 200);
     }
 
@@ -43,7 +43,7 @@ class AdminController extends Controller
                 ->orderByDesc('detail_pesanan_count')
                 ->limit(10)
                 ->get(),
-            'stokMenipis' => Menu::whereColumn('stok_menu', '<=', 5)
+            'stokMenipis' => Menu::where('stok_menu', '<=', 5)
                 ->orderBy('stok_menu')
                 ->get(),
         ]);
@@ -62,7 +62,7 @@ class AdminController extends Controller
                 ->sum('total_bayar'),
             'jumlah_meja_terisi' => MejaMakan::where('status_meja', 'terisi')->count(),
             'jumlah_menu' => Menu::count(),
-            'menu_stok_habis' => Menu::whereColumn('stok_menu', '<=', 0)->count(),
+            'menu_stok_habis' => Menu::where('stok_menu', '<=', 0)->count(),
         ];
     }
 
