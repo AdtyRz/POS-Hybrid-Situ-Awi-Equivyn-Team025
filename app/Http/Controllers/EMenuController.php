@@ -16,7 +16,11 @@ class EMenuController extends Controller
 {
     public function beranda(): View
     {
-        return view('emenu.beranda');
+        $meja = MejaMakan::orderByRaw("FIELD(status_meja, 'terisi', 'kosong', 'menunggu_kasir') asc")
+            ->orderBy('kode_meja')
+            ->get(['id', 'kode_meja', 'area', 'kapasitas', 'status_meja']);
+
+        return view('emenu.beranda', compact('meja'));
     }
 
     public function menu()
@@ -105,14 +109,22 @@ class EMenuController extends Controller
             return back()->withErrors(['jumlah' => $e->getMessage()])->withInput();
         }
 
+        if ($pesanan->meja && $pesanan->session_code) {
+            session(['session_' . $pesanan->meja->id => $pesanan->session_code]);
+        }
+
         return redirect()->route('emenu.status', $pesanan->kode_pesanan);
     }
 
-    public function status(string $kode_pesanan): View
+    public function status(Request $request, string $kode_pesanan): View
     {
         $pesanan = Pesanan::with(['detailPesanan.menu', 'meja'])
             ->where('kode_pesanan', $kode_pesanan)
             ->firstOrFail();
+
+        if ($pesanan->meja && $pesanan->session_code) {
+            session(['session_' . $pesanan->meja->id => $pesanan->session_code]);
+        }
 
         $tahap = [
             'menunggu' => 1,

@@ -7,6 +7,7 @@ use App\Models\Menu;
 use App\Models\Pesanan;
 use App\Models\StokMutasi;
 use Illuminate\Support\Facades\DB;
+use App\Services\SessionService;
 
 class PesananService
 {
@@ -34,9 +35,13 @@ class PesananService
                 }
             }
 
+            $sessionService = app(SessionService::class);
+            $sessionCode = $sessionService->ambilAtauBuatSession($meja);
+
             $pesanan = Pesanan::create([
                 'kode_pesanan' => $this->kodePesanan(),
                 'meja_id' => $meja->id,
+                'session_code' => $sessionCode,
                 'pelanggan_id' => null,
                 'kasir_id' => auth()->check() ? auth()->user()->id : null,
                 'total_bayar' => 0,
