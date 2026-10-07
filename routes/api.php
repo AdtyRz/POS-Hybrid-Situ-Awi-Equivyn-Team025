@@ -10,6 +10,7 @@ Route::get('/health', [HealthCheckController::class, 'index']);
 Route::get('/menu', [EMenuController::class, 'menu']);
 Route::get('/meja', [EMenuController::class, 'daftarMeja']);
 
+Route::get('/iot/status-meja', [IotController::class, 'statusMeja']);
 Route::post('/iot/panggil-pelayan', [IotController::class, 'panggilPelayan']);
 
 Route::middleware(['auth', 'role:pelayan'])->group(function () {
