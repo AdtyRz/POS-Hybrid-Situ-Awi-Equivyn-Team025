@@ -16,9 +16,15 @@ class EMenuController extends Controller
 {
     public function beranda(): View
     {
-        $meja = MejaMakan::orderByRaw("FIELD(status_meja, 'terisi', 'kosong', 'menunggu_kasir') asc")
-            ->orderBy('kode_meja')
-            ->get(['id', 'kode_meja', 'area', 'kapasitas', 'status_meja']);
+        $urutan = [
+            'terisi' => 1,
+            'kosong' => 2,
+            'menunggu_kasir' => 3,
+        ];
+
+        $meja = MejaMakan::all(['id', 'kode_meja', 'area', 'kapasitas', 'status_meja'])
+            ->sortBy(fn ($item) => ($urutan[$item->status_meja] ?? 99) * 1000 + ord(substr($item->kode_meja, 0, 1)))
+            ->values();
 
         return view('emenu.beranda', compact('meja'));
     }
