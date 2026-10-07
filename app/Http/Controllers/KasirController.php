@@ -93,10 +93,14 @@ class KasirController extends Controller
             'id', 'kode_meja', 'area', 'status_meja', 'session_code', 'session_started_at', 'session_ended_at'
         ]);
 
-        return response()->json([
-            'status' => 'sukses',
-            'data' => $meja,
-        ], 200);
+        if ($request->expectsJson()) {
+            return response()->json([
+                'status' => 'sukses',
+                'data' => $meja,
+            ], 200);
+        }
+
+        return view('kasir.session', compact('meja'));
     }
 
     public function akhiriSession(Request $request, MejaMakan $meja)
