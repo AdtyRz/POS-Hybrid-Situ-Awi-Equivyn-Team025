@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EMenuController;
 use App\Http\Controllers\IotController;
+use App\Http\Controllers\KasirController;
 use App\Http\Controllers\KdsController;
 use App\Http\Controllers\PembayaranController;
 use App\Http\Controllers\PesananController;
@@ -46,6 +47,8 @@ Route::middleware(['auth', 'role:kasir'])->group(function () {
     Route::post('/kasir/pesanan', [PesananController::class, 'store'])->name('kasir.pesanan.store');
     Route::get('/kasir/pembayaran/{kode}', [PembayaranController::class, 'create'])->name('kasir.pembayaran.create');
     Route::post('/kasir/pembayaran', [PembayaranController::class, 'store'])->name('kasir.pembayaran.store');
+    Route::get('/kasir/session', [KasirController::class, 'daftarMejaSession'])->name('kasir.session.index');
+    Route::patch('/kasir/session/{meja}', [KasirController::class, 'akhiriSession'])->name('kasir.session.tutup');
 });
 
 Route::middleware(['auth', 'role:admin,kasir,pelayan'])->group(function () {

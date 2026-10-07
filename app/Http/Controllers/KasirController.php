@@ -86,4 +86,23 @@ class KasirController extends Controller
             ], 500);
         }
     }
+
+    public function daftarMejaSession(Request $request)
+    {
+        $meja = MejaMakan::orderBy('kode_meja')->get([
+            'id', 'kode_meja', 'area', 'status_meja', 'session_code', 'session_started_at', 'session_ended_at'
+        ]);
+
+        return response()->json([
+            'status' => 'sukses',
+            'data' => $meja,
+        ], 200);
+    }
+
+    public function akhiriSession(Request $request, MejaMakan $meja)
+    {
+        $meja->tutupSession($request->user()->id);
+
+        return redirect()->back()->with('sukses', 'Session meja ' . $meja->kode_meja . ' berhasil diakhiri.');
+    }
 }
