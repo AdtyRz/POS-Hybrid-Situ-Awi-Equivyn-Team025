@@ -7,18 +7,15 @@ use App\Http\Controllers\Controller;
 use App\Models\Pesanan;
 use App\Models\Pembayaran;
 use Illuminate\Http\JsonResponse;
+use App\Http\Requests\Api\PembayaranApiRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class PembayaranApiController extends Controller
 {
-    public function store(Request $request): JsonResponse
+    public function store(PembayaranApiRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'kode_pesanan' => ['required', 'string', 'exists:pesanan,kode_pesanan'],
-            'metode_pembayaran' => ['required', 'in:tunai,qris'],
-            'jumlah_bayar' => ['required', 'numeric', 'min:0'],
-        ]);
+        $data = $request->validated();
 
         $pesanan = Pesanan::where('kode_pesanan', $data['kode_pesanan'])->with('meja')->firstOrFail();
 

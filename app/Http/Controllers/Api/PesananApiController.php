@@ -8,19 +8,15 @@ use App\Models\MejaMakan;
 use App\Models\Pesanan;
 use App\Services\PesananService;
 use Illuminate\Http\JsonResponse;
+use App\Http\Requests\Api\PesananApiRequest;
+use App\Http\Requests\Api\UpdateStatusApiRequest;
 use Illuminate\Http\Request;
 
 class PesananApiController extends Controller
 {
-    public function store(Request $request, PesananService $pesananService): JsonResponse
+    public function store(PesananApiRequest $request, PesananService $pesananService): JsonResponse
     {
-        $data = $request->validate([
-            'meja_id' => ['required', 'integer', 'exists:meja_makan,id'],
-            'jumlah' => ['required', 'array', 'min:1'],
-            'jumlah.*' => ['required', 'integer', 'min:1', 'max:99'],
-            'catatan' => ['nullable', 'array'],
-            'catatan.*' => ['nullable', 'string', 'max:255'],
-        ]);
+        $data = $request->validated();
 
         $meja = MejaMakan::findOrFail($data['meja_id']);
 
@@ -50,7 +46,7 @@ class PesananApiController extends Controller
         return ApiResponse::success($pesanan);
     }
 
-    public function updateStatus(Request $request, string $kode): JsonResponse
+    public function updateStatus(UpdateStatusApiRequest $request, string $kode): JsonResponse
     {
         $pesanan = Pesanan::where('kode_pesanan', $kode)->first();
 
@@ -58,10 +54,7 @@ class PesananApiController extends Controller
             return ApiResponse::notFound('Pesanan tidak ditemukan');
         }
 
-        $data = $request->validate([
-            'status_pesanan' => ['required', 'in:diproses,siap,diantar'],
-        ]);
-
+        $data = $request->validated();
         $pesanan->update(['status_pesanan' => $data['status_pesanan']]);
 
         return ApiResponse::success($pesanan->fresh());
