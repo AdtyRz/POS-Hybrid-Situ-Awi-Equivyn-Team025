@@ -34,8 +34,8 @@ class KasirController extends Controller
     {
 
         $request->validate([
-            'meja_makan_id' => 'required|exists:meja_makan,id',
-            'nama_pelanggan' => 'required|string|max:255',
+            'meja_id' => 'required|exists:meja_makan,id',
+            'catatan' => 'required|string|max:255',
             'items' => 'required|array',
             'items.*.menu_id' => 'required|exists:menu,id',
             'items.*.jumlah' => 'required|integer|min:1',
@@ -52,10 +52,10 @@ class KasirController extends Controller
             }
 
             $pesanan = Pesanan::create([
-                'meja_makan_id' => $request->meja_makan_id,
-                'nama_pelanggan' => $request->nama_pelanggan,
-                'total_harga' => $totalHarga,
-                'status_pesanan' => 'pending',
+                'meja_id' => $request->meja_id,
+                'catatan' => $request->catatan,
+                'total_bayar' => $totalHarga,
+                'status_pesanan' => 'menunggu',
                 'status_pembayaran' => 'belum_bayar'
             ]);
 
