@@ -17,3 +17,4 @@ Route::middleware(['auth', 'role:pelayan'])->group(function () {
     Route::get('/iot/antrean', [IotController::class, 'antrean']);
     Route::patch('/iot/panggil-pelayan/{id}', [IotController::class, 'ubahStatus']);
 });
+require __DIR__ . '/api_v1.php';
