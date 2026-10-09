@@ -39,7 +39,7 @@
             <div
                 class="grid lg:grid-cols-[1.4fr_1fr] rounded-[1.75rem] relative overflow-hidden shadow-[0_25px_60px_-20px_rgba(11,59,44,0.3)] mt-4">
 
-                <div class="relative overflow-hidden bg-[#f6f2e8] px-9 pt-[46px] pb-8 flex flex-col">
+                <div class="relative overflow-hidden bg-[#f6f2e8] px-9 pt-[46px] pb-8 hidden lg:flex flex-col">
                     <svg class="absolute inset-0 w-full h-full text-[#eadcb4] opacity-80 pointer-events-none"
                         fill="none" stroke="currentColor" stroke-width="12" viewBox="0 0 560 582"
                         preserveAspectRatio="xMaxYMax slice" aria-hidden="true">
