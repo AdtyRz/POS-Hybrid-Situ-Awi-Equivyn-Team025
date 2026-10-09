@@ -42,4 +42,31 @@ class MejaMakan extends Model
     {
         return $this->pesananAktif()->count() === 0;
     }
+
+    public function punyaSessionAktif(): bool
+    {
+        return $this->session_code !== null && $this->session_ended_at === null;
+    }
+
+    public function tutupSession(?int $userId = null): void
+    {
+        $this->update([
+            'session_code' => null,
+            'session_started_at' => null,
+            'session_ended_at' => now(),
+            'session_ended_by' => $userId,
+            'status_meja' => 'kosong',
+        ]);
+    }
+
+    public function mulaiSession(string $kodeSession): void
+    {
+        $this->update([
+            'session_code' => $kodeSession,
+            'session_started_at' => now(),
+            'session_ended_at' => null,
+            'session_ended_by' => null,
+            'status_meja' => 'terisi',
+        ]);
+    }
 }
