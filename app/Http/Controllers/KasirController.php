@@ -34,8 +34,8 @@ class KasirController extends Controller
     {
 
         $request->validate([
-            'meja_makan_id' => 'required|exists:meja_makan,id',
-            'nama_pelanggan' => 'required|string|max:255',
+            'meja_id' => 'required|exists:meja_makan,id',
+            'catatan' => 'required|string|max:255',
             'items' => 'required|array',
             'items.*.menu_id' => 'required|exists:menu,id',
             'items.*.jumlah' => 'required|integer|min:1',
@@ -52,10 +52,10 @@ class KasirController extends Controller
             }
 
             $pesanan = Pesanan::create([
-                'meja_makan_id' => $request->meja_makan_id,
-                'nama_pelanggan' => $request->nama_pelanggan,
-                'total_harga' => $totalHarga,
-                'status_pesanan' => 'pending',
+                'meja_id' => $request->meja_id,
+                'catatan' => $request->catatan,
+                'total_bayar' => $totalHarga,
+                'status_pesanan' => 'menunggu',
                 'status_pembayaran' => 'belum_bayar'
             ]);
 
@@ -85,5 +85,28 @@ class KasirController extends Controller
                 'message' => 'Gagal membuat pesanan: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function daftarMejaSession(Request $request)
+    {
+        $meja = MejaMakan::orderBy('kode_meja')->get([
+            'id', 'kode_meja', 'area', 'status_meja', 'session_code', 'session_started_at', 'session_ended_at'
+        ]);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'status' => 'sukses',
+                'data' => $meja,
+            ], 200);
+        }
+
+        return view('kasir.session', compact('meja'));
+    }
+
+    public function akhiriSession(Request $request, MejaMakan $meja)
+    {
+        $meja->tutupSession($request->user()->id);
+
+        return redirect()->back()->with('sukses', 'Session meja ' . $meja->kode_meja . ' berhasil diakhiri.');
     }
 }
