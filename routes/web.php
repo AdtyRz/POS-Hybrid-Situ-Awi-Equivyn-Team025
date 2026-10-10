@@ -16,7 +16,7 @@ Route::get('/meja/{meja}', [EMenuController::class, 'aplikasi'])->name('emenu.me
 Route::get('/meja/{meja}/pelacakan', [EMenuController::class, 'pelacakan'])->name('emenu.pelacakan');
 Route::post('/meja/{meja}/panggil', [EMenuController::class, 'panggil'])->name('emenu.panggil');
 Route::post('/meja/{meja}/checkout', [EMenuController::class, 'checkout'])->name('emenu.checkout');
-Route::get('/pesanan/{kode_pesanan}', [EMenuController::class, 'status'])->name('emenu.status');
+Route::get('/status/{kode_pesanan}', [EMenuController::class, 'status'])->name('emenu.status');
 
 Route::get('/admin/analitik-laporan', [AdminController::class, 'dashboard'])->name('admin.analitik-laporan');
 Route::get('/admin/master-meja', [AdminController::class, 'daftarMeja'])->name('admin.master-meja');
