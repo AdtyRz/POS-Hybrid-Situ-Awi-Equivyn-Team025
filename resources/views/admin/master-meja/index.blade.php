@@ -4,25 +4,8 @@
 @section('page_category', 'Master Data Meja/Saung')
 
 @section('content')
-<div class="flex flex-col gap-8 pb-16" x-data="{
-    activeClusterFilter: 'all',
-    searchQuery: '',
-    selectedSaung: 'LB-02',
-    buzzerMuted: false,
-    addModalOpen: false,
-    toast: { show: false, message: '' },
-    showToast(msg) {
-        this.toast.message = msg;
-        this.toast.show = true;
-        setTimeout(() => this.toast.show = false, 3000);
-    },
-    // Saung selection helper
-    select(id) {
-        this.selectedSaung = id;
-    }
-}">
+<div class="flex flex-col gap-8 pb-16" x-data="masterMejaApp()">
 
-    <!-- 01. BREADCRUMBS & META HEADER -->
     <div class="flex flex-col gap-3">
         <div class="flex flex-wrap items-center justify-between gap-4 text-xs font-semibold">
             <div class="flex items-center gap-2 text-[#707971]">
@@ -47,7 +30,6 @@
                 </p>
             </div>
 
-            <!-- Primary Action Buttons -->
             <div class="flex flex-wrap items-center gap-3">
                 <button 
                     type="button" 
@@ -72,10 +54,8 @@
         </div>
     </div>
 
-    <!-- 02. SUMMARY KPI SECTION (4 CARDS) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
-        <!-- Card 1: Kapasitas Total Saung -->
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[175px]">
             <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">KAPASITAS TOTAL SAUNG</span>
@@ -99,7 +79,6 @@
             </div>
         </div>
 
-        <!-- Card 2: Status Keterisian Live -->
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[175px]">
             <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">STATUS KETERISIAN LIVE</span>
@@ -118,7 +97,6 @@
                     <span class="text-xs font-semibold text-[#00341A]">(64% Full)</span>
                 </div>
 
-                <!-- Segmented Multi-Color Progress Bar -->
                 <div class="w-full h-2 rounded-full bg-[#E5E2DB] overflow-hidden flex my-2">
                     <div class="h-full bg-[#FECE66]" style="width: 64%"></div>
                     <div class="h-full bg-[#B1F1C2]" style="width: 27%"></div>
@@ -132,7 +110,6 @@
             </div>
         </div>
 
-        <!-- Card 3: Status IoT Hardware -->
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[175px]">
             <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">STATUS IOT HARDWARE</span>
@@ -156,7 +133,6 @@
             </div>
         </div>
 
-        <!-- Card 4: Dynamic QR Security -->
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[175px] relative overflow-hidden">
             <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">DYNAMIC QR SECURITY</span>
@@ -177,15 +153,12 @@
                 </div>
             </div>
 
-            <!-- Soft blur glow corner -->
             <div class="absolute -right-8 -bottom-8 w-24 h-24 rounded-full bg-[#FFDEA1]/25 blur-xl pointer-events-none"></div>
         </div>
 
     </div>
 
-    <!-- 03. FILTER & SEARCH SUB-HEADER BAR -->
     <div class="p-2.5 bg-[#F6F3EC] rounded-2xl shadow-xs border border-[#C0C9BF]/20 flex flex-wrap items-center justify-between gap-4">
-        <!-- Area Filter Tabs -->
         <div class="flex items-center flex-wrap gap-2">
             <button 
                 type="button"
@@ -217,7 +190,6 @@
             </button>
         </div>
 
-        <!-- Search Input with icon -->
         <div class="relative w-full sm:w-72">
             <input 
                 type="text" 
@@ -231,13 +203,10 @@
         </div>
     </div>
 
-    <!-- 04. MAIN CONTENT GRID (LEFT: CLUSTERS / RIGHT: INSPECTOR PANEL) -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        <!-- LEFT COLUMN: CLUSTERS (8 cols / ~66%) -->
         <div class="lg:col-span-8 flex flex-col gap-8">
             
-            <!-- SECTION - CLUSTER A: LESEHAN BAWAH TEPI DANAU -->
             <div 
                 x-show="activeClusterFilter === 'all' || activeClusterFilter === 'cluster_a'"
                 class="flex flex-col gap-4">
@@ -255,389 +224,126 @@
                     <span class="text-xs font-semibold text-[#00341A]">Tepi Danau Indah</span>
                 </div>
 
-                <!-- Cluster A Cards Grid -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     
-                    <!-- 1. LB-01: Saung Teratai Air -->
-                    <div 
-                        @click="select('LB-01')"
-                        :class="selectedSaung === 'LB-01' ? 'ring-2 ring-[#0B4D2B] bg-white' : 'bg-[#F6F3EC] hover:bg-[#efece3]'"
-                        class="rounded-2xl p-4 shadow-xs border border-[#C0C9BF]/30 cursor-pointer transition-all flex flex-col justify-between min-h-[200px]">
-                        <div>
-                            <div class="flex items-start justify-between gap-1">
-                                <div>
-                                    <span class="text-[10px] font-bold text-[#707971]">LB-01</span>
-                                    <h3 class="font-bold text-base text-[#1C1C18] leading-tight mt-0.5">Saung Teratai Air</h3>
-                                </div>
-                                <span class="px-2 py-0.5 rounded-full bg-[#FFDEA1] text-[10px] font-bold text-[#261900] flex items-center gap-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-[#7A5900]"></span>
-                                    Terisi (4)
-                                </span>
-                            </div>
-
-                            <div class="mt-3 p-2 bg-white/80 rounded-xl text-xs flex flex-col gap-1">
-                                <div class="flex justify-between">
-                                    <span class="text-[#707971]">Bill Aktif:</span>
-                                    <span class="font-mono font-semibold text-[#1C1C18]">SW-8812</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-[#707971]">Total Pesanan:</span>
-                                    <span class="font-bold text-[#00341A]">Rp 385.000</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between pt-3 text-[10px] font-bold text-[#707971]">
-                            <span class="flex items-center gap-1 text-[#213200]">
-                                <span>📱</span> LCD: "Diproses"
-                            </span>
-                            <span>QR Auto-Renewed</span>
-                        </div>
-                    </div>
-
-                    <!-- 2. LB-02: Saung Lesehan 02 (SELECTED & ACTIVE BUZZER CALL) -->
-                    <div 
-                        @click="select('LB-02')"
+@foreach ($daftarMeja as $m)
+                    @if ($m->adaPanggilan)
+                    <div
+                        @click="select('{{ $m->kode_meja }}')"
                         class="rounded-2xl p-4 cursor-pointer transition-all flex flex-col justify-between min-h-[200px] relative overflow-hidden bg-white border-2 border-[#BA1A1A] shadow-lg shadow-red-500/10">
-                        
-                        <!-- Top Red Corner Call Ribbon -->
                         <div class="absolute top-0 right-0 bg-[#BA1A1A] text-white text-[10px] font-bold px-3 py-0.5 rounded-bl-xl shadow-xs flex items-center gap-1">
-                            <span>🚨</span>
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
                             <span>PANGGILAN AKTIF!</span>
                         </div>
-
                         <div>
                             <div class="flex items-start justify-between gap-1 pt-1">
                                 <div>
-                                    <span class="text-[10px] font-bold text-[#BA1A1A]">LB-02 • TERPILIH</span>
-                                    <h3 class="font-bold text-base text-[#1C1C18] leading-tight mt-0.5">Saung Lesehan 02</h3>
+                                    <span class="text-[10px] font-bold text-[#BA1A1A]">{{ $m->kode_meja }} • TERPILIH</span>
+                                    <h3 class="font-bold text-base text-[#1C1C18] leading-tight mt-0.5">Saung {{ $m->kode_meja }}</h3>
                                 </div>
                             </div>
-
                             <div class="mt-3 p-2 bg-[#FFDAD6]/40 rounded-xl text-xs flex flex-col gap-1 text-[#93000A]">
                                 <div class="flex justify-between">
                                     <span class="font-medium">Sensor TTP223:</span>
                                     <span class="font-bold text-[#BA1A1A]">Terpicu Buzzer ON</span>
                                 </div>
+                                @if ($m->billKode)
                                 <div class="flex justify-between">
-                                    <span class="font-medium">Bill SW-8819:</span>
-                                    <span class="font-bold text-[#00341A]">Rp 144.100</span>
+                                    <span class="font-medium">Bill {{ $m->billKode }}:</span>
+                                    <span class="font-bold text-[#00341A]">Rp{{ number_format($m->billTotal, 0, ',', '.') }}</span>
                                 </div>
+                                @endif
                             </div>
                         </div>
-
                         <div class="flex items-center justify-between pt-3 text-[10px] font-bold text-[#BA1A1A]">
                             <span class="flex items-center gap-1 animate-pulse">
-                                <span>🔔</span> Suara Buzzer Menyala
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg> Suara Buzzer Menyala
                             </span>
-                            <span>📡 IP: .102</span>
+                            <span>IP: {{ $m->id_device ?? '-' }}</span>
                         </div>
                     </div>
-
-                    <!-- 3. LB-03: Saung Bambu Hitam (Tersedia) -->
-                    <div 
-                        @click="select('LB-03')"
-                        :class="selectedSaung === 'LB-03' ? 'ring-2 ring-[#0B4D2B] bg-white' : 'bg-[#F6F3EC] hover:bg-[#efece3]'"
+                    @elseif ($m->status_meja === 'terisi')
+                    <div
+                        @click="select('{{ $m->kode_meja }}')"
+                        :class="selectedSaung === '{{ $m->kode_meja }}' ? 'ring-2 ring-[#0B4D2B] bg-white' : 'bg-[#F6F3EC] hover:bg-[#efece3]'"
                         class="rounded-2xl p-4 shadow-xs border border-[#C0C9BF]/30 cursor-pointer transition-all flex flex-col justify-between min-h-[200px]">
                         <div>
                             <div class="flex items-start justify-between gap-1">
                                 <div>
-                                    <span class="text-[10px] font-bold text-[#707971]">LB-03</span>
-                                    <h3 class="font-bold text-base text-[#1C1C18] leading-tight mt-0.5">Saung Bambu Hitam</h3>
+                                    <span class="text-[10px] font-bold text-[#707971]">{{ $m->kode_meja }}</span>
+                                    <h3 class="font-bold text-base text-[#1C1C18] leading-tight mt-0.5">Saung {{ $m->kode_meja }}</h3>
+                                </div>
+                                <span class="px-2 py-0.5 rounded-full bg-[#FFDEA1] text-[10px] font-bold text-[#261900] flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-[#7A5900]"></span>
+                                    Terisi ({{ $m->itemCount }})
+                                </span>
+                            </div>
+                            <div class="mt-3 p-2 bg-white/80 rounded-xl text-xs flex flex-col gap-1">
+                                <div class="flex justify-between">
+                                    <span class="text-[#707971]">Bill Aktif:</span>
+                                    <span class="font-mono font-semibold text-[#1C1C18]">{{ $m->billKode }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-[#707971]">Total Pesanan:</span>
+                                    <span class="font-bold text-[#00341A]">Rp{{ number_format($m->billTotal, 0, ',', '.') }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-3 text-[10px] font-bold text-[#707971]">
+                            <span class="flex items-center gap-1 text-[#0B4D2B]">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 7v5l3 2"/></svg> LCD: "{{ $m->billKode ? 'Diproses' : 'Siap' }}"
+                            </span>
+                            <span>QR Auto-Renewed</span>
+                        </div>
+                    </div>
+                    @else
+                    <div
+                        @click="select('{{ $m->kode_meja }}')"
+                        :class="selectedSaung === '{{ $m->kode_meja }}' ? 'ring-2 ring-[#0B4D2B] bg-white' : 'bg-[#F6F3EC] hover:bg-[#efece3]'"
+                        class="rounded-2xl p-4 shadow-xs border border-[#C0C9BF]/30 cursor-pointer transition-all flex flex-col justify-between min-h-[200px]">
+                        <div>
+                            <div class="flex items-start justify-between gap-1">
+                                <div>
+                                    <span class="text-[10px] font-bold text-[#707971]">{{ $m->kode_meja }}</span>
+                                    <h3 class="font-bold text-base text-[#1C1C18] leading-tight mt-0.5">Saung {{ $m->kode_meja }}</h3>
                                 </div>
                                 <span class="px-2 py-0.5 rounded-full bg-[#B1F1C2]/50 text-[10px] font-semibold text-[#00341A] flex items-center gap-1">
                                     <span class="w-1.5 h-1.5 rounded-full bg-[#0B4D2B]"></span>
                                     Tersedia
                                 </span>
                             </div>
-
                             <div class="mt-3 p-2 bg-white/80 rounded-xl text-xs flex flex-col gap-1">
                                 <span class="text-[#707971] italic">Meja Bersih & Siap Tamu</span>
                                 <div class="flex justify-between text-[#707971]">
                                     <span>Kapasitas:</span>
-                                    <span class="font-semibold text-[#1C1C18]">6 Orang</span>
+                                    <span class="font-semibold text-[#1C1C18]">{{ $m->kapasitas }} Orang</span>
                                 </div>
                             </div>
                         </div>
-
                         <div class="flex items-center justify-between pt-3 text-[10px] font-bold text-[#707971]">
                             <span class="flex items-center gap-1 text-[#0B4D2B]">
-                                <span>✓</span> Node Ready
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Node Ready
                             </span>
                             <span>QR Auto-Renewed</span>
                         </div>
                     </div>
-
-                    <!-- 4. LB-04: Saung Gandasoli -->
-                    <div 
-                        @click="select('LB-04')"
-                        :class="selectedSaung === 'LB-04' ? 'ring-2 ring-[#0B4D2B] bg-white' : 'bg-[#F6F3EC] hover:bg-[#efece3]'"
-                        class="rounded-2xl p-4 shadow-xs border border-[#C0C9BF]/30 cursor-pointer transition-all flex flex-col justify-between min-h-[200px]">
-                        <div>
-                            <div class="flex items-start justify-between gap-1">
-                                <div>
-                                    <span class="text-[10px] font-bold text-[#707971]">LB-04</span>
-                                    <h3 class="font-bold text-base text-[#1C1C18] leading-tight mt-0.5">Saung Gandasoli</h3>
-                                </div>
-                                <span class="px-2 py-0.5 rounded-full bg-[#FFDEA1] text-[10px] font-bold text-[#261900] flex items-center gap-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-[#7A5900]"></span>
-                                    Memasak (8)
-                                </span>
-                            </div>
-
-                            <div class="mt-3 p-2 bg-white/80 rounded-xl text-xs flex flex-col gap-1">
-                                <div class="flex justify-between">
-                                    <span class="text-[#707971]">Bill Aktif:</span>
-                                    <span class="font-mono font-semibold text-[#1C1C18]">SW-8809</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-[#707971]">Total:</span>
-                                    <span class="font-bold text-[#00341A]">Rp 620.000</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between pt-3 text-[10px] font-bold text-[#707971]">
-                            <span class="flex items-center gap-1 text-[#7A5900]">
-                                <span>🍳</span> KDS Ticket #14
-                            </span>
-                            <span>📡 IP: .104</span>
-                        </div>
-                    </div>
-
-                    <!-- 5. LB-05: Saung Dermaga Ujung -->
-                    <div 
-                        @click="select('LB-05')"
-                        :class="selectedSaung === 'LB-05' ? 'ring-2 ring-[#0B4D2B] bg-white' : 'bg-[#F6F3EC] hover:bg-[#efece3]'"
-                        class="rounded-2xl p-4 shadow-xs border border-[#C0C9BF]/30 cursor-pointer transition-all flex flex-col justify-between min-h-[200px]">
-                        <div>
-                            <div class="flex items-start justify-between gap-1">
-                                <div>
-                                    <span class="text-[10px] font-bold text-[#707971]">LB-05</span>
-                                    <h3 class="font-bold text-base text-[#1C1C18] leading-tight mt-0.5">Saung Dermaga Ujung</h3>
-                                </div>
-                                <span class="px-2 py-0.5 rounded-full bg-[#FFDEA1] text-[10px] font-bold text-[#261900] flex items-center gap-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-[#7A5900]"></span>
-                                    Terisi (5)
-                                </span>
-                            </div>
-
-                            <div class="mt-3 p-2 bg-white/80 rounded-xl text-xs flex flex-col gap-1">
-                                <div class="flex justify-between">
-                                    <span class="text-[#707971]">Bill Aktif:</span>
-                                    <span class="font-mono font-semibold text-[#1C1C18]">SW-8815</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-[#707971]">Total:</span>
-                                    <span class="font-bold text-[#00341A]">Rp 290.000</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between pt-3 text-[10px] font-bold text-[#707971]">
-                            <span class="flex items-center gap-1 text-[#00341A]">
-                                <span>☕</span> Teh Poci sedang dibawa
-                            </span>
-                            <span>📡 IP: .105</span>
-                        </div>
-                    </div>
-
-                    <!-- 6. Cluster Telemetry Node Card -->
-                    <div class="rounded-2xl p-4 bg-[#0B4D2B] text-white shadow-xs flex flex-col justify-between min-h-[200px]">
-                        <div>
-                            <span class="text-[10px] font-bold tracking-wider text-[#B1F1C2] uppercase">CLUSTER TELEMETRY</span>
-                            <h3 class="font-bold text-base text-white mt-1">Danau Gateway Node</h3>
-                            <p class="text-xs text-[#96D5A7] mt-2 leading-relaxed">
-                                Seluruh 5 node saung terhubung ke Access Point Mesh 'SITU_AWI_MESH_A'.
-                            </p>
-                        </div>
-
-                        <div class="flex items-center justify-between pt-3 border-t border-[#B1F1C2]/20 text-[10px] font-bold text-[#B1F1C2]">
-                            <span>Ping 14ms • Paket Hilang 0%</span>
-                            <span class="font-mono">192.168.4.101</span>
-                        </div>
-                    </div>
+                    @endif
+                    @endforeach
 
                 </div>
             </div>
 
-            <!-- SECTION - CLUSTER B: AREA LESEHAN ATAS BALONG INDAH -->
-            <div 
-                x-show="activeClusterFilter === 'all' || activeClusterFilter === 'cluster_b'"
-                class="flex flex-col gap-4">
-                
-                <div class="flex items-center justify-between pb-1">
-                    <div class="flex items-center gap-2.5">
-                        <span class="w-3 h-3 rounded-full bg-[#7A5900]"></span>
-                        <h2 class="font-bold text-lg sm:text-xl text-[#00341A]">
-                            Cluster B • Area Lesehan Atas Balong Indah
-                        </h2>
-                        <span class="px-2 py-0.5 rounded-md bg-[#EBE8E1] text-[10px] font-bold text-[#707971]">
-                            2 Saung Panggung
-                        </span>
-                    </div>
-                    <span class="text-xs font-semibold text-[#7A5900]">Area Kolam Atas</span>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- LA-01 -->
-                    <div 
-                        @click="select('LA-01')"
-                        :class="selectedSaung === 'LA-01' ? 'ring-2 ring-[#0B4D2B] bg-white' : 'bg-[#F6F3EC] hover:bg-[#efece3]'"
-                        class="rounded-2xl p-4 shadow-xs border border-[#C0C9BF]/30 cursor-pointer transition-all flex flex-col justify-between min-h-[165px]">
-                        <div>
-                            <div class="flex items-start justify-between gap-1">
-                                <div>
-                                    <span class="text-[10px] font-bold text-[#707971]">LA-01</span>
-                                    <h3 class="font-bold text-base text-[#1C1C18] leading-tight mt-0.5">Saung Panorama Balong</h3>
-                                </div>
-                                <span class="px-2.5 py-0.5 rounded-full bg-[#FFDEA1] text-[10px] font-bold text-[#261900] flex items-center gap-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-[#7A5900]"></span>
-                                    Terisi (6)
-                                </span>
-                            </div>
-
-                            <div class="mt-3 p-2 bg-white/80 rounded-xl text-xs flex justify-between">
-                                <span class="text-[#707971]">Bill Aktif: <strong class="font-mono text-[#1C1C18]">SW-8820</strong></span>
-                                <span class="font-bold text-[#00341A]">Rp 510.000</span>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between pt-3 text-[10px] font-bold text-[#707971]">
-                            <span class="text-[#213200]">🍽️ Makanan Selesai Disajikan</span>
-                            <span>📡 IP: .201</span>
-                        </div>
-                    </div>
-
-                    <!-- LA-02 -->
-                    <div 
-                        @click="select('LA-02')"
-                        :class="selectedSaung === 'LA-02' ? 'ring-2 ring-[#0B4D2B] bg-white' : 'bg-[#F6F3EC] hover:bg-[#efece3]'"
-                        class="rounded-2xl p-4 shadow-xs border border-[#C0C9BF]/30 cursor-pointer transition-all flex flex-col justify-between min-h-[165px]">
-                        <div>
-                            <div class="flex items-start justify-between gap-1">
-                                <div>
-                                    <span class="text-[10px] font-bold text-[#707971]">LA-02</span>
-                                    <h3 class="font-bold text-base text-[#1C1C18] leading-tight mt-0.5">Saung Kicau Burung</h3>
-                                </div>
-                                <span class="px-2.5 py-0.5 rounded-full bg-[#E5E2DB] text-[10px] font-bold text-[#404941] flex items-center gap-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-[#707971]"></span>
-                                    Booking 18:30
-                                </span>
-                            </div>
-
-                            <div class="mt-3 p-2 bg-white/80 rounded-xl text-xs flex justify-between">
-                                <span class="text-[#707971]">Atas Nama: <strong class="text-[#1C1C18]">Pak H. Dani (8 Org)</strong></span>
-                                <span class="font-bold text-[#00341A]">DP Rp 200.000</span>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between pt-3 text-[10px] font-bold text-[#707971]">
-                            <span>🔒 Kunci QR dikunci s/d Check-in</span>
-                            <span>📡 IP: .202</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION - CLUSTER C: AREA KURSI KAYU DEKAT KASIR & DAPUR -->
-            <div 
-                x-show="activeClusterFilter === 'all' || activeClusterFilter === 'cluster_c'"
-                class="flex flex-col gap-4">
-                
-                <div class="flex items-center justify-between pb-1">
-                    <div class="flex items-center gap-2.5">
-                        <span class="w-3 h-3 rounded-full bg-[#213200]"></span>
-                        <h2 class="font-bold text-lg sm:text-xl text-[#00341A]">
-                            Cluster C • Area Kursi Kayu Dekat Kasir & Dapur
-                        </h2>
-                        <span class="px-2 py-0.5 rounded-md bg-[#EBE8E1] text-[10px] font-bold text-[#707971]">
-                            4 Meja Non-Lesehan
-                        </span>
-                    </div>
-                    <span class="text-xs font-semibold text-[#707971]">Lantai Utama Semen Ekspos</span>
-                </div>
-
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <!-- KA-01 -->
-                    <div 
-                        @click="select('KA-01')"
-                        :class="selectedSaung === 'KA-01' ? 'ring-2 ring-[#0B4D2B] bg-white' : 'bg-[#F6F3EC] hover:bg-[#efece3]'"
-                        class="rounded-2xl p-4 shadow-xs border border-[#C0C9BF]/30 cursor-pointer transition-all flex flex-col justify-between">
-                        <div class="flex items-center justify-between">
-                            <span class="font-bold text-base text-[#1C1C18]">KA-01</span>
-                            <span class="w-2 h-2 rounded-full bg-[#7A5900]"></span>
-                        </div>
-                        <span class="text-[10px] font-bold text-[#707971] mt-1">Meja Kayu Jati 4P</span>
-                        <div class="mt-3 p-1.5 bg-white rounded-lg text-xs flex justify-between font-semibold">
-                            <span class="text-[#404941]">Status:</span>
-                            <span class="text-[#7A5900]">Terisi (4)</span>
-                        </div>
-                    </div>
-
-                    <!-- KA-02 -->
-                    <div 
-                        @click="select('KA-02')"
-                        :class="selectedSaung === 'KA-02' ? 'ring-2 ring-[#0B4D2B] bg-white' : 'bg-[#F6F3EC] hover:bg-[#efece3]'"
-                        class="rounded-2xl p-4 shadow-xs border border-[#C0C9BF]/30 cursor-pointer transition-all flex flex-col justify-between">
-                        <div class="flex items-center justify-between">
-                            <span class="font-bold text-base text-[#1C1C18]">KA-02</span>
-                            <span class="w-2 h-2 rounded-full bg-[#0B4D2B]"></span>
-                        </div>
-                        <span class="text-[10px] font-bold text-[#707971] mt-1">Meja Kayu Jati 4P</span>
-                        <div class="mt-3 p-1.5 bg-white rounded-lg text-xs flex justify-between font-semibold">
-                            <span class="text-[#404941]">Status:</span>
-                            <span class="text-[#0B4D2B]">Tersedia</span>
-                        </div>
-                    </div>
-
-                    <!-- KA-03 -->
-                    <div 
-                        @click="select('KA-03')"
-                        :class="selectedSaung === 'KA-03' ? 'ring-2 ring-[#0B4D2B] bg-white' : 'bg-[#F6F3EC] hover:bg-[#efece3]'"
-                        class="rounded-2xl p-4 shadow-xs border border-[#C0C9BF]/30 cursor-pointer transition-all flex flex-col justify-between">
-                        <div class="flex items-center justify-between">
-                            <span class="font-bold text-base text-[#1C1C18]">KA-03</span>
-                            <span class="w-2 h-2 rounded-full bg-[#0B4D2B]"></span>
-                        </div>
-                        <span class="text-[10px] font-bold text-[#707971] mt-1">Meja Kayu Jati 4P</span>
-                        <div class="mt-3 p-1.5 bg-white rounded-lg text-xs flex justify-between font-semibold">
-                            <span class="text-[#404941]">Status:</span>
-                            <span class="text-[#0B4D2B]">Tersedia</span>
-                        </div>
-                    </div>
-
-                    <!-- KA-04 -->
-                    <div 
-                        @click="select('KA-04')"
-                        :class="selectedSaung === 'KA-04' ? 'ring-2 ring-[#0B4D2B] bg-white' : 'bg-[#F6F3EC] hover:bg-[#efece3]'"
-                        class="rounded-2xl p-4 shadow-xs border border-[#C0C9BF]/30 cursor-pointer transition-all flex flex-col justify-between">
-                        <div class="flex items-center justify-between">
-                            <span class="font-bold text-base text-[#1C1C18]">KA-04</span>
-                            <span class="w-2 h-2 rounded-full bg-[#7A5900]"></span>
-                        </div>
-                        <span class="text-[10px] font-bold text-[#707971] mt-1 leading-tight">Meja Panjang Famili 8P</span>
-                        <div class="mt-3 p-1.5 bg-white rounded-lg text-xs flex justify-between font-semibold">
-                            <span class="text-[#404941]">Status:</span>
-                            <span class="text-[#7A5900]">Terisi (8)</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION - VISUAL CONTEXTUAL PHOTO SHOWCASE -->
             <div class="p-6 bg-[#F6F3EC] rounded-2xl shadow-xs border border-[#C0C9BF]/30 flex flex-col sm:flex-row items-center gap-6">
-                <!-- Lake Saung Photo Graphic -->
                 <div class="w-full sm:w-48 h-32 rounded-xl bg-gradient-to-tr from-[#0B4D2B] to-[#2E6A45] flex items-center justify-center text-white flex-shrink-0 shadow-inner p-4 text-center">
                     <div class="flex flex-col items-center gap-1.5">
-                        <span class="text-3xl">🏕️</span>
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 8h1a3 3 0 0 1 0 6h-1M4 8h14v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8z"/></svg>
                         <span class="font-display font-semibold text-xs tracking-wide">Saung Situ Awi</span>
                     </div>
                 </div>
 
                 <div class="flex flex-col">
                     <div class="flex items-center gap-2">
-                        <span class="text-xs">🌿</span>
+                        
                         <span class="text-[10px] font-bold text-[#00341A] uppercase tracking-wider">
                             KONSEP PENATAAN SAUNG SUNDA TRADISIONAL
                         </span>
@@ -653,17 +359,15 @@
 
         </div>
 
-        <!-- RIGHT COLUMN: DETAIL INSPECTOR PANEL (4 cols / ~33%) -->
         <div class="lg:col-span-4 bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col gap-6 sticky top-24">
             
-            <!-- Inspector Header -->
             <div class="flex items-start justify-between border-b border-gray-100 pb-4">
                 <div class="flex flex-col">
                     <span class="px-2.5 py-0.5 rounded-full bg-[#E5E2DB] text-[10px] font-bold text-[#00341A] w-fit font-mono">
                         <span x-text="selectedSaung">LB-02</span> CLUSTER A (DANAU)
                     </span>
                     <h2 class="font-display font-bold text-2xl text-[#00341A] mt-1">
-                        <span x-text="selectedSaung === 'LB-02' ? 'Saung Lesehan 02' : 'Saung Detail (' + selectedSaung + ')'">Saung Lesehan 02</span>
+                        <span x-text="'Saung ' + selectedSaung">Saung Detail</span>
                     </h2>
                 </div>
 
@@ -674,12 +378,11 @@
                 </button>
             </div>
 
-            <!-- CRITICAL / CALL ALERT BANNER -->
             <div 
-                x-show="!buzzerMuted && selectedSaung === 'LB-02'"
+                x-show="!buzzerMuted && detailMeja[selectedSaung] && detailMeja[selectedSaung].panggilan"
                 class="p-4 rounded-2xl bg-[#FFDAD6] border border-red-300 flex flex-col gap-3 shadow-xs">
                 <div class="flex items-start gap-2.5 text-[#BA1A1A]">
-                    <span class="text-xl animate-bounce">🚨</span>
+                    <svg class="w-5 h-5 animate-bounce" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
                     <div class="flex flex-col">
                         <span class="font-bold text-xs leading-tight">PANGGILAN PELAYAN AKTIF!</span>
                         <span class="text-[11px] text-[#93000A] mt-0.5">Tamu menyentuh sensor TTP223 (3 Menit lalu)</span>
@@ -702,7 +405,6 @@
                 </div>
             </div>
 
-            <!-- IOT HARDWARE TELEMETRY DETAILS -->
             <div class="p-4 rounded-2xl bg-[#F6F3EC] border border-[#C0C9BF]/30 flex flex-col gap-3">
                 <div class="flex items-center justify-between pb-1 border-b border-[#C0C9BF]/20">
                     <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">IOT HARDWARE TELEMETRY</span>
@@ -738,18 +440,17 @@
                         type="button" 
                         @click="showToast('Uji coba sinyal bunyi buzzer 1 detik berhasil dikirim.')"
                         class="flex-1 py-2 rounded-xl bg-[#EBE8E1] hover:bg-[#ded9cf] text-[#1C1C18] font-bold text-[10px] transition-all cursor-pointer">
-                        🔊 Uji Buzzer
+                        Uji Buzzer
                     </button>
                     <button 
                         type="button" 
                         @click="showToast('Perintah restart modul ESP32 terkirim via MQTT.')"
                         class="flex-1 py-2 rounded-xl bg-[#EBE8E1] hover:bg-[#ded9cf] text-[#1C1C18] font-bold text-[10px] transition-all cursor-pointer">
-                        🔄 Restart Node
+                        Restart Node
                     </button>
                 </div>
             </div>
 
-            <!-- DYNAMIC QR CODE CARD -->
             <div class="p-4 rounded-2xl bg-[#F6F3EC] border border-[#C0C9BF]/30 flex flex-col gap-3">
                 <div class="flex items-center justify-between pb-1 border-b border-[#C0C9BF]/20">
                     <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">DYNAMIC QR CODE ORDER</span>
@@ -759,10 +460,8 @@
                 </div>
 
                 <div class="flex items-center gap-3 p-3 bg-white rounded-xl">
-                    <!-- QR Graphic Box -->
                     <div class="w-20 h-20 rounded-xl bg-[#FCF9F2] p-2 flex items-center justify-center flex-shrink-0 border border-gray-200 shadow-inner">
                         <svg viewBox="0 0 100 100" class="w-full h-full text-[#00341A]" fill="currentColor">
-                            <!-- Pattern QR Representation -->
                             <rect x="5" y="5" width="25" height="25" rx="3" fill="#00341A"/>
                             <rect x="9" y="9" width="17" height="17" rx="2" fill="#FCF9F2"/>
                             <rect x="13" y="13" width="9" height="9" fill="#00341A"/>
@@ -775,7 +474,6 @@
                             <rect x="9" y="74" width="17" height="17" rx="2" fill="#FCF9F2"/>
                             <rect x="13" y="78" width="9" height="9" fill="#00341A"/>
 
-                            <!-- Matrix Data Dots -->
                             <rect x="40" y="10" width="8" height="8" fill="#00341A"/>
                             <rect x="52" y="10" width="8" height="8" fill="#00341A"/>
                             <rect x="40" y="24" width="8" height="8" fill="#00341A"/>
@@ -786,7 +484,6 @@
                             <rect x="70" y="40" width="8" height="8" fill="#00341A"/>
                             <rect x="84" y="40" width="8" height="8" fill="#00341A"/>
 
-                            <!-- Center Situ Awi Gold Emblem Dot -->
                             <circle cx="50" cy="50" r="8" fill="#E0B24E"/>
                             <circle cx="50" cy="50" r="3" fill="#0B4D2B"/>
 
@@ -800,10 +497,10 @@
                     <div class="flex flex-col text-xs overflow-hidden">
                         <span class="text-[10px] font-bold text-[#707971] uppercase">URL SESI ENKRIPSI:</span>
                         <span class="font-mono text-[11px] font-bold text-[#00341A] truncate mt-0.5">
-                            https://situawi.com/order/<span x-text="selectedSaung">LB-02</span>?token=9902xrt-ciwidey
+                            https://situawi.com/order/<span x-text="selectedSaung"></span>?token=<span x-text="detailMeja[selectedSaung] ? detailMeja[selectedSaung].token : ''"></span>
                         </span>
                         <span class="text-[10px] text-[#2E6A45] font-semibold mt-1 flex items-center gap-1">
-                            <span>🛡️</span> Anti Fake Order Verified
+                            Anti Fake Order Verified
                         </span>
                     </div>
                 </div>
@@ -813,56 +510,46 @@
                         type="button" 
                         @click="showToast('Mengunduh QR Code (SVG/PNG)...')"
                         class="flex-1 py-2 rounded-xl bg-[#EBE8E1] hover:bg-[#ded9cf] text-[#1C1C18] font-bold text-[10px] flex items-center justify-center gap-1 transition-all cursor-pointer">
-                        <span>📥</span> Unduh SVG/PNG
+                        Unduh SVG/PNG
                     </button>
                     <button 
                         type="button" 
                         @click="showToast('Token sesi berhasil di-regenerasi!')"
                         class="flex-1 py-2 rounded-xl bg-[#EBE8E1] hover:bg-[#ded9cf] text-[#1C1C18] font-bold text-[10px] flex items-center justify-center gap-1 transition-all cursor-pointer">
-                        <span>🔄</span> Regenerasi Token
+                        Regenerasi Token
                     </button>
                 </div>
             </div>
 
-            <!-- ACTIVE ORDER QUICK GLANCE -->
             <div class="p-4 rounded-2xl bg-[#F6F3EC] border border-[#C0C9BF]/30 flex flex-col gap-3">
                 <div class="flex items-center justify-between pb-1 border-b border-[#C0C9BF]/20">
                     <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">PESANAN TAMU SAAT INI</span>
-                    <span class="font-mono font-bold text-xs text-[#1C1C18]">SW-8819</span>
+                    <span class="font-mono font-bold text-xs text-[#1C1C18]" x-text="detailMeja[selectedSaung] ? detailMeja[selectedSaung].billKode : ''"></span>
                 </div>
 
                 <div class="flex flex-col gap-2 text-xs">
+                    <template x-for="(item, idx) in (detailMeja[selectedSaung] ? detailMeja[selectedSaung].items : [])" :key="idx">
                     <div class="flex items-center justify-between py-1 border-b border-gray-200/40">
                         <div class="flex items-center gap-2">
-                            <span class="w-5 h-5 rounded-md bg-[#E5E2DB] text-[#1C1C18] flex items-center justify-center font-bold text-[10px]">1</span>
-                            <span class="text-[#1C1C18]">Gurame Bakar Cobek Sedap</span>
+                            <span class="w-5 h-5 rounded-md bg-[#E5E2DB] text-[#1C1C18] flex items-center justify-center font-bold text-[10px]" x-text="item.jumlah"></span>
+                            <span class="text-[#1C1C18]" x-text="item.nama"></span>
                         </div>
-                        <span class="font-mono text-[#1C1C18]">Rp 85.000</span>
+                        <span class="font-mono text-[#1C1C18]" x-text="'Rp ' + Number(item.subtotal).toLocaleString('id-ID')"></span>
                     </div>
-                    <div class="flex items-center justify-between py-1 border-b border-gray-200/40">
-                        <div class="flex items-center gap-2">
-                            <span class="w-5 h-5 rounded-md bg-[#E5E2DB] text-[#1C1C18] flex items-center justify-center font-bold text-[10px]">2</span>
-                            <span class="text-[#1C1C18]">Nasi Liwet Kastrol Komplit</span>
-                        </div>
-                        <span class="font-mono text-[#1C1C18]">Rp 44.000</span>
-                    </div>
-                    <div class="flex items-center justify-between py-1 border-b border-gray-200/40">
-                        <div class="flex items-center gap-2">
-                            <span class="w-5 h-5 rounded-md bg-[#E5E2DB] text-[#1C1C18] flex items-center justify-center font-bold text-[10px]">1</span>
-                            <span class="text-[#1C1C18]">Es Kelapa Batok Gula Aren</span>
-                        </div>
-                        <span class="font-mono text-[#1C1C18]">Rp 15.100</span>
-                    </div>
+                    </template>
+                    <template x-if="!detailMeja[selectedSaung] || detailMeja[selectedSaung].items.length === 0">
+                    <div class="py-1 text-[#707971] italic">Belum ada pesanan aktif di meja ini.</div>
+                    </template>
                 </div>
 
                 <div class="flex items-baseline justify-between pt-1">
                     <span class="text-xs font-semibold text-[#707971]">Total Bill Kasir:</span>
-                    <span class="font-bold text-base text-[#00341A]">Rp 144.100</span>
+                    <span class="font-bold text-base text-[#00341A]" x-text="detailMeja[selectedSaung] ? 'Rp ' + Number(detailMeja[selectedSaung].billTotal).toLocaleString('id-ID') : 'Rp 0'"></span>
                 </div>
 
                 <div class="flex items-center gap-2 pt-2">
-                    <a 
-                        href="{{ url('/kasir') }}"
+                    <a
+                        :href="detailMeja[selectedSaung] && detailMeja[selectedSaung].billKode ? '/pesanan/' + detailMeja[selectedSaung].billKode : '/kasir/dashboard'"
                         class="flex-1 py-2.5 rounded-xl bg-[#0B4D2B] hover:bg-[#08381F] text-white font-bold text-xs text-center transition-all shadow-xs">
                         Lihat Bill POS Kasir
                     </a>
@@ -879,7 +566,6 @@
 
     </div>
 
-    <!-- MODAL: + TAMBAH MEJA / SAUNG BARU -->
     <div 
         x-cloak
         x-show="addModalOpen" 
@@ -900,38 +586,38 @@
                     <h3 class="font-display font-bold text-xl text-[#00341A]">Tambah Meja / Saung Baru</h3>
                     <p class="text-xs text-[#707971] mt-0.5">Konfigurasi node fisik ESP32 & kode meja POS</p>
                 </div>
-                <button type="button" @click="addModalOpen = false" class="text-gray-400 hover:text-black p-1 text-lg">✕</button>
+                <button type="button" @click="addModalOpen = false" class="text-gray-400 hover:text-black p-1 cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
 
-            <form @submit.prevent="addModalOpen = false; showToast('Unit saung baru berhasil ditambahkan!')" class="flex flex-col gap-4 text-xs">
+            <form method="POST" action="{{ route('admin.meja.simpan') }}" class="flex flex-col gap-4 text-xs">
+                @csrf
                 <div class="grid grid-cols-2 gap-4">
                     <div class="flex flex-col gap-1.5">
                         <label class="font-bold text-[#1C1C18]">Kode Saung/Meja *</label>
-                        <input type="text" placeholder="Contoh: LB-06" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
+                        <input type="text" name="kode_meja" placeholder="Contoh: LB-06" maxlength="10" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
                     </div>
                     <div class="flex flex-col gap-1.5">
-                        <label class="font-bold text-[#1C1C18]">Klaster Wilayah *</label>
-                        <select class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
-                            <option value="cluster_a">Cluster A: Danau</option>
-                            <option value="cluster_b">Cluster B: Balong</option>
-                            <option value="cluster_c">Cluster C: Kursi Kayu</option>
+                        <label class="font-bold text-[#1C1C18]">Area *</label>
+                        <select name="area" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
+                            <option value="Lesehan Bawah">Lesehan Bawah</option>
+                            <option value="Lesehan Atas">Lesehan Atas</option>
+                            <option value="Kursi Atas">Kursi Atas</option>
                         </select>
                     </div>
-                </div>
-
-                <div class="flex flex-col gap-1.5">
-                    <label class="font-bold text-[#1C1C18]">Nama Saung *</label>
-                    <input type="text" placeholder="Contoh: Saung Teratai Biru" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div class="flex flex-col gap-1.5">
                         <label class="font-bold text-[#1C1C18]">Kapasitas Tamu</label>
-                        <input type="number" value="6" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]">
+                        <input type="number" name="kapasitas" value="6" min="1" max="20" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]">
                     </div>
                     <div class="flex flex-col gap-1.5">
-                        <label class="font-bold text-[#1C1C18]">IP Address ESP32 Node</label>
-                        <input type="text" placeholder="192.168.4.106" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]">
+                        <label class="font-bold text-[#1C1C18]">ID Device ESP32</label>
+                        <input type="text" name="id_device" placeholder="Contoh: ESP32-12" maxlength="20" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]">
                     </div>
                 </div>
 
@@ -952,7 +638,6 @@
         </div>
     </div>
 
-    <!-- FLOATING TOAST -->
     <div 
         x-cloak
         x-show="toast.show" 
@@ -963,10 +648,32 @@
         x-transition:leave-start="opacity-100 translate-y-0"
         x-transition:leave-end="opacity-0 translate-y-4"
         class="fixed bottom-8 right-8 z-50 bg-[#00341A] text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 border border-[#FECE66]/30 text-sm font-semibold">
-        <span>🔔</span>
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
         <span x-text="toast.message"></span>
     </div>
 
 </div>
+
+<script>
+    function masterMejaApp() {
+        return {
+            activeClusterFilter: 'all',
+            searchQuery: '',
+            selectedSaung: @json($mejaPertama),
+            buzzerMuted: false,
+            addModalOpen: false,
+            detailMeja: @json($detailJson),
+            toast: { show: false, message: '' },
+            showToast(msg) {
+                this.toast.message = msg;
+                this.toast.show = true;
+                setTimeout(() => this.toast.show = false, 3000);
+            },
+            select(id) {
+                this.selectedSaung = id;
+            }
+        };
+    }
+</script>
 @endsection
 

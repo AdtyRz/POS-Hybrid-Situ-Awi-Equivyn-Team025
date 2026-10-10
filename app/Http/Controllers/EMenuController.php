@@ -46,11 +46,14 @@ class EMenuController extends Controller
 
         $inisial = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $mejaMakan->kode_meja), 0, 2));
 
+        $riwayat = session('riwayat_meja_' . $mejaMakan->id, []);
+
         return view('pelanggan.index', [
             'meja' => $mejaMakan,
             'menuJson' => $menuJson,
             'kategoriJson' => $kategoriJson,
             'orderRef' => '#' . $inisial . '-' . $mejaMakan->id . '04',
+            'punyaRiwayat' => count($riwayat) > 0,
         ]);
     }
 
@@ -122,6 +125,8 @@ class EMenuController extends Controller
             return $pesanan;
         });
 
+        $request->session()->push('riwayat_meja_' . $mejaMakan->id, $pesanan->kode_pesanan);
+
         return redirect()->route('emenu.status', $pesanan->kode_pesanan);
     }
 
@@ -140,6 +145,33 @@ class EMenuController extends Controller
         ][$pesanan->status_pesanan] ?? 0;
 
         return view('emenu.status', compact('pesanan', 'tahap'));
+    }
+
+    public function pelacakan(string $meja): View
+    {
+        $mejaMakan = $this->cariMeja($meja);
+
+        $kodeRiwayat = array_reverse(session('riwayat_meja_' . $mejaMakan->id, []));
+
+        $daftarPesanan = Pesanan::with(['detailPesanan.menu'])
+            ->where('meja_id', $mejaMakan->id)
+            ->whereIn('kode_pesanan', $kodeRiwayat)
+            ->get()
+            ->sortBy(fn ($pesanan) => array_search($pesanan->kode_pesanan, $kodeRiwayat))
+            ->values();
+
+        return view('emenu.pelacakan', [
+            'meja' => $mejaMakan,
+            'daftarPesanan' => $daftarPesanan,
+            'tahapStatus' => [
+                'menunggu' => 1,
+                'diproses' => 2,
+                'siap' => 3,
+                'diantar' => 4,
+                'selesai' => 5,
+                'dibatalkan' => 0,
+            ],
+        ]);
     }
 
     public function panggil(string $meja): RedirectResponse

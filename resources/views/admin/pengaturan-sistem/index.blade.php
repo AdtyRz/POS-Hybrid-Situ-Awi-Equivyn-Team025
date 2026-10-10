@@ -69,19 +69,17 @@
     }
 }" class="relative min-h-screen pb-16">
 
-    <!-- Atmospheric Ambient Glow Blobs -->
+    
     <div class="absolute top-0 right-0 w-96 h-96 bg-[#00341A]/5 rounded-full blur-3xl pointer-events-none -z-10"></div>
     <div class="absolute top-80 right-1/3 w-80 h-80 bg-[#FECE66]/10 rounded-full blur-2xl pointer-events-none -z-10"></div>
 
     <div class="p-6 sm:p-8 space-y-8 max-w-[1400px] mx-auto">
 
-        <!-- ==========================================
-             TOP COMMAND & ACTION BAR
-             ========================================== -->
+        
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pt-2">
-            <!-- Left Header Copy & Breadcrumb -->
+            
             <div class="space-y-2 max-w-2xl">
-                <!-- Breadcrumbs & System Console Badge -->
+                
                 <div class="flex flex-wrap items-center gap-3">
                     <nav class="flex items-center gap-2 text-xs font-semibold text-[#707971]">
                         <span class="hover:text-[#0B4D2B] transition-colors">Situ Awi Saung Lesehan</span>
@@ -94,18 +92,18 @@
                     </div>
                 </div>
 
-                <!-- Main Heading -->
+                
                 <h1 class="font-display font-bold text-3xl sm:text-4xl text-[#00341A] tracking-tight leading-tight">
                     Konfigurasi Sistem, Hardware IoT & Integrasi Resto
                 </h1>
 
-                <!-- Subtitle -->
+                
                 <p class="text-sm text-[#404941] leading-relaxed">
                     Kelola konektivitas MQTT broker ESP32, konfigurasi printer thermal kasir, kunci sandbox Midtrans QRIS, dan parameter operasional saung secara terpusat.
                 </p>
             </div>
 
-            <!-- Global Action CTAs -->
+            
             <div class="flex flex-wrap sm:flex-nowrap items-center gap-3">
                 <button 
                     @click="testPing()"
@@ -145,7 +143,7 @@
             </div>
         </div>
 
-        <!-- Notification Banner when Test Ping Succeeds -->
+        
         <div x-show="pingSuccess" x-transition class="p-4 rounded-xl bg-[#B1F1C2]/50 border border-[#0B4D2B]/20 flex items-center justify-between text-xs font-semibold text-[#00210E]">
             <div class="flex items-center gap-2.5">
                 <span class="w-2 h-2 rounded-full bg-[#00341A]"></span>
@@ -154,11 +152,9 @@
             <button @click="pingSuccess = false" class="text-[#00341A] font-bold hover:underline">Tutup</button>
         </div>
 
-        <!-- ==========================================
-             SERVICE HEALTH KPI CARDS (4 Cards Grid)
-             ========================================== -->
+        
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <!-- Card 1: MQTT Broker -->
+            
             <div class="bg-white rounded-xl p-5 shadow-xs border border-[#F0EEE7] relative overflow-hidden flex flex-col justify-between h-44 hover:shadow-md transition-shadow">
                 <div class="absolute -top-10 -left-10 w-28 h-28 bg-[#00341A]/10 rounded-full blur-2xl pointer-events-none"></div>
                 <div class="flex items-center justify-between">
@@ -185,7 +181,7 @@
                 </div>
             </div>
 
-            <!-- Card 2: Laravel Reverb WebSockets -->
+            
             <div class="bg-white rounded-xl p-5 shadow-xs border border-[#F0EEE7] relative overflow-hidden flex flex-col justify-between h-44 hover:shadow-md transition-shadow">
                 <div class="flex items-center justify-between">
                     <div class="w-10 h-10 rounded-xl bg-[#FECE66]/30 text-[#765600] flex items-center justify-center">
@@ -208,7 +204,7 @@
                 </div>
             </div>
 
-            <!-- Card 3: Midtrans Payment -->
+            
             <div class="bg-white rounded-xl p-5 shadow-xs border border-[#F0EEE7] relative overflow-hidden flex flex-col justify-between h-44 hover:shadow-md transition-shadow">
                 <div class="flex items-center justify-between">
                     <div class="w-10 h-10 rounded-xl bg-[#E5E2DB] text-[#0B4D2B] flex items-center justify-center">
@@ -234,7 +230,7 @@
                 </div>
             </div>
 
-            <!-- Card 4: Thermal Printer Kasir -->
+            
             <div class="bg-white rounded-xl p-5 shadow-xs border border-[#F0EEE7] relative overflow-hidden flex flex-col justify-between h-44 hover:shadow-md transition-shadow">
                 <div class="absolute -bottom-6 -right-6 w-28 h-28 bg-[#FFDEA1]/20 rounded-full blur-xl pointer-events-none"></div>
                 <div class="flex items-center justify-between">
@@ -259,9 +255,7 @@
             </div>
         </div>
 
-        <!-- ==========================================
-             NAVIGATION PILL TABS
-             ========================================== -->
+        
         <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
             <button 
                 @click="activeTab = 'iot'"
@@ -314,19 +308,15 @@
             </button>
         </div>
 
-        <!-- ==========================================
-             MAIN CONTENT: 8 COLS CONFIG / 4 COLS TOPOLOGY
-             ========================================== -->
+        
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-            <!-- LEFT COLUMN (8 Columns) -->
+            
             <div class="lg:col-span-8 space-y-6">
 
-                <!-- ----------------------------------------------------
-                     SECTION 1: KONFIGURASI MODUL IOT TABLE NODE
-                     ---------------------------------------------------- -->
+                
                 <div x-show="activeTab === 'iot' || activeTab === 'all'" class="bg-white rounded-xl p-6 sm:p-8 shadow-xs border border-[#F0EEE7] space-y-6">
-                    <!-- Section Header -->
+                    
                     <div class="flex items-center justify-between pb-4 border-b border-[#F0EEE7]">
                         <div class="flex items-center gap-3.5">
                             <div class="w-9 h-9 rounded-xl bg-[#0B4D2B] text-white flex items-center justify-center">
@@ -345,7 +335,7 @@
                         </span>
                     </div>
 
-                    <!-- Wi-Fi Subnet & Network Info Banner -->
+                    
                     <div class="p-4 rounded-xl bg-[#F6F3EC] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div class="flex items-center gap-3.5">
                             <div class="w-10 h-10 rounded-full bg-[#E5E2DB] text-[#0B4D2B] flex items-center justify-center flex-shrink-0">
@@ -371,7 +361,7 @@
                         </div>
                     </div>
 
-                    <!-- TTP223 Capacitive Touch Sensor Parameters -->
+                    
                     <div class="space-y-3">
                         <div class="flex items-center gap-2">
                             <svg class="w-4 h-4 text-[#7A5900]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -381,7 +371,7 @@
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <!-- Parameter 1: Buzzer Duration -->
+                            
                             <div class="bg-[#F6F3EC] rounded-xl p-4 flex flex-col justify-between gap-3">
                                 <div class="flex items-center justify-between">
                                     <label class="text-xs font-bold text-[#1C1C18]">Durasi Buzzer Feedback</label>
@@ -403,7 +393,7 @@
                                 </div>
                             </div>
 
-                            <!-- Parameter 2: Cooldown Anti Spam -->
+                            
                             <div class="bg-[#F6F3EC] rounded-xl p-4 flex flex-col justify-between gap-3">
                                 <div class="flex items-center justify-between">
                                     <label class="text-xs font-bold text-[#1C1C18]">Cooldown Anti-Spam Tombol</label>
@@ -427,7 +417,7 @@
                         </div>
                     </div>
 
-                    <!-- LCD 16x2 Display Text -->
+                    
                     <div class="bg-[#F6F3EC] rounded-xl p-4 space-y-2">
                         <div class="flex items-center justify-between">
                             <label class="text-xs font-bold text-[#1C1C18]">Pesan Tampilan Layar LCD 16x2 I2C</label>
@@ -448,7 +438,7 @@
                         </div>
                     </div>
 
-                    <!-- Dynamic QR Code & Anti-Tamper Security -->
+                    
                     <div class="pt-4 border-t border-[#F0EEE7] space-y-3">
                         <div class="flex items-center gap-2">
                             <svg class="w-4 h-4 text-[#7A5900]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -458,7 +448,7 @@
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <!-- Token Expiry -->
+                            
                             <div class="bg-[#F6F3EC] rounded-xl p-4 flex flex-col justify-between gap-3">
                                 <label class="text-xs font-bold text-[#1C1C18]">Masa Berlaku Sesi Tamu</label>
                                 <p class="text-xs text-[#404941] leading-relaxed">
@@ -475,7 +465,7 @@
                                 </div>
                             </div>
 
-                            <!-- Encryption Dropdown -->
+                            
                             <div class="bg-[#F6F3EC] rounded-xl p-4 flex flex-col justify-between gap-3">
                                 <label class="text-xs font-bold text-[#1C1C18]">Tingkat Enkripsi Anti-Order Palsu</label>
                                 <p class="text-xs text-[#404941] leading-relaxed">
@@ -494,7 +484,7 @@
                         </div>
                     </div>
 
-                    <!-- Hardware Remote Diagnostics Actions -->
+                    
                     <div class="pt-4 border-t border-[#F0EEE7] space-y-3">
                         <div class="flex items-center gap-2">
                             <svg class="w-4 h-4 text-[#707971]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -532,11 +522,9 @@
                     </div>
                 </div>
 
-                <!-- ----------------------------------------------------
-                     SECTION 2: KONFIGURASI STRUK & PRINTER KASIR
-                     ---------------------------------------------------- -->
+                
                 <div x-show="activeTab === 'printer' || activeTab === 'all' || activeTab === 'iot'" class="bg-white rounded-xl p-6 sm:p-8 shadow-xs border border-[#F0EEE7] space-y-6">
-                    <!-- Section Header -->
+                    
                     <div class="flex items-center justify-between pb-4 border-b border-[#F0EEE7]">
                         <div class="flex items-center gap-3.5">
                             <div class="w-9 h-9 rounded-xl bg-[#FECE66] text-[#765600] flex items-center justify-center">
@@ -554,7 +542,7 @@
                         </span>
                     </div>
 
-                    <!-- 3 Input Configuration Columns -->
+                    
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div class="space-y-1.5">
                             <label class="text-xs font-semibold text-[#1C1C18]">Ukuran Kertas Thermal</label>
@@ -583,7 +571,7 @@
                         </div>
                     </div>
 
-                    <!-- Receipt Print Simulator Preview Banner -->
+                    
                     <div class="p-4 rounded-xl bg-[#F0EEE7] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div class="flex items-center gap-3.5">
                             <div class="w-10 h-10 rounded-xl bg-white text-[#707971] flex items-center justify-center shadow-xs">
@@ -609,11 +597,9 @@
                     </div>
                 </div>
 
-                <!-- ----------------------------------------------------
-                     SECTION 3: PARAMETER PAJAK RESTORAN (PB1) & BIAYA LAYANAN
-                     ---------------------------------------------------- -->
+                
                 <div x-show="activeTab === 'tax' || activeTab === 'all' || activeTab === 'iot'" class="bg-white rounded-xl p-6 sm:p-8 shadow-xs border border-[#F0EEE7] space-y-6">
-                    <!-- Section Header -->
+                    
                     <div class="flex items-center justify-between pb-4 border-b border-[#F0EEE7]">
                         <div class="flex items-center gap-3.5">
                             <div class="w-9 h-9 rounded-xl bg-[#B1F1C2] text-[#00210E] flex items-center justify-center">
@@ -628,9 +614,9 @@
                         </div>
                     </div>
 
-                    <!-- 2 Cards Grid -->
+                    
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <!-- Card 1: PB1 Tax -->
+                        
                         <div class="bg-[#F6F3EC] rounded-xl p-5 flex flex-col justify-between gap-4">
                             <div class="flex items-start justify-between gap-4">
                                 <div class="space-y-1">
@@ -639,7 +625,7 @@
                                         Pajak pembangunan daerah resmi kabupaten Bandung untuk konsumsi restoran.
                                     </p>
                                 </div>
-                                <!-- Switch Toggle -->
+                                
                                 <button 
                                     @click="pb1Enabled = !pb1Enabled"
                                     type="button" 
@@ -661,7 +647,7 @@
                             </div>
                         </div>
 
-                        <!-- Card 2: Service Charge -->
+                        
                         <div class="bg-[#F6F3EC] rounded-xl p-5 flex flex-col justify-between gap-4" :class="{ 'opacity-75': !serviceChargeEnabled }">
                             <div class="flex items-start justify-between gap-4">
                                 <div class="space-y-1">
@@ -670,7 +656,7 @@
                                         Biaya tambahan opsional jasa pelayanan untuk tim saung & operasional meja.
                                     </p>
                                 </div>
-                                <!-- Switch Toggle -->
+                                
                                 <button 
                                     @click="serviceChargeEnabled = !serviceChargeEnabled"
                                     type="button" 
@@ -698,12 +684,10 @@
 
             </div>
 
-            <!-- RIGHT COLUMN (4 Columns) -->
+            
             <div class="lg:col-span-4 space-y-6">
 
-                <!-- ----------------------------------------------------
-                     HARDWARE MESH TOPOLOGY CARD
-                     ---------------------------------------------------- -->
+                
                 <div class="bg-white rounded-xl p-6 shadow-xs border border-[#F0EEE7] space-y-4">
                     <div class="flex items-center justify-between">
                         <h3 class="text-base font-bold text-[#1C1C18]">Topologi Node Saung</h3>
@@ -716,75 +700,75 @@
                         Peta sebaran koneksi 11 unit ESP32 yang terhubung ke broker EMQX lokal dan diteruskan ke KDS Dapur Utama.
                     </p>
 
-                    <!-- Visual Mini Node Grid (11 Nodes + Gazebo VIP) -->
+                    
                     <div class="bg-[#F6F3EC] rounded-xl p-3 grid grid-cols-4 gap-2">
-                        <!-- Node 1 -->
+                        
                         <div class="bg-white rounded-lg p-2 flex flex-col items-center justify-center text-center shadow-2xs hover:scale-105 transition-transform">
                             <span class="w-2 h-2 rounded-full bg-[#00341A] mb-1"></span>
                             <span class="text-[11px] font-bold text-[#1C1C18]">S-01</span>
                             <span class="font-mono text-[9px] text-[#707971]">11ms</span>
                         </div>
-                        <!-- Node 2 -->
+                        
                         <div class="bg-white rounded-lg p-2 flex flex-col items-center justify-center text-center shadow-2xs hover:scale-105 transition-transform">
                             <span class="w-2 h-2 rounded-full bg-[#00341A] mb-1"></span>
                             <span class="text-[11px] font-bold text-[#1C1C18]">S-02</span>
                             <span class="font-mono text-[9px] text-[#707971]">14ms</span>
                         </div>
-                        <!-- Node 3 (Calling / Buzzer Active) -->
+                        
                         <div class="bg-white rounded-lg p-2 flex flex-col items-center justify-center text-center shadow-2xs hover:scale-105 transition-transform ring-1 ring-[#FECE66]">
                             <span class="w-2 h-2 rounded-full bg-[#7A5900] animate-ping mb-1"></span>
                             <span class="text-[11px] font-bold text-[#1C1C18]">S-03</span>
                             <span class="font-mono text-[9px] font-bold text-[#7A5900]">Call</span>
                         </div>
-                        <!-- Node 4 -->
+                        
                         <div class="bg-white rounded-lg p-2 flex flex-col items-center justify-center text-center shadow-2xs hover:scale-105 transition-transform">
                             <span class="w-2 h-2 rounded-full bg-[#00341A] mb-1"></span>
                             <span class="text-[11px] font-bold text-[#1C1C18]">S-04</span>
                             <span class="font-mono text-[9px] text-[#707971]">9ms</span>
                         </div>
-                        <!-- Node 5 -->
+                        
                         <div class="bg-white rounded-lg p-2 flex flex-col items-center justify-center text-center shadow-2xs hover:scale-105 transition-transform">
                             <span class="w-2 h-2 rounded-full bg-[#00341A] mb-1"></span>
                             <span class="text-[11px] font-bold text-[#1C1C18]">S-05</span>
                             <span class="font-mono text-[9px] text-[#707971]">12ms</span>
                         </div>
-                        <!-- Node 6 -->
+                        
                         <div class="bg-white rounded-lg p-2 flex flex-col items-center justify-center text-center shadow-2xs hover:scale-105 transition-transform">
                             <span class="w-2 h-2 rounded-full bg-[#00341A] mb-1"></span>
                             <span class="text-[11px] font-bold text-[#1C1C18]">S-06</span>
                             <span class="font-mono text-[9px] text-[#707971]">16ms</span>
                         </div>
-                        <!-- Node 7 -->
+                        
                         <div class="bg-white rounded-lg p-2 flex flex-col items-center justify-center text-center shadow-2xs hover:scale-105 transition-transform">
                             <span class="w-2 h-2 rounded-full bg-[#00341A] mb-1"></span>
                             <span class="text-[11px] font-bold text-[#1C1C18]">S-07</span>
                             <span class="font-mono text-[9px] text-[#707971]">10ms</span>
                         </div>
-                        <!-- Node 8 -->
+                        
                         <div class="bg-white rounded-lg p-2 flex flex-col items-center justify-center text-center shadow-2xs hover:scale-105 transition-transform">
                             <span class="w-2 h-2 rounded-full bg-[#00341A] mb-1"></span>
                             <span class="text-[11px] font-bold text-[#1C1C18]">S-08</span>
                             <span class="font-mono text-[9px] text-[#707971]">15ms</span>
                         </div>
-                        <!-- Node 9 -->
+                        
                         <div class="bg-white rounded-lg p-2 flex flex-col items-center justify-center text-center shadow-2xs hover:scale-105 transition-transform">
                             <span class="w-2 h-2 rounded-full bg-[#00341A] mb-1"></span>
                             <span class="text-[11px] font-bold text-[#1C1C18]">S-09</span>
                             <span class="font-mono text-[9px] text-[#707971]">13ms</span>
                         </div>
-                        <!-- Node 10 -->
+                        
                         <div class="bg-white rounded-lg p-2 flex flex-col items-center justify-center text-center shadow-2xs hover:scale-105 transition-transform">
                             <span class="w-2 h-2 rounded-full bg-[#00341A] mb-1"></span>
                             <span class="text-[11px] font-bold text-[#1C1C18]">S-10</span>
                             <span class="font-mono text-[9px] text-[#707971]">11ms</span>
                         </div>
-                        <!-- Node 11 -->
+                        
                         <div class="bg-white rounded-lg p-2 flex flex-col items-center justify-center text-center shadow-2xs hover:scale-105 transition-transform">
                             <span class="w-2 h-2 rounded-full bg-[#00341A] mb-1"></span>
                             <span class="text-[11px] font-bold text-[#1C1C18]">S-11</span>
                             <span class="font-mono text-[9px] text-[#707971]">10ms</span>
                         </div>
-                        <!-- VIP Gazebo Utama -->
+                        
                         <div class="bg-[#FFDEA1]/40 border border-[#FECE66] rounded-lg p-2 flex flex-col items-center justify-center text-center shadow-2xs hover:scale-105 transition-transform">
                             <span class="w-2 h-2 rounded-full bg-[#7A5900] mb-1"></span>
                             <span class="text-[11px] font-bold text-[#261900]">VIP-1</span>
@@ -792,7 +776,7 @@
                         </div>
                     </div>
 
-                    <!-- Latency Metrics Inline -->
+                    
                     <div class="space-y-1.5 pt-1">
                         <div class="flex items-center justify-between text-[10px] font-bold">
                             <span class="text-[#707971] tracking-wider uppercase">11 DARI 11 NODE TERHUBUNG</span>
@@ -804,9 +788,7 @@
                     </div>
                 </div>
 
-                <!-- ----------------------------------------------------
-                     DATABASE & BACKUP AUTOMATION BOX
-                     ---------------------------------------------------- -->
+                
                 <div class="bg-white rounded-xl p-6 shadow-xs border border-[#F0EEE7] space-y-4">
                     <div class="flex items-center gap-3">
                         <div class="w-9 h-9 rounded-xl bg-[#E5E2DB] text-[#0B4D2B] flex items-center justify-center flex-shrink-0">
@@ -824,7 +806,7 @@
                         Pencadangan snapshot basis data otomatis ke S3 Cloud Storage setiap penutupan shift kasir pukul 23:59 WIB.
                     </p>
 
-                    <!-- Last Snapshot Meta Box -->
+                    
                     <div class="bg-[#F6F3EC] rounded-xl p-3.5 space-y-2 text-xs">
                         <div class="flex items-center justify-between">
                             <span class="text-[#707971]">Snapshot Terakhir:</span>
@@ -836,7 +818,7 @@
                         </div>
                     </div>
 
-                    <!-- Action Buttons -->
+                    
                     <div class="space-y-2 pt-1">
                         <button 
                             @click="alert('Mengunduh arsip pencadangan basis data Situ Awi (situawi_backup_20261010.sql.gz)...')"
@@ -858,9 +840,7 @@
                     </div>
                 </div>
 
-                <!-- ----------------------------------------------------
-                     MIDTRANS FAST QUICK-TOGGLE
-                     ---------------------------------------------------- -->
+                
                 <div class="bg-white rounded-xl p-6 shadow-xs border border-[#F0EEE7] space-y-3">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
