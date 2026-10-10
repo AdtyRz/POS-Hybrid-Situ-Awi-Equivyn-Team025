@@ -53,14 +53,26 @@
             </div>
         </div>
 
-        <button type="button" 
-                @click="checkIotStatus()" 
-                class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-forest-900/80 hover:bg-forest-900 text-gold-300 hover:text-gold-200 border border-gold-500/30 text-xs font-medium transition active:scale-95 shrink-0">
-            <svg class="w-3 h-3 transition-transform" :class="iotChecking ? 'animate-spin' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-            </svg>
-            <span>Cek</span>
-        </button>
+        <div class="flex items-center gap-2 shrink-0">
+            @if (!empty($punyaRiwayat))
+            <a href="{{ route('emenu.pelacakan', $meja->id) }}"
+               class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-gold-500 hover:bg-gold-400 text-forest-900 text-[10px] sm:text-xs font-bold transition active:scale-95 whitespace-nowrap"
+               title="Pelacakan & Status Pesanan">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zm10 0a2 2 0 11-4 0 2 2 0 014 0zM13 17V6a1 1 0 00-1-1H4m9 12h6V9a1 1 0 00-1-1h-4"></path>
+                </svg>
+                <span>Pelacakan &amp; Status Pesanan</span>
+            </a>
+            @endif
+            <button type="button" 
+                    @click="checkIotStatus()" 
+                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-forest-900/80 hover:bg-forest-900 text-gold-300 hover:text-gold-200 border border-gold-500/30 text-xs font-medium transition active:scale-95 shrink-0">
+                <svg class="w-3 h-3 transition-transform" :class="iotChecking ? 'animate-spin' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                <span>Cek</span>
+            </button>
+        </div>
     </div>
 
     <div class="relative flex items-center gap-2">

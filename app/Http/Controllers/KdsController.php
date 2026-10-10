@@ -3,121 +3,169 @@
 namespace App\Http\Controllers;
 
 use App\Models\DetailPesanan;
+use App\Models\LogPanggilPelayan;
 use App\Models\Pesanan;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class KdsController extends Controller
 {
-    public function index(Request $request, string $target = 'dapur')
+    public function index(Request $request): View
     {
-        $antrean = $this->ambilAntrean($target);
+        $target = $request->route('target', 'dapur');
 
-        if ($request->expectsJson()) {
-            return response()->json($antrean, 200);
+        if ($target === 'bar') {
+            $judul = 'Bar';
+            $subJudul = 'Beverage Display System';
+            $lencana = 'KDS BAR — MINUMAN & KOPI';
+            $tampilan = 'BARISTA VIEW';
+            $kataMulai = 'Racik';
+            $kataSiap = 'Minuman';
+            $kataRunner = 'Bar';
+            $stasiunNama = 'Bar & Racikan';
+            $stasiunSub = 'STATION POS 02 • KHUSUS MINUMAN';
+            $stasiunUtama = 'Bar Utama';
+            $stasiun = 'Bar';
+        } else {
+            $target = 'dapur';
+            $judul = 'Dapur';
+            $subJudul = 'Kitchen Display System';
+            $lencana = 'KDS DAPUR — MAKANAN & BAKARAN';
+            $tampilan = 'KOKI VIEW';
+            $kataMulai = 'Masak';
+            $kataSiap = 'Makanan';
+            $kataRunner = 'Dapur';
+            $stasiunNama = 'Hot Kitchen & Bakaran';
+            $stasiunSub = 'STATION POS 01 • KHUSUS MAKANAN';
+            $stasiunUtama = 'Dapur Utama';
+            $stasiun = 'Dapur';
         }
 
-        return view('kds.index', [
-            'target' => $target,
-            'item' => $antrean['data'],
-        ]);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $data = $request->validate([
-            'status_item' => ['required', 'in:diproses,siap,diantar'],
-        ], [
-            'status_item.required' => 'Status item wajib diisi.',
-            'status_item.in' => 'Status item harus diproses, siap, atau diantar.',
-        ]);
-
-        $detail = DetailPesanan::with('pesanan')->findOrFail($id);
-
-        if ($detail->pesanan->status_pesanan === Pesanan::STATUS_DIBATALKAN) {
-            abort(409, 'Pesanan ini sudah dibatalkan.');
-        }
-
-        $detail->update(['status_item' => $data['status_item']]);
-
-        $this->sinkronStatusPesanan($detail->pesanan_id);
-
-        return response()->json([
-            'status' => 'sukses',
-            'message' => 'Status item diperbarui.',
-            'data' => $detail->fresh(),
-        ], 200);
-    }
-
-    public function daftarPesanan()
-    {
-        $pesanan = Pesanan::with('meja')
-            ->whereIn('status_pesanan', [
-                Pesanan::STATUS_MENUNGGU,
-                Pesanan::STATUS_DIPROSES,
-                Pesanan::STATUS_SIAP,
-                Pesanan::STATUS_DIANTAR,
-            ])
-            ->orderBy('waktu_pesan')
-            ->get();
-
-        return response()->json([
-            'status' => 'sukses',
-            'total' => $pesanan->count(),
-            'data' => $pesanan,
-        ], 200);
-    }
-
-    private function ambilAntrean($targetKds)
-    {
-        $item = DetailPesanan::with(['menu.kategori', 'pesanan.meja'])
-            ->whereHas('menu.kategori', function ($query) use ($targetKds) {
-                $query->where('target_kds', $targetKds);
-            })
-            ->whereHas('pesanan', function ($query) {
-                $query->whereIn('status_pesanan', [
-                    Pesanan::STATUS_MENUNGGU,
-                    Pesanan::STATUS_DIPROSES,
-                    Pesanan::STATUS_SIAP,
-                ]);
+        $tiket = DetailPesanan::with(['menu', 'pesanan.meja'])
+            ->whereHas('menu.kategori', function ($query) use ($target) {
+                $query->where('target_kds', $target);
             })
             ->whereIn('status_item', ['menunggu', 'diproses', 'siap'])
-            ->orderBy('pesanan_id')
-            ->get();
+            ->whereHas('pesanan', function ($query) {
+                $query->whereNotIn('status_pesanan', ['selesai', 'dibatalkan']);
+            })
+            ->orderBy('created_at')
+            ->get()
+            ->groupBy('pesanan_id');
 
-        return [
-            'status' => 'sukses',
-            'target_kds' => $targetKds,
-            'total' => $item->count(),
-            'data' => $item,
-        ];
+        $tiketJson = $tiket->map(function ($baris, $pesananId) {
+            $pesanan = $baris->first()->pesanan;
+            $status = $this->statusTiket($baris);
+            $detik = now()->diffInSeconds($pesanan->waktu_pesan);
+
+            return [
+                'dbId' => $pesanan->id,
+                'id' => '#' . $pesanan->kode_pesanan,
+                'saung' => 'SAUNG ' . $pesanan->meja->kode_meja,
+                'customer' => 'Tamu ' . $pesanan->meja->kode_meja,
+                'status' => $status,
+                'seconds' => $detik,
+                'isOverdue' => $detik >= 900 && $status !== 'siap',
+                'passBarMessage' => 'Di Meja Pass Bar: Menunggu pelayan mengantar ke Saung ' . $pesanan->meja->kode_meja . '.',
+                'items' => $baris->map(function ($detail) {
+                    return [
+                        'dbId' => $detail->id,
+                        'name' => $detail->menu->nama_menu,
+                        'qty' => $detail->jumlah . 'x',
+                        'checked' => $detail->status_item !== 'menunggu',
+                        'note' => $detail->catatan ? 'Catatan: ' . $detail->catatan : null,
+                        'noteType' => $detail->catatan ? (str_contains(strtolower($detail->catatan), 'pedas') ? 'warning' : 'info') : null,
+                    ];
+                })->values(),
+            ];
+        })->values();
+
+        $selesaiHariIni = DetailPesanan::where('status_item', 'siap')
+            ->whereDate('updated_at', today())
+            ->whereHas('menu.kategori', function ($query) use ($target) {
+                $query->where('target_kds', $target);
+            })
+            ->sum('jumlah');
+
+        return view('KDS.index', compact(
+            'target', 'judul', 'subJudul', 'lencana', 'tampilan',
+            'kataMulai', 'kataSiap', 'kataRunner',
+            'stasiunNama', 'stasiunSub', 'stasiunUtama', 'stasiun',
+            'tiketJson', 'selesaiHariIni'
+        ));
     }
 
-    private function sinkronStatusPesanan(int $pesananId): void
+    public function update(Request $request, string $id): RedirectResponse
     {
-        $pesanan = Pesanan::with('detailPesanan')->find($pesananId);
+        $target = $request->route('target', 'dapur');
 
-        if (! $pesanan) {
-            return;
+        $data = $request->validate([
+            'aksi' => ['required', 'in:mulai,siap,item,runner'],
+            'item_id' => ['nullable', 'exists:detail_pesanan,id'],
+        ]);
+
+        DB::transaction(function () use ($target, $id, $data) {
+            $pesanan = Pesanan::findOrFail($id);
+
+            if ($data['aksi'] === 'runner') {
+                LogPanggilPelayan::create([
+                    'meja_id' => $pesanan->meja_id,
+                    'status_panggilan' => 'menunggu',
+                ]);
+                return;
+            }
+
+            if ($data['aksi'] === 'item' && $data['item_id']) {
+                $detail = DetailPesanan::where('id', $data['item_id'])
+                    ->where('pesanan_id', $pesanan->id)
+                    ->firstOrFail();
+
+                $detail->update([
+                    'status_item' => $detail->status_item === 'menunggu' ? 'diproses' : 'menunggu',
+                ]);
+            } else {
+                $tujuan = $data['aksi'] === 'siap' ? 'siap' : 'diproses';
+
+                DetailPesanan::where('pesanan_id', $pesanan->id)
+                    ->whereHas('menu.kategori', function ($query) use ($target) {
+                        $query->where('target_kds', $target);
+                    })
+                    ->update(['status_item' => $tujuan]);
+            }
+
+            $pesanan->update(['status_pesanan' => $this->statusPesanan($pesanan)]);
+        });
+
+        return back();
+    }
+
+    private function statusTiket($baris): string
+    {
+        if ($baris->every(fn ($detail) => $detail->status_item === 'siap')) {
+            return 'siap';
         }
 
-        $statusItem = $pesanan->detailPesanan->pluck('status_item');
-
-        if ($statusItem->isEmpty()) {
-            return;
+        if ($baris->contains(fn ($detail) => $detail->status_item !== 'menunggu')) {
+            return 'diproses';
         }
 
-        if ($statusItem->contains('diantar')) {
-            $statusBaru = Pesanan::STATUS_DIANTAR;
-        } elseif ($statusItem->every(fn ($item) => $item === 'siap')) {
-            $statusBaru = Pesanan::STATUS_SIAP;
-        } elseif ($statusItem->contains(fn ($item) => $item !== 'menunggu')) {
-            $statusBaru = Pesanan::STATUS_DIPROSES;
-        } else {
-            $statusBaru = Pesanan::STATUS_MENUNGGU;
+        return 'menunggu';
+    }
+
+    private function statusPesanan(Pesanan $pesanan): string
+    {
+        $status = DetailPesanan::where('pesanan_id', $pesanan->id)->pluck('status_item');
+
+        if ($status->every(fn ($item) => $item === 'siap')) {
+            return 'siap';
         }
 
-        if ($pesanan->status_pesanan !== $statusBaru) {
-            $pesanan->update(['status_pesanan' => $statusBaru]);
+        if ($status->contains(fn ($item) => $item !== 'menunggu')) {
+            return 'diproses';
         }
+
+        return 'menunggu';
     }
 }
