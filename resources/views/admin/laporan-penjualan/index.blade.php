@@ -4,111 +4,8 @@
 @section('page_category', 'Laporan & Ekspor')
 
 @section('content')
-<div class="flex flex-col gap-8 pb-16" x-data="{
-    exportFormat: 'pdf',
-    searchQuery: '',
-    selectedCluster: 'all',
-    toast: { show: false, message: '' },
-    showToast(msg) {
-        this.toast.message = msg;
-        this.toast.show = true;
-        setTimeout(() => this.toast.show = false, 3000);
-    },
-    // Transaction records matching design & OCR data
-    transactions: [
-        {
-            id: '#ORD-9821',
-            time: '20:45 WIB',
-            table: 'Saung 02 (LB-02)',
-            items: '4 Item (Gurame, Liwet, Es Kelapa)',
-            method: 'QRIS Midtrans',
-            subtotal: 438182,
-            pb1: 43818,
-            total: 482000,
-            cashier: 'Teh Neng Santi',
-            status: 'valid',
-            statusText: 'Match/Valid'
-        },
-        {
-            id: '#ORD-9820',
-            time: '20:15 WIB',
-            table: 'Saung Gandasoli (LB-04)',
-            items: '5 Item (Ayam Bakakak, Karedok, dll)',
-            method: 'Tunai Kasir',
-            subtotal: 563636,
-            pb1: 56364,
-            total: 620000,
-            cashier: 'Teh Neng Santi',
-            status: 'valid',
-            statusText: 'Match/Valid'
-        },
-        {
-            id: '#ORD-9819',
-            time: '19:40 WIB',
-            table: 'Meja Kursi KA-02',
-            items: '1 Item (Sop Gurame - Void Batal)',
-            method: 'VOID Kasir',
-            subtotal: 0,
-            pb1: 0,
-            total: 0,
-            cashier: 'Teh Neng Santi',
-            status: 'void',
-            statusText: 'VOID Approved'
-        },
-        {
-            id: '#ORD-9818',
-            time: '19:10 WIB',
-            table: 'Saung Dermaga (LB-05)',
-            items: '8 Item Paket Rombongan',
-            method: 'QRIS Midtrans',
-            subtotal: 809091,
-            pb1: 80909,
-            total: 890000,
-            cashier: 'Teh Neng Santi',
-            status: 'valid',
-            statusText: 'Match/Valid'
-        },
-        {
-            id: '#ORD-9817',
-            time: '18:30 WIB',
-            table: 'Saung Panorama (LA-01)',
-            items: '6 Item Liwet Komplit',
-            method: 'QRIS Midtrans',
-            subtotal: 463636,
-            pb1: 46364,
-            total: 510000,
-            cashier: 'Teh Neng Santi',
-            status: 'valid',
-            statusText: 'Match/Valid'
-        },
-        {
-            id: '#ORD-9816',
-            time: '17:55 WIB',
-            table: 'Saung Teratai (LB-01)',
-            items: '3 Item Gurame Cobek',
-            method: 'Tunai Kasir',
-            subtotal: 350000,
-            pb1: 35000,
-            total: 385000,
-            cashier: 'Teh Neng Santi',
-            status: 'valid',
-            statusText: 'Match/Valid'
-        }
-    ],
+<div class="flex flex-col gap-8 pb-16" x-data="laporanPenjualanApp()">
 
-    get filteredTransactions() {
-        if (!this.searchQuery) return this.transactions;
-        const q = this.searchQuery.toLowerCase();
-        return this.transactions.filter(t => 
-            t.id.toLowerCase().includes(q) || 
-            t.table.toLowerCase().includes(q) || 
-            t.items.toLowerCase().includes(q) ||
-            t.method.toLowerCase().includes(q)
-        );
-    }
-}">
-
-    <!-- 01. PAGE HEADER & ACTION BAR -->
     <div class="flex flex-col gap-3">
         <div class="flex flex-wrap items-center justify-between gap-4 text-xs font-semibold">
             <div class="flex items-center gap-2 text-[#707971]">
@@ -135,7 +32,6 @@
                 </p>
             </div>
 
-            <!-- Export Trays -->
             <div class="flex flex-wrap items-center gap-3">
                 <button 
                     type="button" 
@@ -170,10 +66,8 @@
         </div>
     </div>
 
-    <!-- 02. SECTION - INDIKATOR KUNCI FINANSIAL (4 BENTO CARDS) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
-        <!-- KPI 1: Omzet Terkonsolidasi -->
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[190px] relative overflow-hidden">
             <div class="flex items-start justify-between">
                 <div>
@@ -203,7 +97,6 @@
             <div class="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-[#00341A]/5 blur-xl pointer-events-none"></div>
         </div>
 
-        <!-- KPI 2: Total Tiket Transaksi -->
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[190px]">
             <div class="flex items-start justify-between">
                 <div>
@@ -222,12 +115,11 @@
                     2.418 Pesanan
                 </span>
                 <span class="text-[10px] font-bold text-[#261900] mt-2 flex items-center gap-1">
-                    <span>✓</span> 100% Audit Reconciled
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> 100% Audit Reconciled
                 </span>
             </div>
         </div>
 
-        <!-- KPI 3: Selisih Fisik vs Sistem -->
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[190px]">
             <div class="flex items-start justify-between">
                 <div>
@@ -255,7 +147,6 @@
             </div>
         </div>
 
-        <!-- KPI 4: Total Pajak Resto PB1 -->
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[190px] relative overflow-hidden">
             <div class="flex items-start justify-between">
                 <div>
@@ -274,7 +165,7 @@
                     Rp 28.465.000
                 </span>
                 <span class="text-[10px] font-bold text-[#404941] mt-2 flex items-center gap-1">
-                    <span>🏛️</span> Siap Lapor Bapenda Kab. Bandung
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg> Siap Lapor Bapenda Kab. Bandung
                 </span>
             </div>
 
@@ -283,7 +174,6 @@
 
     </div>
 
-    <!-- 03. SECTION - FILTER GENERATOR CONSOLE CARD -->
     <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/30 flex flex-col gap-5">
         
         <div class="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-[#C0C9BF]/20">
@@ -307,9 +197,7 @@
             </div>
         </div>
 
-        <!-- Filter Inputs Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-            <!-- 1. Rentang Periode -->
             <div class="flex flex-col gap-1.5">
                 <label class="font-bold text-[10px] text-[#707971] uppercase tracking-wider">RENTANG PERIODE</label>
                 <div class="relative">
@@ -323,7 +211,6 @@
                 </div>
             </div>
 
-            <!-- 2. Tipe Rekapitulasi -->
             <div class="flex flex-col gap-1.5">
                 <label class="font-bold text-[10px] text-[#707971] uppercase tracking-wider">TIPE REKAPITULASI</label>
                 <div class="relative">
@@ -342,7 +229,6 @@
                 </div>
             </div>
 
-            <!-- 3. Kluster Saung / Meja -->
             <div class="flex flex-col gap-1.5">
                 <label class="font-bold text-[10px] text-[#707971] uppercase tracking-wider">KLUSTER SAUNG / MEJA</label>
                 <div class="relative">
@@ -361,7 +247,6 @@
                 </div>
             </div>
 
-            <!-- 4. Format Ekspor -->
             <div class="flex flex-col gap-1.5">
                 <label class="font-bold text-[10px] text-[#707971] uppercase tracking-wider">FORMAT EKSPOR</label>
                 <div class="h-11 bg-[#FCF9F2] p-1 rounded-xl border border-gray-200 shadow-2xs flex items-center justify-between">
@@ -393,7 +278,6 @@
             </div>
         </div>
 
-        <!-- Generate Button -->
         <div class="flex justify-end pt-1">
             <button 
                 type="button" 
@@ -408,10 +292,8 @@
 
     </div>
 
-    <!-- 04. INTERACTIVE PREVIEW TABLE SECTION -->
     <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
         
-        <!-- Table Header Info Bar -->
         <div class="p-5 bg-[#F6F3EC] border-b border-gray-200 flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-2.5">
                 <span class="w-2.5 h-6 rounded-full bg-[#EFC05A]"></span>
@@ -421,7 +303,6 @@
                 </div>
             </div>
 
-            <!-- Search & Filter Controls -->
             <div class="flex items-center gap-2">
                 <div class="relative w-44 sm:w-56">
                     <input 
@@ -444,7 +325,6 @@
             </div>
         </div>
 
-        <!-- Responsive Table Wrapper -->
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse text-xs">
                 <thead>
@@ -467,7 +347,6 @@
                             class="transition-colors"
                             :class="t.status === 'void' ? 'bg-red-50/30 text-gray-500' : 'hover:bg-[#FBF8F1]/60'">
                             
-                            <!-- No. Transaksi -->
                             <td class="py-3 px-4">
                                 <span 
                                     class="font-mono font-bold"
@@ -476,20 +355,16 @@
                                 </span>
                             </td>
 
-                            <!-- Waktu / Sesi -->
                             <td class="py-3 px-4 text-[#404941]" x-text="t.time"></td>
 
-                            <!-- Saung / Meja -->
                             <td class="py-3 px-4">
                                 <span class="font-semibold text-[#1C1C18]" x-text="t.table"></span>
                             </td>
 
-                            <!-- Item Dipesan -->
                             <td class="py-3 px-4">
                                 <span :class="t.status === 'void' ? 'line-through text-red-700' : 'text-[#404941]'" x-text="t.items"></span>
                             </td>
 
-                            <!-- Metode Bayar -->
                             <td class="py-3 px-4">
                                 <span 
                                     class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold"
@@ -502,31 +377,30 @@
                                 </span>
                             </td>
 
-                            <!-- Subtotal -->
                             <td class="py-3 px-4 text-right" :class="t.status === 'void' ? 'line-through text-gray-400' : 'text-[#404941]'" x-text="'Rp ' + t.subtotal.toLocaleString('id-ID')"></td>
 
-                            <!-- Pajak PB1 -->
                             <td class="py-3 px-4 text-right text-gray-500" :class="t.status === 'void' ? 'line-through' : ''" x-text="'Rp ' + t.pb1.toLocaleString('id-ID')"></td>
 
-                            <!-- Total Bersih -->
                             <td class="py-3 px-4 text-right font-bold text-sm" :class="t.status === 'void' ? 'line-through text-gray-400' : 'text-[#0B4D2B]'" x-text="'Rp ' + t.total.toLocaleString('id-ID')"></td>
 
-                            <!-- Kasir Petugas -->
                             <td class="py-3 px-4 text-[#404941]" x-text="t.cashier"></td>
 
-                            <!-- Status Audit -->
                             <td class="py-3 px-4 text-center">
                                 <span 
                                     class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold"
                                     :class="t.status === 'void' ? 'bg-[#FFDAD6] text-[#93000A]' : 'bg-[#B1F1C2]/50 text-[#11512F]'">
-                                    <span x-text="t.status === 'void' ? '✕' : '✓'"></span>
+                                    <template x-if="t.status === 'void'">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </template>
+                                    <template x-if="t.status !== 'void'">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                    </template>
                                     <span x-text="t.statusText"></span>
                                 </span>
                             </td>
                         </tr>
                     </template>
                 </tbody>
-                <!-- Table Summary Footer Row -->
                 <tfoot>
                     <tr class="bg-[#F0EEE7] border-t-2 border-gray-300 font-bold text-xs text-[#1C1C18]">
                         <td colspan="5" class="py-3.5 px-4 text-right">
@@ -543,7 +417,6 @@
             </table>
         </div>
 
-        <!-- Table Pagination Tray -->
         <div class="p-4 bg-[#F6F3EC] border-t border-gray-200 flex flex-wrap items-center justify-between gap-4 text-xs font-semibold text-[#707971]">
             <span>Menampilkan 1-6 dari 142 transaksi pada 15 Sep 2026</span>
 
@@ -558,10 +431,8 @@
 
     </div>
 
-    <!-- 05. SECTION - BOTTOM VISUAL BREAK: RECONCILIATION CARDS & OWNERSHIP AUDIT STAMP -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         
-        <!-- KOTAK REKONSILIASI KASIR & MIDTRANS (8 cols) -->
         <div class="lg:col-span-8 bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/30 flex flex-col justify-between gap-5">
             <div>
                 <div class="flex items-center justify-between">
@@ -579,42 +450,40 @@
                     Perbandingan fisik laci kasir tunai vs settlement online payment gateway Midtrans yang telah masuk ke rekening operasional BCA Situ Awi.
                 </p>
 
-                <!-- Split Metrics Bento -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
-                    <!-- Drawer Cash -->
                     <div class="p-4 bg-[#F0EEE7] rounded-xl shadow-2xs flex flex-col justify-between">
                         <div class="flex items-center justify-between">
                             <span class="text-[10px] font-bold text-[#707971] uppercase">FISIK LACI KASIR</span>
-                            <span class="text-base text-[#0B4D2B]">💵</span>
+                            <svg class="w-4 h-4 text-[#0B4D2B]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                         </div>
                         <span class="font-display font-bold text-xl text-[#1C1C18] mt-2">Rp 4.158.000</span>
                         <span class="text-[10px] font-semibold text-[#0B4D2B] mt-1 flex items-center gap-1">
-                            <span>✓</span> Tersinkron (Laci Kasir A &amp; B)
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Tersinkron (Laci Kasir A &amp; B)
                         </span>
                     </div>
 
-                    <!-- Midtrans Settlement -->
                     <div class="p-4 bg-[#FFDEA1]/30 rounded-xl shadow-2xs flex flex-col justify-between">
                         <div class="flex items-center justify-between">
                             <span class="text-[10px] font-bold text-[#765600] uppercase">MIDTRANS QRIS SETTLEMENT</span>
-                            <span class="text-base text-[#7A5900]">💳</span>
+                            <svg class="w-4 h-4 text-[#7A5900]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                         </div>
                         <span class="font-display font-bold text-xl text-[#261900] mt-2">Rp 10.692.000</span>
                         <span class="text-[10px] font-semibold text-[#7A5900] mt-1 flex items-center gap-1">
-                            <span>✓</span> Disbursed to BCA • Batch ID: MID-99214
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Disbursed to BCA • Batch ID: MID-99214
                         </span>
                     </div>
                 </div>
             </div>
 
-            <!-- Verification Timestamp Footer -->
             <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#C0C9BF]/30 text-[10px] font-bold text-[#707971]">
-                <span>🔒 Enkripsi SHA-256 Validated via Situ Awi Edge Core</span>
+                <span class="flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    <span>Enkripsi SHA-256 Validated via Situ Awi Edge Core</span>
+                </span>
                 <span class="font-mono text-[#404941]">Audit Timestamp: 15/09/2026 21:05:12 WIB</span>
             </div>
         </div>
 
-        <!-- CATATAN PENGESAHAN PEMILIK & CAP RESMI (4 cols) -->
         <div class="lg:col-span-4 bg-[#EBE8E1] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/30 flex flex-col justify-between relative overflow-hidden">
             <div>
                 <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">LEMBAR PENGESAHAN RESMI</span>
@@ -632,7 +501,6 @@
                     <span class="text-[10px] text-[#707971] mt-0.5">Tanggal: 15/09/2026</span>
                 </div>
 
-                <!-- Physical Stamp / Seal Graphic (Dashed Circle Rotated -3deg) -->
                 <div class="relative w-20 h-20 rounded-full border-2 border-dashed border-[#0B4D2B] p-1 flex flex-col items-center justify-center text-center -rotate-6 bg-white/70 shadow-xs flex-shrink-0">
                     <span class="text-[7px] font-bold text-[#0B4D2B] uppercase tracking-tighter">SITU AWI</span>
                     <svg class="w-4 h-4 text-[#0B4D2B] my-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -645,7 +513,6 @@
 
     </div>
 
-    <!-- FLOATING TOAST -->
     <div 
         x-cloak
         x-show="toast.show" 
@@ -656,10 +523,39 @@
         x-transition:leave-start="opacity-100 translate-y-0"
         x-transition:leave-end="opacity-0 translate-y-4"
         class="fixed bottom-8 right-8 z-50 bg-[#00341A] text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 border border-[#FECE66]/30 text-sm font-semibold">
-        <span>🔔</span>
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
         <span x-text="toast.message"></span>
     </div>
 
 </div>
+
+<script>
+    function laporanPenjualanApp() {
+        return {
+            exportFormat: 'pdf',
+            searchQuery: '',
+            selectedCluster: 'all',
+            toast: { show: false, message: '' },
+            transactions: @json($transaksiJson),
+
+            showToast(msg) {
+                this.toast.message = msg;
+                this.toast.show = true;
+                setTimeout(() => this.toast.show = false, 3000);
+            },
+
+            get filteredTransactions() {
+                if (!this.searchQuery) return this.transactions;
+                const q = this.searchQuery.toLowerCase();
+                return this.transactions.filter(t =>
+                    t.id.toLowerCase().includes(q) ||
+                    t.table.toLowerCase().includes(q) ||
+                    t.items.toLowerCase().includes(q) ||
+                    t.method.toLowerCase().includes(q)
+                );
+            }
+        };
+    }
+</script>
 @endsection
 
