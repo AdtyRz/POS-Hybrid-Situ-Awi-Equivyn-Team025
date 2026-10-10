@@ -291,6 +291,18 @@
   .summary-row { @apply flex justify-between gap-3 py-1.5; }
   .summary-row-total { @apply border-t-[1.5px] border-forest-100 mt-2 pt-3 text-xl font-bold; }
 
+  /* ---- Mobile POS Pelayan (mobile-only, max 480px di layar besar) ---- */
+  .max-w-waiter {
+    max-width: 100%;
+    width: 100%;
+  }
+  @media (min-width: 415px) {
+    .max-w-waiter {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+  }
+
   /* ---- POS Kasir: mobile = bottom sheet, desktop = dual-panel 65/35 ---- */
   .pos { @apply min-h-screen; }
   .pos__menu { @apply pb-24; }
