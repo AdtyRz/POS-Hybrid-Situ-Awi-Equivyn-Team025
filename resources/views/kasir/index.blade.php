@@ -926,7 +926,7 @@
                 cashReceived: 0,
                 isPrinting: false,
                 isLocked: false,
-                statusUrlTemplate: @json(route('pesanan.status', ['kode' => '__KODE__'])),
+         <<<<<<< feature       statusUrlTemplate: @json(route('pesanan.status', ['kode' => '__KODE__'])),
 
                 iotAlert: @json($iotAlertJson),
 
@@ -1064,7 +1064,7 @@
                 },
 
                 handleKeyboardShortcuts(e) {
-                    if (e.key === 'Enter' && !this.isLocked && this.currentSaung.status === 'waiting_cash') {
+                if (e.key === 'Enter' && !this.isLocked && this.currentSaung.status === 'waiting_cash') {
                         e.preventDefault();
                         this.confirmPaymentAndPrint();
                     }
