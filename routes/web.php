@@ -78,7 +78,7 @@ Route::middleware(['auth', 'role:barista'])->group(function () {
 });
 
 Route::middleware(['auth', 'role:pelayan'])->group(function () {
-    Route::get('/pelayan/panggilan', [IotController::class, 'antrean'])->name('pelayan.panggilan');
+    Route::get('/pelayan/notifikasi-panggilan', [IotController::class, 'antrean'])->name('pelayan.panggilan');
     Route::patch('/pelayan/panggilan/{id}', [IotController::class, 'ubahStatus'])->name('pelayan.panggilan.ubah');
 });
 
