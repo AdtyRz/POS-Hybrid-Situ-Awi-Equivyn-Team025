@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Saung Situ Awi - Resto &amp; Saung Lesehan Ciwidey</title>
+<title>Saung Situ Awi - Resto & Saung Lesehan Ciwidey</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
@@ -34,11 +34,11 @@ display: ['"Playfair Display"', 'Georgia', 'serif']
 </div>
 <p class="text-[11px] font-bold tracking-[0.2em] text-[#8a6d1f] mt-4">TRADISI SUNDA • PRESISI DIGITAL</p>
 <h1 class="font-display font-bold text-4xl md:text-5xl text-forest-900 mt-1">Saung Situ Awi</h1>
-<p class="text-stone-500 text-sm md:text-base mt-2 max-w-xl mx-auto">Resto &amp; saung lesehan tepi danau Ciwidey. Pesan dari meja, bayar tunai atau QRIS.</p>
+<p class="text-stone-500 text-sm md:text-base mt-2 max-w-xl mx-auto">Resto & saung lesehan tepi danau Ciwidey. Pesan dari meja, bayar tunai atau QRIS.</p>
 <div class="flex flex-wrap justify-center gap-2 mt-3 text-xs font-bold">
 <span class="bg-forest-900 text-white rounded-full px-3 py-1">Buka 09.00 – 21.00</span>
 <span class="bg-white border border-stone-200 text-stone-600 rounded-full px-3 py-1">Ciwidey, Bandung</span>
-<span class="bg-white border border-stone-200 text-stone-600 rounded-full px-3 py-1">Lesehan &amp; Kursi</span>
+<span class="bg-white border border-stone-200 text-stone-600 rounded-full px-3 py-1">Lesehan & Kursi</span>
 </div>
 </div>
 <div class="grid md:grid-cols-3 gap-3 mt-8">
@@ -85,7 +85,7 @@ display: ['"Playfair Display"', 'Georgia', 'serif']
 </div>
 <p id="pesanKode" class="hidden text-gold-500 text-xs font-bold mt-2">Kode tidak dikenal. Periksa QR di meja Anda.</p>
 </div>
-<p class="text-center text-stone-400 text-xs mt-8">© 2026 Saung Situ Awi Ciwidey • RPL SMK Budi Bakti &amp; Tim Equivyn</p>
+<p class="text-center text-stone-400 text-xs mt-8">© 2026 Saung Situ Awi Ciwidey • RPL SMK Budi Bakti & Tim Equivyn</p>
 </div>
 <script>
 var pemindai = null;

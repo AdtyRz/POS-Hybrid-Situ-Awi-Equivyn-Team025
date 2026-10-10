@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pelacakan &amp; Status Pesanan - Saung Situ Awi</title>
+<title>Pelacakan & Status Pesanan - Saung Situ Awi</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
@@ -33,7 +33,7 @@ display: ['"Playfair Display"', 'Georgia', 'serif']
 </a>
 <div class="text-center">
 <p class="text-[11px] font-bold tracking-widest text-[#8a6d1f]">• SAUNG SITU AWI</p>
-<p class="font-bold text-lg leading-tight">Pelacakan &amp; Status Pesanan</p>
+<p class="font-bold text-lg leading-tight">Pelacakan & Status Pesanan</p>
 </div>
 <div class="flex items-center gap-2">
 <span class="bg-white border border-stone-200 rounded-full px-3 py-1.5 text-xs font-bold whitespace-nowrap">{{ $meja->kode_meja }}</span>

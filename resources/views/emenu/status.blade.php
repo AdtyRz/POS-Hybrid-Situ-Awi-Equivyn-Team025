@@ -33,7 +33,7 @@ display: ['"Playfair Display"', 'Georgia', 'serif']
 </a>
 <div class="text-center">
 <p class="text-[11px] font-bold tracking-widest text-[#8a6d1f]">• SAUNG SITU AWI</p>
-<p class="font-bold text-lg leading-tight">Pelacakan &amp; Status Pesanan</p>
+<p class="font-bold text-lg leading-tight">Pelacakan & Status Pesanan</p>
 </div>
 <div class="flex items-center gap-2">
 <span class="bg-white border border-stone-200 rounded-full px-3 py-1.5 text-xs font-bold whitespace-nowrap">{{ $pesanan->meja->kode_meja }}</span>
@@ -43,7 +43,7 @@ display: ['"Playfair Display"', 'Georgia', 'serif']
 </div>
 </div>
 <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 mt-4">
-<p class="text-[11px] font-bold tracking-widest text-[#8a6d1f]">LIVE TRACKER &amp; PAYMENT</p>
+<p class="text-[11px] font-bold tracking-widest text-[#8a6d1f]">LIVE TRACKER & PAYMENT</p>
 <div class="flex items-start justify-between gap-3 mt-1">
 <div>
 <p class="font-bold text-lg leading-snug">Order #{{ $pesanan->kode_pesanan }}</p>
@@ -96,7 +96,7 @@ display: ['"Playfair Display"', 'Georgia', 'serif']
 </div>
 <div class="pb-4">
 <div class="flex items-center gap-2">
-<p class="font-bold text-sm">Diproses di Dapur &amp; Bar</p>
+<p class="font-bold text-sm">Diproses di Dapur & Bar</p>
 @if ($tahap === 2)
 <span class="bg-gold-50 text-[#7a5c0f] text-[10px] font-bold rounded-full px-2.5 py-0.5">Aktif</span>
 @endif
@@ -123,7 +123,7 @@ display: ['"Playfair Display"', 'Georgia', 'serif']
 </div>
 <div class="flex gap-3">
 <div class="flex flex-col items-center">
-<span class="w-7 h-7 rounded-full {{ $tahap >= 5 ? 'bg-forest-600 text-white' : 'bg-stone-200 text-stone-400' }} flex items-center justify-center">
+<span class="w-7 h-7 rounded-full {{ $tahap >= 4 ? 'bg-forest-600 text-white' : 'bg-stone-200 text-stone-400' }} flex items-center justify-center">
 @if ($tahap >= 5)
 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
 @else
