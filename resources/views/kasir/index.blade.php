@@ -124,6 +124,14 @@
                     <span x-text="liveTimeString">12:08:25 WIB</span>
                 </div>
 
+                <form method="POST" action="{{ route('logout') }}" class="hidden md:block">
+                    @csrf
+                    <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FDF5E6] hover:bg-[#F5ECD8] border border-[#E0B24E]/40 hover:border-[#E0B24E] active:scale-95 transition text-xs font-bold text-[#7A5C0F] whitespace-nowrap" title="Keluar">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                        <span>Keluar</span>
+                    </button>
+                </form>
+
                 <button type="button" 
                         @click="lockTerminal()"
                         class="w-8 h-8 rounded-xl bg-[#F3EEDF] hover:bg-[#EAE4D3] border border-[#C8C2B3]/50 flex items-center justify-center text-[#6B6A63] hover:text-[#2B2A26] transition active:scale-95"
