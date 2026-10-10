@@ -27,3 +27,5 @@ Route::post('/iot/panggil-pelayan', function (Request $request) {
         'data' => $log
     ], 200);
 });
+
+require __DIR__ . '/api_v1.php';
