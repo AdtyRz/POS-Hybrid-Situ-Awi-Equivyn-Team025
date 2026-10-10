@@ -83,3 +83,20 @@ Route::middleware(['auth', 'role:pelayan'])->group(function () {
 });
 
 require __DIR__.'/auth.php';
+Route::middleware(['auth', 'role:pelayan'])->group(function () {
+    Route::get('/pelayan/tab-antar', function () {
+        return view('pelayan.tab-antar.index');
+    })->name('pelayan.tab-antar');
+
+    Route::get('/pelayan/tab-saung', function () {
+        return view('pelayan.tab-saung.index');
+    })->name('pelayan.tab-saung');
+
+    Route::get('/pelayan/tab-shift', function () {
+        return view('pelayan.tab-shift.index');
+    })->name('pelayan.tab-shift');
+
+    Route::get('/pelayan/notifikasi-panggilan', function () {
+        return view('pelayan.notifikasi-panggilan-pelayan.index');
+    })->name('pelayan.notifikasi-panggilan');
+});
