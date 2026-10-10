@@ -17,6 +17,31 @@ Route::post('/meja/{meja}/panggil', [EMenuController::class, 'panggil'])->name('
 Route::post('/meja/{meja}/checkout', [EMenuController::class, 'checkout'])->name('emenu.checkout');
 Route::get('/pesanan/{kode_pesanan}', [EMenuController::class, 'status'])->name('emenu.status');
 
+// Frontend Preview Routes for Admin
+Route::get('/admin/analitik-laporan', function () {
+    return view('admin.analitik-laporan.index');
+})->name('admin.analitik-laporan');
+
+Route::get('/admin/master-meja', function () {
+    return view('admin.master-meja.index');
+})->name('admin.master-meja');
+
+Route::get('/admin/master-menu', function () {
+    return view('admin.master-menu.index');
+})->name('admin.master-menu');
+
+Route::get('/admin/laporan-penjualan', function () {
+    return view('admin.laporan-penjualan.index');
+})->name('admin.laporan-penjualan');
+
+Route::get('/admin/manajemen-akun', function () {
+    return view('admin.manajemen-akun.index');
+})->name('admin.manajemen-akun');
+
+Route::get('/admin/pengaturan-sistem', function () {
+    return view('admin.pengaturan-sistem.index');
+})->name('admin.pengaturan-sistem');
+
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
