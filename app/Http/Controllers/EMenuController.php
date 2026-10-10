@@ -7,54 +7,17 @@ use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
-use App\Services\PesananService;
+use App\Models\StokMutasi;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class EMenuController extends Controller
 {
     public function beranda(): View
     {
-        $urutan = [
-            'terisi' => 1,
-            'kosong' => 2,
-            'menunggu_kasir' => 3,
-        ];
-
-        $meja = MejaMakan::all(['id', 'kode_meja', 'area', 'kapasitas', 'status_meja'])
-            ->sortBy(fn ($item) => ($urutan[$item->status_meja] ?? 99) * 1000 + ord(substr($item->kode_meja, 0, 1)))
-            ->values();
-
-        return view('emenu.beranda', compact('meja'));
-    }
-
-    public function menu()
-    {
-        $menu = Menu::where('stok_menu', '>', 0)
-            ->with('kategori')
-            ->orderBy('kategori_id')
-            ->orderBy('nama_menu')
-            ->get();
-
-        return response()->json([
-            'status' => 'sukses',
-            'total' => $menu->count(),
-            'data' => $menu,
-        ], 200);
-    }
-
-    public function daftarMeja()
-    {
-        $meja = MejaMakan::where('status_meja', 'kosong')
-            ->orderBy('kode_meja')
-            ->get(['id', 'kode_meja', 'area', 'kapasitas', 'status_meja']);
-
-        return response()->json([
-            'status' => 'sukses',
-            'total' => $meja->count(),
-            'data' => $meja,
-        ], 200);
+        return view('emenu.beranda');
     }
 
     public function aplikasi(string $meja): View
@@ -83,15 +46,18 @@ class EMenuController extends Controller
 
         $inisial = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $mejaMakan->kode_meja), 0, 2));
 
+        $riwayat = session('riwayat_meja_' . $mejaMakan->id, []);
+
         return view('pelanggan.index', [
             'meja' => $mejaMakan,
             'menuJson' => $menuJson,
             'kategoriJson' => $kategoriJson,
             'orderRef' => '#' . $inisial . '-' . $mejaMakan->id . '04',
+            'punyaRiwayat' => count($riwayat) > 0,
         ]);
     }
 
-    public function checkout(Request $request, string $meja, PesananService $pesananService): RedirectResponse
+    public function checkout(Request $request, string $meja): RedirectResponse
     {
         $mejaMakan = $this->cariMeja($meja);
 
@@ -103,34 +69,72 @@ class EMenuController extends Controller
             'metode' => ['required', 'in:tunai,qris'],
         ]);
 
-        $dipilih = collect($data['jumlah'])->filter(fn ($jumlah) => $jumlah > 0)->all();
+        $dipilih = collect($data['jumlah'])->filter(fn ($jumlah) => $jumlah > 0);
 
-        if ($dipilih === []) {
+        if ($dipilih->isEmpty()) {
             return back()->withErrors(['jumlah' => 'Pilih minimal satu menu.'])->withInput();
         }
 
-        try {
-            $pesanan = $pesananService->buat($mejaMakan, $dipilih, $data['catatan'] ?? []);
-        } catch (\RuntimeException $e) {
-            return back()->withErrors(['jumlah' => $e->getMessage()])->withInput();
+        $daftarMenu = Menu::whereIn('id', $dipilih->keys())->get()->keyBy('id');
+
+        foreach ($dipilih as $id => $jumlah) {
+            if (! isset($daftarMenu[$id]) || $daftarMenu[$id]->stok_menu < $jumlah) {
+                $nama = isset($daftarMenu[$id]) ? $daftarMenu[$id]->nama_menu : 'menu';
+                return back()->withErrors(['jumlah' => 'Stok ' . $nama . ' tidak cukup.'])->withInput();
+            }
         }
 
-        if ($pesanan->meja && $pesanan->session_code) {
-            session(['session_' . $pesanan->meja->id => $pesanan->session_code]);
-        }
+        $pesanan = DB::transaction(function () use ($mejaMakan, $daftarMenu, $dipilih, $data) {
+            $subtotal = 0;
+
+            foreach ($dipilih as $id => $jumlah) {
+                $subtotal += $daftarMenu[$id]->harga * $jumlah;
+            }
+
+            $pesanan = Pesanan::create([
+                'kode_pesanan' => 'SW-' . now()->format('YmdHis') . '-' . $mejaMakan->id,
+                'meja_id' => $mejaMakan->id,
+                'total_bayar' => $subtotal + round($subtotal * 0.1),
+                'metode_pembayaran' => $data['metode'],
+            ]);
+
+            foreach ($dipilih as $id => $jumlah) {
+                $menu = $daftarMenu[$id];
+
+                $pesanan->detailPesanan()->create([
+                    'menu_id' => $menu->id,
+                    'jumlah' => $jumlah,
+                    'harga_satuan' => $menu->harga,
+                    'subtotal' => $menu->harga * $jumlah,
+                    'catatan' => $data['catatan'][$id] ?? null,
+                ]);
+
+                $menu->decrement('stok_menu', $jumlah);
+
+                StokMutasi::create([
+                    'menu_id' => $menu->id,
+                    'pesanan_id' => $pesanan->id,
+                    'jenis' => 'penjualan',
+                    'jumlah_delta' => -$jumlah,
+                    'stok_akhir' => $menu->fresh()->stok_menu,
+                ]);
+            }
+
+            $mejaMakan->update(['status_meja' => 'terisi']);
+
+            return $pesanan;
+        });
+
+        $request->session()->push('riwayat_meja_' . $mejaMakan->id, $pesanan->kode_pesanan);
 
         return redirect()->route('emenu.status', $pesanan->kode_pesanan);
     }
 
-    public function status(Request $request, string $kode_pesanan): View
+    public function status(string $kode_pesanan): View
     {
         $pesanan = Pesanan::with(['detailPesanan.menu', 'meja'])
             ->where('kode_pesanan', $kode_pesanan)
             ->firstOrFail();
-
-        if ($pesanan->meja && $pesanan->session_code) {
-            session(['session_' . $pesanan->meja->id => $pesanan->session_code]);
-        }
 
         $tahap = [
             'menunggu' => 1,
@@ -143,27 +147,43 @@ class EMenuController extends Controller
         return view('emenu.status', compact('pesanan', 'tahap'));
     }
 
+    public function pelacakan(string $meja): View
+    {
+        $mejaMakan = $this->cariMeja($meja);
+
+        $kodeRiwayat = array_reverse(session('riwayat_meja_' . $mejaMakan->id, []));
+
+        $daftarPesanan = Pesanan::with(['detailPesanan.menu'])
+            ->where('meja_id', $mejaMakan->id)
+            ->whereIn('kode_pesanan', $kodeRiwayat)
+            ->get()
+            ->sortBy(fn ($pesanan) => array_search($pesanan->kode_pesanan, $kodeRiwayat))
+            ->values();
+
+        return view('emenu.pelacakan', [
+            'meja' => $mejaMakan,
+            'daftarPesanan' => $daftarPesanan,
+            'tahapStatus' => [
+                'menunggu' => 1,
+                'diproses' => 2,
+                'siap' => 3,
+                'diantar' => 4,
+                'selesai' => 5,
+                'dibatalkan' => 0,
+            ],
+        ]);
+    }
+
     public function panggil(string $meja): RedirectResponse
     {
         $mejaMakan = $this->cariMeja($meja);
 
-        $sudahAda = LogPanggilPelayan::where('meja_id', $mejaMakan->id)
-            ->whereIn('status_panggilan', ['menunggu', 'ditangani'])
-            ->exists();
-
-        if ($sudahAda) {
-            return back()->with('panggilan_terkirim', true)
-                ->with('pesan', 'Meja ini sudah punya panggilan yang belum selesai.');
-        }
-
         LogPanggilPelayan::create([
             'meja_id' => $mejaMakan->id,
             'status_panggilan' => 'menunggu',
-            'waktu_panggil' => now(),
         ]);
 
-        return back()->with('panggilan_terkirim', true)
-            ->with('pesan', 'Panggilan pelayan berhasil dikirim.');
+        return back()->with('panggilan_terkirim', true);
     }
 
     private function cariMeja(string $meja): MejaMakan

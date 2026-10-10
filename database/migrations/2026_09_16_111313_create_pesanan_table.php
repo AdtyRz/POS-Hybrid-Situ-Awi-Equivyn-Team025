@@ -12,7 +12,6 @@ return new class extends Migration
             $table->id();
             $table->string('kode_pesanan', 30)->unique();
             $table->foreignId('meja_id')->constrained('meja_makan')->restrictOnDelete();
-            $table->string('session_code', 20)->nullable();
             $table->foreignId('pelanggan_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('kasir_id')->nullable()->constrained('users')->nullOnDelete();
             $table->decimal('total_bayar', 12, 2)->default(0);

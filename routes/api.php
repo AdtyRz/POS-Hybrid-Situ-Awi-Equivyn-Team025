@@ -1,20 +1,29 @@
 <?php
 
-use App\Http\Controllers\EMenuController;
-use App\Http\Controllers\HealthCheckController;
-use App\Http\Controllers\IotController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Models\LogPanggilPelayan;
+use App\Models\MejaMakan;
 
-Route::get('/health', [HealthCheckController::class, 'index']);
+Route::post('/iot/panggil-pelayan', function (Request $request) {
+    $request->validate([
+        'kode_meja' => 'required|string',
+    ]);
 
-Route::get('/menu', [EMenuController::class, 'menu']);
-Route::get('/meja', [EMenuController::class, 'daftarMeja']);
+    $meja = MejaMakan::where('kode_meja', $request->kode_meja)->first();
 
-Route::get('/iot/status-meja', [IotController::class, 'statusMeja']);
-Route::post('/iot/panggil-pelayan', [IotController::class, 'panggilPelayan']);
+    if (! $meja) {
+        return response()->json(['status' => 'error', 'message' => 'Meja tidak ditemukan'], 404);
+    }
 
-Route::middleware(['auth', 'role:pelayan'])->group(function () {
-    Route::get('/iot/antrean', [IotController::class, 'antrean']);
-    Route::patch('/iot/panggil-pelayan/{id}', [IotController::class, 'ubahStatus']);
+    $log = LogPanggilPelayan::create([
+        'meja_id' => $meja->id,
+        'status_panggilan' => 'menunggu',
+    ]);
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Panggilan dari meja berhasil dikirim ke server.',
+        'data' => $log
+    ], 200);
 });
-require __DIR__ . '/api_v1.php';

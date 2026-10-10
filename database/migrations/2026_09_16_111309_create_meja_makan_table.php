@@ -16,11 +16,7 @@ return new class extends Migration
             $table->integer('kapasitas')->default(4);
             $table->string('qr_token', 32)->unique();
             $table->string('id_device', 20)->unique()->nullable();
-            $table->enum('status_meja', ['kosong', 'terisi', 'menunggu_kasir'])->default('kosong');
-            $table->string('session_code', 20)->nullable();
-            $table->timestamp('session_started_at')->nullable();
-            $table->timestamp('session_ended_at')->nullable();
-            $table->foreignId('session_ended_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->enum('status_meja', ['kosong', 'terisi'])->default('kosong');
             $table->timestamps();
         });
 

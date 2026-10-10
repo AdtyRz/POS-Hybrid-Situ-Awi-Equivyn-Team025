@@ -4,152 +4,8 @@
 @section('page_category', 'Keamanan & Staf')
 
 @section('content')
-<div class="flex flex-col gap-8 pb-16" x-data="{
-    activeRoleFilter: 'all',
-    searchQuery: '',
-    addModalOpen: false,
-    toast: { show: false, message: '' },
-    showToast(msg) {
-        this.toast.message = msg;
-        this.toast.show = true;
-        setTimeout(() => this.toast.show = false, 3000);
-    },
-    // Staff accounts matching mockup & OCR data
-    staffs: [
-        {
-            id: 'STF-001',
-            name: 'Pak Rodiansyah Ariwibowo',
-            title: 'Owner Utama',
-            roleKey: 'admin',
-            role: 'Admin / Owner',
-            roleBadge: 'owner',
-            email: 'admin@situawi.com',
-            device: 'Laptop Owner (Mac/Chrome)',
-            pin: '••••••',
-            status: 'online',
-            statusText: 'Aktif Online',
-            lastActive: 'Dasbor Analitik',
-            lastActiveTime: 'Baru saja',
-            avatar: 'PA',
-            avatarBg: 'bg-[#0B4D2B] text-white'
-        },
-        {
-            id: 'STF-002',
-            name: 'Dzakwan Fadlurohman',
-            title: 'Tech Lead / IT Ops',
-            roleKey: 'admin',
-            role: 'Developer & Admin',
-            roleBadge: 'owner',
-            email: 'tech@situawi.com',
-            device: 'Stasiun Server Lokal',
-            pin: '••••••',
-            status: 'online',
-            statusText: 'Aktif Online',
-            lastActive: 'MQTT Broker Sync',
-            lastActiveTime: '2 mnt lalu',
-            avatar: 'DF',
-            avatarBg: 'bg-[#FFDEA1] text-[#261900]'
-        },
-        {
-            id: 'STF-003',
-            name: 'Teh Neng Santi',
-            title: 'Shift Siang (Kasir 1)',
-            roleKey: 'kasir',
-            role: 'Kasir Utama',
-            roleBadge: 'kasir',
-            email: 'kasir1@situawi.com',
-            device: 'Terminal POS Utama',
-            pin: '••••••',
-            status: 'online',
-            statusText: 'Aktif Online',
-            lastActive: 'Cetak Struk #ORD-9821',
-            lastActiveTime: 'Baru saja',
-            avatar: 'NS',
-            avatarBg: 'bg-[#B1F1C2] text-[#00341A]'
-        },
-        {
-            id: 'STF-004',
-            name: 'Mang Jaka',
-            title: 'Head Chef Dapur Saung',
-            roleKey: 'koki',
-            role: 'Koki Utama (Kitchen)',
-            roleBadge: 'kitchen',
-            email: 'koki.jaka@situawi.com',
-            device: 'Monitor KDS Dapur Utama',
-            pin: '••••••',
-            status: 'online',
-            statusText: 'Aktif Online',
-            lastActive: 'Selesaikan Gurame #14',
-            lastActiveTime: '3 mnt lalu',
-            avatar: 'MJ',
-            avatarBg: 'bg-[#CBEF89] text-[#131F00]'
-        },
-        {
-            id: 'STF-005',
-            name: 'Kang Rizal',
-            title: 'Lead Bar Minuman',
-            roleKey: 'barista',
-            role: 'Barista Bar',
-            roleBadge: 'kitchen',
-            email: 'bar.rizal@situawi.com',
-            device: 'Tablet KDS Bar Minuman',
-            pin: '••••••',
-            status: 'online',
-            statusText: 'Aktif Online',
-            lastActive: 'Racik Kopi Puntang',
-            lastActiveTime: '1 mnt lalu',
-            avatar: 'KR',
-            avatarBg: 'bg-[#B0D270] text-[#364E00]'
-        },
-        {
-            id: 'STF-006',
-            name: 'Kang Asep',
-            title: 'Pelayan Saung Area Timur',
-            roleKey: 'pelayan',
-            role: 'Pelayan / Runner',
-            roleBadge: 'runner',
-            email: 'runner.asep@situawi.com',
-            device: 'Mobile POS Android',
-            pin: '••••••',
-            status: 'online',
-            statusText: 'Aktif Online',
-            lastActive: 'Respon Panggilan Saung 02',
-            lastActiveTime: '4 mnt lalu',
-            avatar: 'KA',
-            avatarBg: 'bg-[#E5E2DB] text-[#1C1C18]'
-        },
-        {
-            id: 'STF-007',
-            name: 'Teh Siti Aminah',
-            title: 'Pelayan Saung Area Kolam',
-            roleKey: 'pelayan',
-            role: 'Pelayan / Runner',
-            roleBadge: 'runner',
-            email: 'runner.siti@situawi.com',
-            device: 'Mobile POS Android',
-            pin: '••••••',
-            status: 'offline',
-            statusText: 'Istirahat',
-            lastActive: 'Antar Teh Poci',
-            lastActiveTime: '15 mnt lalu',
-            avatar: 'SA',
-            avatarBg: 'bg-[#EBE8E1] text-[#707971]'
-        }
-    ],
+<div class="flex flex-col gap-8 pb-16" x-data="manajemenAkunApp()">
 
-    get filteredStaffs() {
-        return this.staffs.filter(s => {
-            if (this.activeRoleFilter !== 'all' && s.roleKey !== this.activeRoleFilter) return false;
-            if (this.searchQuery) {
-                const q = this.searchQuery.toLowerCase();
-                return s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q) || s.id.toLowerCase().includes(q) || s.role.toLowerCase().includes(q);
-            }
-            return true;
-        });
-    }
-}">
-
-    <!-- 01. TOP AMBIENT BANNER & HEADER SECTION -->
     <div class="flex flex-col gap-3">
         <div class="flex flex-wrap items-center justify-between gap-4 text-xs font-semibold">
             <div class="flex items-center gap-2 text-[#707971]">
@@ -174,7 +30,6 @@
                 </p>
             </div>
 
-            <!-- Action Buttons -->
             <div class="flex flex-wrap items-center gap-3">
                 <button 
                     type="button" 
@@ -209,10 +64,8 @@
         </div>
     </div>
 
-    <!-- 02. 4 KPI SUMMARY CARDS WITH VISUAL INDICATORS -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
-        <!-- Card 1: Total Staf Terdaftar -->
         <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[160px] relative overflow-hidden">
             <div class="flex items-start justify-between">
                 <div>
@@ -238,7 +91,6 @@
             <div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-[#FFDEA1]/20 blur-xl pointer-events-none"></div>
         </div>
 
-        <!-- Card 2: Sesi Staf Online -->
         <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[160px]">
             <div class="flex items-start justify-between">
                 <div>
@@ -258,7 +110,6 @@
             </div>
         </div>
 
-        <!-- Card 3: Proteksi Kredensial -->
         <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[160px]">
             <div class="flex items-start justify-between">
                 <div>
@@ -278,7 +129,6 @@
             </div>
         </div>
 
-        <!-- Card 4: Rata-Rata Sesi Shift -->
         <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[160px] relative overflow-hidden">
             <div class="flex items-start justify-between">
                 <div>
@@ -295,7 +145,12 @@
 
             <div class="flex items-center justify-between text-[10px] font-bold text-[#404941] pt-3 border-t border-gray-100">
                 <span>Rotasi Shift Saung</span>
-                <span class="text-[#0B4D2B] flex items-center gap-0.5">✓ Stabil</span>
+                <span class="text-[#0B4D2B] flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Stabil</span>
+                </span>
             </div>
 
             <div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-[#00341A]/5 blur-xl pointer-events-none"></div>
@@ -303,10 +158,8 @@
 
     </div>
 
-    <!-- 03. ROLE FILTER TABS & FAST SEARCH TOOLBAR -->
     <div class="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
         
-        <!-- Role Pills Navigation -->
         <div class="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 text-xs">
             <button 
                 type="button"
@@ -363,7 +216,6 @@
             </button>
         </div>
 
-        <!-- Fast Search Input -->
         <div class="relative w-full md:w-72">
             <input 
                 type="text" 
@@ -378,13 +230,16 @@
 
     </div>
 
-    <!-- 04. STAFF ACCOUNTS DATA TABLE -->
     <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
         
-        <!-- Table Banner Bar -->
         <div class="p-4 bg-[#F6F3EC] border-b border-gray-200 flex items-center justify-between text-xs">
             <span class="font-bold text-[#1C1C18]">Menampilkan 7 dari 14 akun staf resmi Situ Awi Resto</span>
-            <span class="text-[10px] font-bold text-[#0B4D2B]">🔒 Enkripsi Sesi Aktif</span>
+            <span class="text-[10px] font-bold text-[#0B4D2B] flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <span>Enkripsi Sesi Aktif</span>
+            </span>
         </div>
 
         <div class="overflow-x-auto">
@@ -405,7 +260,6 @@
                     <template x-for="s in filteredStaffs" :key="s.id">
                         <tr class="hover:bg-[#FBF8F1]/60 transition-colors">
                             
-                            <!-- Pegawai & Identitas -->
                             <td class="py-3.5 px-4">
                                 <div class="flex items-center gap-3">
                                     <div 
@@ -420,7 +274,6 @@
                                 </div>
                             </td>
 
-                            <!-- Role Operasional -->
                             <td class="py-3.5 px-4">
                                 <span 
                                     class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold"
@@ -434,7 +287,6 @@
                                 </span>
                             </td>
 
-                            <!-- Email / ID Akun -->
                             <td class="py-3.5 px-4">
                                 <div class="flex flex-col">
                                     <span class="text-xs font-medium text-[#1C1C18]" x-text="s.email"></span>
@@ -442,17 +294,14 @@
                                 </div>
                             </td>
 
-                            <!-- Perangkat & Stasiun -->
                             <td class="py-3.5 px-4 text-[#404941]" x-text="s.device"></td>
 
-                            <!-- PIN Cepat -->
                             <td class="py-3.5 px-4 text-center">
                                 <span class="px-2.5 py-1 rounded-md bg-[#F0EEE7] font-mono font-bold tracking-widest text-xs text-[#404941]">
                                     ••••••
                                 </span>
                             </td>
 
-                            <!-- Status Sesi -->
                             <td class="py-3.5 px-4 text-center">
                                 <span 
                                     class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold"
@@ -465,7 +314,6 @@
                                 </span>
                             </td>
 
-                            <!-- Aktivitas Terakhir -->
                             <td class="py-3.5 px-4">
                                 <div class="flex flex-col">
                                     <span class="text-xs text-[#1C1C18] leading-tight" x-text="s.lastActive"></span>
@@ -473,7 +321,6 @@
                                 </div>
                             </td>
 
-                            <!-- Aksi -->
                             <td class="py-3.5 px-4 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
                                     <template x-if="s.roleKey !== 'admin'">
@@ -498,7 +345,6 @@
             </table>
         </div>
 
-        <!-- Table Pagination Footer -->
         <div class="p-4 bg-[#F6F3EC] border-t border-gray-200 flex flex-wrap items-center justify-between gap-4 text-xs font-semibold text-[#707971]">
             <span>Sebelumnya</span>
 
@@ -512,7 +358,6 @@
 
     </div>
 
-    <!-- 05. BOTTOM INSPECTOR: PERMISSIONS GUARD MATRIX BENTO -->
     <div class="bg-[#F0EEE7] rounded-3xl p-6 sm:p-8 shadow-xs border border-[#C0C9BF]/30 flex flex-col gap-6">
         
         <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#C0C9BF]/30">
@@ -528,15 +373,16 @@
                 </div>
             </div>
 
-            <span class="px-3 py-1 rounded-full bg-[#B1F1C2] text-[10px] font-bold text-[#00341A] shadow-2xs">
-                ✓ Enforced by Policy &amp; Gate
+            <span class="px-3 py-1 rounded-full bg-[#B1F1C2] text-[10px] font-bold text-[#00341A] shadow-2xs flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Enforced by Policy &amp; Gate</span>
             </span>
         </div>
 
-        <!-- 5 Role Permissions Grid Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             
-            <!-- Role 1: Admin -->
             <div class="bg-white rounded-xl p-4 shadow-2xs border border-gray-100 flex flex-col justify-between min-h-[220px]">
                 <div>
                     <div class="flex items-center justify-between">
@@ -553,7 +399,6 @@
                 </div>
             </div>
 
-            <!-- Role 2: Kasir -->
             <div class="bg-white rounded-xl p-4 shadow-2xs border border-gray-100 flex flex-col justify-between min-h-[220px]">
                 <div>
                     <div class="flex items-center justify-between">
@@ -570,7 +415,6 @@
                 </div>
             </div>
 
-            <!-- Role 3: Koki & Barista -->
             <div class="bg-white rounded-xl p-4 shadow-2xs border border-gray-100 flex flex-col justify-between min-h-[220px]">
                 <div>
                     <div class="flex items-center justify-between">
@@ -587,7 +431,6 @@
                 </div>
             </div>
 
-            <!-- Role 4: Pelayan / Runner -->
             <div class="bg-white rounded-xl p-4 shadow-2xs border border-gray-100 flex flex-col justify-between min-h-[220px]">
                 <div>
                     <div class="flex items-center justify-between">
@@ -604,7 +447,6 @@
                 </div>
             </div>
 
-            <!-- Role 5: Tamu (Self-Order) -->
             <div class="bg-white rounded-xl p-4 shadow-2xs border border-gray-100 flex flex-col justify-between min-h-[220px]">
                 <div>
                     <div class="flex items-center justify-between">
@@ -624,7 +466,6 @@
         </div>
     </div>
 
-    <!-- MODAL: + TAMBAH AKUN STAF BARU -->
     <div 
         x-cloak
         x-show="addModalOpen" 
@@ -645,18 +486,23 @@
                     <h3 class="font-display font-bold text-xl text-[#00341A]">Tambah Akun Staf Baru</h3>
                     <p class="text-xs text-[#707971] mt-0.5">Konfigurasi peran operasional &amp; PIN login POS</p>
                 </div>
-                <button type="button" @click="addModalOpen = false" class="text-gray-400 hover:text-black p-1 text-lg cursor-pointer">✕</button>
+                <button type="button" @click="addModalOpen = false" class="text-gray-400 hover:text-black p-1 cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
 
-            <form @submit.prevent="addModalOpen = false; showToast('Akun staf baru berhasil didaftarkan!')" class="flex flex-col gap-4 text-xs">
+            <form method="POST" action="{{ route('admin.akun.simpan') }}" class="flex flex-col gap-4 text-xs">
+                @csrf
                 <div class="grid grid-cols-2 gap-4">
                     <div class="flex flex-col gap-1.5">
                         <label class="font-bold text-[#1C1C18]">Nama Lengkap *</label>
-                        <input type="text" placeholder="Contoh: Kang Dani" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
+                        <input type="text" name="nama" placeholder="Contoh: Kang Dani" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
                     </div>
                     <div class="flex flex-col gap-1.5">
                         <label class="font-bold text-[#1C1C18]">Peran Operasional *</label>
-                        <select class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
+                        <select name="role" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
                             <option value="kasir">Kasir Utama</option>
                             <option value="koki">Koki Dapur</option>
                             <option value="barista">Barista Bar</option>
@@ -669,11 +515,11 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div class="flex flex-col gap-1.5">
                         <label class="font-bold text-[#1C1C18]">Email Akun *</label>
-                        <input type="email" placeholder="staf@situawi.com" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
+                        <input type="email" name="email" placeholder="staf@situawi.com" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
                     </div>
                     <div class="flex flex-col gap-1.5">
-                        <label class="font-bold text-[#1C1C18]">PIN Cepat (6 Digit) *</label>
-                        <input type="password" maxlength="6" placeholder="123456" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
+                        <label class="font-bold text-[#1C1C18]">Kata Sandi (min 6) *</label>
+                        <input type="password" name="password" placeholder="123456" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
                     </div>
                 </div>
 
@@ -694,7 +540,6 @@
         </div>
     </div>
 
-    <!-- FLOATING TOAST -->
     <div 
         x-cloak
         x-show="toast.show" 
@@ -705,10 +550,39 @@
         x-transition:leave-start="opacity-100 translate-y-0"
         x-transition:leave-end="opacity-0 translate-y-4"
         class="fixed bottom-8 right-8 z-50 bg-[#00341A] text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 border border-[#FECE66]/30 text-sm font-semibold">
-        <span>🔔</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
         <span x-text="toast.message"></span>
     </div>
 
 </div>
+
+<script>
+    function manajemenAkunApp() {
+        return {
+            activeRoleFilter: 'all',
+            searchQuery: '',
+            addModalOpen: false,
+            toast: { show: false, message: '' },
+            staffs: @json($stafJson),
+
+            showToast(msg) {
+                this.toast.message = msg;
+                this.toast.show = true;
+                setTimeout(() => this.toast.show = false, 3000);
+            },
+
+            get filteredStaffs() {
+                return this.staffs.filter(s => {
+                    if (this.activeRoleFilter !== 'all' && s.roleKey !== this.activeRoleFilter) return false;
+                    if (this.searchQuery) {
+                        const q = this.searchQuery.toLowerCase();
+                        return s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q) || s.id.toLowerCase().includes(q) || s.role.toLowerCase().includes(q);
+                    }
+                    return true;
+                });
+            }
+        };
+    }
+</script>
 @endsection
 

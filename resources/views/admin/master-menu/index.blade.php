@@ -4,187 +4,8 @@
 @section('page_category', 'Katalog & Manajemen Stok')
 
 @section('content')
-<div class="flex flex-col gap-8 pb-16" x-data="{
-    statusFilter: 'semua',
-    categoryFilter: 'all',
-    searchQuery: '',
-    addModalOpen: false,
-    selectedItem: null,
-    toast: { show: false, message: '' },
-    showToast(msg) {
-        this.toast.message = msg;
-        this.toast.show = true;
-        setTimeout(() => this.toast.show = false, 3000);
-    },
-    // Menu items list matching design mockups & OCR data
-    menus: [
-        {
-            id: 1,
-            sku: 'SKU-GRM-01',
-            name: 'Gurame Bakar Cobek Situ Awi',
-            badge: 'Bestseller Saung',
-            category: 'dapur_ikan',
-            kds: 'KDS Dapur (Makanan)',
-            kdsType: 'dapur',
-            price: 85000,
-            hpp: 26500,
-            stockQty: '18 Ekor',
-            stockNote: 'Segar Kolam',
-            stockStatus: 'normal',
-            status: 'tersedia',
-            statusText: 'Tersedia Live',
-            enabled: true,
-            photoIcon: '🐟'
-        },
-        {
-            id: 2,
-            sku: 'SKU-LWT-04',
-            name: 'Nasi Liwet Kastrol Mini Komplit',
-            badge: 'Kapasitas 1-2 Orang',
-            category: 'dapur_sunda',
-            kds: 'KDS Dapur (Makanan)',
-            kdsType: 'dapur',
-            price: 15000,
-            hpp: 4200,
-            stockQty: '35 Kastrol',
-            stockNote: 'Standby Panas',
-            stockStatus: 'normal',
-            status: 'tersedia',
-            statusText: 'Tersedia Live',
-            enabled: true,
-            photoIcon: '🍚'
-        },
-        {
-            id: 3,
-            sku: 'SKU-SAT-02',
-            name: 'Sate Maranggi Sapi Cianjur',
-            badge: 'Bahan Daging Kosong',
-            category: 'dapur_daging',
-            kds: 'KDS Dapur (Makanan)',
-            kdsType: 'dapur',
-            price: 45000,
-            hpp: 18000,
-            stockQty: '0 Porsi',
-            stockNote: 'Habis 14:15 WIB',
-            stockStatus: 'habis',
-            status: 'habis',
-            statusText: 'HABIS / Nonaktif',
-            enabled: false,
-            photoIcon: '🍢'
-        },
-        {
-            id: 4,
-            sku: 'SKU-AYM-01',
-            name: 'Ayam Bakakak Hayam Kampung',
-            badge: '1 Ekor Utuh',
-            category: 'dapur_sunda',
-            kds: 'KDS Dapur (Makanan)',
-            kdsType: 'dapur',
-            price: 85000,
-            hpp: 31000,
-            stockQty: '12 Ekor',
-            stockNote: 'Standby Marinasi',
-            stockStatus: 'normal',
-            status: 'tersedia',
-            statusText: 'Tersedia Live',
-            enabled: true,
-            photoIcon: '🍗'
-        },
-        {
-            id: 5,
-            sku: 'SKU-KOP-01',
-            name: 'Kopi Robusta Puntang Tubruk',
-            badge: 'Gunung Puntang Single Origin',
-            category: 'bar_kopi',
-            kds: 'KDS Bar (Minuman)',
-            kdsType: 'bar',
-            price: 10000,
-            hpp: 2100,
-            stockQty: '85 Cangkir',
-            stockNote: 'Beans: 1.2 kg',
-            stockStatus: 'normal',
-            status: 'tersedia',
-            statusText: 'Tersedia Live',
-            enabled: true,
-            photoIcon: '☕'
-        },
-        {
-            id: 6,
-            sku: 'SKU-MNM-08',
-            name: 'Es Kelapa Muda Jeruk Kasturi',
-            badge: 'Bahan Segar Terbatas',
-            category: 'bar_tradisional',
-            kds: 'KDS Bar (Minuman)',
-            kdsType: 'bar',
-            price: 16000,
-            hpp: 6000,
-            stockQty: '8 Butir',
-            stockNote: 'Kritis (<10 Butir)',
-            stockStatus: 'kritis',
-            status: 'hampir_habis',
-            statusText: 'Hampir Habis',
-            enabled: true,
-            photoIcon: '🥥'
-        },
-        {
-            id: 7,
-            sku: 'SKU-MNM-03',
-            name: 'Es Cincau Hijau Situ Awi',
-            badge: 'Stok Daun Habis',
-            category: 'bar_tradisional',
-            kds: 'KDS Bar (Minuman)',
-            kdsType: 'bar',
-            price: 12000,
-            hpp: 3400,
-            stockQty: '0 Porsi',
-            stockNote: 'Petik Segar Kosong',
-            stockStatus: 'habis',
-            status: 'habis',
-            statusText: 'HABIS / Nonaktif',
-            enabled: false,
-            photoIcon: '🌿'
-        }
-    ],
+<div class="flex flex-col gap-8 pb-16" x-data="masterMenuApp()">
 
-    // Toggle availability switch
-    toggleSwitch(item) {
-        item.enabled = !item.enabled;
-        if (item.enabled) {
-            item.status = 'tersedia';
-            item.statusText = 'Tersedia Live';
-            this.showToast(`✅ ${item.name} aktif di E-Menu & Kios (<200ms)`);
-        } else {
-            item.status = 'habis';
-            item.statusText = 'HABIS / Nonaktif';
-            this.showToast(`⛔ ${item.name} dinonaktifkan di E-Menu & Kios`);
-        }
-    },
-
-    // Filter computation
-    get filteredMenus() {
-        return this.menus.filter(item => {
-            // Status filter
-            if (this.statusFilter === 'tersedia' && !item.enabled) return false;
-            if (this.statusFilter === 'kritis_habis' && item.status !== 'habis' && item.status !== 'hampir_habis') return false;
-
-            // Category filter
-            if (this.categoryFilter !== 'all' && item.category !== this.categoryFilter) return false;
-
-            // Search query filter
-            if (this.searchQuery) {
-                const q = this.searchQuery.toLowerCase();
-                const matchName = item.name.toLowerCase().includes(q);
-                const matchSku = item.sku.toLowerCase().includes(q);
-                const matchBadge = item.badge.toLowerCase().includes(q);
-                return matchName || matchSku || matchBadge;
-            }
-
-            return true;
-        });
-    }
-}">
-
-    <!-- 01. TOP HEADER SECTION (ARCHITECTURAL EDITORIAL STYLING) -->
     <div class="flex flex-col gap-3">
         <div class="flex flex-wrap items-center justify-between gap-4 text-xs font-semibold">
             <div class="flex items-center gap-2 text-[#707971]">
@@ -209,7 +30,6 @@
                 </p>
             </div>
 
-            <!-- Primary Action Buttons -->
             <div class="flex flex-wrap items-center gap-3">
                 <button 
                     type="button" 
@@ -244,10 +64,8 @@
         </div>
     </div>
 
-    <!-- 02. SECTION - 4 KEY METRIC BENTO CARDS -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
-        <!-- Card 1: Total Menu Aktif -->
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[160px] relative overflow-hidden">
             <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">TOTAL MENU AKTIF</span>
@@ -277,7 +95,6 @@
             <div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-[#FFDEA1]/25 blur-xl pointer-events-none"></div>
         </div>
 
-        <!-- Card 2: Peringatan Stok Menipis -->
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[160px]">
             <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">PERINGATAN STOK MENIPIS</span>
@@ -299,7 +116,6 @@
             </div>
         </div>
 
-        <!-- Card 3: Item Nonaktif / Habis -->
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[160px]">
             <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">ITEM NONAKTIF / HABIS</span>
@@ -321,7 +137,6 @@
             </div>
         </div>
 
-        <!-- Card 4: Rata-Rata Margin Menu -->
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[160px] relative overflow-hidden">
             <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">RATA–RATA MARGIN MENU</span>
@@ -338,7 +153,12 @@
                 </span>
                 <div class="p-2 bg-[#CBEF89]/20 rounded-lg flex items-center justify-between mt-3 text-[10px] font-bold">
                     <span class="text-[#213200]">Target Cost 31.6%</span>
-                    <span class="text-[#0B4D2B] flex items-center gap-0.5">✓ Terkendali</span>
+                    <span class="text-[#0B4D2B] flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Terkendali</span>
+                    </span>
                 </div>
             </div>
 
@@ -347,12 +167,9 @@
 
     </div>
 
-    <!-- 03. SECTION - CONTROLS BAR: SEARCH & OPERATIONAL FILTERS -->
     <div class="bg-white rounded-2xl p-5 shadow-xs border border-gray-100 flex flex-col gap-4">
         
-        <!-- Search & Quick Status Filters Row -->
         <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-            <!-- Search Input -->
             <div class="relative w-full md:flex-1">
                 <input 
                     type="text" 
@@ -365,7 +182,6 @@
                 </svg>
             </div>
 
-            <!-- Quick Status Filters -->
             <div class="bg-[#F6F3EC] p-1 rounded-xl flex items-center gap-1 w-full md:w-auto">
                 <button 
                     type="button" 
@@ -392,66 +208,29 @@
             </div>
         </div>
 
-        <!-- Category Pill Chips Scroll Area -->
         <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-            <button 
+            <button
                 type="button"
                 @click="categoryFilter = 'all'"
                 :class="categoryFilter === 'all' ? 'bg-[#0B4D2B] text-white shadow-xs font-semibold' : 'bg-[#F0EEE7] text-[#404941] hover:text-black font-medium'"
                 class="px-4 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer">
                 <span>Semua Kategori</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="categoryFilter === 'all' ? 'bg-white/20 text-white' : 'bg-[#DCDAD3] text-[#404941]'">42</span>
+                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="categoryFilter === 'all' ? 'bg-white/20 text-white' : 'bg-[#DCDAD3] text-[#404941]'">{{ $menuJson->count() }}</span>
             </button>
-
-            <button 
+            @foreach ($kategoriJson as $kat)
+            <button
                 type="button"
-                @click="categoryFilter = 'dapur_sunda'"
-                :class="categoryFilter === 'dapur_sunda' ? 'bg-[#0B4D2B] text-white shadow-xs font-semibold' : 'bg-[#F0EEE7] text-[#404941] hover:text-black font-medium'"
+                @click="categoryFilter = '{{ $kat['id'] }}'"
+                :class="categoryFilter === '{{ $kat['id'] }}' ? 'bg-[#0B4D2B] text-white shadow-xs font-semibold' : 'bg-[#F0EEE7] text-[#404941] hover:text-black font-medium'"
                 class="px-4 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer">
-                <span>🍲 Dapur: Lesehan Sunda</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="categoryFilter === 'dapur_sunda' ? 'bg-white/20 text-white' : 'bg-[#DCDAD3] text-[#404941]'">14</span>
+                <span>{{ $kat['name'] }}</span>
+                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="categoryFilter === '{{ $kat['id'] }}' ? 'bg-white/20 text-white' : 'bg-[#DCDAD3] text-[#404941]'">{{ $menuJson->where('category', $kat['id'])->count() }}</span>
             </button>
-
-            <button 
-                type="button"
-                @click="categoryFilter = 'dapur_ikan'"
-                :class="categoryFilter === 'dapur_ikan' ? 'bg-[#0B4D2B] text-white shadow-xs font-semibold' : 'bg-[#F0EEE7] text-[#404941] hover:text-black font-medium'"
-                class="px-4 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer">
-                <span>🐟 Dapur: Gurame & Ikan</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="categoryFilter === 'dapur_ikan' ? 'bg-white/20 text-white' : 'bg-[#DCDAD3] text-[#404941]'">6</span>
-            </button>
-
-            <button 
-                type="button"
-                @click="categoryFilter = 'dapur_daging'"
-                :class="categoryFilter === 'dapur_daging' ? 'bg-[#0B4D2B] text-white shadow-xs font-semibold' : 'bg-[#F0EEE7] text-[#404941] hover:text-black font-medium'"
-                class="px-4 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer">
-                <span>🍢 Dapur: Olahan Daging</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="categoryFilter === 'dapur_daging' ? 'bg-white/20 text-white' : 'bg-[#DCDAD3] text-[#404941]'">6</span>
-            </button>
-
-            <button 
-                type="button"
-                @click="categoryFilter = 'bar_kopi'"
-                :class="categoryFilter === 'bar_kopi' ? 'bg-[#0B4D2B] text-white shadow-xs font-semibold' : 'bg-[#F0EEE7] text-[#404941] hover:text-black font-medium'"
-                class="px-4 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer">
-                <span>☕ Bar: Kopi Puntang</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="categoryFilter === 'bar_kopi' ? 'bg-white/20 text-white' : 'bg-[#DCDAD3] text-[#404941]'">6</span>
-            </button>
-
-            <button 
-                type="button"
-                @click="categoryFilter = 'bar_tradisional'"
-                :class="categoryFilter === 'bar_tradisional' ? 'bg-[#0B4D2B] text-white shadow-xs font-semibold' : 'bg-[#F0EEE7] text-[#404941] hover:text-black font-medium'"
-                class="px-4 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer">
-                <span>🥥 Bar: Minuman Tradisional</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="categoryFilter === 'bar_tradisional' ? 'bg-white/20 text-white' : 'bg-[#DCDAD3] text-[#404941]'">10</span>
-            </button>
+            @endforeach
         </div>
 
     </div>
 
-    <!-- 04. SYNC BANNER & OPERATIONAL ACTION BAR -->
     <div class="p-4 bg-white rounded-2xl shadow-xs border border-[#C0C9BF]/30 flex flex-col md:flex-row items-center justify-between gap-4">
         <div class="flex items-center gap-3.5">
             <div class="w-10 h-10 rounded-xl bg-[#B1F1C2] flex items-center justify-center text-[#0B4D2B] flex-shrink-0 shadow-2xs">
@@ -475,23 +254,25 @@
                 type="button" 
                 @click="showToast('Sinyal sinkronisasi dikirim ke KDS Dapur & Bar.')"
                 class="h-10 px-4 rounded-xl bg-[#EBE8E1] hover:bg-[#ded9cf] text-[#1C1C18] font-semibold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
-                <span>🔄</span>
+                <svg class="w-4 h-4 text-[#7A5900]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
                 <span>Sinkronkan ke KDS Dapur & Bar</span>
             </button>
             <button 
                 type="button" 
                 @click="showToast('Seluruh perubahan stok massal berhasil disimpan.')"
                 class="h-10 px-5 rounded-xl bg-[#FECE66] hover:bg-[#ebd055] active:scale-95 text-[#765600] font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
-                <span>💾</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2M8 7h8M12 12v5m0 0l-2-2m2 2l2-2" />
+                </svg>
                 <span>Simpan Perubahan Stok Masal</span>
             </button>
         </div>
     </div>
 
-    <!-- 05. INTERACTIVE DATA TABLE CONTAINER -->
     <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
         
-        <!-- Table Header Bar -->
         <div class="p-4 bg-[#F6F3EC] border-b border-gray-200 flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-3">
                 <h3 class="font-bold text-sm text-[#1C1C18]">Daftar Menu & Stok Terkini</h3>
@@ -508,7 +289,6 @@
             </div>
         </div>
 
-        <!-- Responsive Table Wrapper -->
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
@@ -528,12 +308,10 @@
                             class="transition-colors"
                             :class="!item.enabled ? 'bg-red-50/25 opacity-85' : 'hover:bg-[#FBF8F1]/60'">
                             
-                            <!-- Foto & Nama Menu / SKU -->
                             <td class="py-3 px-4">
                                 <div class="flex items-center gap-3">
-                                    <!-- Photo Icon Box -->
-                                    <div class="w-12 h-12 rounded-xl bg-[#F0EEE7] flex items-center justify-center text-2xl flex-shrink-0 shadow-2xs border border-gray-200/60" x-text="item.photoIcon">
-                                        🐟
+                                    <div class="w-12 h-12 rounded-xl bg-[#F0EEE7] flex items-center justify-center flex-shrink-0 shadow-2xs border border-gray-200/60">
+                                        <svg class="w-6 h-6 text-[#7A5900]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.5"/><path stroke-linecap="round" d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
                                     </div>
                                     <div class="flex flex-col">
                                         <span class="font-bold text-sm text-[#1C1C18] leading-tight" :class="!item.enabled ? 'line-through text-gray-500' : ''" x-text="item.name"></span>
@@ -546,17 +324,14 @@
                                 </div>
                             </td>
 
-                            <!-- Kategori KDS -->
                             <td class="py-3 px-4">
                                 <span 
                                     class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold"
                                     :class="item.kdsType === 'dapur' ? 'bg-[#B1F1C2]/40 text-[#0B4D2B]' : 'bg-[#FFDEA1]/50 text-[#7A5900]'">
-                                    <span x-text="item.kdsType === 'dapur' ? '🍳' : '☕'"></span>
-                                    <span x-text="item.kds"></span>
+                                     <span x-text="item.kds"></span>
                                 </span>
                             </td>
 
-                            <!-- Harga Porsi & HPP -->
                             <td class="py-3 px-4">
                                 <div class="flex flex-col">
                                     <span class="font-bold text-sm text-[#00341A]" x-text="'Rp ' + item.price.toLocaleString('id-ID')"></span>
@@ -564,7 +339,6 @@
                                 </div>
                             </td>
 
-                            <!-- Stok Fisik / Satuan -->
                             <td class="py-3 px-4">
                                 <div class="flex flex-col">
                                     <span 
@@ -580,7 +354,6 @@
                                 </div>
                             </td>
 
-                            <!-- Status Etalase E-Menu -->
                             <td class="py-3 px-4">
                                 <span 
                                     class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide"
@@ -601,7 +374,6 @@
                                 </span>
                             </td>
 
-                            <!-- Sakelar Ketersediaan (Toggle) -->
                             <td class="py-3 px-4 text-center">
                                 <button 
                                     type="button" 
@@ -615,7 +387,6 @@
                                 </button>
                             </td>
 
-                            <!-- Aksi -->
                             <td class="py-3 px-4 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
                                     <template x-if="!item.enabled">
@@ -650,10 +421,9 @@
             </table>
         </div>
 
-        <!-- Table Footer Pagination -->
         <div class="p-4 bg-[#F6F3EC] border-t border-gray-200 flex flex-wrap items-center justify-between gap-4 text-xs font-semibold text-[#707971]">
             <div class="flex items-center gap-1.5">
-                <span>Menampilkan 1 - 7 dari 42 Menu</span>
+                <span>Menampilkan {{ $menuJson->count() }} Menu</span>
                 <span>•</span>
                 <span class="text-[#0B4D2B]">Pembaruan Terakhir: Baru saja (14:32 WIB)</span>
             </div>
@@ -668,7 +438,6 @@
 
     </div>
 
-    <!-- MODAL: + TAMBAH MENU BARU -->
     <div 
         x-cloak
         x-show="addModalOpen" 
@@ -689,37 +458,43 @@
                     <h3 class="font-display font-bold text-xl text-[#00341A]">Tambah Menu & Resep Baru</h3>
                     <p class="text-xs text-[#707971] mt-0.5">Konfigurasi harga, stasiun KDS & alokasi bahan</p>
                 </div>
-                <button type="button" @click="addModalOpen = false" class="text-gray-400 hover:text-black p-1 text-lg">✕</button>
+                <button type="button" @click="addModalOpen = false" class="text-gray-400 hover:text-black p-1 cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
 
-            <form @submit.prevent="addModalOpen = false; showToast('Menu baru berhasil didaftarkan ke sistem!')" class="flex flex-col gap-4 text-xs">
+            <form method="POST" action="{{ route('admin.menu.simpan') }}" class="flex flex-col gap-4 text-xs">
+                @csrf
                 <div class="grid grid-cols-2 gap-4">
                     <div class="flex flex-col gap-1.5">
-                        <label class="font-bold text-[#1C1C18]">Kode SKU *</label>
-                        <input type="text" placeholder="Contoh: SKU-GRM-02" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
+                        <label class="font-bold text-[#1C1C18]">Kategori *</label>
+                        <select name="kategori_id" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
+                            @foreach ($kategoriForm as $kat)
+                            <option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="flex flex-col gap-1.5">
-                        <label class="font-bold text-[#1C1C18]">Stasiun KDS *</label>
-                        <select class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
-                            <option value="dapur">KDS Dapur (Makanan)</option>
-                            <option value="bar">KDS Bar (Minuman)</option>
-                        </select>
+                        <label class="font-bold text-[#1C1C18]">Stok Awal (Porsi) *</label>
+                        <input type="number" name="stok_menu" placeholder="Contoh: 50" min="0" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
                     </div>
                 </div>
 
                 <div class="flex flex-col gap-1.5">
                     <label class="font-bold text-[#1C1C18]">Nama Menu Kuliner *</label>
-                    <input type="text" placeholder="Contoh: Gurame Saus Padang Situ Awi" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
+                    <input type="text" name="nama_menu" placeholder="Contoh: Gurame Saus Padang Situ Awi" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div class="flex flex-col gap-1.5">
                         <label class="font-bold text-[#1C1C18]">Harga Porsi Jual (Rp) *</label>
-                        <input type="number" placeholder="85000" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
+                        <input type="number" name="harga" placeholder="85000" min="0" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
                     </div>
                     <div class="flex flex-col gap-1.5">
-                        <label class="font-bold text-[#1C1C18]">Perkiraan HPP (Rp)</label>
-                        <input type="number" placeholder="28000" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]">
+                        <label class="font-bold text-[#1C1C18]">Deskripsi</label>
+                        <input type="text" name="deskripsi" placeholder="Deskripsi singkat menu" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]">
                     </div>
                 </div>
 
@@ -740,7 +515,6 @@
         </div>
     </div>
 
-    <!-- FLOATING TOAST -->
     <div 
         x-cloak
         x-show="toast.show" 
@@ -751,10 +525,56 @@
         x-transition:leave-start="opacity-100 translate-y-0"
         x-transition:leave-end="opacity-0 translate-y-4"
         class="fixed bottom-8 right-8 z-50 bg-[#00341A] text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 border border-[#FECE66]/30 text-sm font-semibold">
-        <span>🔔</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
         <span x-text="toast.message"></span>
     </div>
 
 </div>
+
+<script>
+    function masterMenuApp() {
+        return {
+            statusFilter: 'semua',
+            categoryFilter: 'all',
+            searchQuery: '',
+            addModalOpen: false,
+            selectedItem: null,
+            toast: { show: false, message: '' },
+            menus: @json($menuJson),
+
+            showToast(msg) {
+                this.toast.message = msg;
+                this.toast.show = true;
+                setTimeout(() => this.toast.show = false, 3000);
+            },
+
+            toggleSwitch(item) {
+                item.enabled = !item.enabled;
+                if (item.enabled) {
+                    item.status = 'tersedia';
+                    item.statusText = 'Tersedia Live';
+                    this.showToast(item.name + ' aktif di E-Menu & Kios (<200ms)');
+                } else {
+                    item.status = 'habis';
+                    item.statusText = 'HABIS / Nonaktif';
+                    this.showToast(item.name + ' dinonaktifkan di E-Menu & Kios');
+                }
+            },
+
+            get filteredMenus() {
+                return this.menus.filter(item => {
+                    if (this.statusFilter === 'tersedia' && !item.enabled) return false;
+                    if (this.statusFilter === 'kritis_habis' && item.status !== 'habis' && item.status !== 'hampir_habis') return false;
+                    if (this.categoryFilter !== 'all' && item.category !== this.categoryFilter) return false;
+                    if (this.searchQuery) {
+                        const q = this.searchQuery.toLowerCase();
+                        return item.name.toLowerCase().includes(q) || item.sku.toLowerCase().includes(q) || item.badge.toLowerCase().includes(q);
+                    }
+                    return true;
+                });
+            }
+        };
+    }
+</script>
 @endsection
 

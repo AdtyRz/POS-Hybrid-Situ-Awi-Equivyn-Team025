@@ -14,9 +14,7 @@
     }
 }">
 
-    <!-- 01. TOP COMMAND & FILTER BAR -->
     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-2">
-        <!-- Title & Status Badge -->
         <div class="flex flex-col gap-2">
             <div class="flex items-center gap-2 text-xs font-semibold text-[#707971]">
                 <span>Situ Awi</span>
@@ -35,9 +33,7 @@
             </div>
         </div>
 
-        <!-- Date Selectors & Export Buttons -->
         <div class="flex flex-wrap items-center gap-3 sm:gap-4">
-            <!-- Date Filter Pills -->
             <div class="bg-[#F0EEE7] p-1 rounded-xl shadow-inner flex items-center gap-1">
                 <button 
                     type="button" 
@@ -69,7 +65,6 @@
                 </button>
             </div>
 
-            <!-- Export Buttons -->
             <div class="flex items-center gap-2">
                 <button 
                     type="button" 
@@ -94,15 +89,12 @@
         </div>
     </div>
 
-    <!-- 02. KEY METRICS ROW (4 BENTO KPI CARDS) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
-        <!-- KPI 1: TOTAL OMZET HARI INI -->
         <div class="relative overflow-hidden bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[190px]">
             <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">TOTAL OMZET HARI INI</span>
                 <div class="w-10 h-10 rounded-xl bg-[#FECE66]/30 flex items-center justify-center text-[#765600]">
-                    <!-- Currency / Banknote Icon -->
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <rect x="2" y="5" width="20" height="14" rx="2" />
                         <line x1="2" y1="10" x2="22" y2="10" />
@@ -112,29 +104,26 @@
 
             <div class="flex flex-col mt-4">
                 <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
-                    Rp 14.850.000
+                    Rp {{ number_format($pendapatan, 0, ',', '.') }}
                 </span>
                 <div class="flex items-center gap-1.5 mt-2 text-xs">
                     <span class="font-bold text-[#00341A] flex items-center gap-0.5">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
                         </svg>
-                        +18.4%
+                        {{ $pendapatanKemarin > 0 ? (($pendapatan >= $pendapatanKemarin ? '+' : '') . number_format(($pendapatan - $pendapatanKemarin) / $pendapatanKemarin * 100, 1) . '%') : '-' }}
                     </span>
-                    <span class="text-[#707971]">vs kemarin (Rp 12.54jt)</span>
+                    <span class="text-[#707971]">vs kemarin (Rp {{ number_format($pendapatanKemarin / 1000000, 2) }}jt)</span>
                 </div>
             </div>
 
-            <!-- Soft decorative corner blur -->
             <div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-[#FFDEA1]/30 blur-xl pointer-events-none"></div>
         </div>
 
-        <!-- KPI 2: PESANAN SELESAI -->
         <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[190px]">
             <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">PESANAN SELESAI</span>
                 <div class="w-10 h-10 rounded-xl bg-[#B1F1C2]/40 flex items-center justify-center text-[#0B4D2B]">
-                    <!-- Receipt / Orders Icon -->
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
@@ -143,23 +132,21 @@
 
             <div class="flex flex-col mt-4">
                 <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
-                    118 Tiket
+                    {{ $pesananHariIni }} Tiket
                 </span>
                 <div class="flex items-center justify-between mt-2 text-xs">
-                    <span class="text-[#707971]">Rata-rata: <strong class="text-[#1C1C18] font-bold">Rp 125.800</strong></span>
+                    <span class="text-[#707971]">Rata-rata: <strong class="text-[#1C1C18] font-bold">Rp {{ number_format($pesananHariIni > 0 ? $pendapatan / $pesananHariIni : 0, 0, ',', '.') }}</strong></span>
                     <span class="px-2 py-0.5 rounded-full bg-[#B1F1C2]/30 text-[10px] font-bold text-[#0B4D2B]">
-                        98.3% Sukses
+                        {{ $pesananTotal > 0 ? number_format($pesananHariIni / $pesananTotal * 100, 1) : 0 }}% Sukses
                     </span>
                 </div>
             </div>
         </div>
 
-        <!-- KPI 3: OKUPANSI SAUNG -->
         <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[190px]">
             <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">OKUPANSI SAUNG</span>
                 <div class="w-10 h-10 rounded-xl bg-[#FFDEA1]/50 flex items-center justify-center text-[#7A5900]">
-                    <!-- Gazebo / Home Icon -->
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                     </svg>
@@ -169,7 +156,7 @@
             <div class="flex flex-col mt-4">
                 <div class="flex items-baseline gap-2">
                     <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
-                        91%
+                        {{ $mejaTotal > 0 ? round($mejaTerisi / $mejaTotal * 100) : 0 }}%
                     </span>
                     <span class="px-2 py-0.5 rounded-full bg-[#EFC05A]/40 text-[10px] font-bold text-[#261900]">
                         Puncak Lesehan
@@ -177,17 +164,15 @@
                 </div>
                 <div class="flex items-center gap-1.5 mt-2 text-xs">
                     <span class="w-2 h-2 rounded-full bg-[#00341A]"></span>
-                    <span class="text-[#707971] font-medium">10 dari 11 Saung terisi penuh</span>
+                    <span class="text-[#707971] font-medium">{{ $mejaTerisi }} dari {{ $mejaTotal }} Saung terisi penuh</span>
                 </div>
             </div>
         </div>
 
-        <!-- KPI 4: KDS KECEPATAN SAJI -->
         <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[190px]">
             <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">KDS KECEPATAN SAJI</span>
                 <div class="w-10 h-10 rounded-xl bg-[#F0EEE7] flex items-center justify-center text-[#00341A]">
-                    <!-- Stopwatch / Timer Icon -->
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="10" />
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" />
@@ -197,10 +182,10 @@
 
             <div class="flex flex-col mt-4">
                 <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
-                    12.4 Menit
+                    {{ $rataMenit ? number_format($rataMenit, 1) : '-' }} Menit
                 </span>
                 <div class="flex items-center gap-1.5 mt-2 text-xs">
-                    <span class="font-bold text-[#00341A]">⚡ 2.1m lebih gesit</span>
+                    <span class="font-bold text-[#00341A]">{{ $rataMenit ? number_format(15 - $rataMenit, 1) . 'm lebih gesit' : 'Belum ada data' }}</span>
                     <span class="text-[#707971]">dari target (15.0m)</span>
                 </div>
             </div>
@@ -208,19 +193,16 @@
 
     </div>
 
-    <!-- 03. MIDDLE ANALYTICS GRID (AREA CHART & PAYMENT DONUT) -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- HOURLY SALES CURVE AREA (8 cols) -->
         <div class="lg:col-span-8 bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-gray-100 flex flex-col justify-between">
-            <!-- Header & Legends -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
                 <div class="flex flex-col">
                     <h2 class="font-bold text-lg sm:text-xl text-[#1C1C18] leading-tight">
-                        Fluktuasi Penjualan Per Jam
+                        Fluktuasi Penjualan
                     </h2>
                     <p class="text-xs text-[#707971] mt-0.5">
-                        Pantauan volume pesanan & nilai kotor (10:00 - 21:00 WIB)
+                        Pantauan volume pesanan & nilai kotor (7 hari terakhir)
                     </p>
                 </div>
 
@@ -236,11 +218,28 @@
                 </div>
             </div>
 
-            <!-- Custom SVG Area Chart Visualization matching exact curve -->
             <div class="w-full my-4 relative">
+                @php
+                    $nilaiMaks = max(array_column($grafik, 'total')) ?: 1;
+                    $koordinat = [];
+                    foreach ($grafik as $i => $hari) {
+                        $koordinat[] = [30 + $i * (740 / 6), 240 - ($hari['total'] / $nilaiMaks) * 180];
+                    }
+                    $garis = 'M ' . round($koordinat[0][0], 1) . ' ' . round($koordinat[0][1], 1);
+                    for ($i = 0; $i < count($koordinat) - 1; $i++) {
+                        $p0 = $koordinat[max(0, $i - 1)];
+                        $p1 = $koordinat[$i];
+                        $p2 = $koordinat[$i + 1];
+                        $p3 = $koordinat[min(count($koordinat) - 1, $i + 2)];
+                        $garis .= ' C ' . round($p1[0] + ($p2[0] - $p0[0]) / 6, 1) . ' ' . round($p1[1] + ($p2[1] - $p0[1]) / 6, 1) . ', ' . round($p2[0] - ($p3[0] - $p1[0]) / 6, 1) . ' ' . round($p2[1] - ($p3[1] - $p1[1]) / 6, 1) . ', ' . round($p2[0], 1) . ' ' . round($p2[1], 1);
+                    }
+                    $indeksPuncak = array_search(max(array_column($grafik, 'total')), array_column($grafik, 'total'));
+                    $titikPuncak = $koordinat[$indeksPuncak];
+                    $kotakX = min(max($titikPuncak[0] - 85, 0), 600);
+                    $kotakY = max($titikPuncak[1] - 52, 0);
+                @endphp
                 <svg viewBox="0 0 800 320" class="w-full h-64 overflow-visible" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <defs>
-                        <!-- Area Gradient Fill -->
                         <linearGradient id="curveGradient" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stop-color="#0B4D2B" stop-opacity="0.35" />
                             <stop offset="60%" stop-color="#0B4D2B" stop-opacity="0.08" />
@@ -248,66 +247,32 @@
                         </linearGradient>
                     </defs>
 
-                    <!-- Horizontal Dashed Gridlines -->
                     <line x1="30" y1="60" x2="770" y2="60" stroke="#F0EEE7" stroke-width="1.5" stroke-dasharray="4 4" />
                     <line x1="30" y1="120" x2="770" y2="120" stroke="#F0EEE7" stroke-width="1.5" stroke-dasharray="4 4" />
                     <line x1="30" y1="180" x2="770" y2="180" stroke="#F0EEE7" stroke-width="1.5" stroke-dasharray="4 4" />
                     <line x1="30" y1="240" x2="770" y2="240" stroke="#EBE8E1" stroke-width="1.5" />
 
-                    <!-- Area Fill Polygon -->
-                    <path d="M 30 240 
-                             C 90 230, 140 180, 200 160 
-                             C 260 140, 290 120, 340 125 
-                             C 400 130, 460 210, 520 180 
-                             C 570 150, 600 70, 650 75 
-                             C 700 80, 740 190, 770 240 
-                             Z" fill="url(#curveGradient)" />
+                    <path d="{{ $garis }} L 770 240 L 30 240 Z" fill="url(#curveGradient)" />
 
-                    <!-- Spline Stroke Path -->
-                    <path d="M 30 240 
-                             C 90 230, 140 180, 200 160 
-                             C 260 140, 290 120, 340 125 
-                             C 400 130, 460 210, 520 180 
-                             C 570 150, 600 70, 650 75 
-                             C 700 80, 740 190, 770 240" 
+                    <path d="{{ $garis }}"
                              stroke="#0B4D2B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
 
-                    <!-- Peak Point 1: Lunch (12:30) -->
-                    <circle cx="340" cy="125" r="6" fill="#FCF9F2" stroke="#7A5900" stroke-width="3" />
-                    
-                    <!-- Tooltip 1: Makan Siang (12:30) -->
-                    <g transform="translate(265, 80)">
-                        <rect width="140" height="34" rx="8" fill="#1C1C18" />
-                        <text x="70" y="14" fill="#FCF9F2" font-size="9" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Makan Siang (12:30)</text>
-                        <text x="70" y="27" fill="#FECE66" font-size="11" font-weight="700" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Rp 1.950.000</text>
-                    </g>
+                    <circle cx="{{ round($titikPuncak[0], 1) }}" cy="{{ round($titikPuncak[1], 1) }}" r="6" fill="#7A5900" stroke="#FCF9F2" stroke-width="3" />
 
-                    <!-- Peak Point 2: Dinner (19:00) -->
-                    <circle cx="650" cy="75" r="6" fill="#7A5900" stroke="#FCF9F2" stroke-width="3" />
-
-                    <!-- Tooltip 2: Puncak Malam (19:00) -->
-                    <g transform="translate(560, 30)">
+                    <g transform="translate({{ round($kotakX, 1) }}, {{ round($kotakY, 1) }})">
                         <rect width="170" height="36" rx="8" fill="#0B4D2B" />
-                        <text x="85" y="15" fill="#FFFFFF" font-size="9" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Puncak Malam (19:00)</text>
-                        <text x="85" y="29" fill="#FECE66" font-size="11" font-weight="700" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Rp 2.850.000 (24 Tiket)</text>
+                        <text x="85" y="15" fill="#FFFFFF" font-size="9" font-weight="600" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Puncak {{ $grafik[$indeksPuncak]['label'] }}</text>
+                        <text x="85" y="29" fill="#FECE66" font-size="11" font-weight="700" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Rp {{ number_format($grafik[$indeksPuncak]['total'], 0, ',', '.') }}</text>
                     </g>
                 </svg>
 
-                <!-- X-Axis Labels Row -->
                 <div class="flex items-center justify-between text-[10px] font-bold text-[#707971] px-2 pt-2 border-t border-[#EBE8E1]">
-                    <span>10:00</span>
-                    <span>11:30</span>
-                    <span class="text-[#1C1C18]">13:00</span>
-                    <span>14:30</span>
-                    <span>16:00</span>
-                    <span>17:30</span>
-                    <span class="text-[#1C1C18]">19:00</span>
-                    <span>20:30</span>
-                    <span>21:30</span>
+                    @foreach ($grafik as $hari)
+                    <span>{{ $hari['label'] }}</span>
+                    @endforeach
                 </div>
             </div>
 
-            <!-- Bottom Insight Pill Box -->
             <div class="p-3.5 bg-[#F0EEE7] rounded-2xl flex items-center justify-between gap-3 mt-2">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-lg bg-[#EAE4D7] flex items-center justify-center text-[#7A5900] flex-shrink-0">
@@ -316,7 +281,11 @@
                         </svg>
                     </div>
                     <p class="text-xs text-[#1C1C18] leading-tight">
-                        Perputaran meja Saung Lesehan tercepat tercatat pada <strong class="font-bold">Saung Kelapa (LB-01)</strong> dengan durasi saji & santap rata-rata <strong class="font-bold">48 menit</strong>.
+                        @if ($putaran)
+                        Perputaran meja tercepat tercatat pada <strong class="font-bold">Saung {{ $putaran->meja->kode_meja }}</strong> dengan durasi saji & santap rata-rata <strong class="font-bold">{{ round($putaran->menit) }} menit</strong>.
+                        @else
+                        Belum ada pesanan selesai hari ini untuk mengukur perputaran meja.
+                        @endif
                     </p>
                 </div>
                 <button type="button" @click="showToast('Membuka audit log POS Saung Kelapa...')" class="text-[10px] font-bold text-[#707971] hover:text-[#00341A] uppercase tracking-wide flex-shrink-0 cursor-pointer">
@@ -325,7 +294,6 @@
             </div>
         </div>
 
-        <!-- RIGHT SIDE: PAYMENT DISTRIBUTION DONUT (4 cols) -->
         <div class="lg:col-span-4 bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-gray-100 flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between">
@@ -338,61 +306,57 @@
                     Distribusi penyelesaian tagihan tamu
                 </p>
 
-                <!-- High-Fidelity SVG Donut Chart -->
                 <div class="relative flex items-center justify-center my-6">
+                    @php
+                        $totalKanal = $qrisHariIni + $tunaiHariIni;
+                        $bagianQris = $totalKanal > 0 ? round($qrisHariIni / $totalKanal * 377) : 0;
+                        $bagianTunai = 377 - $bagianQris;
+                        $persenQris = $totalKanal > 0 ? round($qrisHariIni / $totalKanal * 100) : 0;
+                    @endphp
                     <svg viewBox="0 0 160 160" class="w-44 h-44 -rotate-90">
-                        <!-- Background Circle Track -->
                         <circle cx="80" cy="80" r="60" stroke="#EBE8E1" stroke-width="20" fill="none" />
-                        <!-- QRIS / Non-Tunai Slice (72%) -->
-                        <circle cx="80" cy="80" r="60" stroke="#0B4D2B" stroke-width="20" fill="none" 
-                                stroke-dasharray="271 377" stroke-dashoffset="0" />
-                        <!-- Cash / Tunai Slice (28%) -->
-                        <circle cx="80" cy="80" r="60" stroke="#FECE66" stroke-width="20" fill="none" 
-                                stroke-dasharray="106 377" stroke-dashoffset="-271" />
+                        <circle cx="80" cy="80" r="60" stroke="#0B4D2B" stroke-width="20" fill="none"
+                                stroke-dasharray="{{ $bagianQris }} 377" stroke-dashoffset="0" />
+                        <circle cx="80" cy="80" r="60" stroke="#FECE66" stroke-width="20" fill="none"
+                                stroke-dasharray="{{ $bagianTunai }} 377" stroke-dashoffset="-{{ $bagianQris }}" />
                     </svg>
 
-                    <!-- Center Badge -->
                     <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span class="font-display font-bold text-3xl text-[#1C1C18]">72%</span>
+                        <span class="font-display font-bold text-3xl text-[#1C1C18]">{{ $persenQris }}%</span>
                         <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">NON-TUNAI</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Breakdown Channel List -->
             <div class="flex flex-col gap-2.5">
-                <!-- QRIS / Midtrans -->
                 <div class="p-3 bg-[#F0EEE7] rounded-xl flex items-center justify-between">
                     <div class="flex items-center gap-2.5">
                         <span class="w-3.5 h-3.5 rounded-md bg-[#0B4D2B] flex-shrink-0"></span>
                         <div class="flex flex-col">
                             <span class="text-xs font-semibold text-[#1C1C18]">QRIS / Midtrans</span>
-                            <span class="text-[11px] text-[#707971]">85 Transaksi (72%)</span>
+                            <span class="text-[11px] text-[#707971]">{{ $qrisHariIni }} Transaksi ({{ $persenQris }}%)</span>
                         </div>
                     </div>
-                    <span class="font-bold text-xs text-[#00341A]">Rp 10.692.000</span>
+                    <span class="font-bold text-xs text-[#00341A]">Rp {{ number_format($omzetQris, 0, ',', '.') }}</span>
                 </div>
 
-                <!-- Tunai Kasir POS -->
                 <div class="p-3 bg-[#F0EEE7] rounded-xl flex items-center justify-between">
                     <div class="flex items-center gap-2.5">
                         <span class="w-3.5 h-3.5 rounded-md bg-[#FECE66] flex-shrink-0"></span>
                         <div class="flex flex-col">
                             <span class="text-xs font-semibold text-[#1C1C18]">Tunai Kasir POS</span>
-                            <span class="text-[11px] text-[#707971]">33 Transaksi (28%)</span>
+                            <span class="text-[11px] text-[#707971]">{{ $tunaiHariIni }} Transaksi ({{ 100 - $persenQris }}%)</span>
                         </div>
                     </div>
-                    <span class="font-bold text-xs text-[#7A5900]">Rp 4.158.000</span>
+                    <span class="font-bold text-xs text-[#7A5900]">Rp {{ number_format($omzetTunai, 0, ',', '.') }}</span>
                 </div>
             </div>
         </div>
 
     </div>
 
-    <!-- 04. BOTTOM SECTION: TOP 5 BEST SELLERS & AUDIT LOGS -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- 5 MENU TERLARIS HARI INI (6 cols) -->
         <div class="lg:col-span-6 bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-gray-100 flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between pb-1">
@@ -400,94 +364,38 @@
                         <span class="w-2.5 h-2.5 rounded-full bg-[#7A5900]"></span>
                         <h2 class="font-bold text-lg sm:text-xl text-[#1C1C18]">5 Menu Terlaris Hari Ini</h2>
                     </div>
-                    <span class="text-xs font-semibold text-[#707971]">Total Porsi: 333</span>
+                    <span class="text-xs font-semibold text-[#707971]">Total Porsi: {{ $terlaris->sum('porsi') }}</span>
                 </div>
                 <p class="text-xs text-[#707971] mb-5">
                     Daftar hidangan dengan perputaran paling cepat & penyumbang gross profit terbesar
                 </p>
 
-                <!-- Best Seller Items -->
                 <div class="flex flex-col gap-2.5">
-                    <!-- Item 1 -->
+                    @forelse ($terlaris as $laris)
                     <div class="p-2.5 sm:p-3 bg-[#F0EEE7] rounded-2xl flex items-center justify-between gap-3">
                         <div class="flex items-center gap-3">
-                            <span class="w-8 h-8 rounded-xl bg-[#FECE66]/40 text-[#765600] flex items-center justify-center font-bold text-xs flex-shrink-0">
-                                1
+                            <span class="w-8 h-8 rounded-xl {{ $loop->first ? 'bg-[#FECE66]/40 text-[#765600]' : 'bg-[#E5E2DB] text-[#404941]' }} flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                {{ $loop->iteration }}
                             </span>
                             <div class="flex flex-col">
-                                <span class="text-sm font-bold text-[#1C1C18] leading-tight">Gurame Bakar Situ Awi</span>
-                                <span class="text-xs text-[#707971] mt-0.5">64 Porsi • 36.6% Kontribusi Omzet</span>
+                                <span class="text-sm font-bold text-[#1C1C18] leading-tight">{{ $laris->menu->nama_menu }}</span>
+                                <span class="text-xs text-[#707971] mt-0.5">{{ $laris->porsi }} Porsi</span>
                             </div>
                         </div>
-                        <span class="font-bold text-xs text-[#00341A] flex-shrink-0">Rp 5.440.000</span>
+                        <span class="font-bold text-xs text-[#00341A] flex-shrink-0">Rp {{ number_format($laris->omzet, 0, ',', '.') }}</span>
                     </div>
-
-                    <!-- Item 2 -->
-                    <div class="p-2.5 sm:p-3 bg-[#F0EEE7] rounded-2xl flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-3">
-                            <span class="w-8 h-8 rounded-xl bg-[#E5E2DB] text-[#404941] flex items-center justify-center font-bold text-xs flex-shrink-0">
-                                2
-                            </span>
-                            <div class="flex flex-col">
-                                <span class="text-sm font-bold text-[#1C1C18] leading-tight">Nasi Liwet Kastrol Komplit</span>
-                                <span class="text-xs text-[#707971] mt-0.5">98 Porsi • Pendamping Lesehan</span>
-                            </div>
-                        </div>
-                        <span class="font-bold text-xs text-[#00341A] flex-shrink-0">Rp 1.470.000</span>
-                    </div>
-
-                    <!-- Item 3 -->
-                    <div class="p-2.5 sm:p-3 bg-[#F0EEE7] rounded-2xl flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-3">
-                            <span class="w-8 h-8 rounded-xl bg-[#E5E2DB] text-[#404941] flex items-center justify-center font-bold text-xs flex-shrink-0">
-                                3
-                            </span>
-                            <div class="flex flex-col">
-                                <span class="text-sm font-bold text-[#1C1C18] leading-tight">Ayam Bakakak Hayam Kampung</span>
-                                <span class="text-xs text-[#707971] mt-0.5">35 Ekor Terjual</span>
-                            </div>
-                        </div>
-                        <span class="font-bold text-xs text-[#00341A] flex-shrink-0">Rp 2.975.000</span>
-                    </div>
-
-                    <!-- Item 4 -->
-                    <div class="p-2.5 sm:p-3 bg-[#F0EEE7] rounded-2xl flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-3">
-                            <span class="w-8 h-8 rounded-xl bg-[#E5E2DB] text-[#404941] flex items-center justify-center font-bold text-xs flex-shrink-0">
-                                4
-                            </span>
-                            <div class="flex flex-col">
-                                <span class="text-sm font-bold text-[#1C1C18] leading-tight">Es Kelapa Muda Jeruk Kasturi</span>
-                                <span class="text-xs text-[#707971] mt-0.5">82 Porsi Segar</span>
-                            </div>
-                        </div>
-                        <span class="font-bold text-xs text-[#00341A] flex-shrink-0">Rp 656.000</span>
-                    </div>
-
-                    <!-- Item 5 -->
-                    <div class="p-2.5 sm:p-3 bg-[#F0EEE7] rounded-2xl flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-3">
-                            <span class="w-8 h-8 rounded-xl bg-[#E5E2DB] text-[#404941] flex items-center justify-center font-bold text-xs flex-shrink-0">
-                                5
-                            </span>
-                            <div class="flex flex-col">
-                                <span class="text-sm font-bold text-[#1C1C18] leading-tight">Kopi Robusta Puntang Tubruk</span>
-                                <span class="text-xs text-[#707971] mt-0.5">54 Cangkir Disajikan</span>
-                            </div>
-                        </div>
-                        <span class="font-bold text-xs text-[#00341A] flex-shrink-0">Rp 540.000</span>
-                    </div>
-                </div>
+                    @empty
+                    <div class="p-3 text-xs text-[#707971] italic">Belum ada penjualan hari ini.</div>
+                    @endforelse
             </div>
 
-            <!-- Warning Stock Footer -->
             <div class="p-3.5 bg-[#FFDEA1]/40 rounded-2xl flex items-center justify-between gap-3 mt-4">
                 <div class="flex items-center gap-2.5">
                     <svg class="w-5 h-5 text-[#7A5900] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     <span class="text-xs font-semibold text-[#261900]">
-                        Stok Gurame Hidup Kolam Situ: <strong class="font-bold text-[#261900]">Tersisa 22 Ekor</strong>
+                        Menu stok menipis (≤ 5): <strong class="font-bold text-[#261900]">{{ $stokMenipis }} menu</strong>
                     </span>
                 </div>
                 <a href="{{ url('/admin/menu') }}" class="text-xs font-bold text-[#7A5900] hover:underline flex items-center gap-1 flex-shrink-0">
@@ -497,7 +405,6 @@
             </div>
         </div>
 
-        <!-- RIGHT CARD: LOG AUDIT TRANSAKSI TERKINI (6 cols) -->
         <div class="lg:col-span-6 bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-gray-100 flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between pb-1">
@@ -511,9 +418,7 @@
                     Aktivitas penutupan bill meja, pembayaran, dan otorisasi kasir
                 </p>
 
-                <!-- Audit Log Items -->
                 <div class="flex flex-col gap-3">
-                    <!-- Log Item 1 -->
                     <div class="p-3.5 bg-[#F0EEE7] rounded-2xl flex items-center justify-between gap-3">
                         <div class="flex flex-col">
                             <div class="flex items-center gap-2 text-xs">
@@ -531,7 +436,6 @@
                         </div>
                     </div>
 
-                    <!-- Log Item 2 -->
                     <div class="p-3.5 bg-[#F0EEE7] rounded-2xl flex items-center justify-between gap-3">
                         <div class="flex flex-col">
                             <div class="flex items-center gap-2 text-xs">
@@ -549,7 +453,6 @@
                         </div>
                     </div>
 
-                    <!-- Log Item 3 (Void Event) -->
                     <div class="p-3.5 bg-[#FFDAD6]/30 border border-[#FFDAD6] rounded-2xl flex items-center justify-between gap-3">
                         <div class="flex flex-col">
                             <div class="flex items-center gap-2 text-xs">
@@ -567,7 +470,6 @@
                         </div>
                     </div>
 
-                    <!-- Log Item 4 -->
                     <div class="p-3.5 bg-[#F0EEE7] rounded-2xl flex items-center justify-between gap-3">
                         <div class="flex flex-col">
                             <div class="flex items-center gap-2 text-xs">
@@ -587,7 +489,6 @@
                 </div>
             </div>
 
-            <!-- Footer Pagination / Live Sync Status -->
             <div class="flex items-center justify-between text-xs pt-4 border-t border-gray-100 mt-2">
                 <span class="text-[#707971] flex items-center gap-1.5">
                     <svg class="w-3.5 h-3.5 text-[#00341A] animate-spin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -604,7 +505,6 @@
 
     </div>
 
-    <!-- FLOATING TOAST FEEDBACK -->
     <div 
         x-cloak
         x-show="toast.show" 
@@ -615,7 +515,7 @@
         x-transition:leave-start="opacity-100 translate-y-0"
         x-transition:leave-end="opacity-0 translate-y-4"
         class="fixed bottom-8 right-8 z-50 bg-[#00341A] text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 border border-[#FECE66]/30 text-sm font-semibold">
-        <span>🔔</span>
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
         <span x-text="toast.message"></span>
     </div>
 
