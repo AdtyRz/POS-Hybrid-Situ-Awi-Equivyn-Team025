@@ -14,8 +14,8 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @else
         <script src="https://cdn.tailwindcss.com"></script>
-        <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
     @endif
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
 
     <style>
         [x-cloak] { display: none !important; }
@@ -926,7 +926,7 @@
                 cashReceived: 0,
                 isPrinting: false,
                 isLocked: false,
-         <<<<<<< feature       statusUrlTemplate: @json(route('pesanan.status', ['kode' => '__KODE__'])),
+                statusUrlTemplate: @json(route('pesanan.status', ['kode' => '__KODE__'])),
 
                 iotAlert: @json($iotAlertJson),
 
@@ -1064,7 +1064,7 @@
                 },
 
                 handleKeyboardShortcuts(e) {
-                if (e.key === 'Enter' && !this.isLocked && this.currentSaung.status === 'waiting_cash') {
+                    if (e.key === 'Enter' && !this.isLocked && this.currentSaung.status === 'waiting_cash') {
                         e.preventDefault();
                         this.confirmPaymentAndPrint();
                     }
