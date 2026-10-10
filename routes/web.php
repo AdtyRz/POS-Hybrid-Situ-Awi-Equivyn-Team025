@@ -13,55 +13,20 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [EMenuController::class, 'beranda'])->name('emenu.index');
 
 Route::get('/meja/{meja}', [EMenuController::class, 'aplikasi'])->name('emenu.meja');
+Route::get('/meja/{meja}/pelacakan', [EMenuController::class, 'pelacakan'])->name('emenu.pelacakan');
 Route::post('/meja/{meja}/panggil', [EMenuController::class, 'panggil'])->name('emenu.panggil');
 Route::post('/meja/{meja}/checkout', [EMenuController::class, 'checkout'])->name('emenu.checkout');
 Route::get('/pesanan/{kode_pesanan}', [EMenuController::class, 'status'])->name('emenu.status');
 
-// Frontend Preview Routes for Admin
-Route::get('/admin/analitik-laporan', function () {
-    return view('admin.analitik-laporan.index');
-})->name('admin.analitik-laporan');
-
-Route::get('/admin/master-meja', function () {
-    return view('admin.master-meja.index');
-})->name('admin.master-meja');
-
-Route::get('/admin/master-menu', function () {
-    return view('admin.master-menu.index');
-})->name('admin.master-menu');
-
-Route::get('/admin/laporan-penjualan', function () {
-    return view('admin.laporan-penjualan.index');
-})->name('admin.laporan-penjualan');
-
-Route::get('/admin/manajemen-akun', function () {
-    return view('admin.manajemen-akun.index');
-})->name('admin.manajemen-akun');
+Route::get('/admin/analitik-laporan', [AdminController::class, 'dashboard'])->name('admin.analitik-laporan');
+Route::get('/admin/master-meja', [AdminController::class, 'daftarMeja'])->name('admin.master-meja');
+Route::get('/admin/master-menu', [AdminController::class, 'daftarMenu'])->name('admin.master-menu');
+Route::get('/admin/laporan-penjualan', [AdminController::class, 'index'])->name('admin.laporan-penjualan');
+Route::get('/admin/manajemen-akun', [AdminController::class, 'daftarAkun'])->name('admin.manajemen-akun');
 
 Route::get('/admin/pengaturan-sistem', function () {
     return view('admin.pengaturan-sistem.index');
 })->name('admin.pengaturan-sistem');
-
-// Frontend Preview Routes for Pelayan Mobile POS
-Route::get('/pelayan', function () {
-    return redirect('/pelayan/notifikasi-panggilan');
-});
-
-Route::get('/pelayan/notifikasi-panggilan', function () {
-    return view('pelayan.notifikasi-panggilan-pelayan.index');
-})->name('pelayan.notifikasi-panggilan');
-
-Route::get('/pelayan/tab-antar', function () {
-    return view('pelayan.tab-antar.index');
-})->name('pelayan.tab-antar');
-
-Route::get('/pelayan/tab-saung', function () {
-    return view('pelayan.tab-saung.index');
-})->name('pelayan.tab-saung');
-
-Route::get('/pelayan/tab-shift', function () {
-    return view('pelayan.tab-shift.index');
-})->name('pelayan.tab-shift');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

@@ -13,23 +13,6 @@ class Pesanan extends Model
 
     protected $guarded = ['id'];
 
-    protected $fillable = [
-        'kode_pesanan',
-        'meja_id',
-        'session_code',
-        'pelanggan_id',
-        'kasir_id',
-        'total_bayar',
-        'status_pesanan',
-        'status_pembayaran',
-        'metode_pembayaran',
-        'catatan',
-        'waktu_pesan',
-        'void_by',
-        'void_at',
-        'alasan_void',
-    ];
-
     public const STATUS_MENUNGGU = 'menunggu';
     public const STATUS_DIPROSES = 'diproses';
     public const STATUS_SIAP = 'siap';
