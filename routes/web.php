@@ -42,6 +42,27 @@ Route::get('/admin/pengaturan-sistem', function () {
     return view('admin.pengaturan-sistem.index');
 })->name('admin.pengaturan-sistem');
 
+// Frontend Preview Routes for Pelayan Mobile POS
+Route::get('/pelayan', function () {
+    return redirect('/pelayan/notifikasi-panggilan');
+});
+
+Route::get('/pelayan/notifikasi-panggilan', function () {
+    return view('pelayan.notifikasi-panggilan-pelayan.index');
+})->name('pelayan.notifikasi-panggilan');
+
+Route::get('/pelayan/tab-antar', function () {
+    return view('pelayan.tab-antar.index');
+})->name('pelayan.tab-antar');
+
+Route::get('/pelayan/tab-saung', function () {
+    return view('pelayan.tab-saung.index');
+})->name('pelayan.tab-saung');
+
+Route::get('/pelayan/tab-shift', function () {
+    return view('pelayan.tab-shift.index');
+})->name('pelayan.tab-shift');
+
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
