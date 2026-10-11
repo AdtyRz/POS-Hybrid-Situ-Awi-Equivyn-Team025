@@ -38,7 +38,7 @@
                 <div>
                     <div class="flex items-center gap-1.5 leading-tight">
                         <span class="font-bold text-base text-[#1C1C18]" x-text="runnerName">{{ auth()->user()->nama }}</span>
-                        <span class="text-[10px] font-medium text-[#404941]">(Area {{ runnerArea }})</span>
+                        <span class="text-[10px] font-medium text-[#404941]">(Area {{ $runnerArea }})</span>
                     </div>
                     <span class="text-xs text-[#404941] block leading-tight mt-0.5" x-text="shiftInfo">Shift Siang (12:00–18:00)</span>
                 </div>
