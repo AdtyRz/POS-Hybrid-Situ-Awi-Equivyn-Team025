@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('pesanan', function (Blueprint $table) {
             $table->id();
             $table->string('kode_pesanan', 30)->unique();
-            $table->string('kode_pembayaran', 30)->unique();
+            $table->string('kode_pembayaran', 30)->unique()->nullable();
             $table->foreignId('meja_id')->constrained('meja_makan')->restrictOnDelete();
             $table->foreignId('pelanggan_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('kasir_id')->nullable()->constrained('users')->nullOnDelete();
