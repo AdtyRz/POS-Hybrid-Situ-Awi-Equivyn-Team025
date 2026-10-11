@@ -8,10 +8,12 @@ use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
 use App\Models\StokMutasi;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Illuminate\Support\Str;
 
 class EMenuController extends Controller
 {
@@ -91,11 +93,31 @@ class EMenuController extends Controller
                 $subtotal += $daftarMenu[$id]->harga * $jumlah;
             }
 
+            $totalBayar = $subtotal + round($subtotal * 0.1);
+            $kodePesanan = 'SW-' . now()->format('YmdHis') . '-' . $mejaMakan->id;
+            $kodePembayaran = 'PAY-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(6));
+
+            // Determine initial status based on payment method
+            if ($data['metode'] === 'qris') {
+                // QRIS: Auto-verify via callback, status pending verification
+                $statusPesanan = Pesanan::STATUS_MENUNGGU_VERIFIKASI;
+                $statusPembayaran = Pesanan::PAYMENT_PENDING_VERIFIKASI;
+                $metodePembayaran = 'qris';
+            } else {
+                // Cash: Pay first at kasir, generate payment code
+                $statusPesanan = Pesanan::STATUS_MENUNGGU_PEMBAYARAN;
+                $statusPembayaran = Pesanan::PAYMENT_PENDING_PEMBAYARAN;
+                $metodePembayaran = 'tunai';
+            }
+
             $pesanan = Pesanan::create([
-                'kode_pesanan' => 'SW-' . now()->format('YmdHis') . '-' . $mejaMakan->id,
+                'kode_pesanan' => $kodePesanan,
+                'kode_pembayaran' => $kodePembayaran,
                 'meja_id' => $mejaMakan->id,
-                'total_bayar' => $subtotal + round($subtotal * 0.1),
-                'metode_pembayaran' => $data['metode'],
+                'total_bayar' => $totalBayar,
+                'metode_pembayaran' => $metodePembayaran,
+                'status_pesanan' => $statusPesanan,
+                'status_pembayaran' => $statusPembayaran,
             ]);
 
             foreach ($dipilih as $id => $jumlah) {
@@ -107,6 +129,7 @@ class EMenuController extends Controller
                     'harga_satuan' => $menu->harga,
                     'subtotal' => $menu->harga * $jumlah,
                     'catatan' => $data['catatan'][$id] ?? null,
+                    'status_item' => 'menunggu',
                 ]);
 
                 $menu->decrement('stok_menu', $jumlah);
@@ -127,7 +150,14 @@ class EMenuController extends Controller
 
         $request->session()->push('riwayat_meja_' . $mejaMakan->id, $pesanan->kode_pesanan);
 
-        return redirect()->route('emenu.status', $pesanan->kode_pesanan);
+        // Redirect based on payment method
+        if ($data['metode'] === 'qris') {
+            // QRIS: Show waiting for verification page, will auto-redirect after callback
+            return redirect()->route('emenu.verifikasi', $pesanan->kode_pesanan);
+        } else {
+            // Cash: Show payment code page for customer to give to kasir
+            return redirect()->route('emenu.bayar-tunai', $pesanan->kode_pesanan);
+        }
     }
 
     public function status(string $kode_pesanan): View
@@ -165,6 +195,8 @@ class EMenuController extends Controller
             'daftarPesanan' => $daftarPesanan,
             'tahapStatus' => [
                 'menunggu' => 1,
+                'menunggu_verifikasi' => 1,
+                'menunggu_pembayaran' => 1,
                 'diproses' => 2,
                 'siap' => 3,
                 'diantar' => 4,
@@ -172,6 +204,61 @@ class EMenuController extends Controller
                 'dibatalkan' => 0,
             ],
         ]);
+    }
+
+    public function verifikasi(string $kode_pesanan): View
+    {
+        $pesanan = Pesanan::where('kode_pesanan', $kode_pesanan)->firstOrFail();
+
+        return view('emenu.verifikasi', compact('pesanan'));
+    }
+
+    public function bayarTunai(string $kode_pesanan): View
+    {
+        $pesanan = Pesanan::where('kode_pesanan', $kode_pesanan)->firstOrFail();
+
+        return view('emenu.bayar-tunai', compact('pesanan'));
+    }
+
+    public function qrisCallback(Request $request): JsonResponse
+    {
+        // Simulate Midtrans callback for QRIS payment
+        $kodePesanan = $request->input('kode_pesanan') ?? $request->input('order_id');
+        $transactionStatus = $request->input('transaction_status');
+
+        $pesanan = Pesanan::where('kode_pesanan', $kodePesanan)->first();
+
+        if (! $pesanan) {
+            return response()->json(['status' => 'error', 'message' => 'Pesanan tidak ditemukan'], 404);
+        }
+
+        if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
+            return response()->json(['status' => 'success', 'message' => 'Pembayaran sudah diproses']);
+        }
+
+        // Simulate successful payment
+        if (in_array($transactionStatus, ['settlement', 'capture']) || $request->has('test_success')) {
+            DB::transaction(function () use ($pesanan) {
+                $pesanan->update([
+                    'status_pesanan' => Pesanan::STATUS_DIPROSES,
+                    'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+                    'metode_pembayaran' => 'qris',
+                ]);
+
+                // Create payment record
+                \App\Models\Pembayaran::create([
+                    'pesanan_id' => $pesanan->id,
+                    'metode_pembayaran' => 'qris',
+                    'status_pembayaran' => 'lunas',
+                    'jumlah_bayar' => $pesanan->total_bayar,
+                    'kembalian' => 0,
+                ]);
+            });
+
+            return response()->json(['status' => 'success', 'message' => 'Pembayaran QRIS berhasil']);
+        }
+
+        return response()->json(['status' => 'pending', 'message' => 'Menunggu pembayaran']);
     }
 
     public function panggil(string $meja): RedirectResponse

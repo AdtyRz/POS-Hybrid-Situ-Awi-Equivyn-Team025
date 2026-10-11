@@ -49,7 +49,7 @@ class KdsController extends Controller
             })
             ->whereIn('status_item', ['menunggu', 'diproses', 'siap'])
             ->whereHas('pesanan', function ($query) {
-                $query->whereNotIn('status_pesanan', ['selesai', 'dibatalkan']);
+                $query->where('status_pesanan', 'diproses');
             })
             ->orderBy('created_at')
             ->get()
