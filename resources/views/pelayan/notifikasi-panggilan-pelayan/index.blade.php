@@ -255,24 +255,7 @@
                 this.ordersDelivered = {{ $ordersDelivered ?? 18 }};
                 this.avgResponse = '{{ $avgResponse ?? "1.8m" }}';
 
-                this.siapAntar = @json($siapAntar->map(function($p) {
-                    $firstItem = $p->detailPesanan->first();
-                    $isBar = $firstItem && $firstItem->menu->kategori->target_kds === 'bar';
-                    return [
-                        'id' => $p->id,
-                        'kode_pesanan' => $p->kode_pesanan,
-                        'meja' => ['kode_meja' => $p->meja->kode_meja, 'area' => $p->meja->area],
-                        'source' => $isBar ? 'bar' : 'dapur',
-                        'sourceLabel' => $isBar ? 'Bar Counter Beverage' : 'Meja Pass Dapur Utama',
-                        'mainItem' => $firstItem ? $firstItem->jumlah . 'x ' . $firstItem->menu->nama_menu : 'Item',
-                        'sideItems' => $p->detailPesanan->count() > 1 ? '+' . ($p->detailPesanan->count() - 1) . ' item' : '',
-                        'note' => $firstItem && $firstItem->catatan ? 'Catatan: ' . $firstItem->catatan : 'Tanpa catatan',
-                        'icon' => $isBar ? '🍹' : '🐟',
-                        'timeAgo' => $p->waktu_pesan->diffForHumans(),
-                        'actionText' => $isBar ? 'Ambil & Antar ke ' . $p->meja->kode_meja : 'Tandai Selesai Diantarkan',
-                        'delivered' => false
-                    ];
-                }));
+                this.siapAntar = @json($siapAntarFormatted);
 
                 this.saungStatus = @json([
                     ['code' => 'LB-01', 'dotColor' => 'bg-[#213200]', 'status' => 'Makan (4p)', 'statusColor' => 'text-[#213200]', 'borderClass' => 'border border-[#F0EEE7]'],
