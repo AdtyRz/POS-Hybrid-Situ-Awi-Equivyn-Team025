@@ -16,10 +16,10 @@ return new class extends Migration
             $table->foreignId('kasir_id')->nullable()->constrained('users')->nullOnDelete();
             $table->decimal('total_bayar', 12, 2)->default(0);
             $table->enum('status_pesanan', [
-                'menunggu', 'diproses', 'siap', 'diantar', 'selesai', 'dibatalkan',
+                'menunggu', 'menunggu_verifikasi', 'menunggu_pembayaran', 'diproses', 'siap', 'diantar', 'selesai', 'dibatalkan',
             ])->default('menunggu');
             $table->enum('status_pembayaran', [
-                'belum_bayar', 'sudah_bayar',
+                'belum_bayar', 'pending_verifikasi', 'pending_pembayaran', 'sudah_bayar',
             ])->default('belum_bayar');
             $table->enum('metode_pembayaran', ['tunai', 'qris'])->nullable();
             $table->string('catatan', 255)->nullable();
