@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EMenuController;
 use App\Http\Controllers\IotController;
+use App\Http\Controllers\PelayanController;
 use App\Http\Controllers\KasirController;
 use App\Http\Controllers\KdsController;
 use App\Http\Controllers\PembayaranController;
@@ -17,6 +18,9 @@ Route::get('/meja/{meja}/pelacakan', [EMenuController::class, 'pelacakan'])->nam
 Route::post('/meja/{meja}/panggil', [EMenuController::class, 'panggil'])->name('emenu.panggil');
 Route::post('/meja/{meja}/checkout', [EMenuController::class, 'checkout'])->name('emenu.checkout');
 Route::get('/status/{kode_pesanan}', [EMenuController::class, 'status'])->name('emenu.status');
+Route::get('/verifikasi/{kode_pesanan}', [EMenuController::class, 'verifikasi'])->name('emenu.verifikasi');
+Route::get('/bayar-tunai/{kode_pesanan}', [EMenuController::class, 'bayarTunai'])->name('emenu.bayar-tunai');
+Route::post('/qris/callback', [EMenuController::class, 'qrisCallback'])->name('emenu.qris.callback');
 
 Route::get('/admin/analitik-laporan', [AdminController::class, 'dashboard'])->name('admin.analitik-laporan');
 Route::get('/admin/master-meja', [AdminController::class, 'daftarMeja'])->name('admin.master-meja');
@@ -56,6 +60,7 @@ Route::middleware(['auth', 'role:kasir'])->group(function () {
     Route::get('/kasir/dashboard', [PesananController::class, 'index'])->name('kasir.dashboard');
     Route::get('/kasir/pesanan/tambah', [PesananController::class, 'create'])->name('kasir.pesanan.create');
     Route::post('/kasir/pesanan', [PesananController::class, 'store'])->name('kasir.pesanan.store');
+    Route::get('/kasir/pembayaran/cari', [PembayaranController::class, 'cari'])->name('kasir.pembayaran.cari');
     Route::get('/kasir/pembayaran/{kode}', [PembayaranController::class, 'create'])->name('kasir.pembayaran.create');
     Route::post('/kasir/pembayaran', [PembayaranController::class, 'store'])->name('kasir.pembayaran.store');
     Route::get('/kasir/session', [KasirController::class, 'daftarMejaSession'])->name('kasir.session.index');
@@ -78,8 +83,11 @@ Route::middleware(['auth', 'role:barista'])->group(function () {
 });
 
 Route::middleware(['auth', 'role:pelayan'])->group(function () {
-    Route::get('/pelayan/panggilan', [IotController::class, 'antrean'])->name('pelayan.panggilan');
-    Route::patch('/pelayan/panggilan/{id}', [IotController::class, 'ubahStatus'])->name('pelayan.panggilan.ubah');
+    Route::get('/pelayan/notifikasi-panggilan', [PelayanController::class, 'notifikasiPanggilan'])->name('pelayan.notifikasi-panggilan');
+    Route::get('/pelayan/tab-antar', [PelayanController::class, 'tabAntar'])->name('pelayan.tab-antar');
+    Route::get('/pelayan/tab-saung', [PelayanController::class, 'tabSaung'])->name('pelayan.tab-saung');
+    Route::get('/pelayan/tab-shift', [PelayanController::class, 'tabShift'])->name('pelayan.tab-shift');
+    Route::patch('/pelayan/panggilan/{id}', [PelayanController::class, 'ubahStatus'])->name('pelayan.panggilan.ubah');
 });
 
 require __DIR__.'/auth.php';

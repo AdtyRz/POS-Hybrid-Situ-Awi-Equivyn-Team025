@@ -67,8 +67,21 @@ class PesananController extends Controller
                 $pajak = round($subtotal * 0.1);
             }
 
-            $dasar['status'] = $p->status_pembayaran === 'sudah_bayar' ? 'paid' : 'waiting_cash';
+            $statusMap = [
+                Pesanan::STATUS_MENUNGGU => 'waiting_cash',
+                Pesanan::STATUS_MENUNGGU_VERIFIKASI => 'waiting_qris',
+                Pesanan::STATUS_MENUNGGU_PEMBAYARAN => 'waiting_cash',
+                Pesanan::STATUS_DIPROSES => 'preparing',
+                Pesanan::STATUS_SIAP => 'ready',
+                Pesanan::STATUS_DIANTAR => 'delivering',
+                Pesanan::STATUS_SELESAI => 'completed',
+                Pesanan::STATUS_DIBATALKAN => 'cancelled',
+            ];
+
+            $dasar['status'] = $statusMap[$p->status_pesanan] ?? 'empty';
             $dasar['paymentType'] = $p->metode_pembayaran;
+            $dasar['paymentStatus'] = $p->status_pembayaran;
+            $dasar['orderStatus'] = $p->status_pesanan;
             $dasar['orderId'] = $p->kode_pesanan;
             $dasar['kodePesanan'] = $p->kode_pesanan;
             $dasar['customer'] = 'Tamu ' . $m->kode_meja;
@@ -115,7 +128,18 @@ class PesananController extends Controller
             ];
         }
 
-        $pertama = $saungsJson->firstWhere('status', 'waiting_cash') ?? $saungsJson->firstWhere('status', 'paid') ?? $saungsJson->first();
+        $statusPriority = [
+            'waiting_qris' => 1,
+            'waiting_cash' => 2,
+            'preparing' => 3,
+            'ready' => 4,
+            'delivering' => 5,
+            'completed' => 6,
+            'cancelled' => 7,
+            'empty' => 8,
+        ];
+
+        $pertama = $saungsJson->sortBy(fn ($s) => $statusPriority[$s['status']] ?? 99)->first();
         $selectedSaungId = $pertama ? $pertama['id'] : null;
 
         return view('kasir.index', compact('saungsJson', 'iotAlertJson', 'selectedSaungId'));
