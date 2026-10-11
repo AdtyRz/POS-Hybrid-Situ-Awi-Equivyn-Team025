@@ -27,6 +27,28 @@ class PembayaranController extends Controller
         return view('kasir.bayar', compact('pesanan', 'kembalian'));
     }
 
+    public function cari(Request $request): View
+    {
+        $kode = $request->input('kode_pembayaran') ?? $request->input('kode_pesanan');
+
+        $pesanan = Pesanan::with(['detailPesanan.menu', 'meja'])
+            ->where(function ($q) use ($kode) {
+                $q->where('kode_pembayaran', $kode)
+                  ->orWhere('kode_pesanan', $kode);
+            })
+            ->first();
+
+        if (! $pesanan) {
+            return view('kasir.cari', ['error' => 'Pesanan tidak ditemukan', 'kode' => $kode]);
+        }
+
+        if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
+            return view('kasir.cari', ['error' => 'Pesanan ini sudah dibayar', 'pesanan' => $pesanan]);
+        }
+
+        return view('kasir.cari', compact('pesanan'));
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -37,7 +59,7 @@ class PembayaranController extends Controller
 
         $pesanan = Pesanan::where('kode_pesanan', $data['kode_pesanan'])->firstOrFail();
 
-        if ($pesanan->status_pembayaran === 'sudah_bayar') {
+        if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
             return back()->withErrors(['kode_pesanan' => 'Pesanan ini sudah dibayar.']);
         }
 
@@ -56,13 +78,22 @@ class PembayaranController extends Controller
                 'kembalian' => $kembalian,
             ]);
 
-            $pesanan->update([
-                'status_pembayaran' => 'sudah_bayar',
-                'status_pesanan' => 'selesai',
-                'metode_pembayaran' => $data['metode_pembayaran'],
-            ]);
-
-            $pesanan->meja()->update(['status_meja' => 'kosong']);
+            // Determine next status based on payment method
+            if ($data['metode_pembayaran'] === 'tunai') {
+                // Cash: After payment, order goes to kitchen
+                $pesanan->update([
+                    'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+                    'status_pesanan' => Pesanan::STATUS_DIPROSES,
+                    'metode_pembayaran' => 'tunai',
+                ]);
+            } else {
+                // QRIS: Already verified via callback, just mark as paid
+                $pesanan->update([
+                    'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+                    'status_pesanan' => Pesanan::STATUS_DIPROSES,
+                    'metode_pembayaran' => 'qris',
+                ]);
+            }
         });
 
         return redirect()->route('kasir.dashboard');
