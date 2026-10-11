@@ -110,7 +110,43 @@ class PelayanController extends Controller
             ->whereDate('waktu_pesan', today())
             ->count();
 
-        return view('pelayan.tab-antar.index', compact('siapAntar', 'pesananDiantar', 'deliveringRunners', 'selesaiCount'));
+        $siapAntarFormatted = $siapAntar->map(function ($p) {
+            $firstItem = $p->detailPesanan->first();
+            $isBar = $firstItem && $firstItem->menu->kategori->target_kds === 'bar';
+            return [
+                'id' => $p->id,
+                'kode_pesanan' => $p->kode_pesanan,
+                'meja' => ['kode_meja' => $p->meja->kode_meja, 'area' => $p->meja->area],
+                'detailPesanan' => $p->detailPesanan->map(function ($d) {
+                    return [
+                        'id' => $d->id,
+                        'menu' => ['nama_menu' => $d->menu->nama_menu, 'kategori' => ['target_kds' => $d->menu->kategori->target_kds ?? 'dapur']],
+                        'jumlah' => $d->jumlah,
+                        'catatan' => $d->catatan
+                    ];
+                }),
+                'waktu_pesan' => $p->waktu_pesan->toISOString()
+            ];
+        });
+
+        $readyCount = $siapAntar->count();
+        $kitchenCount = $siapAntar->filter(fn($p) => ($p->detailPesanan->first()->menu->kategori->target_kds ?? 'dapur') === 'dapur')->count();
+        $barCount = $siapAntar->filter(fn($p) => ($p->detailPesanan->first()->menu->kategori->target_kds ?? 'dapur') === 'bar')->count();
+        $deliveringCount = $pesananDiantar->count();
+        $finishedCount = Pesanan::where('status_pesanan', 'selesai')->whereDate('waktu_pesan', today())->count();
+
+        return view('pelayan.tab-antar.index', compact(
+            'siapAntar',
+            'pesananDiantar',
+            'deliveringRunners',
+            'selesaiCount',
+            'siapAntarFormatted',
+            'readyCount',
+            'kitchenCount',
+            'barCount',
+            'deliveringCount',
+            'finishedCount'
+        ));
     }
 
     public function tabSaung(): View
