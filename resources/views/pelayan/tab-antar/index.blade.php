@@ -348,20 +348,12 @@
             },
 
             loadData() {
-                this.readyCount = @json($siapAntar->count());
-                this.kitchenCount = @json($siapAntar->filter(fn($p) => $p->detailPesanan->first()->menu->kategori->target_kds ?? 'dapur' === 'dapur')->count());
-                this.barCount = @json($siapAntar->filter(fn($p) => $p->detailPesanan->first()->menu->kategori->target_kds ?? 'dapur' === 'bar')->count());
-                this.deliveringCount = @json($diantar->count());
-                this.finishedCount = @json($selesaiCount);
-                this.siapAntar = @json($siapAntar->map(function($p) {
-                    return [
-                        'id' => $p->id,
-                        'kode_pesanan' => $p->kode_pesanan,
-                        'meja' => ['kode_meja' => $p->meja->kode_meja, 'area' => $p->meja->area],
-                        'detailPesanan' => $p->detailPesanan->map(fn($d) => ['id' => $d->id, 'menu' => ['nama_menu' => $d->menu->nama_menu, 'kategori' => ['target_kds' => $d->menu->kategori->target_kds ?? 'dapur']], 'jumlah' => $d->jumlah, 'catatan' => $d->catatan]),
-                        'waktu_pesan' => $p->waktu_pesan->toISOString()
-                    ];
-                }));
+                this.readyCount = @json($readyCount);
+                this.kitchenCount = @json($kitchenCount);
+                this.barCount = @json($barCount);
+                this.deliveringCount = @json($deliveringCount);
+                this.finishedCount = @json($finishedCount);
+                this.siapAntar = @json($siapAntarFormatted);
                 this.updateCounts();
             },
 
@@ -369,7 +361,7 @@
                 this.readyCount = this.siapAntar.length;
                 this.kitchenCount = this.siapAntar.filter(p => p.detailPesanan[0]?.menu?.kategori?.target_kds === 'dapur').length;
                 this.barCount = this.siapAntar.filter(p => p.detailPesanan[0]?.menu?.kategori?.target_kds === 'bar').length;
-                this.deliveringCount = @json($diantar->count());
+                this.deliveringCount = @json($deliveringCount);
             },
 
             get filteredSiapAntar() {
