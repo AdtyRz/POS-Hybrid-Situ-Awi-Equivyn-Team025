@@ -135,6 +135,8 @@ class PelayanController extends Controller
         $deliveringCount = $pesananDiantar->count();
         $finishedCount = Pesanan::where('status_pesanan', 'selesai')->whereDate('waktu_pesan', today())->count();
 
+        $runnerArea = auth()->user()->area ?? 'Danau';
+
         return view('pelayan.tab-antar.index', compact(
             'siapAntar',
             'pesananDiantar',
@@ -145,7 +147,8 @@ class PelayanController extends Controller
             'kitchenCount',
             'barCount',
             'deliveringCount',
-            'finishedCount'
+            'finishedCount',
+            'runnerArea'
         ));
     }
 
