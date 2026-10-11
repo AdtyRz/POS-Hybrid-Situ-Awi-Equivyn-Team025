@@ -19,12 +19,69 @@ class PelayanController extends Controller
             ->orderBy('waktu_panggil')
             ->get();
 
-        $siapAntar = Pesanan::with('meja')
+        $siapAntar = Pesanan::with(['meja', 'detailPesanan.menu'])
             ->where('status_pesanan', 'siap')
             ->orderBy('waktu_pesan')
             ->get();
 
-        return view('pelayan.notifikasi-panggilan-pelayan.index', compact('panggilan', 'siapAntar'));
+        $callsAnswered = LogPanggilPelayan::where('status_panggilan', 'selesai')
+            ->whereDate('waktu_panggil', today())
+            ->count();
+
+        $ordersDelivered = Pesanan::where('status_pesanan', 'selesai')
+            ->whereDate('waktu_pesan', today())
+            ->count();
+
+        $avgRespon = LogPanggilPelayan::where('status_panggilan', 'selesai')
+            ->whereDate('waktu_panggil', today())
+            ->whereNotNull('waktu_selesai')
+            ->get()
+            ->avg(function ($log) {
+                return $log->waktu_panggil->diffInMinutes($log->waktu_selesai);
+            });
+
+        $currentArea = 'Area Bawah (Situ Danau)';
+
+        $siapAntarFormatted = $siapAntar->map(function ($p) {
+            $firstItem = $p->detailPesanan->first();
+            $isBar = $firstItem && $firstItem->menu->kategori->target_kds === 'bar';
+            return [
+                'id' => $p->id,
+                'kode_pesanan' => $p->kode_pesanan,
+                'meja' => ['kode_meja' => $p->meja->kode_meja, 'area' => $p->meja->area],
+                'source' => $isBar ? 'bar' : 'dapur',
+                'sourceLabel' => $isBar ? 'Bar Counter Beverage' : 'Meja Pass Dapur Utama',
+                'mainItem' => $firstItem ? $firstItem->jumlah . 'x ' . $firstItem->menu->nama_menu : 'Item',
+                'sideItems' => $p->detailPesanan->count() > 1 ? '+' . ($p->detailPesanan->count() - 1) . ' item' : '',
+                'note' => $firstItem && $firstItem->catatan ? 'Catatan: ' . $firstItem->catatan : 'Tanpa catatan',
+                'icon' => $isBar
+                    ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path stroke-linecap="round" d="M9 9h6M9 15h6"/></svg>'
+                    : '<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477 4.5 1.253"/></svg>',
+                'timeAgo' => $p->waktu_pesan->diffForHumans(),
+                'actionText' => $isBar ? 'Ambil & Antar ke ' . $p->meja->kode_meja : 'Tandai Selesai Diantarkan',
+                'delivered' => false
+            ];
+        });
+
+        $saungStatus = [
+            ['code' => 'LB-01', 'dotColor' => 'bg-[#213200]', 'status' => 'Makan (4p)', 'statusColor' => 'text-[#213200]', 'borderClass' => 'border border-[#F0EEE7]'],
+            ['code' => 'LB-02', 'dotColor' => 'bg-[#BA1A1A] animate-ping', 'status' => 'PANGGIL!', 'statusColor' => 'text-[#BA1A1A]', 'borderClass' => 'border-[#BA1A1A]/30 bg-[#FFDAD6]/60'],
+            ['code' => 'LB-03', 'dotColor' => 'bg-[#707971]', 'status' => 'Siap Lap', 'statusColor' => 'text-[#404941]', 'borderClass' => 'border-[#E5E2DB] bg-white/60 opacity-60'],
+            ['code' => 'LB-04', 'dotColor' => 'bg-[#7A5900]', 'status' => 'Masak (14m)', 'statusColor' => 'text-[#7A5900]', 'borderClass' => 'border border-[#F0EEE7]'],
+            ['code' => 'LB-05', 'dotColor' => 'bg-[#0B4D2B]', 'status' => 'Siap Antar', 'statusColor' => 'text-[#00341A]', 'borderClass' => 'border border-[#F0EEE7]'],
+            ['code' => 'LA-01', 'dotColor' => 'bg-[#2E6A45]', 'status' => 'Diantar', 'statusColor' => 'text-[#404941]', 'borderClass' => 'border border-[#F0EEE7]'],
+        ];
+
+        return view('pelayan.notifikasi-panggilan-pelayan.index', compact(
+            'panggilan',
+            'siapAntar',
+            'siapAntarFormatted',
+            'callsAnswered',
+            'ordersDelivered',
+            'avgResponse',
+            'currentArea',
+            'saungStatus'
+        ));
     }
 
     public function tabAntar(): View
