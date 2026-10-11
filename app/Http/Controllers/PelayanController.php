@@ -32,7 +32,7 @@ class PelayanController extends Controller
             ->whereDate('waktu_pesan', today())
             ->count();
 
-        $avgRespon = LogPanggilPelayan::where('status_panggilan', 'selesai')
+        $avgResponse = LogPanggilPelayan::where('status_panggilan', 'selesai')
             ->whereDate('waktu_panggil', today())
             ->whereNotNull('waktu_selesai')
             ->get()
