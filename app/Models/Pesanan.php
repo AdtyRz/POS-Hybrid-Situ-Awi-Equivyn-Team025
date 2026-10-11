@@ -75,6 +75,8 @@ class Pesanan extends Model
     {
         return in_array($this->status_pesanan, [
             self::STATUS_MENUNGGU,
+            self::STATUS_MENUNGGU_VERIFIKASI,
+            self::STATUS_MENUNGGU_PEMBAYARAN,
             self::STATUS_DIPROSES,
             self::STATUS_SIAP,
             self::STATUS_DIANTAR,
