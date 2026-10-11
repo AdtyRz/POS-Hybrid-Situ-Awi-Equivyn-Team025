@@ -19,6 +19,7 @@ return new class extends Migration
             ]);
             $table->string('no_telp', 20)->nullable();
             $table->boolean('is_aktif')->default(true);
+            $table->string('area', 50)->nullable()->after('no_telp');
             $table->rememberToken();
             $table->timestamps();
         });
