@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EMenuController;
 use App\Http\Controllers\IotController;
+use App\Http\Controllers\PelayanController;
 use App\Http\Controllers\KasirController;
 use App\Http\Controllers\KdsController;
 use App\Http\Controllers\PembayaranController;
@@ -78,25 +79,11 @@ Route::middleware(['auth', 'role:barista'])->group(function () {
 });
 
 Route::middleware(['auth', 'role:pelayan'])->group(function () {
-    Route::get('/pelayan/notifikasi-panggilan', [IotController::class, 'antrean'])->name('pelayan.panggilan');
-    Route::patch('/pelayan/panggilan/{id}', [IotController::class, 'ubahStatus'])->name('pelayan.panggilan.ubah');
+    Route::get('/pelayan/notifikasi-panggilan', [PelayanController::class, 'notifikasiPanggilan'])->name('pelayan.notifikasi-panggilan');
+    Route::get('/pelayan/tab-antar', [PelayanController::class, 'tabAntar'])->name('pelayan.tab-antar');
+    Route::get('/pelayan/tab-saung', [PelayanController::class, 'tabSaung'])->name('pelayan.tab-saung');
+    Route::get('/pelayan/tab-shift', [PelayanController::class, 'tabShift'])->name('pelayan.tab-shift');
+    Route::patch('/pelayan/panggilan/{id}', [PelayanController::class, 'ubahStatus'])->name('pelayan.panggilan.ubah');
 });
 
 require __DIR__.'/auth.php';
-Route::middleware(['auth', 'role:pelayan'])->group(function () {
-    Route::get('/pelayan/tab-antar', function () {
-        return view('pelayan.tab-antar.index');
-    })->name('pelayan.tab-antar');
-
-    Route::get('/pelayan/tab-saung', function () {
-        return view('pelayan.tab-saung.index');
-    })->name('pelayan.tab-saung');
-
-    Route::get('/pelayan/tab-shift', function () {
-        return view('pelayan.tab-shift.index');
-    })->name('pelayan.tab-shift');
-
-    Route::get('/pelayan/notifikasi-panggilan', function () {
-        return view('pelayan.notifikasi-panggilan-pelayan.index');
-    })->name('pelayan.notifikasi-panggilan');
-});
