@@ -257,14 +257,7 @@
 
                 this.siapAntar = @json($siapAntarFormatted);
 
-                this.saungStatus = @json([
-                    ['code' => 'LB-01', 'dotColor' => 'bg-[#213200]', 'status' => 'Makan (4p)', 'statusColor' => 'text-[#213200]', 'borderClass' => 'border border-[#F0EEE7]'],
-                    ['code' => 'LB-02', 'dotColor' => 'bg-[#BA1A1A] animate-ping', 'status' => 'PANGGIL!', 'statusColor' => 'text-[#BA1A1A]', 'borderClass' => 'border-[#BA1A1A]/30 bg-[#FFDAD6]/60'],
-                    ['code' => 'LB-03', 'dotColor' => 'bg-[#707971]', 'status' => 'Siap Lap', 'statusColor' => 'text-[#404941]', 'borderClass' => 'border-[#E5E2DB] bg-white/60 opacity-60'],
-                    ['code' => 'LB-04', 'dotColor' => 'bg-[#7A5900]', 'status' => 'Masak (14m)', 'statusColor' => 'text-[#7A5900]', 'borderClass' => 'border border-[#F0EEE7]'],
-                    ['code' => 'LB-05', 'dotColor' => 'bg-[#0B4D2B]', 'status' => 'Siap Antar', 'statusColor' => 'text-[#00341A]', 'borderClass' => 'border border-[#F0EEE7]'],
-                    ['code' => 'LA-01', 'dotColor' => 'bg-[#2E6A45]', 'status' => 'Diantar', 'statusColor' => 'text-[#404941]', 'borderClass' => 'border border-[#F0EEE7]'],
-                ]);
+                this.saungStatus = @json($saungStatus);
             },
 
             formatTime(seconds) {
