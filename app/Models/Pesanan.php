@@ -14,11 +14,18 @@ class Pesanan extends Model
     protected $guarded = ['id'];
 
     public const STATUS_MENUNGGU = 'menunggu';
+    public const STATUS_MENUNGGU_VERIFIKASI = 'menunggu_verifikasi';
+    public const STATUS_MENUNGGU_PEMBAYARAN = 'menunggu_pembayaran';
     public const STATUS_DIPROSES = 'diproses';
     public const STATUS_SIAP = 'siap';
     public const STATUS_DIANTAR = 'diantar';
     public const STATUS_SELESAI = 'selesai';
     public const STATUS_DIBATALKAN = 'dibatalkan';
+
+    public const PAYMENT_BELUM_BAYAR = 'belum_bayar';
+    public const PAYMENT_PENDING_VERIFIKASI = 'pending_verifikasi';
+    public const PAYMENT_PENDING_PEMBAYARAN = 'pending_pembayaran';
+    public const PAYMENT_SUDAH_BAYAR = 'sudah_bayar';
 
     protected function casts(): array
     {
