@@ -86,7 +86,7 @@ class PelayanController extends Controller
 
     public function tabAntar(): View
     {
-        $pesananSiap = Pesanan::with(['meja', 'detailPesanan.menu'])
+        $siapAntar = Pesanan::with(['meja', 'detailPesanan.menu'])
             ->where('status_pesanan', 'siap')
             ->orderBy('waktu_pesan')
             ->get();
@@ -96,7 +96,21 @@ class PelayanController extends Controller
             ->orderBy('waktu_pesan')
             ->get();
 
-        return view('pelayan.tab-antar.index', compact('pesananSiap', 'pesananDiantar'));
+        $deliveringRunners = $pesananDiantar->map(function ($p) {
+            return [
+                'id' => $p->id,
+                'name' => 'Runner ' . substr($p->meja->kode_meja, 0, 2),
+                'initials' => strtoupper(substr($p->meja->kode_meja, 0, 2)),
+                'currentTask' => $p->meja->kode_meja . ' (' . $p->detailPesanan->sum('jumlah') . 'x ' . $p->detailPesanan->first()->menu->nama_menu . ')',
+                'elapsedTime' => $p->waktu_pesan->diffForHumans()
+            ];
+        });
+
+        $selesaiCount = Pesanan::where('status_pesanan', 'selesai')
+            ->whereDate('waktu_pesan', today())
+            ->count();
+
+        return view('pelayan.tab-antar.index', compact('siapAntar', 'pesananDiantar', 'deliveringRunners', 'selesaiCount'));
     }
 
     public function tabSaung(): View

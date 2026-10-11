@@ -344,15 +344,7 @@
                     { title: 'Jalur Dermaga Kayu', desc: 'Turun ke arah tepi danau bawah (arah barat).' },
                     { title: 'Saung Tujuan', desc: 'Saung nomor 2 dari dermaga utama, menghadap air terjun mini.' }
                 ];
-                this.deliveringRunners = @json($diantar->map(function($p) {
-                    return [
-                        'id' => $p->id,
-                        'name' => 'Runner ' . substr($p->meja->kode_meja, 0, 2),
-                        'initials' => strtoupper(substr($p->meja->kode_meja, 0, 2)),
-                        'currentTask' => $p->meja->kode_meja . ' (' . $p->detailPesanan->sum('jumlah') . 'x ' . $p->detailPesanan->first()->menu->nama_menu . ')',
-                        'elapsedTime' => $p->waktu_pesan->diffForHumans()
-                    ];
-                }));
+                this.deliveringRunners = @json($deliveringRunners);
             },
 
             loadData() {
