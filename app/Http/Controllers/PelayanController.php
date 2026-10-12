@@ -210,7 +210,50 @@ class PelayanController extends Controller
             ->orderBy('waktu_pesan')
             ->get();
 
-        return view('pelayan.tab-saung.index', compact('meja', 'panggilanAktif', 'pesananAktif'));
+        // Cluster meja by area prefix (LB, LA, etc)
+        $clusters = $meja->groupBy(function ($m) {
+            return substr($m->kode_meja, 0, 2);
+        })->map(function ($group, $prefix) {
+            $areaName = match($prefix) {
+                'LB' => 'Lesehan Bawah',
+                'LA' => 'Lesehan Atas',
+                'KA' => 'Kursi Atas',
+                default => $prefix
+            };
+            return [
+                'id' => $prefix,
+                'name' => $areaName . ' (' . $prefix . ')',
+                'meja' => $group->map(function ($m) use ($panggilanAktif) {
+                    $call = $panggilanAktif->where('meja_id', $m->id)->first();
+                    return [
+                        'id' => $m->id,
+                        'code' => $m->kode_meja,
+                        'area' => $m->area,
+                        'kapasitas' => $m->kapasitas,
+                        'status' => $m->status_meja,
+                        'panggilan' => $call ? ['status' => $call->status_panggilan, 'waktu' => $call->waktu_panggil->format('H:i:s')] : null,
+                    ];
+                })->values(),
+            ];
+        })->values();
+
+        $totalMeja = $meja->count();
+        $terisiCount = $meja->where('status_meja', 'terisi')->count();
+        $tersediaCount = $meja->where('status_meja', 'kosong')->count();
+        $panggilanCount = $panggilanAktif->count();
+        $currentArea = $this->getPelayanArea() ?? 'Tepi Danau (LB-01 – LB-05)';
+
+        return view('pelayan.tab-saung.index', compact(
+            'meja',
+            'panggilanAktif',
+            'pesananAktif',
+            'clusters',
+            'totalMeja',
+            'terisiCount',
+            'tersediaCount',
+            'panggilanCount',
+            'currentArea'
+        ));
     }
 
     public function tabShift(): View
