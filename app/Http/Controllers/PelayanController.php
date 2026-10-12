@@ -210,7 +210,7 @@ class PelayanController extends Controller
             ->orderBy('waktu_pesan')
             ->get();
 
-        // Cluster meja by area prefix (LB, LA, etc)
+        // Build clusters matching frontend Alpine.js expected format
         $clusters = $meja->groupBy(function ($m) {
             return substr($m->kode_meja, 0, 2);
         })->map(function ($group, $prefix) {
@@ -221,17 +221,76 @@ class PelayanController extends Controller
                 default => $prefix
             };
             return [
-                'id' => $prefix,
+                'key' => $prefix,
                 'name' => $areaName . ' (' . $prefix . ')',
-                'meja' => $group->map(function ($m) use ($panggilanAktif) {
+                'meja' => $group->map(function ($m) use ($panggilanAktif, $pesananAktif) {
                     $call = $panggilanAktif->where('meja_id', $m->id)->first();
+                    $isCalling = (bool) $call;
+                    
+                    // Find pesanan for this meja
+                    $pesananMeja = $pesananAktif->where('meja_id', $m->id)->first();
+                    $hasPesanan = (bool) $pesananMeja;
+                    
+                    // Determine status and color
+                    $status = 'tersedia';
+                    $statusColor = 'bg-[#213200]';
+                    $statusLabel = 'Tersedia';
+                    $statusColorClass = 'text-[#213200]';
+                    $billInfo = 'Rp0';
+                    $requestNote = null;
+                    $timeAgo = '';
+                    $statusForTemplate = 'tersedia';
+                    
+                    if ($isCalling) {
+                        $status = 'panggilan';
+                        $statusColor = 'bg-[#BA1A1A]';
+                        $statusLabel = 'PANGGIL!';
+                        $statusColorClass = 'text-[#BA1A1A]';
+                        $statusForTemplate = 'panggilan';
+                        $timeAgo = $call->waktu_panggil->diffForHumans();
+                        $requestNote = 'Tamu butuh bantuan';
+                    } elseif ($hasPesanan) {
+                        $pesananStatus = $pesananMeja->status_pesanan;
+                        if (in_array($pesananStatus, ['siap', 'diantar'])) {
+                            $status = 'siap_antar';
+                            $statusColor = 'bg-[#0B4D2B]';
+                            $statusLabel = 'Siap Antar';
+                            $statusColorClass = 'text-[#0B4D2B]';
+                            $statusForTemplate = 'siap_antar';
+                        } elseif ($pesananStatus === 'diproses') {
+                            $status = 'masak';
+                            $statusColor = 'bg-[#7A5900]';
+                            $statusLabel = 'Masak (' . $pesananMeja->waktu_pesan->diffForHumans() . ')';
+                            $statusColorClass = 'text-[#7A5900]';
+                            $statusForTemplate = 'masak';
+                        } elseif ($pesananStatus === 'menunggu') {
+                            $status = 'makan';
+                            $statusColor = 'bg-[#213200]';
+                            $statusLabel = 'Makan';
+                            $statusColorClass = 'text-[#213200]';
+                            $statusForTemplate = 'makan';
+                        }
+                        $timeAgo = $pesananMeja->waktu_pesan->diffForHumans();
+                        $billInfo = 'Rp' . number_format($pesananMeja->total_bayar, 0, ',', '.');
+                    }
+                    
                     return [
                         'id' => $m->id,
-                        'code' => $m->kode_meja,
-                        'area' => $m->area,
+                        'key' => $m->id,
+                        'number' => (int) filter_var($m->kode_meja, FILTER_SANITIZE_NUMBER_INT),
+                        'name' => $m->kode_meja,
+                        'isCalling' => $isCalling,
+                        'statusColor' => $statusColor,
+                        'status' => $statusForTemplate,
+                        'statusLabel' => $statusLabel,
+                        'billInfo' => $billInfo,
+                        'timeAgo' => $timeAgo,
+                        'requestNote' => $requestNote,
+                        'status' => $statusForTemplate,
+                        'statusColorClass' => $statusColorClass,
                         'kapasitas' => $m->kapasitas,
-                        'status' => $m->status_meja,
-                        'panggilan' => $call ? ['status' => $call->status_panggilan, 'waktu' => $call->waktu_panggil->format('H:i:s')] : null,
+                        'area' => $m->area,
+                        'kode_meja' => $m->kode_meja,
                     ];
                 })->values(),
             ];
