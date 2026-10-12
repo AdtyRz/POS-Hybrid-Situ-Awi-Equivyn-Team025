@@ -160,6 +160,16 @@ class EMenuController extends Controller
         }
     }
 
+    /**
+     * Tampilkan form checkout (GET).
+     * Route: GET /meja/{meja}/checkout
+     */
+    public function checkoutForm(string $meja): View
+    {
+        $mejaMakan = $this->cariMeja($meja);
+        return view('emenu.checkout', ['meja' => $mejaMakan]);
+    }
+
     public function status(string $kode_pesanan): View
     {
         $pesanan = Pesanan::with(['detailPesanan.menu', 'meja'])
