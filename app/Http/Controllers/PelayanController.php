@@ -44,7 +44,7 @@ class PelayanController extends Controller
             ->get();
 
         $siapAntar = $this->filterByArea(
-            Pesanan::with(['meja', 'detailPesanan.menu'])
+            Pesanan::with(['meja', 'detailPesanan.menu.kategori'])
         )->where('status_pesanan', 'siap')
             ->orderBy('waktu_pesan')
             ->get();
@@ -124,13 +124,13 @@ class PelayanController extends Controller
     public function tabAntar(): View
     {
         $siapAntar = $this->filterByArea(
-            Pesanan::with(['meja', 'detailPesanan.menu'])
+            Pesanan::with(['meja', 'detailPesanan.menu.kategori'])
         )->where('status_pesanan', 'siap')
             ->orderBy('waktu_pesan')
             ->get();
 
         $pesananDiantar = $this->filterByArea(
-            Pesanan::with(['meja', 'detailPesanan.menu'])
+            Pesanan::with(['meja', 'detailPesanan.menu.kategori'])
         )->where('status_pesanan', 'diantar')
             ->orderBy('waktu_pesan')
             ->get();
@@ -205,24 +205,31 @@ class PelayanController extends Controller
             ->get();
 
         $pesananAktif = $this->filterByArea(
-            Pesanan::with(['meja', 'detailPesanan'])
+            Pesanan::with(['meja', 'detailPesanan.menu.kategori'])
         )->whereIn('status_pesanan', ['menunggu', 'diproses', 'siap', 'diantar'])
             ->orderBy('waktu_pesan')
             ->get();
 
         // Build clusters matching frontend Alpine.js expected format
         $clusters = $meja->groupBy(function ($m) {
-            return substr($m->kode_meja, 0, 2);
+            return strtolower(substr($m->kode_meja, 0, 2)); // lowercase key: 'lb', 'la', 'ka'
         })->map(function ($group, $prefix) {
             $areaName = match($prefix) {
-                'LB' => 'Lesehan Bawah',
-                'LA' => 'Lesehan Atas',
-                'KA' => 'Kursi Atas',
+                'lb' => 'Lesehan Bawah',
+                'la' => 'Lesehan Atas',
+                'ka' => 'Kursi Atas',
                 default => $prefix
             };
             return [
-                'key' => $prefix,
-                'name' => $areaName . ' (' . $prefix . ')',
+                'key'   => $prefix,              // lowercase: 'lb', 'la', 'ka' (match Alpine filter)
+                'name'  => $areaName,            // clean name tanpa prefix
+                'count' => $group->count(),      // untuk x-text="cluster.count + ' Saung'"
+                'color' => match($prefix) {      // untuk :class="cluster.color"
+                    'lb' => 'bg-[#213200]',
+                    'la' => 'bg-[#0B4D2B]',
+                    'ka' => 'bg-[#7A5900]',
+                    default => 'bg-[#404941]',
+                },
                 'meja' => $group->map(function ($m) use ($panggilanAktif, $pesananAktif) {
                     $call = $panggilanAktif->where('meja_id', $m->id)->first();
                     $isCalling = (bool) $call;
@@ -271,7 +278,8 @@ class PelayanController extends Controller
                             $statusForTemplate = 'makan';
                         }
                         $timeAgo = $pesananMeja->waktu_pesan->diffForHumans();
-                        $billInfo = 'Rp' . number_format($pesananMeja->total_bayar, 0, ',', '.');
+                        // Fix null total_bayar crash
+                        $billInfo = 'Rp' . number_format($pesananMeja->total_bayar ?? 0, 0, ',', '.');
                     }
                     
                     return [
@@ -281,12 +289,11 @@ class PelayanController extends Controller
                         'name' => $m->kode_meja,
                         'isCalling' => $isCalling,
                         'statusColor' => $statusColor,
-                        'status' => $statusForTemplate,
+                        'status' => $statusForTemplate,  // HAPUS DUPLIKAT 'status' key
                         'statusLabel' => $statusLabel,
                         'billInfo' => $billInfo,
                         'timeAgo' => $timeAgo,
                         'requestNote' => $requestNote,
-                        'status' => $statusForTemplate,
                         'statusColorClass' => $statusColorClass,
                         'kapasitas' => $m->kapasitas,
                         'area' => $m->area,
