@@ -72,7 +72,14 @@ display: ['"Playfair Display"', 'Georgia', 'serif']
 </div>
 </div>
 
-<p class="text-center text-stone-400 text-xs mt-8">© 2026 Saung Situ Awi Ciwidey</p>
+        <div class="space-y-3 mt-4">
+            <a href="{{ route('emenu.status', $pesanan->kode_pesanan) }}"
+               class="block w-full text-center bg-forest-900 text-white font-extrabold rounded-2xl py-4 shadow-sm hover:bg-forest-600 transition active:scale-95">
+                🔍 Lihat Status Pesanan
+            </a>
+        </div>
+
+        <p class="text-center text-stone-400 text-xs mt-6">© 2026 Saung Situ Awi Ciwidey</p>
 </div>
 </div>
 
@@ -83,7 +90,7 @@ const orderCode = "{{ $pesanan->kode_pesanan }}";
 
 function checkPaymentStatus() {
 checkCount++;
-fetch(`/emenu/status/${orderCode}`)
+fetch(`/status/${orderCode}`)
 .then(response => response.text())
 .then(html => {
 const parser = new DOMParser();

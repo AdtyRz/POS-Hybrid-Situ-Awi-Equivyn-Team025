@@ -8,7 +8,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700,800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -21,7 +21,7 @@
         [x-cloak] { display: none !important; }
         
         body {
-            background-color: #EDE8DE;
+            background-color: #ECE7DC;
             color: #1C1C18;
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             -webkit-font-smoothing: antialiased;
@@ -62,81 +62,95 @@
 </head>
 <body class="min-h-screen flex justify-center bg-[#ECE7DC] sm:py-6">
 
-    <div class="w-full max-w-[420px] min-h-screen bg-[#FCF9F2] shadow-2xl relative flex flex-col justify-between sm:rounded-3xl sm:border sm:border-[#E5E2DB] overflow-x-hidden">
+    <div class="w-full max-w-[390px] sm:max-w-[420px] min-h-screen bg-[#FCF9F2] shadow-2xl relative flex flex-col justify-between sm:rounded-3xl sm:border sm:border-[#E5E2DB] overflow-x-hidden">
 
-        <main class="flex-1 pb-20">
+        <main class="flex-1 pb-16">
             @yield('content')
         </main>
 
-        <nav class="sticky bottom-0 left-0 right-0 z-50 h-16 bg-[#FCF9F2]/90 backdrop-blur-md border-t border-[#E5E2DB]/70 shadow-[0_-4px_20px_rgba(43,42,38,0.06)] flex items-center justify-around px-2">
+        <!-- Bottom Navigation Bar (Persistent across 4 tabs) -->
+        <nav class="sticky bottom-0 left-0 right-0 z-50 h-16 {{ request()->routeIs('pelayan.tab-antar') || request()->routeIs('pelayan.tab-saung') || request()->routeIs('pelayan.tab-shift') ? 'bg-white/90 shadow-[0_-4px_20px_rgba(43,42,38,0.05)]' : 'bg-[#FCF9F2]/90 shadow-[0_-2px_16px_rgba(43,42,38,0.05)]' }} backdrop-blur-md border-t border-[#E5E2DB]/70 flex items-center justify-around px-2">
 
+            <!-- Link 1: Panggilan -->
             <a href="{{ route('pelayan.notifikasi-panggilan') }}" 
                class="flex flex-col items-center justify-center w-16 h-12 relative transition-all active:scale-95 group">
                 <div class="relative w-6 h-6 flex items-center justify-center">
-                    <svg class="w-5 h-5 {{ request()->routeIs('pelayan.notifikasi-panggilan') || request()->routeIs('pelayan.panggilan') ? 'text-[#0B4D2B]' : 'text-[#404941] group-hover:text-[#1C1C18]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <svg class="w-6 h-6 {{ request()->routeIs('pelayan.notifikasi-panggilan') || request()->routeIs('pelayan.panggilan') ? 'text-[#0B4D2B]' : 'text-[#404941]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                     </svg>
-                    <span class="absolute -top-1 -right-2 px-1 min-w-[15px] h-3.5 bg-[#BA1A1A] text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-white leading-none" x-text="panggilanCount">
-                        0
-                    </span>
+                    @if(request()->routeIs('pelayan.notifikasi-panggilan') || request()->routeIs('pelayan.panggilan'))
+                        <!-- Page 07: Badge count '3' -->
+                        <span class="absolute -top-1 -right-2 px-1 min-w-[13.5px] h-[12px] bg-[#BA1A1A] text-white text-[9px] font-normal rounded-full flex items-center justify-center leading-none">
+                            3
+                        </span>
+                    @else
+                        <!-- Inactive dot with white outline -->
+                        <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#BA1A1A] rounded-full shadow-[0_0_0_2px_#FFFFFF]"></span>
+                    @endif
                 </div>
-                <span class="text-[10px] mt-0.5 tracking-tight {{ request()->routeIs('pelayan.notifikasi-panggilan') || request()->routeIs('pelayan.panggilan') ? 'font-bold text-[#0B4D2B]' : 'font-medium text-[#404941]' }}">
+                <span class="text-[10px] mt-0.5 tracking-[-0.25px] {{ request()->routeIs('pelayan.notifikasi-panggilan') || request()->routeIs('pelayan.panggilan') ? 'font-bold text-[#0B4D2B]' : 'font-bold text-[#404941]' }}">
                     Panggilan
                 </span>
-                @if(request()->routeIs('pelayan.notifikasi-panggilan') || request()->routeIs('pelayan.panggilan'))
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#0B4D2B] absolute bottom-0.5"></span>
-                @endif
             </a>
 
+            <!-- Link 2: Antar -->
             <a href="{{ route('pelayan.tab-antar') }}" 
                class="flex flex-col items-center justify-center w-16 h-12 relative transition-all active:scale-95 group">
                 <div class="relative w-6 h-6 flex items-center justify-center">
-                    <svg class="w-5 h-5 {{ request()->routeIs('pelayan.tab-antar') ? 'text-[#00341A]' : 'text-[#404941] group-hover:text-[#1C1C18]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <svg class="w-6 h-6 {{ request()->routeIs('pelayan.tab-antar') ? 'text-[#00341A]' : 'text-[#404941]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477 4.5 1.253" />
                     </svg>
-                    <span class="absolute -top-1 -right-2 px-1 min-w-[15px] h-3.5 bg-[#7A5900] text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-white leading-none" x-text="siapCount">
-                        0
-                    </span>
+                    @if(request()->routeIs('pelayan.notifikasi-panggilan') || request()->routeIs('pelayan.panggilan'))
+                        <!-- Page 07: Badge count '5' in gold/amber -->
+                        <span class="absolute -top-1 -right-2 px-1 min-w-[13.5px] h-[12px] bg-[#7A5900] text-white text-[9px] font-normal rounded-full flex items-center justify-center leading-none">
+                            5
+                        </span>
+                    @endif
                 </div>
-                <span class="text-[10px] mt-0.5 tracking-tight {{ request()->routeIs('pelayan.tab-antar') ? 'font-bold text-[#00341A]' : 'font-medium text-[#404941]' }}">
+                <span class="text-[10px] mt-0.5 tracking-[-0.25px] {{ request()->routeIs('pelayan.tab-antar') ? 'font-bold text-[#00341A]' : 'font-bold text-[#404941]' }}">
                     Antar
                 </span>
                 @if(request()->routeIs('pelayan.tab-antar'))
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#FECE66] shadow-xs absolute bottom-0.5"></span>
+                    <!-- Page 07B: 2 yellow stacked dots indicator below 'Antar' -->
+                    <div class="flex flex-col items-center gap-0.5 mt-0.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#FECE66] shadow-[0_1px_2px_rgba(0,0,0,0.05)]"></span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#FECE66] shadow-[0_1px_2px_rgba(0,0,0,0.05)]"></span>
+                    </div>
                 @endif
             </a>
 
+            <!-- Link 3: Saung -->
             <a href="{{ route('pelayan.tab-saung') }}" 
                class="flex flex-col items-center justify-center w-16 h-12 relative transition-all active:scale-95 group">
                 <div class="relative w-6 h-6 flex items-center justify-center">
-                    <svg class="w-5 h-5 {{ request()->routeIs('pelayan.tab-saung') ? 'text-[#0B4D2B]' : 'text-[#404941] group-hover:text-[#1C1C18]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0v-4m14 4v-4M4 6h16a1 1 0 011 1v1a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1z" />
+                    <svg class="w-6 h-6 {{ request()->routeIs('pelayan.tab-saung') ? 'text-[#0B4D2B]' : 'text-[#404941]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h3a1 1 0 001-1V10" />
                     </svg>
-                    <span class="absolute -top-1 -right-2 px-1 min-w-[15px] h-3.5 bg-[#BA1A1A] text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-white leading-none" x-text="panggilanSaungCount">
-                        0
-                    </span>
                 </div>
-                <span class="text-[10px] mt-0.5 tracking-tight {{ request()->routeIs('pelayan.tab-saung') ? 'font-bold text-[#0B4D2B]' : 'font-medium text-[#404941]' }}">
+                <span class="text-[10px] mt-0.5 tracking-[-0.25px] {{ request()->routeIs('pelayan.tab-saung') ? 'font-bold text-[#0B4D2B]' : 'font-bold text-[#404941]' }}">
                     Saung
                 </span>
                 @if(request()->routeIs('pelayan.tab-saung'))
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#0B4D2B] absolute bottom-0.5"></span>
+                    <!-- Page 07C: Green dot indicator below Saung -->
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#0B4D2B] mt-0.5"></span>
                 @endif
             </a>
 
+            <!-- Link 4: Shift -->
             <a href="{{ route('pelayan.tab-shift') }}" 
                class="flex flex-col items-center justify-center w-16 h-12 relative transition-all active:scale-95 group">
                 <div class="relative w-6 h-6 flex items-center justify-center">
-                    <svg class="w-5 h-5 {{ request()->routeIs('pelayan.tab-shift') ? 'text-[#00341A]' : 'text-[#404941] group-hover:text-[#1C1C18]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    <svg class="w-6 h-6 {{ request()->routeIs('pelayan.tab-shift') ? 'text-[#0B4D2B]' : 'text-[#404941]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
                     </svg>
+                    @if(request()->routeIs('pelayan.tab-shift'))
+                        <!-- Page 07D: Yellow dot badge at top-right of shift icon -->
+                        <span class="absolute -top-1 -right-1 w-2 h-2 bg-[#FECE66] rounded-full shadow-[0_0_0_2px_#FFFFFF]"></span>
+                    @endif
                 </div>
-                <span class="text-[10px] mt-0.5 tracking-tight {{ request()->routeIs('pelayan.tab-shift') ? 'font-bold text-[#00341A]' : 'font-medium text-[#404941]' }}">
+                <span class="text-[10px] mt-0.5 tracking-[-0.25px] {{ request()->routeIs('pelayan.tab-shift') ? 'font-bold text-[#00341A]' : 'font-bold text-[#404941]' }}">
                     Shift
                 </span>
-                @if(request()->routeIs('pelayan.tab-shift'))
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#00341A] absolute bottom-0.5"></span>
-                @endif
             </a>
 
         </nav>

@@ -54,16 +54,14 @@
         </div>
 
         <div class="flex items-center gap-2 shrink-0">
-            @if (!empty($punyaRiwayat))
             <a href="{{ route('emenu.pelacakan', $meja->id) }}"
                class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-gold-500 hover:bg-gold-400 text-forest-900 text-[10px] sm:text-xs font-bold transition active:scale-95 whitespace-nowrap"
-               title="Pelacakan & Status Pesanan">
+               title="Lihat Status Pesanan">
                 <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zm10 0a2 2 0 11-4 0 2 2 0 014 0zM13 17V6a1 1 0 00-1-1H4m9 12h6V9a1 1 0 00-1-1h-4"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                 </svg>
-                <span>Pelacakan &amp; Status Pesanan</span>
+                <span>Lihat Status Pesanan</span>
             </a>
-            @endif
             <button type="button" 
                     @click="checkIotStatus()" 
                     class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-forest-900/80 hover:bg-forest-900 text-gold-300 hover:text-gold-200 border border-gold-500/30 text-xs font-medium transition active:scale-95 shrink-0">

@@ -6,6 +6,7 @@ use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
 use App\Models\Pesanan;
 use App\Models\DetailPesanan;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -39,7 +40,7 @@ class PelayanController extends Controller
     {
         $panggilan = $this->filterByArea(
             LogPanggilPelayan::with('meja')
-        )->whereIn('status_panggilan', ['menunggu', 'ditangani'])
+        )->where('status_panggilan', 'menunggu')
             ->orderBy('waktu_panggil')
             ->get();
 
@@ -165,7 +166,8 @@ class PelayanController extends Controller
                         'catatan' => $d->catatan
                     ];
                 }),
-                'waktu_pesan' => $p->waktu_pesan->toISOString()
+                'waktu_pesan' => $p->waktu_pesan->toISOString(),
+                'timeAgo' => $p->waktu_pesan->diffForHumans(),
             ];
         });
 
@@ -200,10 +202,13 @@ class PelayanController extends Controller
 
         $panggilanAktif = $this->filterByArea(
             LogPanggilPelayan::with('meja')
-        )->whereIn('status_panggilan', ['menunggu', 'ditangani'])
+        )->where('status_panggilan', 'menunggu')
             ->orderBy('waktu_panggil')
             ->get();
 
+        // Bug 1 FIX: Tambahkan eager-load 'detailPesanan.menu.kategori'
+        // Sebelumnya hanya with(['meja', 'detailPesanan']) — tanpa menu & kategori,
+        // sehingga $pesananMeja->total_bayar dan relasi menu crash saat diakses di closure.
         $pesananAktif = $this->filterByArea(
             Pesanan::with(['meja', 'detailPesanan.menu.kategori'])
         )->whereIn('status_pesanan', ['menunggu', 'diproses', 'siap', 'diantar'])
@@ -220,68 +225,73 @@ class PelayanController extends Controller
                 'ka' => 'Kursi Atas',
                 default => $prefix
             };
+
+            // Bug 2 FIX: Hitung count panggilan di cluster ini untuk key 'count'
+            // yang dibutuhkan Alpine (x-text="cluster.count + ' Saung'")
+            $clusterPanggilanCount = $group->filter(function ($m) use ($panggilanAktif) {
+                return $panggilanAktif->where('meja_id', $m->id)->isNotEmpty();
+            })->count();
+
             return [
-                'key'   => $prefix,              // lowercase: 'lb', 'la', 'ka' (match Alpine filter)
-                'name'  => $areaName,            // clean name tanpa prefix
-                'count' => $group->count(),      // untuk x-text="cluster.count + ' Saung'"
-                'color' => match($prefix) {      // untuk :class="cluster.color"
+                'key'   => strtolower($prefix),
+                'name'  => $areaName,
+                'count' => $group->count(),
+                'color' => match(strtolower($prefix)) {
                     'lb' => 'bg-[#213200]',
                     'la' => 'bg-[#0B4D2B]',
                     'ka' => 'bg-[#7A5900]',
                     default => 'bg-[#404941]',
                 },
-                'meja' => $group->map(function ($m) use ($panggilanAktif, $pesananAktif) {
-                    $call = $panggilanAktif->where('meja_id', $m->id)->first();
-                    $isCalling = (bool) $call;
-                    
-                    // Find pesanan for this meja
+                'meja'  => $group->map(function ($m) use ($panggilanAktif, $pesananAktif) {
+                    $call       = $panggilanAktif->where('meja_id', $m->id)->first();
+                    $isCalling  = (bool) $call;
                     $pesananMeja = $pesananAktif->where('meja_id', $m->id)->first();
-                    $hasPesanan = (bool) $pesananMeja;
-                    
-                    // Determine status and color
-                    $status = 'tersedia';
-                    $statusColor = 'bg-[#213200]';
-                    $statusLabel = 'Tersedia';
+                    $hasPesanan  = (bool) $pesananMeja;
+                'meja'  => $group->map(function ($m) use ($panggilanAktif, $pesananAktif) {
+                    $call       = $panggilanAktif->where('meja_id', $m->id)->first();
+                    $isCalling  = (bool) $call;
+
+>>>>>>> d96fbc80841249eff58e27d1a9c5fe09441d87ae
+                    $pesananMeja = $pesananAktif->where('meja_id', $m->id)->first();
+                    $hasPesanan  = (bool) $pesananMeja;
+
+                    $statusColor      = 'bg-[#213200]';
+                    $statusLabel      = 'Tersedia';
                     $statusColorClass = 'text-[#213200]';
-                    $billInfo = 'Rp0';
-                    $requestNote = null;
-                    $timeAgo = '';
+                    $billInfo         = '';
+                    $requestNote      = null;
+                    $timeAgo          = '';
                     $statusForTemplate = 'tersedia';
-                    
+
                     if ($isCalling) {
-                        $status = 'panggilan';
-                        $statusColor = 'bg-[#BA1A1A]';
-                        $statusLabel = 'PANGGIL!';
-                        $statusColorClass = 'text-[#BA1A1A]';
+                        $statusColor       = 'bg-[#BA1A1A]';
+                        $statusLabel       = 'PANGGIL!';
+                        $statusColorClass  = 'text-[#BA1A1A]';
                         $statusForTemplate = 'panggilan';
-                        $timeAgo = $call->waktu_panggil->diffForHumans();
-                        $requestNote = 'Tamu butuh bantuan';
+                        $timeAgo           = $call->waktu_panggil->diffForHumans();
+                        $requestNote       = 'Tamu butuh bantuan';
                     } elseif ($hasPesanan) {
                         $pesananStatus = $pesananMeja->status_pesanan;
                         if (in_array($pesananStatus, ['siap', 'diantar'])) {
-                            $status = 'siap_antar';
-                            $statusColor = 'bg-[#0B4D2B]';
-                            $statusLabel = 'Siap Antar';
-                            $statusColorClass = 'text-[#0B4D2B]';
+                            $statusColor       = 'bg-[#0B4D2B]';
+                            $statusLabel       = 'Siap Antar';
+                            $statusColorClass  = 'text-[#0B4D2B]';
                             $statusForTemplate = 'siap_antar';
                         } elseif ($pesananStatus === 'diproses') {
-                            $status = 'masak';
-                            $statusColor = 'bg-[#7A5900]';
-                            $statusLabel = 'Masak (' . $pesananMeja->waktu_pesan->diffForHumans() . ')';
-                            $statusColorClass = 'text-[#7A5900]';
+                            $statusColor       = 'bg-[#7A5900]';
+                            $statusLabel       = 'Masak (' . $pesananMeja->waktu_pesan->diffForHumans() . ')';
+                            $statusColorClass  = 'text-[#7A5900]';
                             $statusForTemplate = 'masak';
                         } elseif ($pesananStatus === 'menunggu') {
-                            $status = 'makan';
-                            $statusColor = 'bg-[#213200]';
-                            $statusLabel = 'Makan';
-                            $statusColorClass = 'text-[#213200]';
+                            $statusColor       = 'bg-[#213200]';
+                            $statusLabel       = 'Makan';
+                            $statusColorClass  = 'text-[#213200]';
                             $statusForTemplate = 'makan';
                         }
                         $timeAgo = $pesananMeja->waktu_pesan->diffForHumans();
-                        // Fix null total_bayar crash
                         $billInfo = 'Rp' . number_format($pesananMeja->total_bayar ?? 0, 0, ',', '.');
                     }
-                    
+
                     return [
                         'id' => $m->id,
                         'key' => $m->id,
@@ -289,25 +299,34 @@ class PelayanController extends Controller
                         'name' => $m->kode_meja,
                         'isCalling' => $isCalling,
                         'statusColor' => $statusColor,
-                        'status' => $statusForTemplate,  // HAPUS DUPLIKAT 'status' key
+                        'status' => $statusForTemplate,
                         'statusLabel' => $statusLabel,
                         'billInfo' => $billInfo,
                         'timeAgo' => $timeAgo,
                         'requestNote' => $requestNote,
+                        'statusColor'    => $statusColor,
+                        // Bug 4 FIX: Hapus key 'status' yang duplikat — PHP hanya simpan
+                        // yang terakhir, menyebabkan nilai tidak konsisten
+                        'status'         => $statusForTemplate,
+                        'statusLabel'    => $statusLabel,
+                        'billInfo'       => $billInfo,
+                        'timeAgo'        => $timeAgo,
+                        'requestNote'    => $requestNote,
+>>>>>>> d96fbc80841249eff58e27d1a9c5fe09441d87ae
                         'statusColorClass' => $statusColorClass,
-                        'kapasitas' => $m->kapasitas,
-                        'area' => $m->area,
-                        'kode_meja' => $m->kode_meja,
+                        'kapasitas'      => $m->kapasitas,
+                        'area'           => $m->area,
+                        'kode_meja'      => $m->kode_meja,
                     ];
                 })->values(),
             ];
         })->values();
 
-        $totalMeja = $meja->count();
-        $terisiCount = $meja->where('status_meja', 'terisi')->count();
-        $tersediaCount = $meja->where('status_meja', 'kosong')->count();
+        $totalMeja      = $meja->count();
+        $terisiCount    = $meja->where('status_meja', 'terisi')->count();
+        $tersediaCount  = $meja->where('status_meja', 'kosong')->count();
         $panggilanCount = $panggilanAktif->count();
-        $currentArea = $this->getPelayanArea() ?? 'Tepi Danau (LB-01 – LB-05)';
+        $currentArea    = $this->getPelayanArea() ?? 'Tepi Danau (LB-01 – LB-05)';
 
         return view('pelayan.tab-saung.index', compact(
             'meja',
@@ -321,6 +340,7 @@ class PelayanController extends Controller
             'currentArea'
         ));
     }
+
 
     public function tabShift(): View
     {
@@ -338,7 +358,7 @@ class PelayanController extends Controller
         return view('pelayan.tab-shift.index', compact('shiftAktif', 'panggilanDitangani'));
     }
 
-    public function ubahStatus(Request $request, $id): RedirectResponse
+    public function ubahStatus(Request $request, $id): RedirectResponse|JsonResponse
     {
         $data = $request->validate([
             'status_panggilan' => ['required', 'in:menunggu,ditangani,selesai'],
@@ -357,6 +377,18 @@ class PelayanController extends Controller
         }
 
         $log->update($isi);
+
+        // Return JSON untuk AJAX request (fetch dari Alpine.js)
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'status'  => 'ok',
+                'message' => 'Status panggilan diperbarui',
+                'panggilan' => [
+                    'id'               => $log->id,
+                    'status_panggilan' => $data['status_panggilan'],
+                ],
+            ]);
+        }
 
         return back();
     }
