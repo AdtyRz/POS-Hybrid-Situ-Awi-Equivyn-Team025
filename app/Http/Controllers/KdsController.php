@@ -49,7 +49,10 @@ class KdsController extends Controller
             })
             ->whereIn('status_item', ['menunggu', 'diproses', 'siap'])
             ->whereHas('pesanan', function ($query) {
-                $query->where('status_pesanan', 'diproses');
+                // Tampilkan tiket selama pesanan masih dalam alur produksi:
+                // 'menunggu' = baru masuk, 'diproses' = sedang dimasak, 'siap' = selesai tapi runner belum ambil.
+                // Tiket baru hilang dari KDS saat status berubah ke 'diantar' atau 'selesai'.
+                $query->whereIn('status_pesanan', ['menunggu', 'diproses', 'siap']);
             })
             ->orderBy('created_at')
             ->get()
@@ -135,6 +138,7 @@ class KdsController extends Controller
                     ->update(['status_item' => $tujuan]);
             }
 
+            $pesanan->refresh();
             $pesanan->update(['status_pesanan' => $this->statusPesanan($pesanan)]);
         });
 
@@ -156,13 +160,18 @@ class KdsController extends Controller
 
     private function statusPesanan(Pesanan $pesanan): string
     {
-        $status = DetailPesanan::where('pesanan_id', $pesanan->id)->pluck('status_item');
+        // Bug 5 FIX: Cek status_item PER semua item di pesanan ini
+        // Pesanan dianggap 'siap' jika SEMUA item (lintas KDS) sudah siap.
+        // Pesanan 'diproses' jika ada item yang sudah mulai diproses.
+        // Ini memastikan dapur dan bar harus sama-sama selesai sebelum pesanan muncul di tab pelayan.
+        $allStatus = DetailPesanan::where('pesanan_id', $pesanan->id)
+            ->pluck('status_item');
 
-        if ($status->every(fn ($item) => $item === 'siap')) {
+        if ($allStatus->every(fn ($item) => $item === 'siap')) {
             return 'siap';
         }
 
-        if ($status->contains(fn ($item) => $item !== 'menunggu')) {
+        if ($allStatus->contains(fn ($item) => $item !== 'menunggu')) {
             return 'diproses';
         }
 
