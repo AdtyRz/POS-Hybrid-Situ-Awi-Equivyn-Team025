@@ -162,6 +162,10 @@
                                 {{ $itemCount }} Item
                             </span>
                         </div>
+                        <button @click="markDelivered(pesanan.id, pesanan.meja.kode_meja)" class="px-4 py-2 bg-[#0B4D2B] hover:bg-[#052E1B] text-white text-xs font-bold rounded-xl transition-all active:scale-95 flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                            <span>Selesai Antar</span>
+                        </button>
                     </div>
 
                     <!-- Table Heading -->
@@ -369,7 +373,6 @@
             <span class="text-xs font-normal text-[#F3F0EA] leading-4 flex-1" x-text="toastMessage">Notifikasi berhasil diproses.</span>
         </div>
     </div>
-
 </div>
 
 <script>
@@ -418,6 +421,7 @@
             },
         };
     }
+}
 </script>
 @endsection
 
