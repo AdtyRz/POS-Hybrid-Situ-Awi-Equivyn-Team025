@@ -14,7 +14,7 @@ class DashboardController extends Controller
             'kasir' => '/kasir/dashboard',
             'koki' => '/kds/dapur',
             'barista' => '/kds/bar',
-            'pelayan' => '/pelayan/panggilan',
+            'pelayan' => '/pelayan/notifikasi-panggilan',
             'pelanggan' => '/',
         ];
 
