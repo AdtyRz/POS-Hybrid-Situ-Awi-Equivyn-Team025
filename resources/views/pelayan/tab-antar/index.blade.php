@@ -206,7 +206,7 @@
                                     },
                                     body: JSON.stringify({ status_pesanan: 'diantar' })
                                 }).catch(()=>{});
-                                triggerToast('Pesanan {{ $order[\'kode_pesanan\'] }} ditandai diantar ke {{ $order[\'meja\'][\'kode_meja\'] }}.')
+                                triggerToast('Pesanan {{ $order["kode_pesanan"] }} ditandai diantar ke {{ $order["meja"]["kode_meja"] }}.')
                             "
                                 type="button"
                                 class="w-full h-12 rounded-xl bg-[#0B4D2B] hover:bg-[#00341A] text-white font-bold text-sm tracking-[0.14px] flex items-center justify-center gap-2 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all cursor-pointer active:scale-98">
@@ -216,7 +216,7 @@
                             <span>Ambil & Tandai Selesai Diantarkan</span>
                         </button>
 
-                        <button @click="openDenahModal('Denah {{ $order[\'meja\'][\'kode_meja\'] }}')" type="button"
+                        <button @click="openDenahModal('Denah {{ $order["meja"]["kode_meja"] }}')" type="button"
                                 class="w-full h-9 rounded-lg bg-[#F0EEE7] hover:bg-[#E5E2DB] text-[#1C1C18] font-semibold text-xs tracking-[0.24px] flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-98">
                             <svg class="w-3 h-3 text-[#7A5900]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
