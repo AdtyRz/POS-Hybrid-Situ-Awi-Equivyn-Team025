@@ -728,15 +728,29 @@
                     </template>
 
                     <div class="space-y-2 pt-1">
+
+                        {{-- Banner khusus saat saung sudah lunas --}}
+                        <template x-if="currentSaung.status === 'paid'">
+                            <div class="bg-[#ECFDF5] border-2 border-[#6EE7B7] rounded-xl p-4 text-center space-y-1">
+                                <div class="flex items-center justify-center gap-2 text-[#065F46] font-extrabold text-sm">
+                                    <svg class="w-5 h-5 text-[#059669]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <span>TRANSAKSI SELESAI — SUDAH LUNAS</span>
+                                </div>
+                                <p class="text-[11px] text-[#047857]" x-text="'Metode: ' + (currentSaung.paymentType === 'qris' ? 'QRIS / Transfer' : 'Tunai')"></p>
+                                <p class="text-[11px] text-[#6B6A63]">Pesanan sedang diproses di dapur / bar.</p>
+                            </div>
+                        </template>
                         
                         <button type="button" 
                                 @click="confirmPaymentAndPrint()"
-                                :disabled="currentSaung.status === 'empty' || (currentSaung.status === 'waiting_cash' && cashReceived < currentSaung.total)"
+                                :disabled="currentSaung.status === 'empty' || currentSaung.status === 'paid' || (currentSaung.status === 'waiting_cash' && cashReceived < currentSaung.total)"
                                 class="w-full py-3.5 px-4 rounded-xl bg-[#0B4D2B] hover:bg-[#0A4A28] disabled:bg-gray-400 disabled:cursor-not-allowed text-[#FBF3DD] font-extrabold text-xs tracking-wider uppercase flex items-center justify-center gap-2 shadow-sm transition active:scale-98 min-h-[48px]">
                             <svg class="w-4 h-4 text-[#FBF3DD]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
                             </svg>
-                            <span>KONFIRMASI LUNAS & CETAK STRUK (ENTER)</span>
+                            <span x-text="currentSaung.status === 'paid' ? 'SUDAH LUNAS — TIDAK BISA DIKONFIRMASI ULANG' : 'KONFIRMASI LUNAS & CETAK STRUK (ENTER)'"></span>
                         </button>
 
                         <div class="grid grid-cols-2 gap-2">
@@ -744,15 +758,15 @@
                                     @click="reprintReceipt()"
                                     :disabled="currentSaung.status === 'empty'"
                                     class="py-2.5 px-3 rounded-lg bg-[#E0B24E]/15 hover:bg-[#E0B24E]/25 border border-[#E0B24E]/40 text-[#C9982F] font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 min-h-[44px]">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                                 <span>Cetak Ulang [F3]</span>
                             </button>
 
                             <button type="button" 
                                     @click="voidOrder()"
-                                    :disabled="currentSaung.status === 'empty'"
-                                    class="py-2.5 px-3 rounded-lg bg-[#FEF2F2] hover:bg-red-100 border border-[#C1442C]/30 text-[#C1442C] font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 min-h-[44px]">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    :disabled="currentSaung.status === 'empty' || currentSaung.status === 'paid'"
+                                    class="py-2.5 px-3 rounded-lg bg-[#FEF2F2] hover:bg-red-100 border border-[#C1442C]/30 text-[#C1442C] font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                 <span>Batalkan Order [F9]</span>
                             </button>
                         </div>
