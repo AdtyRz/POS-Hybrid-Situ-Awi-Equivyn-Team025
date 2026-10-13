@@ -7,9 +7,11 @@ use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
 use App\Models\StokMutasi;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str; // Bug 4 FIX: tambahkan Str untuk generate kode_pembayaran
 use Illuminate\View\View;
 
 class PesananController extends Controller
@@ -68,17 +70,32 @@ class PesananController extends Controller
             }
 
             $statusMap = [
-                Pesanan::STATUS_MENUNGGU => 'waiting_cash',
-                Pesanan::STATUS_MENUNGGU_VERIFIKASI => 'waiting_qris',
-                Pesanan::STATUS_MENUNGGU_PEMBAYARAN => 'waiting_cash',
-                Pesanan::STATUS_DIPROSES => 'preparing',
-                Pesanan::STATUS_SIAP => 'ready',
-                Pesanan::STATUS_DIANTAR => 'delivering',
-                Pesanan::STATUS_SELESAI => 'completed',
-                Pesanan::STATUS_DIBATALKAN => 'cancelled',
+                Pesanan::STATUS_MENUNGGU             => 'waiting_cash',
+                Pesanan::STATUS_MENUNGGU_VERIFIKASI  => 'waiting_qris',
+                Pesanan::STATUS_MENUNGGU_PEMBAYARAN  => 'waiting_cash',
+                Pesanan::STATUS_DIPROSES             => 'preparing',
+                Pesanan::STATUS_SIAP                 => 'ready',
+                Pesanan::STATUS_DIANTAR              => 'delivering',
+                Pesanan::STATUS_SELESAI              => 'completed',
+                Pesanan::STATUS_DIBATALKAN           => 'cancelled',
             ];
 
-            $dasar['status'] = $statusMap[$p->status_pesanan] ?? 'empty';
+            $alpineStatus = $statusMap[$p->status_pesanan] ?? 'empty';
+
+            // Bug C FIX: Jika pesanan sudah dibayar (status_pembayaran = sudah_bayar)
+            // dan bukan lagi menunggu pembayaran, kategorikan sebagai 'paid' di kasir
+            // agar saung masuk ke filter "Sudah Lunas" dan panel kanan ter-lock.
+            $sudahBayar    = $p->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR;
+            $masihMenunggu = in_array($p->status_pesanan, [
+                Pesanan::STATUS_MENUNGGU,
+                Pesanan::STATUS_MENUNGGU_PEMBAYARAN,
+                Pesanan::STATUS_MENUNGGU_VERIFIKASI,
+            ]);
+            if ($sudahBayar && ! $masihMenunggu) {
+                $alpineStatus = 'paid';
+            }
+
+            $dasar['status']      = $alpineStatus;
             $dasar['paymentType'] = $p->metode_pembayaran;
             $dasar['paymentStatus'] = $p->status_pembayaran;
             $dasar['orderStatus'] = $p->status_pesanan;
@@ -187,14 +204,15 @@ class PesananController extends Controller
             }
 
             $baru = Pesanan::create([
-                'kode_pesanan' => 'SW-' . now()->format('YmdHis') . '-' . $meja->id,
-                'meja_id' => $meja->id,
-                'kasir_id' => auth()->id(),
-                'total_bayar' => $subtotal + round($subtotal * 0.1),
-                'status_pesanan' => 'menunggu',
+                'kode_pesanan'     => 'SW-' . now()->format('YmdHis') . '-' . $meja->id,
+                'kode_pembayaran'  => 'PAY-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(6)), // Bug 4 FIX
+                'meja_id'          => $meja->id,
+                'kasir_id'         => auth()->id(),
+                'total_bayar'      => $subtotal + round($subtotal * 0.1),
+                'status_pesanan'   => 'menunggu',
                 'status_pembayaran' => 'belum_bayar',
                 'metode_pembayaran' => $data['metode_pembayaran'] ?? 'tunai',
-                'catatan' => $data['catatan'] ?? null,
+                'catatan'          => $data['catatan'] ?? null,
             ]);
 
             foreach ($dipilih as $id => $jml) {
@@ -237,7 +255,7 @@ class PesananController extends Controller
         return view('pesanan.show', compact('pesanan'));
     }
 
-    public function ubahStatus(Request $request, string $kode): RedirectResponse
+    public function ubahStatus(Request $request, string $kode): RedirectResponse|JsonResponse
     {
         $data = $request->validate([
             'status_pesanan' => ['required', 'in:menunggu,diproses,siap,diantar,selesai,dibatalkan'],
@@ -245,16 +263,24 @@ class PesananController extends Controller
 
         $pesanan = Pesanan::where('kode_pesanan', $kode)->firstOrFail();
 
+        // Bug 3 FIX: Tambahkan semua status yang didefinisikan di model
+        // Status menunggu_pembayaran & menunggu_verifikasi berasal dari e-menu checkout
+        // Tanpa ini, PATCH ke /pesanan/{kode}/status crash dengan undefined array key
         $alur = [
-            'menunggu' => ['diproses', 'dibatalkan'],
-            'diproses' => ['siap', 'dibatalkan'],
-            'siap' => ['diantar', 'dibatalkan'],
-            'diantar' => ['selesai', 'dibatalkan'],
-            'selesai' => [],
-            'dibatalkan' => [],
+            'menunggu'              => ['diproses', 'dibatalkan'],
+            'menunggu_pembayaran'   => ['diproses', 'dibatalkan'],
+            'menunggu_verifikasi'   => ['diproses', 'dibatalkan'],
+            'diproses'              => ['siap', 'dibatalkan'],
+            'siap'                  => ['diantar', 'dibatalkan'],
+            'diantar'               => ['selesai', 'dibatalkan'],
+            'selesai'               => [],
+            'dibatalkan'            => [],
         ];
 
         if (! in_array($data['status_pesanan'], $alur[$pesanan->status_pesanan])) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['message' => 'Perpindahan status tidak diizinkan.'], 422);
+            }
             return back()->withErrors(['status_pesanan' => 'Perpindahan status tidak diizinkan.']);
         }
 
@@ -272,6 +298,19 @@ class PesananController extends Controller
 
             $pesanan->update($isi);
         });
+
+        // Bug 2 FIX: Return JSON untuk AJAX request (fetch dari Alpine tab-antar)
+        // Return redirect untuk form biasa (kasir dashboard)
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'status'  => 'ok',
+                'message' => 'Status pesanan diperbarui',
+                'pesanan' => [
+                    'kode_pesanan'   => $pesanan->kode_pesanan,
+                    'status_pesanan' => $data['status_pesanan'],
+                ],
+            ]);
+        }
 
         return back();
     }
