@@ -29,3 +29,16 @@ Route::post('/iot/panggil-pelayan', function (Request $request) {
 });
 
 require __DIR__ . '/api_v1.php';
+
+// Public endpoint untuk LCD/ESP32 - status meja (tanpa auth)
+Route::get('/iot/status-meja', function () {
+    $meja = \App\Models\MejaMakan::select('id', 'kode_meja', 'area', 'kapasitas', 'status_meja')
+        ->orderBy('kode_meja')
+        ->get();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Berhasil mengambil status meja',
+        'data' => $meja
+    ]);
+});
