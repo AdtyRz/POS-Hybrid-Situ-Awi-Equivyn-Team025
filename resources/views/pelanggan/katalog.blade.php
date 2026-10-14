@@ -54,6 +54,7 @@
         </div>
 
         <div class="flex items-center gap-2 shrink-0">
+            @if (! empty($punyaRiwayat))
             <a href="{{ route('emenu.pelacakan', $meja->id) }}"
                class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-gold-500 hover:bg-gold-400 text-forest-900 text-[10px] sm:text-xs font-bold transition active:scale-95 whitespace-nowrap"
                title="Lihat Status Pesanan">
@@ -62,6 +63,7 @@
                 </svg>
                 <span>Lihat Status Pesanan</span>
             </a>
+            @endif
             <button type="button" 
                     @click="checkIotStatus()" 
                     class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-forest-900/80 hover:bg-forest-900 text-gold-300 hover:text-gold-200 border border-gold-500/30 text-xs font-medium transition active:scale-95 shrink-0">

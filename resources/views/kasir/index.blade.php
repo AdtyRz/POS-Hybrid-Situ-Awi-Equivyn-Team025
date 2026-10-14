@@ -856,6 +856,11 @@
         <input type="hidden" name="kode_pesanan" :value="currentSaung.kodePesanan">
         <input type="hidden" name="metode_pembayaran" value="tunai">
         <input type="hidden" name="jumlah_bayar" :value="cashReceived">
+        <input type="hidden" name="selesaikan_sesi" :value="selesaikanSesi">
+    </form>
+    <form id="formSelesaikanSesi" method="POST" :action="sesiTutupTemplate.replace('__MEJA__', currentSaung.id)" class="hidden">
+        @csrf
+        @method('PATCH')
     </form>
     <form id="formBatal" method="POST" :action="statusUrl" class="hidden">
         @csrf
@@ -938,6 +943,45 @@
         </div>
     </div>
 
+    {{-- Modal konfirmasi: selesaikan sesi pelanggan setelah cetak struk --}}
+    <div x-show="sesiModal.visible" x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         class="fixed inset-0 z-50 bg-[#00341A]/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-[#E0B24E]">
+            <div class="w-14 h-14 rounded-full bg-[#FBF3DD] border border-[#E0B24E] flex items-center justify-center mx-auto text-[#0B4D2B]">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+            </div>
+            <div class="text-center mt-3">
+                <h3 class="font-bold text-lg text-[#00341A]">Selesaikan Sesi Meja?</h3>
+                <p class="text-xs text-[#6B6A63] mt-1">
+                    Meja <strong x-text="currentSaung.id"></strong>. Bila sesi diselesaikan, semua pesanan aktif ditutup,
+                    meja dikosongkan, dan <strong>kode unik baru</strong> dibuat untuk pengunjung berikutnya.
+                </p>
+            </div>
+            <div class="grid grid-cols-1 gap-2 mt-5">
+                <button type="button"
+                        @click="selesaikanSesiDanCetak()"
+                        class="w-full py-3 rounded-xl bg-[#0B4D2B] hover:bg-[#0A4A28] text-white font-extrabold text-xs uppercase tracking-wide transition active:scale-95">
+                    Selesaikan Sesi &amp; Cetak
+                </button>
+                <button type="button"
+                        @click="cetakTanpaSelesaikan()"
+                        class="w-full py-3 rounded-xl bg-[#F3EEDF] hover:bg-[#EFE8D6] border border-[#C8C2B3]/60 text-[#2B2A26] font-bold text-xs uppercase tracking-wide transition active:scale-95">
+                    Cetak Saja (Sesi Tetap Berjalan)
+                </button>
+                <button type="button"
+                        @click="sesiModal.visible = false"
+                        class="w-full py-2 rounded-xl text-[#6B6A63] hover:text-[#2B2A26] font-bold text-[11px] transition">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         function kasirPosApp() {
             return {
@@ -948,7 +992,10 @@
                 cashReceived: 0,
                 isPrinting: false,
                 isLocked: false,
+                selesaikanSesi: 0,
+                sesiModal: { visible: false, mode: 'bayar' },
                 statusUrlTemplate: @json(route('pesanan.status', ['kode' => '__KODE__'])),
+                sesiTutupTemplate: @json(route('kasir.session.tutup', ['meja' => '__MEJA__'])),
 
                 iotAlert: @json($iotAlertJson),
 
@@ -1052,14 +1099,47 @@
                 confirmPaymentAndPrint() {
                     if (!this.currentSaung || this.currentSaung.status !== 'waiting_cash') return;
                     if (this.cashReceived < this.currentSaung.total) return;
-                    this.isPrinting = true;
-                    document.getElementById('formBayar').requestSubmit();
+                    this.bukaModalSesi('bayar');
                 },
 
                 reprintReceipt() {
+                    if (!this.currentSaung || !this.currentSaung.kodePesanan) {
+                        this.showToast('gold', 'i', 'Cetak Ulang Struk', `Mencetak salinan struk ${this.currentSaung.name}.`);
+                        return;
+                    }
+                    this.bukaModalSesi('cetak');
+                },
+
+                bukaModalSesi(mode) {
+                    this.sesiModal.mode = mode;
+                    this.sesiModal.visible = true;
+                },
+
+                selesaikanSesiDanCetak() {
+                    this.selesaikanSesi = 1;
+                    const mode = this.sesiModal.mode;
+                    this.sesiModal.visible = false;
                     this.isPrinting = true;
-                    setTimeout(() => { this.isPrinting = false; }, 800);
-                    this.showToast('gold', 'i', 'Cetak Ulang Struk', `Mencetak ulang salinan struk thermal ${this.currentSaung.name}.`);
+                    if (mode === 'bayar') {
+                        document.getElementById('formBayar').requestSubmit();
+                    } else {
+                        setTimeout(() => { this.isPrinting = false; }, 800);
+                        this.showToast('gold', 'i', 'Cetak Ulang Struk', `Struk ${this.currentSaung.name} dicetak & sesi diselesaikan.`);
+                        document.getElementById('formSelesaikanSesi').requestSubmit();
+                    }
+                },
+
+                cetakTanpaSelesaikan() {
+                    this.selesaikanSesi = 0;
+                    const mode = this.sesiModal.mode;
+                    this.sesiModal.visible = false;
+                    this.isPrinting = true;
+                    if (mode === 'bayar') {
+                        document.getElementById('formBayar').requestSubmit();
+                    } else {
+                        setTimeout(() => { this.isPrinting = false; }, 800);
+                        this.showToast('gold', 'i', 'Cetak Ulang Struk', `Mencetak ulang salinan struk thermal ${this.currentSaung.name}.`);
+                    }
                 },
 
                 voidOrder() {

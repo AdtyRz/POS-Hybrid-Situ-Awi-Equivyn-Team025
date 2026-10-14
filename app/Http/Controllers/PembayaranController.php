@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\SesiMejaBerubah;
+use App\Events\StatusPesananBerubah;
 use App\Models\Pembayaran;
 use App\Models\Pesanan;
+use App\Models\SesiMeja;
+use App\Support\Realtime;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -55,6 +59,7 @@ class PembayaranController extends Controller
             'kode_pesanan' => ['required', 'exists:pesanan,kode_pesanan'],
             'metode_pembayaran' => ['required', 'in:tunai,qris'],
             'jumlah_bayar' => ['required', 'numeric', 'min:0'],
+            'selesaikan_sesi' => ['nullable', 'boolean'],
         ]);
 
         $pesanan = Pesanan::where('kode_pesanan', $data['kode_pesanan'])->firstOrFail();
@@ -95,6 +100,27 @@ class PembayaranController extends Controller
                 ]);
             }
         });
+
+        Realtime::emit(new StatusPesananBerubah([
+            'kode_pesanan' => $pesanan->kode_pesanan,
+            'meja' => $pesanan->meja->kode_meja ?? null,
+            'status_pesanan' => $pesanan->status_pesanan,
+            'status_pembayaran' => $pesanan->status_pembayaran,
+            'metode_pembayaran' => $pesanan->metode_pembayaran,
+        ]));
+
+        // Bila kasir memilih "Selesaikan sesi" saat mencetak struk, tutup sesi meja
+        // dan buat kode unik baru untuk sesi berikutnya.
+        if ($request->boolean('selesaikan_sesi') && $pesanan->meja) {
+            $meja = $pesanan->meja;
+            SesiMeja::putuskanSesi($meja);
+
+            Realtime::emit(new SesiMejaBerubah(
+                $meja->kode_meja,
+                $meja->id,
+                'selesai',
+            ));
+        }
 
         return redirect()->route('kasir.dashboard');
     }

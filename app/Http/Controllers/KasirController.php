@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\SesiMejaBerubah;
 use App\Models\MejaMakan;
-use App\Models\Pesanan;
+use App\Models\SesiMeja;
+use App\Support\Realtime;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class KasirController extends Controller
@@ -17,9 +18,18 @@ class KasirController extends Controller
             ->orderBy('kode_meja')
             ->get();
 
-        return view('kasir.session', compact('meja'));
+        // Sertakan kode unik sesi aktif tiap meja untuk ditampilkan/diinformasikan kasir.
+        $sesiAktif = $meja->mapWithKeys(function ($m) {
+            return [$m->id => SesiMeja::aktifUntuk($m)];
+        });
+
+        return view('kasir.session', compact('meja', 'sesiAktif'));
     }
 
+    /**
+     * Selesaikan sesi meja (cara manual kasir): semua pesanan aktif ditandai
+     * selesai, meja dikosongkan, lalu kode unik baru di-generate untuk sesi baru.
+     */
     public function akhiriSession(Request $request, $meja): RedirectResponse
     {
         if (is_numeric($meja)) {
@@ -28,16 +38,13 @@ class KasirController extends Controller
             $mejaMakan = MejaMakan::where('kode_meja', $meja)->firstOrFail();
         }
 
-        DB::transaction(function () use ($mejaMakan) {
-            Pesanan::where('meja_id', $mejaMakan->id)
-                ->whereNotIn('status_pesanan', ['selesai', 'dibatalkan'])
-                ->update([
-                    'status_pesanan' => 'selesai',
-                    'status_pembayaran' => 'sudah_bayar',
-                ]);
+        SesiMeja::putuskanSesi($mejaMakan);
 
-            $mejaMakan->update(['status_meja' => 'kosong']);
-        });
+        Realtime::emit(new SesiMejaBerubah(
+            $mejaMakan->kode_meja,
+            $mejaMakan->id,
+            'selesai',
+        ));
 
         return back();
     }
