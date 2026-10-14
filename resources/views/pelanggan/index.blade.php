@@ -365,5 +365,9 @@
             };
         }
     </script>
+    <script>
+        // Realtime: sesi meja ditutup kasir → muat ulang agar kembali terkunci minta kode baru.
+        window.addEventListener('realtime:sesi.berubah', () => window.realtimeReload(400));
+    </script>
 </body>
 </html>

@@ -29,9 +29,52 @@ class EMenuController extends Controller
         return view('emenu.beranda');
     }
 
-    public function aplikasi(string $meja): View
+    /**
+     * Halaman kunci: pengunjung memasukkan kode unik yang tampil di LCD meja.
+     */
+    public function kunci(string $meja): View
     {
         $mejaMakan = $this->cariMeja($meja);
+        $sesi = SesiMeja::aktifUntuk($mejaMakan);
+
+        return view('emenu.kunci', [
+            'meja' => $mejaMakan,
+            'panjangKode' => strlen($sesi->kode_unik),
+        ]);
+    }
+
+    /**
+     * Validasi kode unik sesi. Bila benar, tandai sesi sebagai terverifikasi
+     * di session pelanggan lalu arahkan ke halaman e-menu.
+     */
+    public function buka(Request $request, string $meja): RedirectResponse
+    {
+        $mejaMakan = $this->cariMeja($meja);
+
+        $data = $request->validate([
+            'kode_unik' => ['required', 'string'],
+        ]);
+
+        $sesi = SesiMeja::aktifUntuk($mejaMakan);
+
+        if (! hash_equals($sesi->kode_unik, trim($data['kode_unik']))) {
+            return back()->withErrors([
+                'kode_unik' => 'Kode tidak sesuai dengan yang tampil di layar meja.',
+            ]);
+        }
+
+        $request->session()->put('sesi_meja_' . $mejaMakan->id, $sesi->id);
+
+        return redirect()->route('emenu.meja', $mejaMakan->kode_meja);
+    }
+
+    public function aplikasi(string $meja): View|RedirectResponse
+    {
+        $mejaMakan = $this->cariMeja($meja);
+
+        if (! $this->sesiTerverifikasi($mejaMakan)) {
+            return $this->kunciRedirect($mejaMakan);
+        }
 
         $menuJson = Menu::orderBy('nama_menu')->get()->map(function ($menu) {
             return [
@@ -69,6 +112,10 @@ class EMenuController extends Controller
     public function checkout(Request $request, string $meja): RedirectResponse
     {
         $mejaMakan = $this->cariMeja($meja);
+
+        if (! $this->sesiTerverifikasi($mejaMakan)) {
+            return $this->kunciRedirect($mejaMakan);
+        }
 
         $data = $request->validate([
             'jumlah' => ['required', 'array', 'min:1'],
@@ -182,9 +229,14 @@ class EMenuController extends Controller
      * Tampilkan form checkout (GET).
      * Route: GET /meja/{meja}/checkout
      */
-    public function checkoutForm(string $meja): View
+    public function checkoutForm(string $meja): View|RedirectResponse
     {
         $mejaMakan = $this->cariMeja($meja);
+
+        if (! $this->sesiTerverifikasi($mejaMakan)) {
+            return $this->kunciRedirect($mejaMakan);
+        }
+
         return view('emenu.checkout', ['meja' => $mejaMakan]);
     }
 
@@ -424,5 +476,27 @@ class EMenuController extends Controller
         }
 
         return MejaMakan::where('kode_meja', $meja)->firstOrFail();
+    }
+
+    /**
+     * Cek apakah pengunjung sudah memasukkan kode unik untuk sesi yang sedang aktif.
+     * Bila sesi ditutup kasir, sesi aktif berganti sehingga otomatis terkunci lagi.
+     */
+    private function sesiTerverifikasi(MejaMakan $meja): bool
+    {
+        $sesiId = session('sesi_meja_' . $meja->id);
+
+        if (! $sesiId) {
+            return false;
+        }
+
+        $aktif = SesiMeja::aktifUntuk($meja);
+
+        return (int) $sesiId === $aktif->id;
+    }
+
+    private function kunciRedirect(MejaMakan $meja): RedirectResponse
+    {
+        return redirect()->route('emenu.kunci', $meja->kode_meja);
     }
 }

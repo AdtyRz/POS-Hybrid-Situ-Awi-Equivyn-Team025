@@ -6,12 +6,24 @@ use App\Models\Kategori;
 use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
+use App\Models\SesiMeja;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class EmenuPelacakanTest extends TestCase
 {
     use RefreshDatabase;
+
+    /**
+     * Tandai sesi meja sebagai sudah terverifikasi (lolos gate kode unik)
+     * agar request berikutnya boleh mengakses halaman e-menu.
+     */
+    private function sesiTerverifikasi(MejaMakan $meja): array
+    {
+        $sesi = SesiMeja::aktifUntuk($meja);
+
+        return ['sesi_meja_' . $meja->id => $sesi->id];
+    }
 
     private function siapkanMejaDanMenu(): array
     {
@@ -43,11 +55,12 @@ class EmenuPelacakanTest extends TestCase
     {
         [$meja, $menu] = $this->siapkanMejaDanMenu();
 
-        $response = $this->post(route('emenu.checkout', $meja->id), [
-            'jumlah' => [$menu->id => 2],
-            'catatan' => [$menu->id => 'pedas'],
-            'metode' => 'tunai',
-        ]);
+        $response = $this->withSession($this->sesiTerverifikasi($meja))
+            ->post(route('emenu.checkout', $meja->id), [
+                'jumlah' => [$menu->id => 2],
+                'catatan' => [$menu->id => 'pedas'],
+                'metode' => 'tunai',
+            ]);
 
         $response->assertSessionHas('riwayat_meja_' . $meja->id);
 
@@ -61,14 +74,17 @@ class EmenuPelacakanTest extends TestCase
     {
         [$meja, $menu] = $this->siapkanMejaDanMenu();
 
-        $this->get(route('emenu.meja', $meja->id))
-            ->assertOk()
-            ->assertDontSee('Pelacakan &amp; Status Pesanan', false);
-
-        $this->withSession(['riwayat_meja_' . $meja->id => ['SW-UJI-01']])
+        $this->withSession($this->sesiTerverifikasi($meja))
             ->get(route('emenu.meja', $meja->id))
             ->assertOk()
-            ->assertSee('Pelacakan &amp; Status Pesanan', false);
+            ->assertDontSee('Lihat Status Pesanan');
+
+        $this->withSession(array_merge($this->sesiTerverifikasi($meja), [
+            'riwayat_meja_' . $meja->id => ['SW-UJI-01'],
+        ]))
+            ->get(route('emenu.meja', $meja->id))
+            ->assertOk()
+            ->assertSee('Lihat Status Pesanan');
     }
 
     public function test_halaman_pelacakan_menampilkan_riwayat_pesanan(): void
@@ -88,7 +104,9 @@ class EmenuPelacakanTest extends TestCase
             'subtotal' => 50000,
         ]);
 
-        $this->withSession(['riwayat_meja_' . $meja->id => ['SW-UJI-01']])
+        $this->withSession(array_merge($this->sesiTerverifikasi($meja), [
+            'riwayat_meja_' . $meja->id => ['SW-UJI-01'],
+        ]))
             ->get(route('emenu.pelacakan', $meja->id))
             ->assertOk()
             ->assertSee('SW-UJI-01')
@@ -99,7 +117,8 @@ class EmenuPelacakanTest extends TestCase
     {
         [$meja] = $this->siapkanMejaDanMenu();
 
-        $this->get(route('emenu.pelacakan', $meja->id))
+        $this->withSession($this->sesiTerverifikasi($meja))
+            ->get(route('emenu.pelacakan', $meja->id))
             ->assertOk()
             ->assertSee('Belum ada pesanan pada sesi ini');
     }
