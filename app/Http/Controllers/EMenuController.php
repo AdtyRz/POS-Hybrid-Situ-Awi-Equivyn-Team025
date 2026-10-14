@@ -157,6 +157,17 @@ class EMenuController extends Controller
 
         $request->session()->push('riwayat_meja_' . $mejaMakan->id, $pesanan->kode_pesanan);
 
+        // Broadcast realtime: pesanan baru masuk ke KDS, kasir, dan pelayan.
+        Realtime::emit(new PesananBaru([
+            'kode_pesanan' => $pesanan->kode_pesanan,
+            'meja' => $mejaMakan->kode_meja,
+            'meja_id' => $mejaMakan->id,
+            'status_pesanan' => $pesanan->status_pesanan,
+            'status_pembayaran' => $pesanan->status_pembayaran,
+            'metode_pembayaran' => $pesanan->metode_pembayaran,
+            'total_bayar' => (float) $pesanan->total_bayar,
+        ]));
+
         // Redirect based on payment method
         if ($data['metode'] === 'qris') {
             // QRIS: Show waiting for verification page, will auto-redirect after callback
@@ -370,6 +381,15 @@ class EMenuController extends Controller
                 ]);
             });
 
+            $pesanan->refresh();
+            Realtime::emit(new StatusPesananBerubah([
+                'kode_pesanan' => $pesanan->kode_pesanan,
+                'meja' => $pesanan->meja->kode_meja ?? null,
+                'status_pesanan' => $pesanan->status_pesanan,
+                'status_pembayaran' => $pesanan->status_pembayaran,
+                'metode_pembayaran' => $pesanan->metode_pembayaran,
+            ]));
+
             return response()->json(['status' => 'success', 'message' => 'Pembayaran QRIS berhasil']);
         }
 
@@ -380,10 +400,19 @@ class EMenuController extends Controller
     {
         $mejaMakan = $this->cariMeja($meja);
 
-        LogPanggilPelayan::create([
+        $panggilan = LogPanggilPelayan::create([
             'meja_id' => $mejaMakan->id,
             'status_panggilan' => 'menunggu',
         ]);
+
+        // Broadcast realtime: panggilan pelayan baru.
+        Realtime::emit(new PanggilanPelayan([
+            'id' => $panggilan->id,
+            'meja_id' => $mejaMakan->id,
+            'meja' => $mejaMakan->kode_meja,
+            'area' => $mejaMakan->area,
+            'status_panggilan' => 'menunggu',
+        ]));
 
         return back()->with('panggilan_terkirim', true);
     }

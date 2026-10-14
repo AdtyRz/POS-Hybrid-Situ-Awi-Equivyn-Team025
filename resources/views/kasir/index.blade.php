@@ -1117,5 +1117,10 @@
             };
         }
     </script>
+
+    <script>
+        // Realtime: pesanan baru / perubahan status → muat ulang papan kasir.
+        window.addEventListener('realtime', () => window.realtimeReload(800));
+    </script>
 </body>
 </html>

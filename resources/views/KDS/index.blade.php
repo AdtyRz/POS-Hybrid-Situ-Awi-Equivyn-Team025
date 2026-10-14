@@ -814,6 +814,11 @@
             }
         }
     </script>
+
+    <script>
+        // Realtime: pesanan baru / perubahan status / panggilan → muat ulang tiket.
+        window.addEventListener('realtime', () => window.realtimeReload(800));
+    </script>
 </body>
 </html>
 
