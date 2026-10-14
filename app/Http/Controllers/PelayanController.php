@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\PanggilanPelayan;
 use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
 use App\Models\Pesanan;
 use App\Models\DetailPesanan;
+use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -247,13 +249,6 @@ class PelayanController extends Controller
                     $isCalling  = (bool) $call;
                     $pesananMeja = $pesananAktif->where('meja_id', $m->id)->first();
                     $hasPesanan  = (bool) $pesananMeja;
-                'meja'  => $group->map(function ($m) use ($panggilanAktif, $pesananAktif) {
-                    $call       = $panggilanAktif->where('meja_id', $m->id)->first();
-                    $isCalling  = (bool) $call;
-
->>>>>>> d96fbc80841249eff58e27d1a9c5fe09441d87ae
-                    $pesananMeja = $pesananAktif->where('meja_id', $m->id)->first();
-                    $hasPesanan  = (bool) $pesananMeja;
 
                     $statusColor      = 'bg-[#213200]';
                     $statusLabel      = 'Tersedia';
@@ -304,15 +299,6 @@ class PelayanController extends Controller
                         'billInfo' => $billInfo,
                         'timeAgo' => $timeAgo,
                         'requestNote' => $requestNote,
-                        'statusColor'    => $statusColor,
-                        // Bug 4 FIX: Hapus key 'status' yang duplikat — PHP hanya simpan
-                        // yang terakhir, menyebabkan nilai tidak konsisten
-                        'status'         => $statusForTemplate,
-                        'statusLabel'    => $statusLabel,
-                        'billInfo'       => $billInfo,
-                        'timeAgo'        => $timeAgo,
-                        'requestNote'    => $requestNote,
->>>>>>> d96fbc80841249eff58e27d1a9c5fe09441d87ae
                         'statusColorClass' => $statusColorClass,
                         'kapasitas'      => $m->kapasitas,
                         'area'           => $m->area,
@@ -377,6 +363,14 @@ class PelayanController extends Controller
         }
 
         $log->update($isi);
+
+        Realtime::emit(new PanggilanPelayan([
+            'id' => $log->id,
+            'meja_id' => $log->meja_id,
+            'meja' => $log->meja->kode_meja ?? null,
+            'area' => $log->meja->area ?? null,
+            'status_panggilan' => $log->status_panggilan,
+        ]));
 
         // Return JSON untuk AJAX request (fetch dari Alpine.js)
         if ($request->expectsJson() || $request->ajax()) {

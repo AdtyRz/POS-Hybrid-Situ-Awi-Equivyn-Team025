@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\PanggilanPelayan;
+use App\Events\StatusPesananBerubah;
 use App\Models\DetailPesanan;
 use App\Models\LogPanggilPelayan;
 use App\Models\Pesanan;
+use App\Support\Realtime;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -109,11 +112,14 @@ class KdsController extends Controller
             'item_id' => ['nullable', 'exists:detail_pesanan,id'],
         ]);
 
-        DB::transaction(function () use ($target, $id, $data) {
+        $panggilanRunner = null;
+        $statusPayload = null;
+
+        DB::transaction(function () use ($target, $id, $data, &$panggilanRunner, &$statusPayload) {
             $pesanan = Pesanan::findOrFail($id);
 
             if ($data['aksi'] === 'runner') {
-                LogPanggilPelayan::create([
+                $panggilanRunner = LogPanggilPelayan::create([
                     'meja_id' => $pesanan->meja_id,
                     'status_panggilan' => 'menunggu',
                 ]);
@@ -140,7 +146,29 @@ class KdsController extends Controller
 
             $pesanan->refresh();
             $pesanan->update(['status_pesanan' => $this->statusPesanan($pesanan)]);
+
+            $statusPayload = [
+                'kode_pesanan' => $pesanan->kode_pesanan,
+                'meja' => $pesanan->meja->kode_meja ?? null,
+                'status_pesanan' => $pesanan->status_pesanan,
+                'status_pembayaran' => $pesanan->status_pembayaran,
+                'metode_pembayaran' => $pesanan->metode_pembayaran,
+            ];
         });
+
+        if ($statusPayload) {
+            Realtime::emit(new StatusPesananBerubah($statusPayload));
+        }
+
+        if ($panggilanRunner) {
+            Realtime::emit(new PanggilanPelayan([
+                'id' => $panggilanRunner->id,
+                'meja_id' => $panggilanRunner->meja_id,
+                'meja' => $panggilanRunner->meja->kode_meja ?? null,
+                'area' => $panggilanRunner->meja->area ?? null,
+                'status_panggilan' => 'menunggu',
+            ]));
+        }
 
         return back();
     }

@@ -268,6 +268,11 @@
     </div>
 
     @stack('scripts')
+
+    <script>
+        // Realtime: perubahan menu/kategori → muat ulang data admin.
+        window.addEventListener('realtime:menu.diperbarui', () => window.realtimeReload(800));
+    </script>
 </body>
 </html>
 
