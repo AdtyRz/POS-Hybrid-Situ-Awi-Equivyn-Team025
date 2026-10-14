@@ -92,3 +92,5 @@ Route::middleware(['auth', 'role:pelayan'])->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+Route::post('/midtrans/notification', [App\Http\Controllers\Api\MidtransNotificationController::class, 'handle'])->name('midtrans.notification');
