@@ -24,6 +24,10 @@ display: ['"Playfair Display"', 'Georgia', 'serif']
 </script>
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=playfair-display:600,700|plus-jakarta-sans:400,500,600,700,800&display=swap" rel="stylesheet">
+@if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+<script>window.__CHANNELS__ = ['pesanan.{{ $pesanan->kode_pesanan }}'];</script>
+@vite('resources/js/reverb.js')
+@endif
 </head>
 <body class="min-h-screen bg-cream-50 text-stone-800 antialiased font-sans">
 <div class="max-w-md mx-auto px-4 pt-4 pb-8">
@@ -56,8 +60,10 @@ display: ['"Playfair Display"', 'Georgia', 'serif']
 </div>
 @if ($pesanan->status_pesanan === 'dibatalkan')
 <span class="inline-block bg-red-100 text-red-700 text-xs font-bold rounded-full px-3 py-1 mt-2">Pesanan Dibatalkan</span>
+@elseif ($pesanan->status_pembayaran === 'sudah_bayar')
+<span class="inline-block bg-forest-100 text-forest-600 text-xs font-bold rounded-full px-3 py-1 mt-2">Lunas - Masuk Dapur</span>
 @else
-<span class="inline-block bg-gold-50 text-[#7a5c0f] text-xs font-bold rounded-full px-3 py-1 mt-2">{{ $pesanan->status_pembayaran === 'sudah_bayar' ? 'Sudah Dibayar' : 'Menunggu Pembayaran' }}</span>
+<span class="inline-block bg-gold-50 text-[#7a5c0f] text-xs font-bold rounded-full px-3 py-1 mt-2">Menunggu Pembayaran</span>
 @endif
 </div>
 <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 mt-3">
@@ -156,11 +162,28 @@ display: ['"Playfair Display"', 'Georgia', 'serif']
 <h2 class="font-bold">Pembayaran QRIS</h2>
 <span class="bg-stone-100 text-stone-500 text-[11px] font-bold rounded-full px-3 py-1">Midtrans Sandbox</span>
 </div>
-<div class="bg-gold-50 rounded-2xl p-4 mt-3 text-center">
-<p class="font-bold text-[#7a5c0f]">QRIS segera hadir</p>
-<p class="text-[#7a5c0f] text-xs mt-1">Integrasi Midtrans belum aktif. Sambil menunggu, selesaikan dengan tunai di kasir.</p>
+@if ($pesanan->status_pembayaran === 'sudah_bayar')
+<div class="bg-forest-100/60 rounded-2xl p-4 mt-3 text-center">
+<p class="font-bold text-forest-900">Pembayaran QRIS Lunas</p>
+<p class="text-forest-600 text-xs mt-1">Pembayaran via QRIS berhasil. Pesanan otomatis diteruskan ke dapur.</p>
 </div>
-<p class="text-stone-500 text-xs mt-3">Cara Pembayaran Scan: Buka aplikasi BCA Mobile, GoPay, OVO, Dana, ShopeePay, atau m-Banking Anda, lalu scan QR di atas.</p>
+@elseif (! empty($qris['qr_url']))
+<div class="rounded-2xl p-4 mt-3 text-center">
+<p class="font-bold text-[#7a5c0f]">Scan QRIS untuk Membayar</p>
+<p class="text-stone-500 text-xs mt-1">Scan QR di bawah dengan e-wallet / m-banking Anda.</p>
+<div class="mt-4 inline-block p-3 bg-white rounded-2xl border-2 border-forest-100">
+<img src="{{ $qris['qr_url'] }}" alt="QRIS {{ $pesanan->kode_pesanan }}" class="w-56 h-56 mx-auto object-contain" data-qris-image>
+</div>
+<p class="text-stone-400 text-xs mt-3">QR berlaku <span id="countdown" class="font-mono font-bold text-stone-600">--:--</span>. Diperbarui otomatis bila kedaluwarsa.</p>
+<p id="statusTeks" class="text-forest-600 text-xs font-semibold mt-2">Menunggu pembayaran...</p>
+</div>
+@else
+<div class="bg-gold-50 rounded-2xl p-4 mt-3 text-center">
+<p class="font-bold text-[#7a5c0f]">Menunggu Pembayaran QRIS</p>
+<p class="text-[#7a5c0f] text-xs mt-1">QR belum dapat dibuat. Muat ulang halaman ini sebentar lagi.</p>
+</div>
+@endif
+<p class="text-stone-500 text-xs mt-3">Pembayaran QRIS diproses otomatis melalui Midtrans (GoPay, OVO, Dana, ShopeePay, BCA Mobile, m-Banking).</p>
 </div>
 @else
 <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 mt-3">
@@ -193,5 +216,65 @@ display: ['"Playfair Display"', 'Georgia', 'serif']
 </div>
 <a href="{{ route('emenu.meja', $pesanan->meja->id) }}" class="block text-center w-full mt-4 bg-white border border-forest-900 text-forest-900 font-bold rounded-full py-3">Kembali ke Katalog</a>
 </div>
+@if ($pesanan->metode_pembayaran === 'qris' && $pesanan->status_pembayaran !== 'sudah_bayar' && $pesanan->status_pesanan !== 'dibatalkan')
+<script>
+let checkCount = 0;
+const maxChecks = 200;
+const qrisStatusUrl = "{{ route('emenu.qris.status', $pesanan->kode_pesanan) }}";
+const qrTtl = {{ (int) ($qrisTtl ?? 300) }};
+let remaining = qrTtl;
+
+function tickCountdown() {
+const el = document.getElementById('countdown');
+if (!el) return;
+if (remaining <= 0) {
+el.textContent = '00:00';
+const s = document.getElementById('statusTeks');
+if (s) s.textContent = 'Memperbarui QR Code...';
+return;
+}
+const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+const sec = String(remaining % 60).padStart(2, '0');
+el.textContent = m + ':' + sec;
+remaining--;
+setTimeout(tickCountdown, 1000);
+}
+
+function checkPaymentStatus() {
+checkCount++;
+fetch(qrisStatusUrl, { headers: { 'Accept': 'application/json' } })
+.then(response => response.json())
+.then(data => {
+if (data.lunas) {
+window.location.reload();
+return;
+}
+if (data.expired && data.qr_url) {
+const img = document.querySelector('[data-qris-image]');
+if (img) img.src = data.qr_url;
+const s = document.getElementById('statusTeks');
+if (s) s.textContent = 'Menunggu pembayaran...';
+remaining = qrTtl;
+}
+if (checkCount < maxChecks) {
+setTimeout(checkPaymentStatus, 3000);
+}
+})
+.catch(() => {
+if (checkCount < maxChecks) {
+setTimeout(checkPaymentStatus, 3000);
+}
+});
+}
+
+tickCountdown();
+checkPaymentStatus();
+</script>
+@endif
+
+<script>
+// Realtime: perubahan status pesanan/pembayaran → muat ulang pelacakan.
+window.addEventListener('realtime', () => window.realtimeReload(600));
+</script>
 </body>
 </html>
