@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\PesananBaru;
+use App\Events\StatusPesananBerubah;
 use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
 use App\Models\StokMutasi;
+use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -243,6 +246,16 @@ class PesananController extends Controller
             return $baru;
         });
 
+        Realtime::emit(new PesananBaru([
+            'kode_pesanan' => $pesanan->kode_pesanan,
+            'meja' => $meja->kode_meja,
+            'meja_id' => $meja->id,
+            'status_pesanan' => $pesanan->status_pesanan,
+            'status_pembayaran' => $pesanan->status_pembayaran,
+            'metode_pembayaran' => $pesanan->metode_pembayaran,
+            'total_bayar' => (float) $pesanan->total_bayar,
+        ]));
+
         return redirect()->route('kasir.pembayaran.create', $pesanan->kode_pesanan);
     }
 
@@ -299,6 +312,13 @@ class PesananController extends Controller
             $pesanan->update($isi);
         });
 
+        Realtime::emit(new StatusPesananBerubah([
+            'kode_pesanan' => $pesanan->kode_pesanan,
+            'meja' => $pesanan->meja->kode_meja ?? null,
+            'status_pesanan' => $pesanan->status_pesanan,
+            'status_pembayaran' => $pesanan->status_pembayaran,
+            'metode_pembayaran' => $pesanan->metode_pembayaran,
+        ]));
         // Bug 2 FIX: Return JSON untuk AJAX request (fetch dari Alpine tab-antar)
         // Return redirect untuk form biasa (kasir dashboard)
         if ($request->expectsJson() || $request->ajax()) {

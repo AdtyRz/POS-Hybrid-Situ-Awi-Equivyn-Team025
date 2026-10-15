@@ -29,6 +29,10 @@
         };
     </script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+    <script>window.__CHANNELS__ = ['meja.{{ $meja->kode_meja }}'];</script>
+    @vite('resources/js/reverb.js')
+    @endif
     <style>
         [x-cloak] { display: none !important; }
         body {
@@ -360,6 +364,10 @@
                 }
             };
         }
+    </script>
+    <script>
+        // Realtime: sesi meja ditutup kasir → muat ulang agar kembali terkunci minta kode baru.
+        window.addEventListener('realtime:sesi.berubah', () => window.realtimeReload(400));
     </script>
 </body>
 </html>

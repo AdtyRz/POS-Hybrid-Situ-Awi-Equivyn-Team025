@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\PanggilanPelayan;
 use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
 use App\Models\Pesanan;
 use App\Models\DetailPesanan;
+use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -45,7 +47,7 @@ class PelayanController extends Controller
             ->get();
 
         $siapAntar = $this->filterByArea(
-            Pesanan::with(['meja', 'detailPesanan.menu'])
+            Pesanan::with(['meja', 'detailPesanan.menu.kategori'])
         )->where('status_pesanan', 'siap')
             ->orderBy('waktu_pesan')
             ->get();
@@ -217,12 +219,12 @@ class PelayanController extends Controller
 
         // Build clusters matching frontend Alpine.js expected format
         $clusters = $meja->groupBy(function ($m) {
-            return substr($m->kode_meja, 0, 2);
-        })->map(function ($group, $prefix) use ($panggilanAktif, $pesananAktif) {
+            return strtolower(substr($m->kode_meja, 0, 2)); // lowercase key: 'lb', 'la', 'ka'
+        })->map(function ($group, $prefix) {
             $areaName = match($prefix) {
-                'LB' => 'Lesehan Bawah',
-                'LA' => 'Lesehan Atas',
-                'KA' => 'Kursi Atas',
+                'lb' => 'Lesehan Bawah',
+                'la' => 'Lesehan Atas',
+                'ka' => 'Kursi Atas',
                 default => $prefix
             };
 
@@ -233,19 +235,18 @@ class PelayanController extends Controller
             })->count();
 
             return [
-                'key'   => strtolower($prefix),     // Alpine pakai lowercase: 'lb', 'la', 'ka'
+                'key'   => strtolower($prefix),
                 'name'  => $areaName,
-                'count' => $group->count(),          // Bug 2 FIX: key 'count' yang hilang
-                'color' => match($prefix) {          // Bug 2 FIX: key 'color' yang hilang
-                    'LB'    => 'bg-[#0B4D2B]',
-                    'LA'    => 'bg-[#7A5900]',
-                    'KA'    => 'bg-[#404941]',
-                    default => 'bg-[#213200]',
+                'count' => $group->count(),
+                'color' => match(strtolower($prefix)) {
+                    'lb' => 'bg-[#213200]',
+                    'la' => 'bg-[#0B4D2B]',
+                    'ka' => 'bg-[#7A5900]',
+                    default => 'bg-[#404941]',
                 },
                 'meja'  => $group->map(function ($m) use ($panggilanAktif, $pesananAktif) {
                     $call       = $panggilanAktif->where('meja_id', $m->id)->first();
                     $isCalling  = (bool) $call;
-
                     $pesananMeja = $pesananAktif->where('meja_id', $m->id)->first();
                     $hasPesanan  = (bool) $pesananMeja;
 
@@ -282,26 +283,22 @@ class PelayanController extends Controller
                             $statusColorClass  = 'text-[#213200]';
                             $statusForTemplate = 'makan';
                         }
-                        $timeAgo  = $pesananMeja->waktu_pesan->diffForHumans();
-                        // Bug 3 FIX: null-safe operator (??) karena total_bayar bisa null
-                        // jika pesanan belum dihitung / masih diproses
+                        $timeAgo = $pesananMeja->waktu_pesan->diffForHumans();
                         $billInfo = 'Rp' . number_format($pesananMeja->total_bayar ?? 0, 0, ',', '.');
                     }
 
                     return [
-                        'id'             => $m->id,
-                        'code'           => $m->kode_meja,
-                        'number'         => (int) filter_var($m->kode_meja, FILTER_SANITIZE_NUMBER_INT),
-                        'name'           => $m->kode_meja,
-                        'isCalling'      => $isCalling,
-                        'statusColor'    => $statusColor,
-                        // Bug 4 FIX: Hapus key 'status' yang duplikat — PHP hanya simpan
-                        // yang terakhir, menyebabkan nilai tidak konsisten
-                        'status'         => $statusForTemplate,
-                        'statusLabel'    => $statusLabel,
-                        'billInfo'       => $billInfo,
-                        'timeAgo'        => $timeAgo,
-                        'requestNote'    => $requestNote,
+                        'id' => $m->id,
+                        'key' => $m->id,
+                        'number' => (int) filter_var($m->kode_meja, FILTER_SANITIZE_NUMBER_INT),
+                        'name' => $m->kode_meja,
+                        'isCalling' => $isCalling,
+                        'statusColor' => $statusColor,
+                        'status' => $statusForTemplate,
+                        'statusLabel' => $statusLabel,
+                        'billInfo' => $billInfo,
+                        'timeAgo' => $timeAgo,
+                        'requestNote' => $requestNote,
                         'statusColorClass' => $statusColorClass,
                         'kapasitas'      => $m->kapasitas,
                         'area'           => $m->area,
@@ -366,6 +363,14 @@ class PelayanController extends Controller
         }
 
         $log->update($isi);
+
+        Realtime::emit(new PanggilanPelayan([
+            'id' => $log->id,
+            'meja_id' => $log->meja_id,
+            'meja' => $log->meja->kode_meja ?? null,
+            'area' => $log->meja->area ?? null,
+            'status_panggilan' => $log->status_panggilan,
+        ]));
 
         // Return JSON untuk AJAX request (fetch dari Alpine.js)
         if ($request->expectsJson() || $request->ajax()) {

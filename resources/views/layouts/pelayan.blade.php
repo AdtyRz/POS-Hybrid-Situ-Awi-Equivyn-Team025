@@ -186,5 +186,14 @@
             } catch(e) {}
         }
     </script>
+
+    <script>
+        // Realtime: panggilan / perubahan status pesanan → muat ulang halaman.
+        window.addEventListener('realtime:panggilan.pelayan', () => {
+            if (typeof playChime === 'function') playChime('urgent');
+            window.realtimeReload(1200);
+        });
+        window.addEventListener('realtime', () => window.realtimeReload(800));
+    </script>
 </body>
 </html>
