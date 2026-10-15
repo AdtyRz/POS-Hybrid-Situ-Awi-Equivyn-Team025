@@ -24,6 +24,10 @@ display: ['"Playfair Display"', 'Georgia', 'serif']
 </script>
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=playfair-display:600,700|plus-jakarta-sans:400,500,600,700,800&display=swap" rel="stylesheet">
+@if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+<script>window.__CHANNELS__ = ['meja.{{ $meja->kode_meja }}',@foreach ($daftarPesanan as $p)'pesanan.{{ $p->kode_pesanan }}',@endforeach];</script>
+@vite('resources/js/reverb.js')
+@endif
 </head>
 <body class="min-h-screen bg-cream-50 text-stone-800 antialiased font-sans">
 <div class="max-w-md mx-auto px-4 pt-4 pb-8">
@@ -92,5 +96,10 @@ $jumlahItem = $pesanan->detailPesanan->sum('jumlah');
 
 <a href="{{ route('emenu.meja', $meja->id) }}" class="block text-center w-full mt-4 bg-white border border-forest-900 text-forest-900 font-bold rounded-full py-3">Kembali ke Katalog</a>
 </div>
+
+<script>
+// Realtime: perubahan status pesanan pada sesi meja ini → muat ulang daftar.
+window.addEventListener('realtime', () => window.realtimeReload(800));
+</script>
 </body>
 </html>

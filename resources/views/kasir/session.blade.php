@@ -26,7 +26,7 @@ Kembali
 </header>
 
 <h1 class="font-display font-bold text-2xl text-[#052E1B] mb-2">Session Meja</h1>
-<p class="text-stone-500 text-sm mb-6">Kelola sesi meja aktif</p>
+<p class="text-stone-500 text-sm mb-6">Kelola sesi meja aktif. Selesaikan sesi untuk menutup sesi pelanggan dan membuat kode unik baru.</p>
 
 @foreach ($meja as $m)
 <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 mb-4">
@@ -34,13 +34,25 @@ Kembali
 <div>
 <p class="font-bold text-lg text-forest-900">{{ $m->kode_meja }} ({{ $m->area }})</p>
 <p class="text-stone-500 text-sm">Status: <span class="font-semibold text-forest-700">{{ ucfirst($m->status_meja) }}</span></p>
+<div class="mt-1 flex items-center gap-2">
+<span class="text-xs text-stone-500">Kode sesi aktif:</span>
+<span class="px-3 py-1 rounded-lg bg-forest-900 text-gold-500 font-mono font-extrabold text-lg tracking-[0.3em]">{{ ($sesiAktif[$m->id] ?? null)->kode_unik ?? '----' }}</span>
+</div>
 </div>
 @if ($m->pesananAktif->count() > 0)
 <form method="POST" action="{{ route('kasir.session.tutup', $m->kode_meja) }}">
 @csrf
 @method('PATCH')
-<button type="submit" class="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm shadow-sm transition" onclick="return confirm('Yakin tutup session meja ini? Semua pesanan aktif akan dibatalkan.')">
-Tutup Session
+<button type="submit" class="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm shadow-sm transition" onclick="return confirm('Selesaikan sesi meja ini? Semua pesanan aktif akan ditandai selesai dan kode unik baru akan dibuat.')">
+Selesaikan Sesi
+</button>
+</form>
+@else
+<form method="POST" action="{{ route('kasir.session.tutup', $m->kode_meja) }}">
+@csrf
+@method('PATCH')
+<button type="submit" class="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold text-sm shadow-sm transition" onclick="return confirm('Selesaikan sesi meja ini dan buat kode unik baru?')">
+Selesaikan Sesi
 </button>
 </form>
 @endif

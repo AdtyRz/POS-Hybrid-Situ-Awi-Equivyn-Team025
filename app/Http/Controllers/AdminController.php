@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MenuDiperbarui;
 use App\Models\DetailPesanan;
 use App\Models\Kategori;
 use App\Models\LogPanggilPelayan;
@@ -9,6 +10,7 @@ use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
 use App\Models\User;
+use App\Support\Realtime;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -195,6 +197,8 @@ class AdminController extends Controller
 
         Menu::create($data);
 
+        Realtime::emit(new MenuDiperbarui('menu'));
+
         return back()->with('sukses', 'Menu baru berhasil didaftarkan ke sistem!');
     }
 
@@ -212,6 +216,8 @@ class AdminController extends Controller
 
         $menu->update($data);
 
+        Realtime::emit(new MenuDiperbarui('menu'));
+
         return back()->with('sukses', 'Menu berhasil diperbarui!');
     }
 
@@ -224,6 +230,8 @@ class AdminController extends Controller
         }
 
         $menu->delete();
+
+        Realtime::emit(new MenuDiperbarui('menu'));
 
         return back()->with('sukses', 'Menu berhasil dihapus!');
     }

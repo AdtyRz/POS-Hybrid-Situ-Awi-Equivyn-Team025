@@ -2,12 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\PanggilanPelayan;
+use App\Events\PesananBaru;
+use App\Events\SesiMejaBerubah;
+use App\Events\StatusPesananBerubah;
 use App\Models\Kategori;
 use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
+use App\Models\SesiMeja;
 use App\Models\StokMutasi;
+use App\Services\MidtransService;
+use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,9 +29,52 @@ class EMenuController extends Controller
         return view('emenu.beranda');
     }
 
-    public function aplikasi(string $meja): View
+    /**
+     * Halaman kunci: pengunjung memasukkan kode unik yang tampil di LCD meja.
+     */
+    public function kunci(string $meja): View
     {
         $mejaMakan = $this->cariMeja($meja);
+        $sesi = SesiMeja::aktifUntuk($mejaMakan);
+
+        return view('emenu.kunci', [
+            'meja' => $mejaMakan,
+            'panjangKode' => strlen($sesi->kode_unik),
+        ]);
+    }
+
+    /**
+     * Validasi kode unik sesi. Bila benar, tandai sesi sebagai terverifikasi
+     * di session pelanggan lalu arahkan ke halaman e-menu.
+     */
+    public function buka(Request $request, string $meja): RedirectResponse
+    {
+        $mejaMakan = $this->cariMeja($meja);
+
+        $data = $request->validate([
+            'kode_unik' => ['required', 'string'],
+        ]);
+
+        $sesi = SesiMeja::aktifUntuk($mejaMakan);
+
+        if (! hash_equals($sesi->kode_unik, trim($data['kode_unik']))) {
+            return back()->withErrors([
+                'kode_unik' => 'Kode tidak sesuai dengan yang tampil di layar meja.',
+            ]);
+        }
+
+        $request->session()->put('sesi_meja_' . $mejaMakan->id, $sesi->id);
+
+        return redirect()->route('emenu.meja', $mejaMakan->kode_meja);
+    }
+
+    public function aplikasi(string $meja): View|RedirectResponse
+    {
+        $mejaMakan = $this->cariMeja($meja);
+
+        if (! $this->sesiTerverifikasi($mejaMakan)) {
+            return $this->kunciRedirect($mejaMakan);
+        }
 
         $menuJson = Menu::orderBy('nama_menu')->get()->map(function ($menu) {
             return [
@@ -62,6 +112,10 @@ class EMenuController extends Controller
     public function checkout(Request $request, string $meja): RedirectResponse
     {
         $mejaMakan = $this->cariMeja($meja);
+
+        if (! $this->sesiTerverifikasi($mejaMakan)) {
+            return $this->kunciRedirect($mejaMakan);
+        }
 
         $data = $request->validate([
             'jumlah' => ['required', 'array', 'min:1'],
@@ -150,6 +204,17 @@ class EMenuController extends Controller
 
         $request->session()->push('riwayat_meja_' . $mejaMakan->id, $pesanan->kode_pesanan);
 
+        // Broadcast realtime: pesanan baru masuk ke KDS, kasir, dan pelayan.
+        Realtime::emit(new PesananBaru([
+            'kode_pesanan' => $pesanan->kode_pesanan,
+            'meja' => $mejaMakan->kode_meja,
+            'meja_id' => $mejaMakan->id,
+            'status_pesanan' => $pesanan->status_pesanan,
+            'status_pembayaran' => $pesanan->status_pembayaran,
+            'metode_pembayaran' => $pesanan->metode_pembayaran,
+            'total_bayar' => (float) $pesanan->total_bayar,
+        ]));
+
         // Redirect based on payment method
         if ($data['metode'] === 'qris') {
             // QRIS: Show waiting for verification page, will auto-redirect after callback
@@ -164,9 +229,14 @@ class EMenuController extends Controller
      * Tampilkan form checkout (GET).
      * Route: GET /meja/{meja}/checkout
      */
-    public function checkoutForm(string $meja): View
+    public function checkoutForm(string $meja): View|RedirectResponse
     {
         $mejaMakan = $this->cariMeja($meja);
+
+        if (! $this->sesiTerverifikasi($mejaMakan)) {
+            return $this->kunciRedirect($mejaMakan);
+        }
+
         return view('emenu.checkout', ['meja' => $mejaMakan]);
     }
 
@@ -184,12 +254,27 @@ class EMenuController extends Controller
             'selesai' => 5,
         ][$pesanan->status_pesanan] ?? 0;
 
-        return view('emenu.status', compact('pesanan', 'tahap'));
+        // Bila pelanggan membuka halaman status tanpa membayar di halaman verifikasi,
+        // tampilkan QRIS di sini agar tetap bisa membayar. QR disembunyikan begitu lunas.
+        $qris = null;
+        $qrisTtl = (int) config('midtrans.qris_expiry_minutes', 5) * 60;
+
+        if ($pesanan->metode_pembayaran === 'qris'
+            && $pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR
+            && $pesanan->status_pesanan !== 'dibatalkan') {
+            $qris = app(MidtransService::class)->createQrisCharge($pesanan);
+        }
+
+        return view('emenu.status', compact('pesanan', 'tahap', 'qris', 'qrisTtl'));
     }
 
-    public function pelacakan(string $meja): View
+    public function pelacakan(string $meja): View|RedirectResponse
     {
         $mejaMakan = $this->cariMeja($meja);
+
+        if (! $this->sesiTerverifikasi($mejaMakan)) {
+            return $this->kunciRedirect($mejaMakan);
+        }
 
         $kodeRiwayat = array_reverse(session('riwayat_meja_' . $mejaMakan->id, []));
 
@@ -216,11 +301,94 @@ class EMenuController extends Controller
         ]);
     }
 
-    public function verifikasi(string $kode_pesanan): View
+    public function verifikasi(string $kode_pesanan): View|RedirectResponse
+    {
+        $pesanan = Pesanan::with('meja')->where('kode_pesanan', $kode_pesanan)->firstOrFail();
+
+        // Kalau sudah lunas (mis. halaman di-refresh), langsung ke status pesanan.
+        if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
+            return redirect()->route('emenu.status', $pesanan->kode_pesanan);
+        }
+
+        // Generate QRIS QR Code via Midtrans untuk ditampilkan di halaman pelanggan.
+        $qris = app(MidtransService::class)->createQrisCharge($pesanan);
+
+        // Perkiraan masa berlaku QR (untuk countdown di UI). Refresh sesungguhnya
+        // terjadi saat Midtrans menandai transaksi expire.
+        $qrisTtl = (int) config('midtrans.qris_expiry_minutes', 5) * 60;
+
+        return view('emenu.verifikasi', compact('pesanan', 'qris', 'qrisTtl'));
+    }
+
+    /**
+     * Cek status pembayaran QRIS dari Midtrans (dipanggil polling oleh halaman pelanggan).
+     * Bila sukses, pesanan otomatis jadi lunas dan masuk dapur.
+     */
+    public function qrisStatus(string $kode_pesanan): JsonResponse
     {
         $pesanan = Pesanan::where('kode_pesanan', $kode_pesanan)->firstOrFail();
 
-        return view('emenu.verifikasi', compact('pesanan'));
+        if ($pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR) {
+            $midtrans = app(MidtransService::class);
+            $status = $midtrans->getTransactionStatus($kode_pesanan);
+
+            $transactionStatus = strtolower($status->transaction_status ?? '');
+            $fraudStatus = strtolower($status->fraud_status ?? '');
+
+            $sukses = $transactionStatus === 'settlement'
+                || ($transactionStatus === 'capture' && $fraudStatus === 'accept');
+
+            if ($sukses) {
+                DB::transaction(function () use ($pesanan, $status) {
+                    $pesanan->update([
+                        'status_pesanan' => Pesanan::STATUS_DIPROSES,
+                        'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+                        'metode_pembayaran' => 'qris',
+                    ]);
+
+                    if (! $pesanan->pembayaran) {
+                        $pesanan->pembayaran()->create([
+                            'metode_pembayaran' => 'qris',
+                            'status_pembayaran' => 'lunas',
+                            'jumlah_bayar' => (float) $pesanan->total_bayar,
+                            'kembalian' => 0,
+                            'transaction_id' => $status->transaction_id ?? null,
+                            'order_id' => $pesanan->kode_pesanan,
+                        ]);
+                    }
+                });
+
+                $pesanan->refresh();
+                Realtime::emit(new StatusPesananBerubah([
+                    'kode_pesanan' => $pesanan->kode_pesanan,
+                    'meja' => $pesanan->meja->kode_meja ?? null,
+                    'status_pesanan' => $pesanan->status_pesanan,
+                    'status_pembayaran' => $pesanan->status_pembayaran,
+                    'metode_pembayaran' => $pesanan->metode_pembayaran,
+                ]));
+            } elseif ($transactionStatus === 'expire') {
+                // QR kedaluwarsa → buat QR baru. Order_id yang sudah expire boleh dipakai ulang.
+                $qris = $midtrans->createQrisCharge($pesanan, true);
+                $pesanan->refresh();
+
+                return response()->json([
+                    'lunas' => false,
+                    'expired' => true,
+                    'status_pesanan' => $pesanan->status_pesanan,
+                    'status_pembayaran' => $pesanan->status_pembayaran,
+                    'qr_url' => $qris['qr_url'] ?? null,
+                    'expiry_time' => $qris['expiry_time'] ?? null,
+                ]);
+            }
+
+            $pesanan->refresh();
+        }
+
+        return response()->json([
+            'lunas' => $pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR,
+            'status_pesanan' => $pesanan->status_pesanan,
+            'status_pembayaran' => $pesanan->status_pembayaran,
+        ]);
     }
 
     public function bayarTunai(string $kode_pesanan): View
@@ -265,6 +433,15 @@ class EMenuController extends Controller
                 ]);
             });
 
+            $pesanan->refresh();
+            Realtime::emit(new StatusPesananBerubah([
+                'kode_pesanan' => $pesanan->kode_pesanan,
+                'meja' => $pesanan->meja->kode_meja ?? null,
+                'status_pesanan' => $pesanan->status_pesanan,
+                'status_pembayaran' => $pesanan->status_pembayaran,
+                'metode_pembayaran' => $pesanan->metode_pembayaran,
+            ]));
+
             return response()->json(['status' => 'success', 'message' => 'Pembayaran QRIS berhasil']);
         }
 
@@ -275,10 +452,19 @@ class EMenuController extends Controller
     {
         $mejaMakan = $this->cariMeja($meja);
 
-        LogPanggilPelayan::create([
+        $panggilan = LogPanggilPelayan::create([
             'meja_id' => $mejaMakan->id,
             'status_panggilan' => 'menunggu',
         ]);
+
+        // Broadcast realtime: panggilan pelayan baru.
+        Realtime::emit(new PanggilanPelayan([
+            'id' => $panggilan->id,
+            'meja_id' => $mejaMakan->id,
+            'meja' => $mejaMakan->kode_meja,
+            'area' => $mejaMakan->area,
+            'status_panggilan' => 'menunggu',
+        ]));
 
         return back()->with('panggilan_terkirim', true);
     }
@@ -290,5 +476,27 @@ class EMenuController extends Controller
         }
 
         return MejaMakan::where('kode_meja', $meja)->firstOrFail();
+    }
+
+    /**
+     * Cek apakah pengunjung sudah memasukkan kode unik untuk sesi yang sedang aktif.
+     * Bila sesi ditutup kasir, sesi aktif berganti sehingga otomatis terkunci lagi.
+     */
+    private function sesiTerverifikasi(MejaMakan $meja): bool
+    {
+        $sesiId = session('sesi_meja_' . $meja->id);
+
+        if (! $sesiId) {
+            return false;
+        }
+
+        $aktif = SesiMeja::aktifUntuk($meja);
+
+        return (int) $sesiId === $aktif->id;
+    }
+
+    private function kunciRedirect(MejaMakan $meja): RedirectResponse
+    {
+        return redirect()->route('emenu.kunci', $meja->kode_meja);
     }
 }

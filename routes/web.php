@@ -14,10 +14,13 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [EMenuController::class, 'beranda'])->name('emenu.index');
 
 Route::get('/meja/{meja}', [EMenuController::class, 'aplikasi'])->name('emenu.meja');
+Route::get('/meja/{meja}/kunci', [EMenuController::class, 'kunci'])->name('emenu.kunci');
+Route::post('/meja/{meja}/buka', [EMenuController::class, 'buka'])->name('emenu.buka');
 Route::get('/meja/{meja}/pelacakan', [EMenuController::class, 'pelacakan'])->name('emenu.pelacakan');
 Route::post('/meja/{meja}/panggil', [EMenuController::class, 'panggil'])->name('emenu.panggil');
 Route::get('/meja/{meja}/checkout', [EMenuController::class, 'checkoutForm'])->name('emenu.checkout.form');
 Route::post('/meja/{meja}/checkout', [EMenuController::class, 'checkout'])->name('emenu.checkout');
+Route::get('/qris/status/{kode_pesanan}', [EMenuController::class, 'qrisStatus'])->name('emenu.qris.status');
 Route::get('/status/{kode_pesanan}', [EMenuController::class, 'status'])->name('emenu.status');
 Route::get('/verifikasi/{kode_pesanan}', [EMenuController::class, 'verifikasi'])->name('emenu.verifikasi');
 Route::get('/bayar-tunai/{kode_pesanan}', [EMenuController::class, 'bayarTunai'])->name('emenu.bayar-tunai');
@@ -92,3 +95,5 @@ Route::middleware(['auth', 'role:pelayan'])->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+Route::post('/midtrans/notification', [App\Http\Controllers\Api\MidtransNotificationController::class, 'handle'])->name('midtrans.notification');
