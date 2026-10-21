@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Models\Pesanan;
+use App\Http\Requests\Api\PembayaranApiRequest;
 use App\Models\Pembayaran;
+use App\Models\Pesanan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
-use App\Http\Requests\Api\PembayaranApiRequest;
 
 class PembayaranApiController extends Controller
 {
@@ -18,8 +18,12 @@ class PembayaranApiController extends Controller
 
         $pesanan = Pesanan::where('kode_pesanan', $data['kode_pesanan'])->with('meja')->firstOrFail();
 
-        if ($pesanan->status_pembayaran === 'sudah_bayar') {
+        if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
             return ApiResponse::conflict('Pesanan sudah lunas');
+        }
+
+        if ($pesanan->status_pesanan === Pesanan::STATUS_DIBATALKAN) {
+            return ApiResponse::conflict('Pesanan sudah dibatalkan');
         }
 
         $tagihan = (float) $pesanan->total_bayar;
@@ -39,12 +43,10 @@ class PembayaranApiController extends Controller
             ]);
 
             $pesanan->update([
-                'status_pesanan' => Pesanan::STATUS_SELESAI,
-                'status_pembayaran' => 'sudah_bayar',
+                'status_pesanan' => Pesanan::STATUS_DIPROSES,
+                'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
                 'metode_pembayaran' => $data['metode_pembayaran'],
             ]);
-
-            $pesanan->meja->update(['status_meja' => 'kosong']);
         });
 
         return ApiResponse::success($pesanan->fresh(), 'Pembayaran berhasil', 201);
