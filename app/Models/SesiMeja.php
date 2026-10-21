@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\PesananService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
@@ -64,17 +65,29 @@ class SesiMeja extends Model
 
     /**
      * Tutup sesi aktif meja lalu buka sesi baru dengan kode unik yang baru.
-     * Semua pesanan aktif meja ditandai selesai dan meja dikosongkan.
+     * Pesanan yang sudah lunas ditandai selesai; pesanan yang belum dibayar
+     * dibatalkan (stok dikembalikan) agar status pembayaran tidak dipalsukan.
      */
     public static function putuskanSesi(MejaMakan $meja): self
     {
         return DB::transaction(function () use ($meja) {
-            Pesanan::where('meja_id', $meja->id)
-                ->whereNotIn('status_pesanan', ['selesai', 'dibatalkan'])
-                ->update([
-                    'status_pesanan' => Pesanan::STATUS_SELESAI,
-                    'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
-                ]);
+            $pesananAktif = Pesanan::where('meja_id', $meja->id)
+                ->whereNotIn('status_pesanan', [Pesanan::STATUS_SELESAI, Pesanan::STATUS_DIBATALKAN])
+                ->get();
+
+            foreach ($pesananAktif as $pesanan) {
+                if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
+                    $pesanan->update(['status_pesanan' => Pesanan::STATUS_SELESAI]);
+
+                    continue;
+                }
+
+                app(PesananService::class)->batalkan(
+                    $pesanan,
+                    null,
+                    'Sesi meja ditutup tanpa pembayaran.'
+                );
+            }
 
             $meja->update(['status_meja' => 'kosong']);
 

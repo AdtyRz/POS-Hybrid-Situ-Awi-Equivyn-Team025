@@ -1,12 +1,12 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Api\MidtransNotificationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EMenuController;
-use App\Http\Controllers\IotController;
-use App\Http\Controllers\PelayanController;
 use App\Http\Controllers\KasirController;
 use App\Http\Controllers\KdsController;
+use App\Http\Controllers\PelayanController;
 use App\Http\Controllers\PembayaranController;
 use App\Http\Controllers\PesananController;
 use Illuminate\Support\Facades\Route;
@@ -15,26 +15,21 @@ Route::get('/', [EMenuController::class, 'beranda'])->name('emenu.index');
 
 Route::get('/meja/{meja}', [EMenuController::class, 'aplikasi'])->name('emenu.meja');
 Route::get('/meja/{meja}/kunci', [EMenuController::class, 'kunci'])->name('emenu.kunci');
-Route::post('/meja/{meja}/buka', [EMenuController::class, 'buka'])->name('emenu.buka');
+Route::post('/meja/{meja}/buka', [EMenuController::class, 'buka'])
+    ->middleware('throttle:10,1')
+    ->name('emenu.buka');
 Route::get('/meja/{meja}/pelacakan', [EMenuController::class, 'pelacakan'])->name('emenu.pelacakan');
-Route::post('/meja/{meja}/panggil', [EMenuController::class, 'panggil'])->name('emenu.panggil');
+Route::post('/meja/{meja}/panggil', [EMenuController::class, 'panggil'])
+    ->middleware('throttle:15,1')
+    ->name('emenu.panggil');
 Route::get('/meja/{meja}/checkout', [EMenuController::class, 'checkoutForm'])->name('emenu.checkout.form');
-Route::post('/meja/{meja}/checkout', [EMenuController::class, 'checkout'])->name('emenu.checkout');
+Route::post('/meja/{meja}/checkout', [EMenuController::class, 'checkout'])
+    ->middleware('throttle:20,1')
+    ->name('emenu.checkout');
 Route::get('/qris/status/{kode_pesanan}', [EMenuController::class, 'qrisStatus'])->name('emenu.qris.status');
 Route::get('/status/{kode_pesanan}', [EMenuController::class, 'status'])->name('emenu.status');
 Route::get('/verifikasi/{kode_pesanan}', [EMenuController::class, 'verifikasi'])->name('emenu.verifikasi');
 Route::get('/bayar-tunai/{kode_pesanan}', [EMenuController::class, 'bayarTunai'])->name('emenu.bayar-tunai');
-Route::post('/qris/callback', [EMenuController::class, 'qrisCallback'])->name('emenu.qris.callback');
-
-Route::get('/admin/analitik-laporan', [AdminController::class, 'dashboard'])->name('admin.analitik-laporan');
-Route::get('/admin/master-meja', [AdminController::class, 'daftarMeja'])->name('admin.master-meja');
-Route::get('/admin/master-menu', [AdminController::class, 'daftarMenu'])->name('admin.master-menu');
-Route::get('/admin/laporan-penjualan', [AdminController::class, 'index'])->name('admin.laporan-penjualan');
-Route::get('/admin/manajemen-akun', [AdminController::class, 'daftarAkun'])->name('admin.manajemen-akun');
-
-Route::get('/admin/pengaturan-sistem', function () {
-    return view('admin.pengaturan-sistem.index');
-})->name('admin.pengaturan-sistem');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -42,9 +37,16 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/admin/analitik-laporan', [AdminController::class, 'dashboard'])->name('admin.analitik-laporan');
     Route::get('/admin/laporan', [AdminController::class, 'index'])->name('admin.laporan');
+    Route::get('/admin/laporan-penjualan', [AdminController::class, 'index'])->name('admin.laporan-penjualan');
+
+    Route::get('/admin/pengaturan-sistem', function () {
+        return view('admin.pengaturan-sistem.index');
+    })->name('admin.pengaturan-sistem');
 
     Route::get('/admin/menu', [AdminController::class, 'daftarMenu'])->name('admin.menu');
+    Route::get('/admin/master-menu', [AdminController::class, 'daftarMenu'])->name('admin.master-menu');
     Route::post('/admin/menu', [AdminController::class, 'simpanMenu'])->name('admin.menu.simpan');
     Route::put('/admin/menu/{id}', [AdminController::class, 'ubahMenu'])->name('admin.menu.ubah');
     Route::delete('/admin/menu/{id}', [AdminController::class, 'hapusMenu'])->name('admin.menu.hapus');
@@ -53,9 +55,11 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/admin/kategori', [AdminController::class, 'simpanKategori'])->name('admin.kategori.simpan');
 
     Route::get('/admin/meja', [AdminController::class, 'daftarMeja'])->name('admin.meja');
+    Route::get('/admin/master-meja', [AdminController::class, 'daftarMeja'])->name('admin.master-meja');
     Route::post('/admin/meja', [AdminController::class, 'simpanMeja'])->name('admin.meja.simpan');
 
     Route::get('/admin/akun', [AdminController::class, 'daftarAkun'])->name('admin.akun');
+    Route::get('/admin/manajemen-akun', [AdminController::class, 'daftarAkun'])->name('admin.manajemen-akun');
     Route::post('/admin/akun', [AdminController::class, 'simpanAkun'])->name('admin.akun.simpan');
     Route::patch('/admin/akun/{id}', [AdminController::class, 'ubahStatusAkun'])->name('admin.akun.status');
 });
@@ -96,4 +100,4 @@ Route::middleware(['auth', 'role:pelayan'])->group(function () {
 
 require __DIR__.'/auth.php';
 
-Route::post('/midtrans/notification', [App\Http\Controllers\Api\MidtransNotificationController::class, 'handle'])->name('midtrans.notification');
+Route::post('/midtrans/notification', [MidtransNotificationController::class, 'handle'])->name('midtrans.notification');

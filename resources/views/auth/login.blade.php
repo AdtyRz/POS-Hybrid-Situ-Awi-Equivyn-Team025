@@ -223,9 +223,8 @@
                                 <rect x="4" y="10" width="16" height="10" rx="2" />
                                 <path stroke-linecap="round" d="M8 10V7a4 4 0 0 1 8 0v3" />
                             </svg>
-                            <input id="password" type="password" name="password"
-                                required autocomplete="current-password"
-                                placeholder="Masukkan password operasional"
+                            <input id="password" type="password" name="password" required
+                                autocomplete="current-password" placeholder="Masukkan password operasional"
                                 class="w-full bg-transparent border-0 outline-none focus:ring-0 py-3 text-[13px] text-stone-800">
                         </div>
                         @error('password')
