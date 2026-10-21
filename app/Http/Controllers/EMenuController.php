@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Events\PanggilanPelayan;
 use App\Events\PesananBaru;
-use App\Events\SesiMejaBerubah;
 use App\Events\StatusPesananBerubah;
 use App\Models\Kategori;
 use App\Models\LogPanggilPelayan;
@@ -12,15 +11,14 @@ use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
 use App\Models\SesiMeja;
-use App\Models\StokMutasi;
 use App\Services\MidtransService;
+use App\Services\PesananService;
 use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
-use Illuminate\Support\Str;
 
 class EMenuController extends Controller
 {
@@ -63,7 +61,7 @@ class EMenuController extends Controller
             ]);
         }
 
-        $request->session()->put('sesi_meja_' . $mejaMakan->id, $sesi->id);
+        $request->session()->put('sesi_meja_'.$mejaMakan->id, $sesi->id);
 
         return redirect()->route('emenu.meja', $mejaMakan->kode_meja);
     }
@@ -83,7 +81,7 @@ class EMenuController extends Controller
                 'price' => (float) $menu->harga,
                 'desc' => $menu->deskripsi ?? '',
                 'category' => $menu->kategori_id,
-                'image' => $menu->foto_menu ? asset('storage/' . $menu->foto_menu) : '',
+                'image' => $menu->foto_menu ? asset('storage/'.$menu->foto_menu) : '',
                 'isSoldOut' => $menu->stok_menu <= 0,
                 'badge' => $menu->stok_menu <= 0 ? 'Stok Habis' : '',
                 'badgeType' => $menu->stok_menu <= 0 ? 'soldout' : '',
@@ -98,13 +96,13 @@ class EMenuController extends Controller
 
         $inisial = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $mejaMakan->kode_meja), 0, 2));
 
-        $riwayat = session('riwayat_meja_' . $mejaMakan->id, []);
+        $riwayat = session('riwayat_meja_'.$mejaMakan->id, []);
 
         return view('pelanggan.index', [
             'meja' => $mejaMakan,
             'menuJson' => $menuJson,
             'kategoriJson' => $kategoriJson,
-            'orderRef' => '#' . $inisial . '-' . $mejaMakan->id . '04',
+            'orderRef' => '#'.$inisial.'-'.$mejaMakan->id.'04',
             'punyaRiwayat' => count($riwayat) > 0,
         ]);
     }
@@ -131,78 +129,18 @@ class EMenuController extends Controller
             return back()->withErrors(['jumlah' => 'Pilih minimal satu menu.'])->withInput();
         }
 
-        $daftarMenu = Menu::whereIn('id', $dipilih->keys())->get()->keyBy('id');
-
-        foreach ($dipilih as $id => $jumlah) {
-            if (! isset($daftarMenu[$id]) || $daftarMenu[$id]->stok_menu < $jumlah) {
-                $nama = isset($daftarMenu[$id]) ? $daftarMenu[$id]->nama_menu : 'menu';
-                return back()->withErrors(['jumlah' => 'Stok ' . $nama . ' tidak cukup.'])->withInput();
-            }
+        try {
+            $pesanan = app(PesananService::class)->buat(
+                $mejaMakan,
+                $dipilih->all(),
+                $data['catatan'] ?? [],
+                ['asal' => 'emenu', 'metode' => $data['metode']]
+            );
+        } catch (\RuntimeException $e) {
+            return back()->withErrors(['jumlah' => $e->getMessage()])->withInput();
         }
 
-        $pesanan = DB::transaction(function () use ($mejaMakan, $daftarMenu, $dipilih, $data) {
-            $subtotal = 0;
-
-            foreach ($dipilih as $id => $jumlah) {
-                $subtotal += $daftarMenu[$id]->harga * $jumlah;
-            }
-
-            $totalBayar = $subtotal + round($subtotal * 0.1);
-            $kodePesanan = 'SW-' . now()->format('YmdHis') . '-' . $mejaMakan->id;
-            $kodePembayaran = 'PAY-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(6));
-
-            // Determine initial status based on payment method
-            if ($data['metode'] === 'qris') {
-                // QRIS: Auto-verify via callback, status pending verification
-                $statusPesanan = Pesanan::STATUS_MENUNGGU_VERIFIKASI;
-                $statusPembayaran = Pesanan::PAYMENT_PENDING_VERIFIKASI;
-                $metodePembayaran = 'qris';
-            } else {
-                // Cash: Pay first at kasir, generate payment code
-                $statusPesanan = Pesanan::STATUS_MENUNGGU_PEMBAYARAN;
-                $statusPembayaran = Pesanan::PAYMENT_PENDING_PEMBAYARAN;
-                $metodePembayaran = 'tunai';
-            }
-
-            $pesanan = Pesanan::create([
-                'kode_pesanan' => $kodePesanan,
-                'kode_pembayaran' => $kodePembayaran,
-                'meja_id' => $mejaMakan->id,
-                'total_bayar' => $totalBayar,
-                'metode_pembayaran' => $metodePembayaran,
-                'status_pesanan' => $statusPesanan,
-                'status_pembayaran' => $statusPembayaran,
-            ]);
-
-            foreach ($dipilih as $id => $jumlah) {
-                $menu = $daftarMenu[$id];
-
-                $pesanan->detailPesanan()->create([
-                    'menu_id' => $menu->id,
-                    'jumlah' => $jumlah,
-                    'harga_satuan' => $menu->harga,
-                    'subtotal' => $menu->harga * $jumlah,
-                    'catatan' => $data['catatan'][$id] ?? null,
-                    'status_item' => 'menunggu',
-                ]);
-
-                $menu->decrement('stok_menu', $jumlah);
-
-                StokMutasi::create([
-                    'menu_id' => $menu->id,
-                    'pesanan_id' => $pesanan->id,
-                    'jenis' => 'penjualan',
-                    'jumlah_delta' => -$jumlah,
-                    'stok_akhir' => $menu->fresh()->stok_menu,
-                ]);
-            }
-
-            $mejaMakan->update(['status_meja' => 'terisi']);
-
-            return $pesanan;
-        });
-
-        $request->session()->push('riwayat_meja_' . $mejaMakan->id, $pesanan->kode_pesanan);
+        $request->session()->push('riwayat_meja_'.$mejaMakan->id, $pesanan->kode_pesanan);
 
         // Broadcast realtime: pesanan baru masuk ke KDS, kasir, dan pelayan.
         Realtime::emit(new PesananBaru([
@@ -276,7 +214,7 @@ class EMenuController extends Controller
             return $this->kunciRedirect($mejaMakan);
         }
 
-        $kodeRiwayat = array_reverse(session('riwayat_meja_' . $mejaMakan->id, []));
+        $kodeRiwayat = array_reverse(session('riwayat_meja_'.$mejaMakan->id, []));
 
         $daftarPesanan = Pesanan::with(['detailPesanan.menu'])
             ->where('meja_id', $mejaMakan->id)
@@ -328,7 +266,10 @@ class EMenuController extends Controller
     {
         $pesanan = Pesanan::where('kode_pesanan', $kode_pesanan)->firstOrFail();
 
-        if ($pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR) {
+        $bisaDibayar = $pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR
+            && $pesanan->status_pesanan !== Pesanan::STATUS_DIBATALKAN;
+
+        if ($bisaDibayar) {
             $midtrans = app(MidtransService::class);
             $status = $midtrans->getTransactionStatus($kode_pesanan);
 
@@ -398,56 +339,6 @@ class EMenuController extends Controller
         return view('emenu.bayar-tunai', compact('pesanan'));
     }
 
-    public function qrisCallback(Request $request): JsonResponse
-    {
-        // Simulate Midtrans callback for QRIS payment
-        $kodePesanan = $request->input('kode_pesanan') ?? $request->input('order_id');
-        $transactionStatus = $request->input('transaction_status');
-
-        $pesanan = Pesanan::where('kode_pesanan', $kodePesanan)->first();
-
-        if (! $pesanan) {
-            return response()->json(['status' => 'error', 'message' => 'Pesanan tidak ditemukan'], 404);
-        }
-
-        if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
-            return response()->json(['status' => 'success', 'message' => 'Pembayaran sudah diproses']);
-        }
-
-        // Simulate successful payment
-        if (in_array($transactionStatus, ['settlement', 'capture']) || $request->has('test_success')) {
-            DB::transaction(function () use ($pesanan) {
-                $pesanan->update([
-                    'status_pesanan' => Pesanan::STATUS_DIPROSES,
-                    'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
-                    'metode_pembayaran' => 'qris',
-                ]);
-
-                // Create payment record
-                \App\Models\Pembayaran::create([
-                    'pesanan_id' => $pesanan->id,
-                    'metode_pembayaran' => 'qris',
-                    'status_pembayaran' => 'lunas',
-                    'jumlah_bayar' => $pesanan->total_bayar,
-                    'kembalian' => 0,
-                ]);
-            });
-
-            $pesanan->refresh();
-            Realtime::emit(new StatusPesananBerubah([
-                'kode_pesanan' => $pesanan->kode_pesanan,
-                'meja' => $pesanan->meja->kode_meja ?? null,
-                'status_pesanan' => $pesanan->status_pesanan,
-                'status_pembayaran' => $pesanan->status_pembayaran,
-                'metode_pembayaran' => $pesanan->metode_pembayaran,
-            ]));
-
-            return response()->json(['status' => 'success', 'message' => 'Pembayaran QRIS berhasil']);
-        }
-
-        return response()->json(['status' => 'pending', 'message' => 'Menunggu pembayaran']);
-    }
-
     public function panggil(string $meja): RedirectResponse
     {
         $mejaMakan = $this->cariMeja($meja);
@@ -484,7 +375,7 @@ class EMenuController extends Controller
      */
     private function sesiTerverifikasi(MejaMakan $meja): bool
     {
-        $sesiId = session('sesi_meja_' . $meja->id);
+        $sesiId = session('sesi_meja_'.$meja->id);
 
         if (! $sesiId) {
             return false;

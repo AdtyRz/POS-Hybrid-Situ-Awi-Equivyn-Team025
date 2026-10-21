@@ -13,40 +13,40 @@ use Illuminate\Support\Facades\DB;
 
 class MidtransNotificationController extends Controller
 {
-    public function __construct(protected MidtransService $midtransService)
-    {
-    }
+    public function __construct(protected MidtransService $midtransService) {}
 
     public function handle(Request $request): JsonResponse
     {
         $payload = $request->all();
 
-        if (!$this->midtransService->verifySignature($payload)) {
+        if (! $this->midtransService->verifySignature($payload)) {
             return response()->json(['status' => 'error', 'message' => 'Invalid signature'], 403);
         }
 
         $orderId = $payload['order_id'] ?? null;
         $transactionStatus = strtolower($payload['transaction_status'] ?? '');
         $fraudStatus = strtolower($payload['fraud_status'] ?? '');
-        $paymentType = $payload['payment_type'] ?? null;
         $transactionId = $payload['transaction_id'] ?? null;
 
-        if (!$orderId) {
+        if (! $orderId) {
             return response()->json(['status' => 'error', 'message' => 'Invalid order_id'], 400);
         }
 
         $pesanan = Pesanan::where('kode_pesanan', $orderId)->first();
 
-        if (!$pesanan) {
+        if (! $pesanan) {
             return response()->json(['status' => 'error', 'message' => 'Order not found'], 404);
         }
 
-        // If already paid, just respond OK
-        if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
-            return response()->json(['status' => 'ok', 'message' => 'Already paid']);
+        // If already paid or cancelled, just respond OK without changing anything.
+        if (
+            $pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR
+            || $pesanan->status_pesanan === Pesanan::STATUS_DIBATALKAN
+        ) {
+            return response()->json(['status' => 'ok', 'message' => 'No action needed']);
         }
 
-        DB::transaction(function () use ($pesanan, $transactionStatus, $fraudStatus, $paymentType, $transactionId) {
+        DB::transaction(function () use ($pesanan, $transactionStatus, $fraudStatus, $transactionId) {
             // Payment success conditions
             $isSuccess = false;
             if ($transactionStatus === 'capture') {
@@ -60,11 +60,11 @@ class MidtransNotificationController extends Controller
                 $pesanan->update([
                     'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
                     'status_pesanan' => Pesanan::STATUS_DIPROSES,
-                    'metode_pembayaran' => $paymentType === 'bank_transfer' ? 'qris' : ($paymentType ?? 'qris'),
+                    'metode_pembayaran' => 'qris',
                 ]);
 
                 // Create payment record if not exists (minimal)
-                if (!$pesanan->pembayaran) {
+                if (! $pesanan->pembayaran) {
                     $pesanan->pembayaran()->create([
                         'metode_pembayaran' => 'qris',
                         'status_pembayaran' => 'lunas',
