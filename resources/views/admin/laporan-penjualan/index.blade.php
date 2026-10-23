@@ -18,7 +18,7 @@
                 <svg class="w-3.5 h-3.5 text-[#334A00]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
-                <span class="tracking-wide">FR-008 • PB-008 • AUDIT TRAIL</span>
+                <span class="tracking-wide">AUDIT TRAIL</span>
             </div>
         </div>
 
@@ -81,7 +81,6 @@
                 </div>
             </div>
 
-            <div class="flex flex-col mt-4">
                 <span class="font-display font-bold text-2xl sm:text-[26px] text-[#0B4D2B] tracking-tight leading-tight">
                     Rp 284.650.000
                 </span>
@@ -92,7 +91,6 @@
                     </div>
                     <span class="text-[10px] font-semibold text-[#00341A]">92% Target</span>
                 </div>
-            </div>
 
             <div class="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-[#00341A]/5 blur-xl pointer-events-none"></div>
         </div>
@@ -110,14 +108,12 @@
                 </div>
             </div>
 
-            <div class="flex flex-col mt-4">
                 <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
                     2.418 Pesanan
                 </span>
                 <span class="text-[10px] font-bold text-[#261900] mt-2 flex items-center gap-1">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> 100% Audit Reconciled
                 </span>
-            </div>
         </div>
 
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[190px]">
@@ -133,7 +129,6 @@
                 </div>
             </div>
 
-            <div class="flex flex-col mt-4">
                 <div class="flex items-baseline gap-1.5">
                     <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
                         Rp 0
@@ -144,7 +139,6 @@
                     <span class="w-2 h-2 rounded-full bg-[#0B4D2B]"></span>
                     <span>Zero Variance (Pagi & Malam)</span>
                 </div>
-            </div>
         </div>
 
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[190px] relative overflow-hidden">
@@ -160,14 +154,12 @@
                 </div>
             </div>
 
-            <div class="flex flex-col mt-4">
                 <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
                     Rp 28.465.000
                 </span>
                 <span class="text-[10px] font-bold text-[#404941] mt-2 flex items-center gap-1">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg> Siap Lapor Bapenda Kab. Bandung
                 </span>
-            </div>
 
             <div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-[#FFDEA1]/20 blur-xl pointer-events-none"></div>
         </div>
@@ -367,7 +359,7 @@
 
                             <td class="py-3 px-4">
                                 <span 
-                                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold"
+                                    class="inline-flex gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold flex flex-col justify-center items-center text-center"
                                     :class="{
                                         'bg-[#FFDEA1]/50 text-[#7A5900]': t.method === 'QRIS Midtrans',
                                         'bg-[#E5E2DB] text-[#1C1C18]': t.method === 'Tunai Kasir',

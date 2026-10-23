@@ -64,7 +64,18 @@ class KdsController extends Controller
         $tiketJson = $tiket->map(function ($baris, $pesananId) {
             $pesanan = $baris->first()->pesanan;
             $status = $this->statusTiket($baris);
-            $detik = now()->diffInSeconds($pesanan->waktu_pesan);
+
+            // Bug FIX: Timer harus berhenti saat tiket status "siap".
+            // Untuk tiket "siap", hitung detik dari waktu_pesan → max(updated_at) item (waktu selesai masak).
+            // Untuk tiket lain, hitung dari waktu_pesan → sekarang (timer masih berjalan).
+            if ($status === 'siap') {
+                $waktuSelesai = $baris->max('updated_at');
+                $detik = $waktuSelesai
+                    ? max(0, (int) $pesanan->waktu_pesan->diffInSeconds($waktuSelesai))
+                    : 0;
+            } else {
+                $detik = (int) now()->diffInSeconds($pesanan->waktu_pesan);
+            }
 
             return [
                 'dbId' => $pesanan->id,
@@ -73,6 +84,7 @@ class KdsController extends Controller
                 'customer' => 'Tamu ' . $pesanan->meja->kode_meja,
                 'status' => $status,
                 'seconds' => $detik,
+                'frozen' => $status === 'siap',
                 'isOverdue' => $detik >= 900 && $status !== 'siap',
                 'passBarMessage' => 'Di Meja Pass Bar: Menunggu pelayan mengantar ke Saung ' . $pesanan->meja->kode_meja . '.',
                 'items' => $baris->map(function ($detail) {
@@ -95,11 +107,41 @@ class KdsController extends Controller
             })
             ->sum('jumlah');
 
+        // Bug FIX: Hitung rata-rata waktu masak dari database (bukan hardcode "14 Mnt").
+        // Ambil semua pesanan yang punya item "siap" hari ini di stasiun ini,
+        // lalu hitung selisih waktu_pesan → max(updated_at) per pesanan.
+        $pesananSelesaiHariIni = DetailPesanan::with('pesanan')
+            ->whereHas('menu.kategori', function ($query) use ($target) {
+                $query->where('target_kds', $target);
+            })
+            ->where('status_item', 'siap')
+            ->whereDate('updated_at', today())
+            ->get()
+            ->groupBy('pesanan_id');
+
+        $durasiMasakList = $pesananSelesaiHariIni->map(function ($items) {
+            $pesanan = $items->first()->pesanan;
+            if (! $pesanan || ! $pesanan->waktu_pesan || ! $pesanan->waktu_pesan->isToday()) {
+                return null;
+            }
+            $waktuSelesai = $items->max('updated_at');
+            if (! $waktuSelesai) {
+                return null;
+            }
+            return max(0, (int) $pesanan->waktu_pesan->diffInSeconds($waktuSelesai));
+        })->filter(fn ($d) => $d !== null && $d > 0)->values();
+
+        $rataRataMasakMenit = $durasiMasakList->isNotEmpty()
+            ? max(1, (int) round($durasiMasakList->avg() / 60))
+            : 0;
+
+        $rataRataMasakTeks = $rataRataMasakMenit > 0 ? $rataRataMasakMenit . ' Mnt' : '— Mnt';
+
         return view('KDS.index', compact(
             'target', 'judul', 'subJudul', 'lencana', 'tampilan',
             'kataMulai', 'kataSiap', 'kataRunner',
             'stasiunNama', 'stasiunSub', 'stasiunUtama', 'stasiun',
-            'tiketJson', 'selesaiHariIni'
+            'tiketJson', 'selesaiHariIni', 'rataRataMasakTeks'
         ));
     }
 

@@ -28,7 +28,7 @@
                 </h1>
                 <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FECE66]/30 text-[10px] font-bold text-[#765600] uppercase tracking-wider">
                     <span class="w-2 h-2 rounded-full bg-[#7A5900] animate-pulse"></span>
-                    <span>FR-008 • REAL-TIME SYNC</span>
+                    <span>REAL-TIME SYNC</span>
                 </div>
             </div>
         </div>
@@ -102,7 +102,6 @@
                 </div>
             </div>
 
-            <div class="flex flex-col mt-4">
                 <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
                     Rp {{ number_format($pendapatan, 0, ',', '.') }}
                 </span>
@@ -115,7 +114,6 @@
                     </span>
                     <span class="text-[#707971]">vs kemarin (Rp {{ number_format($pendapatanKemarin / 1000000, 2) }}jt)</span>
                 </div>
-            </div>
 
             <div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-[#FFDEA1]/30 blur-xl pointer-events-none"></div>
         </div>
@@ -130,17 +128,15 @@
                 </div>
             </div>
 
-            <div class="flex flex-col mt-4">
                 <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
                     {{ $pesananHariIni }} Tiket
                 </span>
                 <div class="flex items-center justify-between mt-2 text-xs">
                     <span class="text-[#707971]">Rata-rata: <strong class="text-[#1C1C18] font-bold">Rp {{ number_format($pesananHariIni > 0 ? $pendapatan / $pesananHariIni : 0, 0, ',', '.') }}</strong></span>
-                    <span class="px-2 py-0.5 rounded-full bg-[#B1F1C2]/30 text-[10px] font-bold text-[#0B4D2B]">
+                    <span class="px-2 py-0.5 rounded-full bg-[#B1F1C2]/30 text-[10px] font-bold text-[#0B4D2B] flex flex-col justify-center items-center text-center">
                         {{ $pesananTotal > 0 ? number_format($pesananHariIni / $pesananTotal * 100, 1) : 0 }}% Sukses
                     </span>
                 </div>
-            </div>
         </div>
 
         <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[190px]">
@@ -153,8 +149,7 @@
                 </div>
             </div>
 
-            <div class="flex flex-col mt-4">
-                <div class="flex items-baseline gap-2">
+                <div class="items-center gap-2 my-auto">
                     <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
                         {{ $mejaTotal > 0 ? round($mejaTerisi / $mejaTotal * 100) : 0 }}%
                     </span>
@@ -166,7 +161,6 @@
                     <span class="w-2 h-2 rounded-full bg-[#00341A]"></span>
                     <span class="text-[#707971] font-medium">{{ $mejaTerisi }} dari {{ $mejaTotal }} Saung terisi penuh</span>
                 </div>
-            </div>
         </div>
 
         <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[190px]">
@@ -180,7 +174,6 @@
                 </div>
             </div>
 
-            <div class="flex flex-col mt-4">
                 <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
                     {{ $rataMenit ? number_format($rataMenit, 1) : '-' }} Menit
                 </span>
@@ -188,7 +181,6 @@
                     <span class="font-bold text-[#00341A]">{{ $rataMenit ? number_format(15 - $rataMenit, 1) . 'm lebih gesit' : 'Belum ada data' }}</span>
                     <span class="text-[#707971]">dari target (15.0m)</span>
                 </div>
-            </div>
         </div>
 
     </div>
@@ -355,7 +347,7 @@
 
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         <div class="lg:col-span-6 bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-gray-100 flex flex-col justify-between">
             <div>
@@ -387,6 +379,7 @@
                     @empty
                     <div class="p-3 text-xs text-[#707971] italic">Belum ada penjualan hari ini.</div>
                     @endforelse
+                </div>
             </div>
 
             <div class="p-3.5 bg-[#FFDEA1]/40 rounded-2xl flex items-center justify-between gap-3 mt-4">

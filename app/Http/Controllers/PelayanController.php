@@ -139,12 +139,14 @@ class PelayanController extends Controller
             ->get();
 
         $deliveringRunners = $pesananDiantar->map(function ($p) {
+            $firstItem = $p->detailPesanan->first();
+            $menuName = $firstItem && $firstItem->menu ? $firstItem->menu->nama_menu : 'Menu';
             return [
                 'id' => $p->id,
-                'name' => 'Runner ' . substr($p->meja->kode_meja, 0, 2),
-                'initials' => strtoupper(substr($p->meja->kode_meja, 0, 2)),
-                'currentTask' => $p->meja->kode_meja . ' (' . $p->detailPesanan->sum('jumlah') . 'x ' . $p->detailPesanan->first()->menu->nama_menu . ')',
-                'elapsedTime' => $p->waktu_pesan->diffForHumans()
+                'name' => 'Runner ' . substr($p->meja->kode_meja ?? '', 0, 2),
+                'initials' => strtoupper(substr($p->meja->kode_meja ?? 'RN', 0, 2)),
+                'currentTask' => ($p->meja->kode_meja ?? '-') . ' (' . $p->detailPesanan->sum('jumlah') . 'x ' . $menuName . ')',
+                'elapsedTime' => $p->waktu_pesan ? $p->waktu_pesan->diffForHumans() : '-'
             ];
         });
 
@@ -220,7 +222,7 @@ class PelayanController extends Controller
         // Build clusters matching frontend Alpine.js expected format
         $clusters = $meja->groupBy(function ($m) {
             return strtolower(substr($m->kode_meja, 0, 2)); // lowercase key: 'lb', 'la', 'ka'
-        })->map(function ($group, $prefix) {
+        })->map(function ($group, $prefix) use ($panggilanAktif, $pesananAktif) {
             $areaName = match($prefix) {
                 'lb' => 'Lesehan Bawah',
                 'la' => 'Lesehan Atas',
@@ -332,16 +334,35 @@ class PelayanController extends Controller
     {
         $pelayan = auth()->user();
         
-        $shiftAktif = LogPanggilPelayan::where('pelayan_id', $pelayan->id)
-            ->whereDate('waktu_panggil', today())
-            ->count();
+        // Pesanan diantar / selesai hari ini
+        $shiftAktif = $this->filterByArea(
+            Pesanan::whereIn('status_pesanan', ['diantar', 'selesai'])
+        )->whereDate('waktu_pesan', today())->count();
 
-        $panggilanDitangani = LogPanggilPelayan::where('pelayan_id', $pelayan->id)
-            ->where('status_panggilan', 'selesai')
-            ->whereDate('waktu_selesai', today())
-            ->count();
+        // Panggilan meja selesai hari ini
+        $panggilanDitangani = $this->filterByArea(
+            LogPanggilPelayan::where('status_panggilan', 'selesai')
+        )->whereDate('waktu_selesai', today())->count();
 
-        return view('pelayan.tab-shift.index', compact('shiftAktif', 'panggilanDitangani'));
+        // Rata-rata waktu respon hari ini (dalam menit)
+        $logSelesai = $this->filterByArea(
+            LogPanggilPelayan::where('status_panggilan', 'selesai')
+                ->whereDate('waktu_panggil', today())
+                ->whereNotNull('waktu_selesai')
+        )->get();
+
+        $avgRespon = $logSelesai->count() > 0
+            ? round($logSelesai->avg(fn($l) => $l->waktu_panggil->diffInSeconds($l->waktu_selesai)) / 60, 1)
+            : 0;
+
+        // Log aktivitas hari ini
+        $logAktivitas = $this->filterByArea(
+            LogPanggilPelayan::whereDate('waktu_panggil', today())
+                ->with('meja')
+                ->orderBy('waktu_panggil', 'desc')
+        )->take(10)->get();
+
+        return view('pelayan.tab-shift.index', compact('shiftAktif', 'panggilanDitangani', 'avgRespon', 'logAktivitas'));
     }
 
     public function ubahStatus(Request $request, $id): RedirectResponse|JsonResponse

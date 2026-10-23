@@ -24,7 +24,7 @@
 
             <!-- Avatar -->
             <div class="w-8 h-8 rounded-full bg-[#0B4D2B] text-[#B1F1C2] font-bold text-[10px] flex items-center justify-center shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
-                KA
+                {{ strtoupper(substr(auth()->user()->nama ?? auth()->user()->name ?? 'P', 0, 2)) }}
             </div>
         </div>
     </header>
@@ -38,16 +38,16 @@
                 <div class="flex items-center gap-2.5">
                     <div class="relative flex-shrink-0">
                         <div class="w-11 h-11 rounded-full bg-[#0B4D2B] text-white font-bold text-base flex items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-                            KA
+                            {{ strtoupper(substr(auth()->user()->nama ?? auth()->user()->name ?? 'P', 0, 2)) }}
                         </div>
                         <span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#B1F1C2] shadow-[0_0_0_2px_#F6F3EC]"></span>
                     </div>
 
                     <div class="flex flex-col">
                         <div class="flex items-center gap-1.5 leading-6">
-                            <span class="font-bold text-base text-[#1C1C18]" x-text="runnerName">Kang Asep</span>
+                            <span class="font-bold text-base text-[#1C1C18]" x-text="runnerName">{{ auth()->user()->nama ?? auth()->user()->name ?? 'Kang Asep' }}</span>
                             <span class="inline-flex items-center px-1.5 py-0.5 rounded-full bg-[#F0EEE7] text-[#404941] text-[10px] font-bold tracking-[0.4px]">
-                                STF-006
+                                STF-{{ str_pad(auth()->user()->id ?? 1, 3, '0', STR_PAD_LEFT) }}
                             </span>
                         </div>
                         <div class="flex items-center gap-1 text-xs text-[#404941] leading-4">
@@ -89,25 +89,25 @@
         <section class="grid grid-cols-4 gap-2">
             <!-- Total -->
             <div class="bg-[#F6F3EC] rounded-xl p-2.5 flex flex-col items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] h-[62px]">
-                <span class="font-bold text-[20px] text-[#1C1C18] leading-7" x-text="totalMeja">11</span>
-                <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px] mt-0.5" x-text="'Total (' + totalPercentage + '%)'">Total (64%)</span>
+                <span class="font-bold text-[20px] text-[#1C1C18] leading-7" x-text="totalMeja">{{ $totalMeja ?? 11 }}</span>
+                <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px] mt-0.5" x-text="'Total (' + totalPercentage + '%)'">Total ({{ ($totalMeja ?? 0) > 0 ? round((($terisiCount ?? 0) / $totalMeja) * 100) : 0 }}%)</span>
             </div>
 
             <!-- Terisi -->
             <div class="bg-[#F6F3EC] rounded-xl p-2.5 flex flex-col items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] h-[62px]">
-                <span class="font-bold text-[20px] text-[#0B4D2B] leading-7" x-text="terisiCount">7</span>
+                <span class="font-bold text-[20px] text-[#0B4D2B] leading-7" x-text="terisiCount">{{ $terisiCount ?? 0 }}</span>
                 <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px] mt-0.5">Terisi</span>
             </div>
 
             <!-- Tersedia -->
             <div class="bg-[#F6F3EC] rounded-xl p-2.5 flex flex-col items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] h-[62px]">
-                <span class="font-bold text-[20px] text-[#7A5900] leading-7" x-text="tersediaCount">3</span>
+                <span class="font-bold text-[20px] text-[#7A5900] leading-7" x-text="tersediaCount">{{ $tersediaCount ?? 0 }}</span>
                 <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px] mt-0.5">Tersedia</span>
             </div>
 
             <!-- Panggilan -->
             <div class="bg-[#FFDAD6] rounded-xl p-2.5 flex flex-col items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] h-[62px] relative">
-                <span class="font-bold text-[20px] text-[#93000A] leading-7" x-text="panggilanCount">1</span>
+                <span class="font-bold text-[20px] text-[#93000A] leading-7" x-text="panggilanCount">{{ $panggilanCount ?? 0 }}</span>
                 <span class="text-[10px] font-semibold text-[#93000A] tracking-[0.4px] mt-0.5">Panggilan</span>
                 <template x-if="panggilanCount > 0">
                     <span class="w-2.5 h-2.5 rounded-full bg-[#BA1A1A] animate-ping absolute -top-1 -right-1"></span>
@@ -124,7 +124,7 @@
                 <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
-                <span x-text="'Semua Saung (' + totalMeja + ')'">Semua Saung (11)</span>
+                <span x-text="'Semua Saung (' + totalMeja + ')'">Semua Saung ({{ $totalMeja ?? 11 }})</span>
             </button>
 
             <!-- Cluster Danau -->
@@ -134,7 +134,7 @@
                 <svg class="w-3.5 h-3 text-[#00341A]" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
                 </svg>
-                <span>Cluster Danau (5)</span>
+                <span>Cluster Danau ({{ $clusters->firstWhere('key', 'lb')['count'] ?? 5 }})</span>
             </button>
 
             <!-- Cluster Balong -->
@@ -144,7 +144,7 @@
                 <svg class="w-3.5 h-3.5 text-[#7A5900]" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                 </svg>
-                <span>Cluster Balong (2)</span>
+                <span>Cluster Balong ({{ $clusters->firstWhere('key', 'la')['count'] ?? 2 }})</span>
             </button>
 
             <!-- Meja Kayu -->
@@ -154,7 +154,7 @@
                 <svg class="w-3.5 h-3 text-[#707971]" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v1.268a2 2 0 000 3.464V16a1 1 0 102 0V8.732a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z" />
                 </svg>
-                <span>Meja Kayu (4)</span>
+                <span>Meja Kayu ({{ $clusters->firstWhere('key', 'ka')['count'] ?? 4 }})</span>
             </button>
         </section>
 
@@ -186,12 +186,12 @@
                             <div class="w-12 h-12 rounded-xl flex flex-col items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex-shrink-0"
                                  :class="lb02Calling ? 'bg-[#FFDAD6] text-[#93000A]' : 'bg-[#F0EEE7] text-[#1C1C18]'">
                                 <span class="text-[10px] font-bold uppercase tracking-[0.4px]">SAUNG</span>
-                                <span class="text-[20px] font-bold leading-5">02</span>
+                                <span class="text-[20px] font-bold leading-5">{{ $panggilanAktif->first() ? filter_var($panggilanAktif->first()->meja->kode_meja, FILTER_SANITIZE_NUMBER_INT) : '02' }}</span>
                             </div>
 
                             <div class="flex flex-col">
                                 <div class="flex items-center gap-2">
-                                    <h3 class="font-bold text-base text-[#1C1C18] leading-6">LB-02 Teratai 2</h3>
+                                    <h3 class="font-bold text-base text-[#1C1C18] leading-6">{{ $panggilanAktif->first() ? $panggilanAktif->first()->meja->kode_meja : 'LB-02' }} Teratai 2</h3>
                                     <!-- Bell on badge: ONLY when calling -->
                                     <template x-if="lb02Calling">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-[#BA1A1A] text-white text-[10px] font-bold tracking-[0.4px] animate-pulse">
@@ -215,7 +215,7 @@
                                 <circle cx="12" cy="12" r="10" />
                                 <polyline points="12 6 12 12 16 14" />
                             </svg>
-                            <span>3m lalu</span>
+                            <span>{{ $panggilanAktif->first() && $panggilanAktif->first()->waktu_panggil ? $panggilanAktif->first()->waktu_panggil->diffForHumans() : '3m lalu' }}</span>
                         </div>
                     </div>
 
@@ -231,7 +231,7 @@
                                 PERMINTAAN TAMU (SENSOR TTP223)
                             </span>
                             <p class="text-sm font-semibold text-[#93000A] leading-snug mt-0.5">
-                                "Minta sendok ekstra & sambal terasi dadak"
+                                {{ $panggilanAktif->first() && !empty($panggilanAktif->first()->catatan) ? '"' . $panggilanAktif->first()->catatan . '"' : '"Tamu butuh bantuan / piring ekstra & sendok"' }}
                             </p>
                         </div>
                     </div>
@@ -610,11 +610,9 @@
                 <div>
                     <label class="font-bold text-[#1C1C18] block mb-1">Pilih Saung / Meja:</label>
                     <select class="w-full bg-[#F6F3EC] border border-[#E5E2DB] rounded-xl p-2.5 font-semibold text-[#1C1C18]">
-                        <option>LB-01 Teratai Air (4 Tamu)</option>
-                        <option>LB-02 Teratai 2 (4 Tamu)</option>
-                        <option>LB-03 Bambu Hitam (Tersedia)</option>
-                        <option>LB-04 Gandasoli (7 Tamu)</option>
-                        <option>LB-05 Dermaga Ujung</option>
+                        @foreach ($meja ?? [] as $m)
+                            <option value="{{ $m->id }}">{{ $m->kode_meja }} ({{ $m->area }} - {{ $m->kapasitas }} Tamu)</option>
+                        @endforeach
                     </select>
                 </div>
                 <div>
@@ -663,7 +661,7 @@
                 </div>
                 <div class="py-1">
                     <span class="font-bold text-[#1C1C18] block mb-1">Item Pesanan:</span>
-                    <p class="text-[#404941]">Gurame Bakar Situ Awi, Nasi Liwet Kastrol Mini x2, Karedok Leunca Sunda, Es Teh Manis x4</p>
+                    <p class="text-[#404941]" x-text="detailItems || 'Gurame Bakar Situ Awi, Nasi Liwet Kastrol Mini x2, Karedok Leunca Sunda, Es Teh Manis x4'">Gurame Bakar Situ Awi, Nasi Liwet Kastrol Mini x2, Karedok Leunca Sunda, Es Teh Manis x4</p>
                 </div>
             </div>
             <button @click="showDetailModal = false" type="button" class="w-full py-2.5 bg-[#0B4D2B] text-white font-bold text-xs rounded-xl cursor-pointer">
@@ -694,21 +692,21 @@
 <script>
     function pelayanTabSaung() {
         return {
-            runnerName: 'Kang Asep',
+            runnerName: '{{ auth()->user()->nama ?? auth()->user()->name ?? "Runner" }}',
             shiftInfo: 'Shift Siang (12:00 – 18:00 WIB)',
-            currentArea: 'Tepi Danau (LB-01 – LB-05)',
+            currentArea: '{{ $currentArea ?? "Tepi Danau (LB-01 – LB-05)" }}',
             meshStatus: 'IoT Mesh 11/11 (-52dBm)',
 
-            totalMeja: 11,
-            totalPercentage: 64,
-            terisiCount: 7,
-            tersediaCount: 3,
-            panggilanCount: 1,
+            totalMeja: {{ $totalMeja ?? 11 }},
+            totalPercentage: {{ ($totalMeja ?? 0) > 0 ? round((($terisiCount ?? 0) / $totalMeja) * 100) : 64 }},
+            terisiCount: {{ $terisiCount ?? 7 }},
+            tersediaCount: {{ $tersediaCount ?? 3 }},
+            panggilanCount: {{ $panggilanCount ?? 1 }},
 
             selectedCluster: 'all', // 'all', 'danau', 'balong', 'kayu'
 
             // CRITICAL: Bell ON & Permintaan Tamu merah on LB-02 only active while calling!
-            lb02Calling: true,
+            lb02Calling: {{ ($panggilanCount ?? 0) > 0 ? 'true' : 'false' }},
             buzzerActive: true,
 
             showQrModal: false,
@@ -717,28 +715,20 @@
             detailTitle: '',
             detailBill: '',
             detailTotal: '',
+            detailItems: '',
 
             toastMessage: 'Notifikasi berhasil diproses.',
             showToast: false,
 
             init() {
-                // Bind dynamic backend data if passed
-                @if(isset($currentArea))
-                    this.currentArea = '{{ $currentArea }}';
-                @endif
-                @if(isset($totalMeja) && $totalMeja > 0)
-                    this.totalMeja = {{ $totalMeja }};
-                @endif
-                @if(isset($terisiCount))
-                    this.terisiCount = {{ $terisiCount }};
-                @endif
-                @if(isset($tersediaCount))
-                    this.tersediaCount = {{ $tersediaCount }};
-                @endif
-                @if(isset($panggilanCount))
-                    this.panggilanCount = {{ $panggilanCount }};
-                    this.lb02Calling = {{ $panggilanCount > 0 ? 'true' : 'false' }};
-                @endif
+                // Selalu assign dari backend — tanpa kondisi > 0 agar 0 pun terbaca
+                this.currentArea     = '{{ $currentArea ?? "Tepi Danau (LB-01 – LB-05)" }}';
+                this.totalMeja       = {{ $totalMeja ?? 0 }};
+                this.terisiCount     = {{ $terisiCount ?? 0 }};
+                this.tersediaCount   = {{ $tersediaCount ?? 0 }};
+                this.panggilanCount  = {{ $panggilanCount ?? 0 }};
+                this.lb02Calling     = {{ ($panggilanCount ?? 0) > 0 ? 'true' : 'false' }};
+                this.totalPercentage = this.totalMeja > 0 ? Math.round((this.terisiCount / this.totalMeja) * 100) : 0;
             },
 
             triggerToast(msg) {
@@ -776,7 +766,7 @@
                     @endif
                 } catch(e) {}
 
-                this.triggerToast('Respons panggilan Saung 02 dicatat! Menuju lokasi...');
+                this.triggerToast('Respons panggilan Saung dicatat! Menuju lokasi...');
             },
 
             muteBuzzer() {
@@ -788,10 +778,11 @@
                 this.triggerToast('Sesi tamu untuk ' + saungCode + ' dibuka. QR dinamis aktif.');
             },
 
-            showOrderModal(title, bill, total) {
+            showOrderModal(title, bill, total, items = '') {
                 this.detailTitle = title;
                 this.detailBill = bill;
                 this.detailTotal = total;
+                this.detailItems = items;
                 this.showDetailModal = true;
             }
         };

@@ -78,14 +78,15 @@
                     <svg class="w-6 h-6 {{ request()->routeIs('pelayan.notifikasi-panggilan') || request()->routeIs('pelayan.panggilan') ? 'text-[#0B4D2B]' : 'text-[#404941]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                     </svg>
-                    @if(request()->routeIs('pelayan.notifikasi-panggilan') || request()->routeIs('pelayan.panggilan'))
-                        <!-- Page 07: Badge count '3' -->
+                    @if(isset($panggilan) && $panggilan->count() > 0)
+                        <!-- Dynamic Badge Panggilan count -->
                         <span class="absolute -top-1 -right-2 px-1 min-w-[13.5px] h-[12px] bg-[#BA1A1A] text-white text-[9px] font-normal rounded-full flex items-center justify-center leading-none">
-                            3
+                            {{ $panggilan->count() }}
                         </span>
-                    @else
-                        <!-- Inactive dot with white outline -->
-                        <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#BA1A1A] rounded-full shadow-[0_0_0_2px_#FFFFFF]"></span>
+                    @elseif(isset($panggilanCount) && $panggilanCount > 0)
+                        <span class="absolute -top-1 -right-2 px-1 min-w-[13.5px] h-[12px] bg-[#BA1A1A] text-white text-[9px] font-normal rounded-full flex items-center justify-center leading-none">
+                            {{ $panggilanCount }}
+                        </span>
                     @endif
                 </div>
                 <span class="text-[10px] mt-0.5 tracking-[-0.25px] {{ request()->routeIs('pelayan.notifikasi-panggilan') || request()->routeIs('pelayan.panggilan') ? 'font-bold text-[#0B4D2B]' : 'font-bold text-[#404941]' }}">
@@ -100,10 +101,18 @@
                     <svg class="w-6 h-6 {{ request()->routeIs('pelayan.tab-antar') ? 'text-[#00341A]' : 'text-[#404941]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477 4.5 1.253" />
                     </svg>
-                    @if(request()->routeIs('pelayan.notifikasi-panggilan') || request()->routeIs('pelayan.panggilan'))
-                        <!-- Page 07: Badge count '5' in gold/amber -->
+                    @if(isset($readyCount) && $readyCount > 0)
+                        <!-- Dynamic Badge count in gold/amber -->
                         <span class="absolute -top-1 -right-2 px-1 min-w-[13.5px] h-[12px] bg-[#7A5900] text-white text-[9px] font-normal rounded-full flex items-center justify-center leading-none">
-                            5
+                            {{ $readyCount }}
+                        </span>
+                    @elseif(isset($siapAntarFormatted) && $siapAntarFormatted->count() > 0)
+                        <span class="absolute -top-1 -right-2 px-1 min-w-[13.5px] h-[12px] bg-[#7A5900] text-white text-[9px] font-normal rounded-full flex items-center justify-center leading-none">
+                            {{ $siapAntarFormatted->count() }}
+                        </span>
+                    @elseif(isset($siapAntar) && $siapAntar->count() > 0)
+                        <span class="absolute -top-1 -right-2 px-1 min-w-[13.5px] h-[12px] bg-[#7A5900] text-white text-[9px] font-normal rounded-full flex items-center justify-center leading-none">
+                            {{ $siapAntar->count() }}
                         </span>
                     @endif
                 </div>
@@ -113,7 +122,6 @@
                 @if(request()->routeIs('pelayan.tab-antar'))
                     <!-- Page 07B: 2 yellow stacked dots indicator below 'Antar' -->
                     <div class="flex flex-col items-center gap-0.5 mt-0.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-[#FECE66] shadow-[0_1px_2px_rgba(0,0,0,0.05)]"></span>
                         <span class="w-1.5 h-1.5 rounded-full bg-[#FECE66] shadow-[0_1px_2px_rgba(0,0,0,0.05)]"></span>
                     </div>
                 @endif

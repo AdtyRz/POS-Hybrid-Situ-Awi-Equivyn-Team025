@@ -232,7 +232,7 @@
                 </div>
                 <div class="flex flex-col">
                     <span class="text-[9px] font-bold tracking-wider text-[#707971] uppercase leading-none">RATA–RATA MASAK</span>
-                    <span class="font-bold text-[14px] text-[#0B4D2B] leading-tight mt-0.5">14 Mnt</span>
+                    <span class="font-bold text-[14px] text-[#0B4D2B] leading-tight mt-0.5">{{ $rataRataMasakTeks }}</span>
                 </div>
             </div>
 
@@ -259,7 +259,19 @@
     </section>
 
     <main class="flex-1 w-full px-4 sm:px-8 py-5 overflow-x-auto kds-scroll">
-        <div class="flex items-start gap-5 min-w-max pb-3">
+        <template x-if="filteredTickets.length === 0">
+            <div class="w-full flex flex-col items-center justify-center py-20 text-center">
+                <div class="w-16 h-16 rounded-2xl bg-white border border-[#0B4D2B]/10 shadow-xs flex items-center justify-center text-[#0B4D2B] mb-3">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h4 class="font-display font-bold text-lg text-[#052E1B]">Tidak Ada Pesanan Aktif</h4>
+                <p class="text-xs text-[#707971] mt-1 max-w-sm">Semua pesanan untuk stasiun ini telah selesai atau belum ada tiket pesanan baru yang masuk.</p>
+            </div>
+        </template>
+
+        <div x-show="filteredTickets.length > 0" class="flex items-start gap-5 min-w-max pb-3">
             
             <template x-for="(ticket, tIndex) in filteredTickets" :key="ticket.id">
                 <article 
@@ -273,86 +285,87 @@
                     
                     <div class="flex flex-col">
                         <div 
-                            class="p-4 rounded-t-2xl border-b flex items-start justify-between gap-2"
+                            class="p-4 rounded-t-2xl border-b flex items-start justify-between gap-3"
                             :class="{
                                 'bg-[#FDF4F2] border-[#C1442C]/20': ticket.isOverdue && ticket.status !== 'siap',
                                 'bg-[#F4F8F5] border-[#0B4D2B]/15': !ticket.isOverdue && ticket.status === 'diproses',
                                 'bg-gray-50/80 border-gray-200': ticket.status === 'menunggu',
                                 'bg-[#F4F8F5] border-[#2E6A45]/15': ticket.status === 'siap'
                             }">
-                            <div class="flex flex-col">
+                            <div class="flex flex-col min-w-0 flex-1">
                                 <h3 
-                                    class="font-display font-bold text-2xl tracking-tight leading-tight"
+                                    class="font-display font-bold text-xl sm:text-2xl tracking-tight leading-tight text-[#1F2937] whitespace-nowrap truncate"
                                     :class="ticket.status === 'siap' ? 'text-[#0B4D2B]' : 'text-[#1F2937]'"
-                                    x-text="ticket.saung">
+                                    x-text="ticket.saung"
+                                    :title="ticket.saung">
                                 </h3>
-                                <div class="flex items-center gap-1.5 mt-1 text-xs">
-                                    <span class="font-bold text-[#0B4D2B]" x-text="ticket.id"></span>
-                                    <span class="text-gray-400">•</span>
-                                    <span class="font-medium text-[#1F2937]" x-text="ticket.customer"></span>
+                                <div class="flex items-center gap-1.5 mt-1 text-xs text-[#707971] min-w-0">
+                                    <span class="font-bold text-[#0B4D2B] whitespace-nowrap truncate max-w-[140px] sm:max-w-[160px]" x-text="ticket.id" :title="ticket.id"></span>
+                                    <span class="text-gray-400 shrink-0">•</span>
+                                    <span class="font-medium text-[#1F2937] whitespace-nowrap truncate" x-text="ticket.customer" :title="ticket.customer"></span>
                                 </div>
                             </div>
 
-                            <div class="flex flex-col items-end gap-1.5">
+                            <div class="flex flex-col items-end gap-1.5 shrink-0">
                                 <template x-if="ticket.status === 'diproses'">
-                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-[#FEF3C7] border border-[#F59E0B] text-[#92400E] flex items-center gap-1">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-[#FEF3C7] border border-[#F59E0B] text-[#92400E] flex items-center gap-1 whitespace-nowrap shrink-0">
                                         <span class="w-1.5 h-1.5 rounded-full bg-[#92400E] inline-block"></span>
                                         DIPROSES
                                     </span>
                                 </template>
                                 <template x-if="ticket.status === 'menunggu'">
-                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-[#E5E7EB] text-[#4B5563]">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-[#E5E7EB] text-[#4B5563] whitespace-nowrap shrink-0">
                                         MENUNGGU
                                     </span>
                                 </template>
                                 <template x-if="ticket.status === 'siap'">
-                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-[#2E6A45] text-white flex items-center gap-1">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-[#2E6A45] text-white flex items-center gap-1 whitespace-nowrap shrink-0">
                                         <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                                         SIAP DIANTAR
                                     </span>
                                 </template>
 
                                 <template x-if="ticket.isOverdue && ticket.status !== 'siap'">
-                                    <div class="h-10 px-2.5 rounded-lg bg-[#C1442C] text-white flex items-center gap-1.5 shadow-2xs">
+                                    <div class="h-10 px-2.5 rounded-lg bg-[#C1442C] text-white flex items-center gap-1.5 shadow-2xs shrink-0 whitespace-nowrap">
                                         <svg class="w-4 h-4 text-white flex-shrink-0 animate-pulse" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                         </svg>
                                         <div class="flex flex-col text-right leading-none">
-                                            <span class="font-mono font-bold text-sm tracking-tight" x-text="formatTimer(ticket.seconds)">18:42</span>
-                                            <span class="text-[9px] uppercase tracking-wider font-semibold opacity-90">mnt</span>
+                                            <span class="font-mono font-bold text-sm tracking-tight whitespace-nowrap" x-text="formatTimer(ticket.seconds)">18:42</span>
+                                            <span class="text-[9px] uppercase tracking-wider font-semibold opacity-90" x-text="timerUnit(ticket.seconds)">mnt</span>
                                         </div>
                                     </div>
                                 </template>
 
                                 <template x-if="!ticket.isOverdue && ticket.status === 'diproses'">
-                                    <div class="h-10 px-2.5 rounded-lg bg-[#EBF5EE] border border-[#0B4D2B]/20 text-[#0B4D2B] flex items-center gap-1.5">
+                                    <div class="h-10 px-2.5 rounded-lg bg-[#EBF5EE] border border-[#0B4D2B]/20 text-[#0B4D2B] flex items-center gap-1.5 shrink-0 whitespace-nowrap">
                                         <svg class="w-4 h-4 text-[#0B4D2B] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                             <circle cx="12" cy="12" r="10" />
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" />
                                         </svg>
                                         <div class="flex flex-col text-right leading-none">
-                                            <span class="font-mono font-bold text-sm tracking-tight" x-text="formatTimer(ticket.seconds)">09:15</span>
-                                            <span class="text-[9px] uppercase tracking-wider font-semibold text-[#0B4D2B]/80">mnt</span>
+                                            <span class="font-mono font-bold text-sm tracking-tight whitespace-nowrap" x-text="formatTimer(ticket.seconds)">09:15</span>
+                                            <span class="text-[9px] uppercase tracking-wider font-semibold text-[#0B4D2B]/80" x-text="timerUnit(ticket.seconds)">mnt</span>
                                         </div>
                                     </div>
                                 </template>
 
-                                <template x-if="ticket.status === 'menunggu'">
-                                    <div class="h-10 px-2.5 rounded-lg bg-[#F3F4F6] border border-[#E5E7EB] text-[#4B5563] flex items-center gap-1.5">
+                                <template x-if="!ticket.isOverdue && ticket.status === 'menunggu'">
+                                    <div class="h-10 px-2.5 rounded-lg bg-[#F3F4F6] border border-[#E5E7EB] text-[#4B5563] flex items-center gap-1.5 shrink-0 whitespace-nowrap">
                                         <svg class="w-4 h-4 text-[#6B7280] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                             <circle cx="12" cy="12" r="10" />
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" />
                                         </svg>
                                         <div class="flex flex-col text-right leading-none">
-                                            <span class="font-mono font-bold text-sm tracking-tight" x-text="formatTimer(ticket.seconds)">02:30</span>
-                                            <span class="text-[9px] uppercase tracking-wider font-semibold text-[#6B7280]">mnt</span>
+                                            <span class="font-mono font-bold text-sm tracking-tight whitespace-nowrap" x-text="formatTimer(ticket.seconds)">02:30</span>
+                                            <span class="text-[9px] uppercase tracking-wider font-semibold text-[#6B7280]" x-text="timerUnit(ticket.seconds)">mnt</span>
                                         </div>
                                     </div>
                                 </template>
 
                                 <template x-if="ticket.status === 'siap'">
-                                    <div class="h-8 px-2.5 rounded-lg bg-[#EBF5EE] border border-[#2E6A45]/20 text-[#0B4D2B] flex items-center gap-1.5">
-                                        <span class="font-mono font-bold text-sm tracking-tight" x-text="formatTimer(ticket.seconds) + ' mnt'">14:10 mnt</span>
+                                    <div class="h-8 px-2.5 rounded-lg bg-[#EBF5EE] border border-[#2E6A45]/20 text-[#0B4D2B] flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                                        <span class="font-mono font-bold text-sm tracking-tight whitespace-nowrap" x-text="formatTimer(ticket.seconds) + ' ' + timerUnit(ticket.seconds)">14:10 mnt</span>
                                     </div>
                                 </template>
                             </div>
@@ -387,14 +400,14 @@
                                             </template>
                                         </div>
 
-                                        <div class="flex-1 flex flex-col gap-1.5">
+                                        <div class="flex-1 flex flex-col gap-1.5 min-w-0">
                                             <div class="flex items-center justify-between gap-2">
                                                 <span 
-                                                    class="font-bold text-[15px] leading-tight text-[#1F2937]"
+                                                    class="font-bold text-[15px] leading-tight text-[#1F2937] break-words"
                                                     :class="item.checked ? 'line-through text-gray-500 font-semibold' : ''"
                                                     x-text="item.name">
                                                 </span>
-                                                <span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-[#FDF6E2] border border-[#F3E27A] text-[#B45309] flex-shrink-0" x-text="item.qty">
+                                                <span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-[#FDF6E2] border border-[#F3E27A] text-[#B45309] shrink-0 whitespace-nowrap" x-text="item.qty">
                                                     1x
                                                 </span>
                                             </div>
@@ -513,7 +526,7 @@
                     </svg>
                 </div>
                 <div class="flex flex-col">
-                    <span class="font-bold text-base text-[#0B4D2B] leading-none">14 Mnt</span>
+                    <span class="font-bold text-base text-[#0B4D2B] leading-none">{{ $rataRataMasakTeks }}</span>
                     <span class="text-[10px] font-medium text-[#707971] tracking-wide leading-none mt-1">Rata-rata Masak</span>
                 </div>
             </div>
@@ -645,17 +658,29 @@
                 },
 
                 initKds() {
+                    if (Array.isArray(this.tickets)) {
+                        this.tickets.forEach(t => {
+                            t.seconds = Math.max(0, Math.floor(Math.abs(Number(t.seconds)) || 0));
+                            if (t.seconds >= 15 * 60 && t.status !== 'siap') {
+                                t.isOverdue = true;
+                            }
+                        });
+                    }
                     this.updateClock();
                     setInterval(() => {
                         this.updateClock();
-                        this.tickets.forEach(t => {
-                            if (t.status !== 'siap') {
-                                t.seconds++;
-                                if (t.seconds >= 15 * 60) {
-                                    t.isOverdue = true;
+                        if (Array.isArray(this.tickets)) {
+                            this.tickets.forEach(t => {
+                                // Bug FIX: Timer hanya berjalan untuk tiket yang BELUM siap.
+                                // Tiket "siap" memiliki frozen=true → detik sudah di-freeze dari backend.
+                                if (t.status !== 'siap' && !t.frozen) {
+                                    t.seconds++;
+                                    if (t.seconds >= 15 * 60) {
+                                        t.isOverdue = true;
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        }
                     }, 1000);
                 },
 
@@ -668,9 +693,19 @@
                 },
 
                 formatTimer(seconds) {
-                    const m = Math.floor(seconds / 60);
-                    const s = seconds % 60;
+                    const sec = Math.max(0, Math.floor(Math.abs(Number(seconds)) || 0));
+                    const h = Math.floor(sec / 3600);
+                    const m = Math.floor((sec % 3600) / 60);
+                    const s = sec % 60;
+                    if (h > 0) {
+                        return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                    }
                     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                },
+
+                timerUnit(seconds) {
+                    const sec = Math.max(0, Math.floor(Math.abs(Number(seconds)) || 0));
+                    return sec >= 3600 ? 'jam' : 'mnt';
                 },
 
                 kirimAksi(dbId, aksi, itemId) {
@@ -705,6 +740,10 @@
                 },
 
                 markReady(ticket) {
+                    // Freeze timer langsung di client sebelum form submit & reload
+                    ticket.status = 'siap';
+                    ticket.frozen = true;
+                    ticket.isOverdue = false;
                     this.kirimAksi(ticket.dbId, 'siap');
                 },
 

@@ -16,7 +16,7 @@
 
             <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0B4D2B] text-[10px] font-bold text-white shadow-2xs">
                 <span class="w-2 h-2 rounded-full bg-[#FFDEA1]"></span>
-                <span class="tracking-wide">FR-001 • PB-001 • LARAVEL BREEZE / SANCTUM GUARD</span>
+                <span class="tracking-wide">LARAVEL BREEZE / SANCTUM GUARD</span>
             </div>
         </div>
 
@@ -30,27 +30,7 @@
                 </p>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3">
-                <button 
-                    type="button" 
-                    @click="showToast('Memulai prosedur reset PIN massal staf operasional...')"
-                    class="h-10 px-4 rounded-xl bg-[#E5E2DB] hover:bg-[#ded9cf] active:scale-95 text-[#1C1C18] font-semibold text-xs flex items-center gap-2 transition-all shadow-xs cursor-pointer">
-                    <svg class="w-4 h-4 text-[#1C1C18]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                    </svg>
-                    <span>Reset PIN Masal</span>
-                </button>
-
-                <button 
-                    type="button" 
-                    @click="showToast('Membuka audit log riwayat autentikasi & sesi staf...')"
-                    class="h-10 px-4 rounded-xl bg-[#E5E2DB] hover:bg-[#ded9cf] active:scale-95 text-[#1C1C18] font-semibold text-xs flex items-center gap-2 transition-all shadow-xs cursor-pointer">
-                    <svg class="w-4 h-4 text-[#1C1C18]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                    <span>Log Akses Keamanan</span>
-                </button>
-
+            <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end mt-24">
                 <button 
                     type="button" 
                     @click="addModalOpen = true"
@@ -66,55 +46,66 @@
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
-        <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[160px] relative overflow-hidden">
+        <!-- CARD 1: Total Staf Terdaftar -->
+        <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[190px] relative overflow-hidden">
             <div class="flex items-start justify-between">
                 <div>
                     <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">TOTAL STAF TERDAFTAR</span>
-                    <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] block mt-1">14 Akun</span>
+                    <h4 class="text-xs font-semibold text-[#404941] mt-0.5">Semua Peran Resto</h4>
                 </div>
-                <div class="w-10 h-10 rounded-xl bg-[#B1F1C2]/40 flex items-center justify-center text-[#0B4D2B]">
+                <div class="w-10 h-10 rounded-xl bg-[#B1F1C2]/50 flex items-center justify-center text-[#0B4D2B]">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                 </div>
             </div>
 
-            <div class="flex items-center justify-between text-xs pt-3 border-t border-gray-100">
+            <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
+                14 Akun
+            </span>
+
+            <div class="flex items-center justify-between text-xs mt-2">
                 <span class="text-[10px] font-semibold text-[#0B4D2B]">6 Peran Operasional</span>
                 <div class="flex items-center -space-x-1">
-                    <span class="w-2.5 h-2.5 rounded-full bg-[#7A5900] ring-2 ring-white"></span>
-                    <span class="w-2.5 h-2.5 rounded-full bg-[#0B4D2B] ring-2 ring-white"></span>
-                    <span class="w-2.5 h-2.5 rounded-full bg-[#213200] ring-2 ring-white"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#7A5900] ring-2 ring-[#F6F3EC]"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#0B4D2B] ring-2 ring-[#F6F3EC]"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#213200] ring-2 ring-[#F6F3EC]"></span>
                 </div>
             </div>
 
-            <div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-[#FFDEA1]/20 blur-xl pointer-events-none"></div>
+            <div class="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-[#00341A]/5 blur-xl pointer-events-none"></div>
         </div>
 
-        <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[160px]">
+        <!-- CARD 2: Sesi Staf Online -->
+        <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[190px]">
             <div class="flex items-start justify-between">
                 <div>
                     <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">SESI STAF ONLINE</span>
-                    <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] block mt-1">5 Perangkat</span>
+                    <h4 class="text-xs font-semibold text-[#404941] mt-0.5">Sesi Aktif Terhubung</h4>
                 </div>
-                <div class="w-10 h-10 rounded-xl bg-[#FFDEA1]/50 flex items-center justify-center text-[#7A5900]">
+                <div class="w-10 h-10 rounded-xl bg-[#FFDEA1]/60 flex items-center justify-center text-[#7A5900]">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                 </div>
             </div>
 
-            <div class="flex items-center gap-1.5 text-[10px] font-bold text-[#404941] pt-3 border-t border-gray-100">
+            <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
+                5 Perangkat
+            </span>
+
+            <div class="flex items-center gap-1.5 text-[10px] font-bold text-[#404941] mt-2">
                 <span class="w-2 h-2 rounded-full bg-[#0B4D2B] animate-pulse"></span>
                 <span>1 Kasir, 1 Dapur, 1 Bar, 2 Mobile</span>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[160px]">
+        <!-- CARD 3: Proteksi Kredensial -->
+        <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[190px]">
             <div class="flex items-start justify-between">
                 <div>
                     <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">PROTEKSI KREDENSIAL</span>
-                    <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] block mt-1">100% Bcrypt</span>
+                    <h4 class="text-xs font-semibold text-[#404941] mt-0.5">Enkripsi &amp; Token Guard</h4>
                 </div>
                 <div class="w-10 h-10 rounded-xl bg-[#CBEF89]/60 flex items-center justify-center text-[#213200]">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -123,17 +114,25 @@
                 </div>
             </div>
 
-            <div class="flex items-center justify-between text-[10px] font-bold text-[#707971] pt-3 border-t border-gray-100">
+            <div class="flex items-baseline gap-1.5">
+                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
+                    100%
+                </span>
+                <span class="text-sm font-semibold text-[#364E00]">(Bcrypt)</span>
+            </div>
+
+            <div class="flex items-center justify-between text-[10px] font-bold text-[#707971] mt-2">
                 <span>PIN-6 &amp; Sandi Terhash Aktif</span>
                 <span class="text-[#0B4D2B]">TLS 1.3</span>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[160px] relative overflow-hidden">
+        <!-- CARD 4: Rata-Rata Sesi Shift -->
+        <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[190px] relative overflow-hidden">
             <div class="flex items-start justify-between">
                 <div>
                     <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">RATA–RATA SESI SHIFT</span>
-                    <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] block mt-1">6.5 Jam</span>
+                    <h4 class="text-xs font-semibold text-[#404941] mt-0.5">Rotasi Jam Kerja Staf</h4>
                 </div>
                 <div class="w-10 h-10 rounded-xl bg-[#E5E2DB] flex items-center justify-center text-[#1C1C18]">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -143,7 +142,11 @@
                 </div>
             </div>
 
-            <div class="flex items-center justify-between text-[10px] font-bold text-[#404941] pt-3 border-t border-gray-100">
+            <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
+                6.5 Jam
+            </span>
+
+            <div class="flex items-center justify-between text-[10px] font-bold text-[#404941] mt-2">
                 <span>Rotasi Shift Saung</span>
                 <span class="text-[#0B4D2B] flex items-center gap-1">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -153,12 +156,12 @@
                 </span>
             </div>
 
-            <div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-[#00341A]/5 blur-xl pointer-events-none"></div>
+            <div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-[#FFDEA1]/20 blur-xl pointer-events-none"></div>
         </div>
 
     </div>
 
-    <div class="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="bg-[#F6F3EC] rounded-2xl p-4 shadow-xs border border-[#C0C9BF]/20 flex flex-col md:flex-row items-center justify-between gap-4">
         
         <div class="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 text-xs">
             <button 
@@ -221,7 +224,7 @@
                 type="text" 
                 x-model="searchQuery"
                 placeholder="Cari nama staf, email akun, nomor ID..." 
-                class="w-full h-10 pl-10 pr-4 rounded-xl bg-[#F6F3EC] text-xs border border-transparent focus:outline-hidden focus:border-[#0B4D2B] focus:bg-white transition-all shadow-inner">
+                class="w-full h-10 pl-10 pr-4 rounded-xl bg-white text-xs border border-gray-200 focus:outline-hidden focus:border-[#0B4D2B] focus:ring-1 focus:ring-[#0B4D2B] transition-all shadow-2xs">
             <svg class="w-4 h-4 text-[#707971] absolute left-3.5 top-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <circle cx="11" cy="11" r="8" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35" />
@@ -230,9 +233,9 @@
 
     </div>
 
-    <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-xs border border-[#C0C9BF]/20 overflow-hidden">
         
-        <div class="p-4 bg-[#F6F3EC] border-b border-gray-200 flex items-center justify-between text-xs">
+        <div class="p-4 bg-[#F6F3EC] border-b border-[#C0C9BF]/20 flex items-center justify-between text-xs">
             <span class="font-bold text-[#1C1C18]">Menampilkan 7 dari 14 akun staf resmi Situ Awi Resto</span>
             <span class="text-[10px] font-bold text-[#0B4D2B] flex items-center gap-1">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -245,7 +248,7 @@
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse text-xs">
                 <thead>
-                    <tr class="bg-[#F0EEE7] border-b border-gray-200 text-[10px] font-bold text-[#404941] uppercase tracking-wider">
+                    <tr class="bg-[#F0EEE7] border-b border-[#C0C9BF]/20 text-[10px] font-bold text-[#404941] uppercase tracking-wider">
                         <th class="py-3 px-4 min-w-[200px]">PEGAWAI &amp; IDENTITAS</th>
                         <th class="py-3 px-4 min-w-[130px]">ROLE OPERASIONAL</th>
                         <th class="py-3 px-4 min-w-[170px]">EMAIL / ID AKUN</th>
@@ -256,7 +259,7 @@
                         <th class="py-3 px-4 text-right min-w-[120px]">AKSI</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-[#C0C9BF]/20">
                     <template x-for="s in filteredStaffs" :key="s.id">
                         <tr class="hover:bg-[#FBF8F1]/60 transition-colors">
                             
@@ -345,12 +348,12 @@
             </table>
         </div>
 
-        <div class="p-4 bg-[#F6F3EC] border-t border-gray-200 flex flex-wrap items-center justify-between gap-4 text-xs font-semibold text-[#707971]">
+        <div class="p-4 bg-[#F6F3EC] border-t border-[#C0C9BF]/20 flex flex-wrap items-center justify-between gap-4 text-xs font-semibold text-[#707971]">
             <span>Sebelumnya</span>
 
             <div class="flex items-center gap-1">
                 <button type="button" class="w-8 h-8 rounded-lg bg-[#0B4D2B] text-white font-bold flex items-center justify-center">1</button>
-                <button type="button" class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-[#1C1C18] hover:bg-gray-100 flex items-center justify-center font-bold">2</button>
+                <button type="button" class="w-8 h-8 rounded-lg bg-white border border-[#C0C9BF]/30 text-[#1C1C18] hover:bg-gray-100 flex items-center justify-center font-bold">2</button>
             </div>
 
             <button type="button" class="hover:text-black">Berikutnya</button>
@@ -383,7 +386,7 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             
-            <div class="bg-white rounded-xl p-4 shadow-2xs border border-gray-100 flex flex-col justify-between min-h-[220px]">
+            <div class="bg-[#F6F3EC] rounded-xl p-4 shadow-2xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[220px]">
                 <div>
                     <div class="flex items-center justify-between">
                         <h4 class="font-bold text-sm text-[#1C1C18]">Role Admin</h4>
@@ -393,13 +396,13 @@
                         Akses total seluruh sistem: CRUD Menu &amp; Stok, Tata Kelola Meja/Saung, Finansial Resto, Manajemen Akun, dan Telemetri Sensor IoT.
                     </p>
                 </div>
-                <div class="flex items-center justify-between pt-3 border-t border-gray-100 text-[10px] font-bold">
+                <div class="flex items-center justify-between pt-3 border-t border-[#C0C9BF]/20 text-[10px] font-bold">
                     <span class="text-[#707971]">Tingkat Akses</span>
                     <span class="text-[#7A5900]">Level 0 (Super)</span>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl p-4 shadow-2xs border border-gray-100 flex flex-col justify-between min-h-[220px]">
+            <div class="bg-[#F6F3EC] rounded-xl p-4 shadow-2xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[220px]">
                 <div>
                     <div class="flex items-center justify-between">
                         <h4 class="font-bold text-sm text-[#1C1C18]">Role Kasir</h4>
@@ -409,13 +412,13 @@
                         Buka/Tutup Kas shift kasir, Entri pesanan walk-in, Void tagihan berkode otorisasi, Cetak struk thermal Bluetooth, &amp; Pantau antrean bayar.
                     </p>
                 </div>
-                <div class="flex items-center justify-between pt-3 border-t border-gray-100 text-[10px] font-bold">
+                <div class="flex items-center justify-between pt-3 border-t border-[#C0C9BF]/20 text-[10px] font-bold">
                     <span class="text-[#707971]">Tingkat Akses</span>
                     <span class="text-[#0B4D2B]">Level 1 (POS Finansial)</span>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl p-4 shadow-2xs border border-gray-100 flex flex-col justify-between min-h-[220px]">
+            <div class="bg-[#F6F3EC] rounded-xl p-4 shadow-2xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[220px]">
                 <div>
                     <div class="flex items-center justify-between">
                         <h4 class="font-bold text-sm text-[#1C1C18]">Koki &amp; Barista</h4>
@@ -425,13 +428,13 @@
                         Layar interaktif KDS Kitchen/Bar, filter pesanan per kategori menu, update status racikan (Diproses / Siap Saji), tandai stok habis instan.
                     </p>
                 </div>
-                <div class="flex items-center justify-between pt-3 border-t border-gray-100 text-[10px] font-bold">
+                <div class="flex items-center justify-between pt-3 border-t border-[#C0C9BF]/20 text-[10px] font-bold">
                     <span class="text-[#707971]">Tingkat Akses</span>
                     <span class="text-[#213200]">Level 2 (Produksi KDS)</span>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl p-4 shadow-2xs border border-gray-100 flex flex-col justify-between min-h-[220px]">
+            <div class="bg-[#F6F3EC] rounded-xl p-4 shadow-2xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[220px]">
                 <div>
                     <div class="flex items-center justify-between">
                         <h4 class="font-bold text-sm text-[#1C1C18]">Pelayan / Runner</h4>
@@ -441,13 +444,13 @@
                         Penerimaan push MQTT notifikasi panggilan IoT saung, konfirmasi antar hidangan ke saung/lesehan, dan mobile input pesanan meja tamu.
                     </p>
                 </div>
-                <div class="flex items-center justify-between pt-3 border-t border-gray-100 text-[10px] font-bold">
+                <div class="flex items-center justify-between pt-3 border-t border-[#C0C9BF]/20 text-[10px] font-bold">
                     <span class="text-[#707971]">Tingkat Akses</span>
                     <span class="text-[#1C1C18]">Level 3 (Mobile Floor)</span>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl p-4 shadow-2xs border border-gray-100 flex flex-col justify-between min-h-[220px]">
+            <div class="bg-[#F6F3EC] rounded-xl p-4 shadow-2xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[220px]">
                 <div>
                     <div class="flex items-center justify-between">
                         <h4 class="font-bold text-sm text-[#1C1C18]">Tamu (Self-Order)</h4>
@@ -457,7 +460,7 @@
                         Pemesanan mandiri via scan Token QR Saung. Akses dibatasi ketat tanpa izin membaca konsol internal manajemen resto.
                     </p>
                 </div>
-                <div class="flex items-center justify-between pt-3 border-t border-gray-100 text-[10px] font-bold">
+                <div class="flex items-center justify-between pt-3 border-t border-[#C0C9BF]/20 text-[10px] font-bold">
                     <span class="text-[#707971]">Tingkat Akses</span>
                     <span class="text-[#707971]">Level 4 (Guest Token)</span>
                 </div>

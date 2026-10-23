@@ -16,7 +16,7 @@
 
             <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F0EEE7] text-[10px] font-bold text-[#707971]">
                 <span class="w-2 h-2 rounded-full bg-[#7A5900]"></span>
-                <span class="tracking-wide">INFRASTRUKTUR SAUNG & IOT TABLE NODE • FR-002A</span>
+                <span class="tracking-wide">INFRASTRUKTUR SAUNG & IOT TABLE NODE</span>
             </div>
         </div>
 
@@ -48,7 +48,7 @@
                     <svg class="w-4 h-4 text-white stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
-                    <span>+ Tambah Meja / Saung Baru</span>
+                    <span>Tambah Meja / Saung Baru</span>
                 </button>
             </div>
         </div>
@@ -66,17 +66,15 @@
                 </div>
             </div>
 
-            <div class="flex flex-col mt-4">
                 <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
                     11 Unit Saung
                 </span>
                 <div class="flex items-center justify-between mt-2 text-xs">
                     <span class="text-[#404941] font-semibold text-[10px]">Maks. 68 Tamu Lesehan</span>
-                    <span class="px-2 py-0.5 rounded-full bg-[#E5E2DB] text-[10px] font-semibold text-[#00341A]">
+                    <span class="px-2 py-0.5 rounded-full bg-[#E5E2DB] text-[10px] font-semibold text-[#00341A] flex flex-col justify-center items-center text-center">
                         3 Klaster Wilayah
                     </span>
                 </div>
-            </div>
         </div>
 
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[175px]">
@@ -89,7 +87,6 @@
                 </div>
             </div>
 
-            <div class="flex flex-col mt-4">
                 <div class="flex items-baseline gap-1.5">
                     <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
                         7 Terisi
@@ -107,7 +104,6 @@
                     <span>3 Tersedia</span>
                     <span>1 Ter-reservasi</span>
                 </div>
-            </div>
         </div>
 
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[175px]">
@@ -120,7 +116,6 @@
                 </div>
             </div>
 
-            <div class="flex flex-col mt-4">
                 <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
                     11/11 Synced
                 </span>
@@ -130,7 +125,6 @@
                         1 Buzzer Aktif
                     </span>
                 </div>
-            </div>
         </div>
 
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[175px] relative overflow-hidden">
@@ -143,7 +137,6 @@
                 </div>
             </div>
 
-            <div class="flex flex-col mt-4">
                 <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
                     100% Valid
                 </span>
@@ -151,7 +144,6 @@
                     <span class="text-[#404941]">Auto-Renewing per Sesi</span>
                     <span class="text-[#0B4D2B]">Anti-Order Palsu</span>
                 </div>
-            </div>
 
             <div class="absolute -right-8 -bottom-8 w-24 h-24 rounded-full bg-[#FFDEA1]/25 blur-xl pointer-events-none"></div>
         </div>
@@ -330,30 +322,6 @@
                     @endif
                     @endforeach
 
-                </div>
-            </div>
-
-            <div class="p-6 bg-[#F6F3EC] rounded-2xl shadow-xs border border-[#C0C9BF]/30 flex flex-col sm:flex-row items-center gap-6">
-                <div class="w-full sm:w-48 h-32 rounded-xl bg-gradient-to-tr from-[#0B4D2B] to-[#2E6A45] flex items-center justify-center text-white flex-shrink-0 shadow-inner p-4 text-center">
-                    <div class="flex flex-col items-center gap-1.5">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 8h1a3 3 0 0 1 0 6h-1M4 8h14v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8z"/></svg>
-                        <span class="font-display font-semibold text-xs tracking-wide">Saung Situ Awi</span>
-                    </div>
-                </div>
-
-                <div class="flex flex-col">
-                    <div class="flex items-center gap-2">
-                        
-                        <span class="text-[10px] font-bold text-[#00341A] uppercase tracking-wider">
-                            KONSEP PENATAAN SAUNG SUNDA TRADISIONAL
-                        </span>
-                    </div>
-                    <h3 class="font-display font-bold text-base sm:text-lg text-[#00341A] mt-1">
-                        Harmoni Vernakular Bambu & Presisi POS Terintegrasi
-                    </h3>
-                    <p class="text-xs text-[#404941] mt-1.5 leading-relaxed">
-                        Setiap saung dirancang terpisah dengan jarak 3.5 meter di atas air situ. Modul IoT ESP32 terlindung dalam kotak ukir kayu tahan kelembapan dengan baterai cadangan hingga 18 jam operasional penuh.
-                    </p>
                 </div>
             </div>
 

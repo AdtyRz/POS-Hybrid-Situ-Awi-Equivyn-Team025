@@ -16,7 +16,7 @@
 
             <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFDEA1]/40 text-[10px] font-bold text-[#261900]">
                 <span class="w-2 h-2 rounded-full bg-[#7A5900]"></span>
-                <span class="tracking-wide">FR-002 • PB-002 • AUTO-CUT SYSTEM</span>
+                <span class="tracking-wide">AUTO-CUT SYSTEM</span>
             </div>
         </div>
 
@@ -30,7 +30,7 @@
                 </p>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3 w-full ">
                 <button 
                     type="button" 
                     @click="showToast('Membuka sakelar cepat habis darurat...')"
@@ -58,7 +58,7 @@
                     <svg class="w-4 h-4 text-[#B1F1C2] stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
-                    <span>+ Tambah Menu Baru</span>
+                    <span>Tambah Menu Baru</span>
                 </button>
             </div>
         </div>
@@ -76,7 +76,6 @@
                 </div>
             </div>
 
-            <div class="flex flex-col mt-2">
                 <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
                     42 Item
                 </span>
@@ -90,14 +89,13 @@
                         16 Minuman Bar
                     </span>
                 </div>
-            </div>
 
             <div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-[#FFDEA1]/25 blur-xl pointer-events-none"></div>
         </div>
 
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[160px]">
             <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">PERINGATAN STOK MENIPIS</span>
+                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">PERINGATAN STOK<br>MENIPIS</span> 
                 <div class="w-10 h-10 rounded-xl bg-[#FFDEA1]/60 flex items-center justify-center text-[#261900]">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -105,15 +103,13 @@
                 </div>
             </div>
 
-            <div class="flex flex-col mt-2">
-                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#7A5900] tracking-tight leading-tight">
+                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
                     3 Bahan
                 </span>
                 <div class="p-2 bg-[#FFDEA1]/20 rounded-lg flex items-center justify-between mt-3 text-[10px] font-bold text-[#1C1C18]">
                     <span class="truncate">Gurame Kolam, Kelapa Ijo, Maranggi</span>
                     <span class="text-[#7A5900]">→</span>
                 </div>
-            </div>
         </div>
 
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[160px]">
@@ -127,7 +123,7 @@
             </div>
 
             <div class="flex flex-col mt-2">
-                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#BA1A1A] tracking-tight leading-tight">
+                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
                     2 Menu
                 </span>
                 <div class="p-2 bg-[#FFDAD6]/40 rounded-lg flex items-center justify-between mt-3 text-[10px] font-bold text-[#93000A]">
@@ -139,7 +135,7 @@
 
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[160px] relative overflow-hidden">
             <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">RATA–RATA MARGIN MENU</span>
+                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">RATA–RATA MARGIN<br>MENU</span>
                 <div class="w-10 h-10 rounded-xl bg-[#CBEF89]/60 flex items-center justify-center text-[#213200]">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
@@ -148,7 +144,7 @@
             </div>
 
             <div class="flex flex-col mt-2">
-                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#334A00] tracking-tight leading-tight">
+                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
                     68.4%
                 </span>
                 <div class="p-2 bg-[#CBEF89]/20 rounded-lg flex items-center justify-between mt-3 text-[10px] font-bold">
@@ -249,7 +245,7 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
+        <div class="flex flex-wrap items-center justify-end gap-2 md:gap-3 gap-y-2 w-full md:w-auto">
             <button 
                 type="button" 
                 @click="showToast('Sinyal sinkronisasi dikirim ke KDS Dapur & Bar.')"
