@@ -32,7 +32,7 @@
 
             <!-- User Avatar Badge -->
             <div class="w-8 h-8 rounded-full bg-[#0B4D2B] text-white font-bold text-[10px] tracking-[0.4px] flex items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-                KA
+                {{ strtoupper(substr(auth()->user()->nama ?? auth()->user()->name ?? 'P', 0, 2)) }}
             </div>
         </div>
     </header>
@@ -239,17 +239,8 @@
                     </div>
 
                     {{-- Action Button --}}
-                    <button @click="
-                            delivered = true;
-                            const csrfToken = document.querySelector('meta[name=\'csrf-token\']')?.content ?? '';
-                            fetch('/pesanan/{{ $order['kode_pesanan'] }}/status', {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                                body: JSON.stringify({ status_pesanan: 'diantar' })
-                            }).catch(()=>{});
-                            ordersDelivered++;
-                            triggerToast('Pesanan {{ $order['meja']['kode_meja'] }} berhasil ditandai diantar.');
-                        " type="button"
+                    <button @click="delivered = true; deliverOrder('{{ $order['kode_pesanan'] }}', '{{ $order['meja']['kode_meja'] }}')"
+                        type="button"
                         class="w-full h-12 rounded-xl {{ $order['source'] === 'bar' ? 'bg-[#FECE66] hover:bg-[#F5BF45] text-[#765600]' : 'bg-[#0B4D2B] hover:bg-[#00341A] text-white' }} font-semibold text-sm tracking-[0.14px] flex items-center justify-center gap-2 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all cursor-pointer active:scale-98">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -349,13 +340,13 @@
             showToast: false,
             soundVibrationActive: true,
 
-            runnerInfo: '{{ auth()->user()->nama ?? "Kang Asep" }} • Runner Lesehan',
+            runnerInfo: '{{ auth()->user()->nama ?? auth()->user()->name ?? "Runner" }} • {{ auth()->user()->area ?? "Runner Lesehan" }}',
             currentArea: '{{ $currentArea ?? "Area Bawah (Situ Danau)" }}',
             meshStatus: 'Mesh -52 dBm',
             shiftInfo: 'Shift Siang (12:00 - 18:00 WIB)',
-            callsAnswered: {{ $callsAnswered ?? 3 }},
-            ordersDelivered: {{ $ordersDelivered ?? 18 }},
-            avgResponse: '{{ $avgResponse ?? "1.8m" }}',
+            callsAnswered: {{ $callsAnswered ?? 0 }},
+            ordersDelivered: {{ $ordersDelivered ?? 0 }},
+            avgResponse: '{{ $avgResponse ? round($avgResponse, 1) . "m" : "— m" }}',
 
             urgentSaungName: '{{ $panggilan->first() ? ("Saung " . filter_var($panggilan->first()->meja->kode_meja, FILTER_SANITIZE_NUMBER_INT) . " (" . $panggilan->first()->meja->kode_meja . ")") : "Saung 01 (LB-01)" }}',
             urgentSaungShortName: '{{ $panggilan->first() ? ("Saung " . filter_var($panggilan->first()->meja->kode_meja, FILTER_SANITIZE_NUMBER_INT)) : "Saung 01" }}',
@@ -420,6 +411,17 @@
             muteBuzzer() {
                 this.buzzerActive = false;
                 this.triggerToast('Sinyal MQTT terkirim: Buzzer dinonaktifkan.');
+            },
+
+            deliverOrder(kodePesanan, kodeMeja) {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+                fetch(`/pesanan/${kodePesanan}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: JSON.stringify({ status_pesanan: 'diantar' })
+                }).catch(() => {});
+                this.ordersDelivered++;
+                this.triggerToast(`Pesanan ${kodeMeja} berhasil ditandai diantar.`);
             }
         };
     }

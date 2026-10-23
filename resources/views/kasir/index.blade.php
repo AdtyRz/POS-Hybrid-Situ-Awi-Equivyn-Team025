@@ -14,8 +14,8 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @else
         <script src="https://cdn.tailwindcss.com"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
     @endif
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
 
     <style>
         [x-cloak] { display: none !important; }
@@ -702,14 +702,113 @@
                                 </button>
                             </div>
 
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-xs font-bold text-[#6B6A63]">
-                                    Rp
-                                </span>
-                                <input type="number" 
-                                       x-model.number="cashReceived"
-                                       class="w-full pl-9 pr-3 py-2 bg-white border border-[#C8C2B3]/60 rounded-lg text-sm font-mono font-bold text-right text-[#2B2A26] focus:outline-none focus:border-[#E0B24E] focus:ring-1 focus:ring-[#E0B24E]"
-                                       placeholder="150000">
+                            <!-- Display Uang Diterima -->
+                            <div class="relative bg-white border-2 border-[#C8C2B3]/70 rounded-xl px-3 py-2 flex items-center justify-between shadow-xs">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="px-1.5 py-0.5 rounded bg-[#FAF7F0] border border-[#C8C2B3]/50 text-[10px] font-extrabold text-[#6B6A63] tracking-wider uppercase">
+                                        Rp
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono font-extrabold text-lg sm:text-xl text-[#00341A] tracking-tight"
+                                          x-text="formatNumber(cashReceived)">
+                                        0
+                                    </span>
+                                    <button type="button" 
+                                            @click="pressNumpad('clear')"
+                                            x-show="cashReceived > 0"
+                                            title="Reset Uang Diterima"
+                                            class="p-1 rounded-md text-[#8A8980] hover:text-[#C1442C] hover:bg-[#FEF2F2] transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Number Pad / Keypad Kasir -->
+                            <div class="grid grid-cols-4 gap-1.5 pt-0.5 select-none">
+                                {{-- Baris 1: 1, 2, 3, C (Clear) --}}
+                                <button type="button" 
+                                        @click="pressNumpad('1')"
+                                        class="h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
+                                    1
+                                </button>
+                                <button type="button" 
+                                        @click="pressNumpad('2')"
+                                        class="h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
+                                    2
+                                </button>
+                                <button type="button" 
+                                        @click="pressNumpad('3')"
+                                        class="h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
+                                    3
+                                </button>
+                                <button type="button" 
+                                        @click="pressNumpad('clear')"
+                                        class="h-10 rounded-lg bg-[#FEF2F2] hover:bg-red-100 border border-[#FCA5A5]/60 text-[#C1442C] font-mono font-extrabold text-sm shadow-xs active:scale-95 transition flex items-center justify-center tracking-wider"
+                                        title="Reset ke 0">
+                                    C
+                                </button>
+
+                                {{-- Baris 2: 4, 5, 6, ⌫ (Backspace) --}}
+                                <button type="button" 
+                                        @click="pressNumpad('4')"
+                                        class="h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
+                                    4
+                                </button>
+                                <button type="button" 
+                                        @click="pressNumpad('5')"
+                                        class="h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
+                                    5
+                                </button>
+                                <button type="button" 
+                                        @click="pressNumpad('6')"
+                                        class="h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
+                                    6
+                                </button>
+                                <button type="button" 
+                                        @click="pressNumpad('backspace')"
+                                        class="h-10 rounded-lg bg-[#FAF7F0] hover:bg-[#EAE4D3] border border-[#C8C2B3]/70 text-[#6B6A63] hover:text-[#2B2A26] shadow-xs active:scale-95 transition flex items-center justify-center"
+                                        title="Hapus 1 angka">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414-6.414A2 2 0 0110.828 5H20a2 2 0 012 2v10a2 2 0 01-2 2h-9.172a2 2 0 01-1.414-.586L3 12z"></path>
+                                    </svg>
+                                </button>
+
+                                {{-- Baris 3: 7, 8, 9, 00 --}}
+                                <button type="button" 
+                                        @click="pressNumpad('7')"
+                                        class="h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
+                                    7
+                                </button>
+                                <button type="button" 
+                                        @click="pressNumpad('8')"
+                                        class="h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
+                                    8
+                                </button>
+                                <button type="button" 
+                                        @click="pressNumpad('9')"
+                                        class="h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
+                                    9
+                                </button>
+                                <button type="button" 
+                                        @click="pressNumpad('00')"
+                                        class="h-10 rounded-lg bg-[#FAF7F0] hover:bg-[#EAE4D3] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-xs shadow-xs active:scale-95 transition flex items-center justify-center">
+                                    00
+                                </button>
+
+                                {{-- Baris 4: 0 (span 2), 000 (span 2) --}}
+                                <button type="button" 
+                                        @click="pressNumpad('0')"
+                                        class="col-span-2 h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
+                                    0
+                                </button>
+                                <button type="button" 
+                                        @click="pressNumpad('000')"
+                                        class="col-span-2 h-10 rounded-lg bg-[#E0B24E]/15 hover:bg-[#E0B24E]/25 border border-[#E0B24E]/50 text-[#C9982F] font-mono font-extrabold text-xs shadow-xs active:scale-95 transition flex items-center justify-center">
+                                    000
+                                </button>
                             </div>
 
                             <div class="bg-[#ECFDF5] border border-[#6EE7B7] rounded-lg p-2.5 flex items-center justify-between">
@@ -990,6 +1089,7 @@
                 activeFilter: 'all',
                 selectedSaungId: @json($selectedSaungId),
                 cashReceived: 0,
+                _lastNumpadTime: 0,
                 isPrinting: false,
                 isLocked: false,
                 selesaikanSesi: 0,
@@ -1079,7 +1179,53 @@
                 },
 
                 setQuickCash(amount) {
-                    this.cashReceived = amount;
+                    this.cashReceived = Number(amount) || 0;
+                    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                        document.activeElement.blur();
+                    }
+                },
+
+                pressNumpad(val) {
+                    const now = Date.now();
+                    if (this._lastNumpadTime && (now - this._lastNumpadTime < 50)) {
+                        return;
+                    }
+                    this._lastNumpadTime = now;
+
+                    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                        document.activeElement.blur();
+                    }
+
+                    if (val === 'clear') {
+                        this.cashReceived = 0;
+                        return;
+                    }
+
+                    let currentStr = String(this.cashReceived || 0);
+
+                    if (val === 'backspace') {
+                        if (currentStr.length <= 1 || currentStr === '0') {
+                            this.cashReceived = 0;
+                        } else {
+                            this.cashReceived = parseInt(currentStr.slice(0, -1), 10) || 0;
+                        }
+                        return;
+                    }
+
+                    if (val === '0' || val === '00' || val === '000') {
+                        if (this.cashReceived === 0) return;
+                        let nextStr = currentStr + val;
+                        if (nextStr.length <= 10) {
+                            this.cashReceived = parseInt(nextStr, 10) || 0;
+                        }
+                        return;
+                    }
+
+                    // Digit 1 sampai 9
+                    let nextStr = (this.cashReceived === 0) ? String(val) : currentStr + String(val);
+                    if (nextStr.length <= 10) {
+                        this.cashReceived = parseInt(nextStr, 10) || 0;
+                    }
                 },
 
                 calculateChange() {
@@ -1166,17 +1312,37 @@
                 },
 
                 handleKeyboardShortcuts(e) {
+                    if (e.repeat) return;
+
+                    const isInputActive = e.target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
+
                     if (e.key === 'Enter' && !this.isLocked && this.currentSaung.status === 'waiting_cash') {
                         e.preventDefault();
                         this.confirmPaymentAndPrint();
+                        return;
                     }
                     if (e.key === 'F3') {
                         e.preventDefault();
                         this.reprintReceipt();
+                        return;
                     }
                     if (e.key === 'F9') {
                         e.preventDefault();
                         this.voidOrder();
+                        return;
+                    }
+
+                    // Dukungan input keypad fisik/keyboard saat status waiting_cash
+                    if (!isInputActive && !this.isLocked && this.currentSaung && this.currentSaung.status === 'waiting_cash' && !this.sesiModal.visible) {
+                        if (e.key >= '0' && e.key <= '9') {
+                            this.pressNumpad(e.key);
+                        } else if (e.key === 'Backspace') {
+                            e.preventDefault();
+                            this.pressNumpad('backspace');
+                        } else if (e.key === 'Delete' || e.key === 'Escape') {
+                            e.preventDefault();
+                            this.pressNumpad('clear');
+                        }
                     }
                 },
 

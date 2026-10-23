@@ -143,12 +143,9 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477 4.5 1.253" />
                             </svg>
                         </div>
-                        <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-[rgba(177,241,194,0.5)] text-[#11512F] text-[10px] font-bold tracking-[0.4px]">
-                            +6 Avg
-                        </span>
                     </div>
                     <div>
-                        <span class="font-bold text-[26px] text-[#1C1C18] leading-none tracking-[-0.26px] block" x-text="pesananDiantar">24</span>
+                        <span class="font-bold text-[26px] text-[#1C1C18] leading-none tracking-[-0.26px] block" x-text="pesananDiantar">{{ $shiftAktif ?? 0 }}</span>
                         <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px] block mt-1">Pesanan Diantar</span>
                     </div>
                 </div>
@@ -162,13 +159,14 @@
                                 <polyline points="12 6 12 12 16 14" />
                             </svg>
                         </div>
-                        <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-[#FFDEA1] text-[#261900] text-[10px] font-bold tracking-[0.4px]">
-                            Sangat Baik
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-[#FFDEA1] text-[#261900] text-[10px] font-bold tracking-[0.4px]"
+                              x-text="avgRespon > 0 ? (avgRespon <= 3 ? 'Sangat Baik' : 'Normal') : 'Standby'">
+                            {{ ($avgRespon ?? 0) > 0 ? (($avgRespon <= 3) ? 'Sangat Baik' : 'Normal') : 'Standby' }}
                         </span>
                     </div>
                     <div>
                         <div class="flex items-baseline gap-1 leading-none">
-                            <span class="font-bold text-[26px] text-[#00341A] tracking-[-0.26px]" x-text="avgRespon">1.8</span>
+                            <span class="font-bold text-[26px] text-[#00341A] tracking-[-0.26px]" x-text="avgRespon > 0 ? avgRespon : '0'">{{ ($avgRespon ?? 0) > 0 ? $avgRespon : '0' }}</span>
                             <span class="text-xs text-[#404941] tracking-[-0.26px]">Menit</span>
                         </div>
                         <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px] block mt-1">Respon Sensor Meja</span>
@@ -186,7 +184,7 @@
                         <span class="text-[10px] font-bold text-[#00341A] tracking-[0.4px]">100% Zero-Loss</span>
                     </div>
                     <div>
-                        <span class="font-bold text-[26px] text-[#1C1C18] leading-none tracking-[-0.26px] block" x-text="panggilanSelesai">14</span>
+                        <span class="font-bold text-[26px] text-[#1C1C18] leading-none tracking-[-0.26px] block" x-text="panggilanSelesai">{{ $panggilanDitangani ?? 0 }}</span>
                         <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px] block mt-1">Panggilan Selesai</span>
                     </div>
                 </div>
@@ -203,7 +201,7 @@
                     </div>
                     <div>
                         <div class="flex items-baseline gap-1 leading-none">
-                            <span class="font-bold text-[26px] text-[#7A5900] tracking-[-0.26px]">—</span>
+                            <span class="font-bold text-[26px] text-[#7A5900] tracking-[-0.26px]">100%</span>
                         </div>
                         <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px] block mt-1">Kepuasan Tamu Saung</span>
                     </div>
@@ -493,8 +491,7 @@
                 // Selalu assign dari backend — tanpa kondisi > 0 agar nilai 0 setelah fresh seed juga terbaca
                 this.pesananDiantar   = {{ $shiftAktif ?? 0 }};
                 this.panggilanSelesai = {{ $panggilanDitangani ?? 0 }};
-                // avgRespon tidak tersedia di controller saat ini → tampilkan 0
-                this.avgRespon        = 0;
+                this.avgRespon        = {{ $avgRespon ?? 0 }};
             },
 
             triggerToast(msg) {
