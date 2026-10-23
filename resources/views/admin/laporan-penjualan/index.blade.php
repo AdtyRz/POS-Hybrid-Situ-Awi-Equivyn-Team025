@@ -14,15 +14,11 @@
                     <span class="text-[#0B4D2B]">LAPORAN & EKSPOR</span>
                 </div>
 
-                <div
-                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E5E2DB] text-[10px] font-bold text-[#0B4D2B]">
-                    <svg class="w-3.5 h-3.5 text-[#334A00]" fill="none" stroke="currentColor" stroke-width="2"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                    <span class="tracking-wide">FR-008 • PB-008 • AUDIT TRAIL</span>
-                </div>
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E5E2DB] text-[10px] font-bold text-[#0B4D2B]">
+                <svg class="w-3.5 h-3.5 text-[#334A00]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <span class="tracking-wide">AUDIT TRAIL</span>
             </div>
 
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pt-1">
@@ -72,19 +68,13 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
 
-            <div
-                class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[190px] relative overflow-hidden">
-                <div class="flex items-start justify-between">
-                    <div>
-                        <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">OMZET
-                            TERKONSOLIDASI</span>
-                        <h4 class="text-xs font-semibold text-[#404941] mt-0.5">Bulan Ini (Sep 2026)</h4>
-                    </div>
-                    <div class="w-10 h-10 rounded-xl bg-[#B1F1C2]/50 flex items-center justify-center text-[#0B4D2B]">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#0B4D2B] tracking-tight leading-tight">
+                    Rp 284.650.000
+                </span>
+                
+                <div class="flex items-center gap-2 mt-2">
+                    <div class="flex-1 h-1.5 rounded-full bg-[#E5E2DB] overflow-hidden">
+                        <div class="h-full bg-[#0B4D2B] rounded-full" style="width: 92%"></div>
                     </div>
                 </div>
 
@@ -102,9 +92,13 @@
                     </div>
                 </div>
 
-                <div class="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-[#00341A]/5 blur-xl pointer-events-none">
-                </div>
-            </div>
+                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
+                    2.418 Pesanan
+                </span>
+                <span class="text-[10px] font-bold text-[#261900] mt-2 flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> 100% Audit Reconciled
+                </span>
+        </div>
 
             <div
                 class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[190px]">
@@ -122,18 +116,12 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col mt-4">
-                    <span
-                        class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
-                        2.418 Pesanan
-                    </span>
-                    <span class="text-[10px] font-bold text-[#261900] mt-2 flex items-center gap-1">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                        </svg> 100% Audit Reconciled
+                <div class="flex items-baseline gap-1.5">
+                    <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
+                        Rp 0
                     </span>
                 </div>
-            </div>
+        </div>
 
             <div
                 class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[190px]">
@@ -151,20 +139,12 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col mt-4">
-                    <div class="flex items-baseline gap-1.5">
-                        <span
-                            class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
-                            Rp 0
-                        </span>
-                        <span class="text-sm font-semibold text-[#364E00]">(Sempurna)</span>
-                    </div>
-                    <div class="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-[#707971]">
-                        <span class="w-2 h-2 rounded-full bg-[#0B4D2B]"></span>
-                        <span>Zero Variance (Pagi & Malam)</span>
-                    </div>
-                </div>
-            </div>
+                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
+                    Rp 28.465.000
+                </span>
+                <span class="text-[10px] font-bold text-[#404941] mt-2 flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg> Siap Lapor Bapenda Kab. Bandung
+                </span>
 
             <div
                 class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[190px] relative overflow-hidden">
@@ -378,100 +358,16 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr
-                            class="bg-[#F0EEE7] border-b border-gray-200 text-[10px] font-bold text-[#404941] uppercase tracking-wider">
-                            <th class="py-3 px-4 min-w-[100px]">NO. TRANSAKSI</th>
-                            <th class="py-3 px-4 min-w-[90px]">WAKTU / SESI</th>
-                            <th class="py-3 px-4 min-w-[140px]">SAUNG / MEJA</th>
-                            <th class="py-3 px-4 min-w-[220px]">ITEM DIPESAN</th>
-                            <th class="py-3 px-4 min-w-[120px]">METODE BAYAR</th>
-                            <th class="py-3 px-4 text-right min-w-[110px]">SUBTOTAL</th>
-                            <th class="py-3 px-4 text-right min-w-[90px]">PAJAK PB1</th>
-                            <th class="py-3 px-4 text-right min-w-[120px]">TOTAL BERSIH</th>
-                            <th class="py-3 px-4 min-w-[120px]">KASIR PETUGAS</th>
-                            <th class="py-3 px-4 text-center min-w-[110px]">STATUS AUDIT</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        <template x-for="t in filteredTransactions" :key="t.id">
-                            <tr class="transition-colors"
-                                :class="t.status === 'void' ? 'bg-red-50/30 text-gray-500' : 'hover:bg-[#FBF8F1]/60'">
-
-                                <td class="py-3 px-4">
-                                    <span class="font-mono font-bold"
-                                        :class="t.status === 'void' ? 'line-through text-[#BA1A1A]' : 'text-[#0B4D2B]'"
-                                        x-text="t.id">
-                                    </span>
-                                </td>
-
-                                <td class="py-3 px-4 text-[#404941]" x-text="t.time"></td>
-
-                                <td class="py-3 px-4">
-                                    <span class="font-semibold text-[#1C1C18]" x-text="t.table"></span>
-                                </td>
-
-                                <td class="py-3 px-4">
-                                    <span :class="t.status === 'void' ? 'line-through text-red-700' : 'text-[#404941]'"
-                                        x-text="t.items"></span>
-                                </td>
-
-                                <td class="py-3 px-4">
-                                    <span
-                                        class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold"
-                                        :class="{
-                                            'bg-[#FFDEA1]/50 text-[#7A5900]': t.method === 'QRIS Midtrans',
-                                            'bg-[#E5E2DB] text-[#1C1C18]': t.method === 'Tunai Kasir',
-                                            'bg-[#FFDAD6] text-[#93000A]': t.method === 'VOID Kasir'
-                                        }">
-                                        <span x-text="t.method"></span>
-                                    </span>
-                                </td>
-
-                                <td class="py-3 px-4 text-right"
-                                    :class="t.status === 'void' ? 'line-through text-gray-400' : 'text-[#404941]'"
-                                    x-text="'Rp ' + t.subtotal.toLocaleString('id-ID')"></td>
-
-                                <td class="py-3 px-4 text-right text-gray-500"
-                                    :class="t.status === 'void' ? 'line-through' : ''"
-                                    x-text="'Rp ' + t.pb1.toLocaleString('id-ID')"></td>
-
-                                <td class="py-3 px-4 text-right font-bold text-sm"
-                                    :class="t.status === 'void' ? 'line-through text-gray-400' : 'text-[#0B4D2B]'"
-                                    x-text="'Rp ' + t.total.toLocaleString('id-ID')"></td>
-
-                                <td class="py-3 px-4 text-[#404941]" x-text="t.cashier"></td>
-
-                                <td class="py-3 px-4 text-center">
-                                    <span
-                                        class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold"
-                                        :class="t.status === 'void' ? 'bg-[#FFDAD6] text-[#93000A]' :
-                                            'bg-[#B1F1C2]/50 text-[#11512F]'">
-                                        <template x-if="t.status === 'void'">
-                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </template>
-                                        <template x-if="t.status !== 'void'">
-                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                            </svg>
-                                        </template>
-                                        <span x-text="t.statusText"></span>
-                                    </span>
-                                </td>
-                            </tr>
-                        </template>
-                    </tbody>
-                    <tfoot>
-                        <tr class="bg-[#F0EEE7] border-t-2 border-gray-300 font-bold text-xs text-[#1C1C18]">
-                            <td colspan="5" class="py-3.5 px-4 text-right">
-                                Total Sampel Pratinjau (5 Valid + 1 Void):
+                            <td class="py-3 px-4">
+                                <span 
+                                    class="inline-flex gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold flex flex-col justify-center items-center text-center"
+                                    :class="{
+                                        'bg-[#FFDEA1]/50 text-[#7A5900]': t.method === 'QRIS Midtrans',
+                                        'bg-[#E5E2DB] text-[#1C1C18]': t.method === 'Tunai Kasir',
+                                        'bg-[#FFDAD6] text-[#93000A]': t.method === 'VOID Kasir'
+                                    }">
+                                    <span x-text="t.method"></span>
+                                </span>
                             </td>
                             <td class="py-3.5 px-4 text-right font-bold text-[#1C1C18]">Rp 2.624.545</td>
                             <td class="py-3.5 px-4 text-right font-bold text-[#707971]">Rp 262.455</td>

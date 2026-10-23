@@ -14,11 +14,9 @@
                     <span class="text-[#00341A]">Master Data Meja/Saung</span>
                 </div>
 
-                <div
-                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F0EEE7] text-[10px] font-bold text-[#707971]">
-                    <span class="w-2 h-2 rounded-full bg-[#7A5900]"></span>
-                    <span class="tracking-wide">INFRASTRUKTUR SAUNG & IOT TABLE NODE • FR-002A</span>
-                </div>
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F0EEE7] text-[10px] font-bold text-[#707971]">
+                <span class="w-2 h-2 rounded-full bg-[#7A5900]"></span>
+                <span class="tracking-wide">INFRASTRUKTUR SAUNG & IOT TABLE NODE</span>
             </div>
 
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pt-1">
@@ -43,15 +41,15 @@
                         <span>Cetak Semua QR Saung (PDF)</span>
                     </button>
 
-                    <button type="button" @click="addModalOpen = true"
-                        class="h-11 px-5 rounded-xl bg-[#0B4D2B] hover:bg-[#08381F] active:scale-95 text-white font-semibold text-sm flex items-center gap-2.5 shadow-md transition-all cursor-pointer">
-                        <svg class="w-4 h-4 text-white stroke-[2.5]" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                        </svg>
-                        <span>+ Tambah Meja / Saung Baru</span>
-                    </button>
-                </div>
+                <button 
+                    type="button" 
+                    @click="addModalOpen = true"
+                    class="h-11 px-5 rounded-xl bg-[#0B4D2B] hover:bg-[#08381F] active:scale-95 text-white font-semibold text-sm flex items-center gap-2.5 shadow-md transition-all cursor-pointer">
+                    <svg class="w-4 h-4 text-white stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Tambah Meja / Saung Baru</span>
+                </button>
             </div>
         </div>
 
@@ -69,10 +67,13 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col mt-4">
-                    <span
-                        class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
-                        11 Unit Saung
+                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
+                    11 Unit Saung
+                </span>
+                <div class="flex items-center justify-between mt-2 text-xs">
+                    <span class="text-[#404941] font-semibold text-[10px]">Maks. 68 Tamu Lesehan</span>
+                    <span class="px-2 py-0.5 rounded-full bg-[#E5E2DB] text-[10px] font-semibold text-[#00341A] flex flex-col justify-center items-center text-center">
+                        3 Klaster Wilayah
                     </span>
                     <div class="flex items-center justify-between mt-2 text-xs">
                         <span class="text-[#404941] font-semibold text-[10px]">Maks. 68 Tamu Lesehan</span>
@@ -81,7 +82,7 @@
                         </span>
                     </div>
                 </div>
-            </div>
+        </div>
 
             <div
                 class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[175px]">
@@ -96,14 +97,12 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col mt-4">
-                    <div class="flex items-baseline gap-1.5">
-                        <span
-                            class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
-                            7 Terisi
-                        </span>
-                        <span class="text-xs font-semibold text-[#00341A]">(64% Full)</span>
-                    </div>
+                <div class="flex items-baseline gap-1.5">
+                    <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
+                        7 Terisi
+                    </span>
+                    <span class="text-xs font-semibold text-[#00341A]">(64% Full)</span>
+                </div>
 
                     <div class="w-full h-2 rounded-full bg-[#E5E2DB] overflow-hidden flex my-2">
                         <div class="h-full bg-[#FECE66]" style="width: 64%"></div>
@@ -116,7 +115,7 @@
                         <span>1 Ter-reservasi</span>
                     </div>
                 </div>
-            </div>
+        </div>
 
             <div
                 class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[175px]">
@@ -130,10 +129,13 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col mt-4">
-                    <span
-                        class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
-                        11/11 Synced
+                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
+                    11/11 Synced
+                </span>
+                <div class="flex items-center justify-between mt-2 text-xs">
+                    <span class="text-[#404941] font-bold text-[10px]">ESP32 + TTP223 OK</span>
+                    <span class="px-2 py-0.5 rounded-full bg-[#FFDAD6] text-[10px] font-bold text-[#93000A] animate-pulse">
+                        1 Buzzer Aktif
                     </span>
                     <div class="flex items-center justify-between mt-2 text-xs">
                         <span class="text-[#404941] font-bold text-[10px]">ESP32 + TTP223 OK</span>
@@ -143,7 +145,7 @@
                         </span>
                     </div>
                 </div>
-            </div>
+        </div>
 
             <div
                 class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[175px] relative overflow-hidden">
@@ -168,10 +170,13 @@
                     </div>
                 </div>
 
-                <div
-                    class="absolute -right-8 -bottom-8 w-24 h-24 rounded-full bg-[#FFDEA1]/25 blur-xl pointer-events-none">
+                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
+                    100% Valid
+                </span>
+                <div class="flex items-center justify-between mt-2 text-[10px] font-bold">
+                    <span class="text-[#404941]">Auto-Renewing per Sesi</span>
+                    <span class="text-[#0B4D2B]">Anti-Order Palsu</span>
                 </div>
-            </div>
 
         </div>
 
@@ -392,25 +397,19 @@
                     <div class="flex flex-col">
                         <div class="flex items-center gap-2">
 
-                            <span class="text-[10px] font-bold text-[#00341A] uppercase tracking-wider">
-                                KONSEP PENATAAN SAUNG SUNDA TRADISIONAL
-                            </span>
-                        </div>
-                        <h3 class="font-display font-bold text-base sm:text-lg text-[#00341A] mt-1">
-                            Harmoni Vernakular Bambu & Presisi POS Terintegrasi
-                        </h3>
-                        <p class="text-xs text-[#404941] mt-1.5 leading-relaxed">
-                            Setiap saung dirancang terpisah dengan jarak 3.5 meter di atas air situ. Modul IoT ESP32
-                            terlindung dalam kotak ukir kayu tahan kelembapan dengan baterai cadangan hingga 18 jam
-                            operasional penuh.
-                        </p>
-                    </div>
+        </div>
+
+        <div class="lg:col-span-4 bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col gap-6 sticky top-24">
+            
+            <div class="flex items-start justify-between border-b border-gray-100 pb-4">
+                <div class="flex flex-col">
+                    <span class="px-2.5 py-0.5 rounded-full bg-[#E5E2DB] text-[10px] font-bold text-[#00341A] w-fit font-mono">
+                        <span x-text="selectedSaung">LB-02</span> CLUSTER A (DANAU)
+                    </span>
+                    <h2 class="font-display font-bold text-2xl text-[#00341A] mt-1">
+                        <span x-text="'Saung ' + selectedSaung">Saung Detail</span>
+                    </h2>
                 </div>
-
-            </div>
-
-            <div
-                class="lg:col-span-4 bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col gap-6 sticky top-24">
 
                 <div class="flex items-start justify-between border-b border-gray-100 pb-4">
                     <div class="flex flex-col">

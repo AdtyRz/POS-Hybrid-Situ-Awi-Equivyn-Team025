@@ -4,22 +4,31 @@
 @section('page_category', 'Dasbor Analitik')
 
 @section('content')
-    <div class="flex flex-col gap-8 pb-12" x-data="{
-        dateFilter: 'hari_ini',
-        toast: { show: false, message: '' },
-        showToast(msg) {
-            this.toast.message = msg;
-            this.toast.show = true;
-            setTimeout(() => this.toast.show = false, 3000);
-        }
-    }">
+<div class="flex flex-col gap-8 pb-12" x-data="{ 
+    dateFilter: 'hari_ini',
+    toast: { show: false, message: '' },
+    showToast(msg) {
+        this.toast.message = msg;
+        this.toast.show = true;
+        setTimeout(() => this.toast.show = false, 3000);
+    }
+}">
 
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-2">
-            <div class="flex flex-col gap-2">
-                <div class="flex items-center gap-2 text-xs font-semibold text-[#707971]">
-                    <span>Situ Awi</span>
-                    <span>/</span>
-                    <span class="text-[#1C1C18]">Dasbor Analitik</span>
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-2">
+        <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-2 text-xs font-semibold text-[#707971]">
+                <span>Situ Awi</span>
+                <span>/</span>
+                <span class="text-[#1C1C18]">Dasbor Analitik</span>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-3">
+                <h1 class="font-display font-bold text-2xl sm:text-[32px] text-[#00341A] tracking-tight leading-tight">
+                    Dasbor Analitik & Intelijen Penjualan
+                </h1>
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FECE66]/30 text-[10px] font-bold text-[#765600] uppercase tracking-wider">
+                    <span class="w-2 h-2 rounded-full bg-[#7A5900] animate-pulse"></span>
+                    <span>REAL-TIME SYNC</span>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3">
@@ -62,13 +71,13 @@
                     </button>
                 </div>
 
-                <div class="flex items-center gap-2">
-                    <button type="button" @click="showToast('Memproses cetak PDF ringkasan penjualan...')"
-                        class="h-10 px-4 rounded-xl bg-[#FECE66]/25 hover:bg-[#FECE66]/40 active:scale-95 text-[#765600] font-semibold text-xs flex items-center gap-2 transition-all cursor-pointer">
-                        <svg class="w-4 h-4 text-[#765600]" fill="none" stroke="currentColor" stroke-width="2"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
+                    Rp {{ number_format($pendapatan, 0, ',', '.') }}
+                </span>
+                <div class="flex items-center gap-1.5 mt-2 text-xs">
+                    <span class="font-bold text-[#00341A] flex items-center gap-0.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
                         </svg>
                         <span>Cetak PDF</span>
                     </button>
@@ -83,27 +92,38 @@
                         <span>Ekspor XLSX</span>
                     </button>
                 </div>
-            </div>
+
+            <div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-[#FFDEA1]/30 blur-xl pointer-events-none"></div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
 
-            <div
-                class="relative overflow-hidden bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[190px]">
-                <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">TOTAL OMZET HARI INI</span>
-                    <div class="w-10 h-10 rounded-xl bg-[#FECE66]/30 flex items-center justify-center text-[#765600]">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <rect x="2" y="5" width="20" height="14" rx="2" />
-                            <line x1="2" y1="10" x2="22" y2="10" />
-                        </svg>
-                    </div>
+                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
+                    {{ $pesananHariIni }} Tiket
+                </span>
+                <div class="flex items-center justify-between mt-2 text-xs">
+                    <span class="text-[#707971]">Rata-rata: <strong class="text-[#1C1C18] font-bold">Rp {{ number_format($pesananHariIni > 0 ? $pendapatan / $pesananHariIni : 0, 0, ',', '.') }}</strong></span>
+                    <span class="px-2 py-0.5 rounded-full bg-[#B1F1C2]/30 text-[10px] font-bold text-[#0B4D2B] flex flex-col justify-center items-center text-center">
+                        {{ $pesananTotal > 0 ? number_format($pesananHariIni / $pesananTotal * 100, 1) : 0 }}% Sukses
+                    </span>
+                </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[190px]">
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">OKUPANSI SAUNG</span>
+                <div class="w-10 h-10 rounded-xl bg-[#FFDEA1]/50 flex items-center justify-center text-[#7A5900]">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
                 </div>
 
-                <div class="flex flex-col mt-4">
-                    <span
-                        class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
-                        Rp {{ number_format($pendapatan, 0, ',', '.') }}
+                <div class="items-center gap-2 my-auto">
+                    <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
+                        {{ $mejaTotal > 0 ? round($mejaTerisi / $mejaTotal * 100) : 0 }}%
+                    </span>
+                    <span class="px-2 py-0.5 rounded-full bg-[#EFC05A]/40 text-[10px] font-bold text-[#261900]">
+                        Puncak Lesehan
                     </span>
                     <div class="flex items-center gap-1.5 mt-2 text-xs">
                         <span class="font-bold text-[#00341A] flex items-center gap-0.5">
@@ -120,7 +140,7 @@
 
                 <div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-[#FFDEA1]/30 blur-xl pointer-events-none">
                 </div>
-            </div>
+        </div>
 
             <div
                 class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[190px]">
@@ -134,20 +154,14 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col mt-4">
-                    <span
-                        class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
-                        {{ $pesananHariIni }} Tiket
-                    </span>
-                    <div class="flex items-center justify-between mt-2 text-xs">
-                        <span class="text-[#707971]">Rata-rata: <strong class="text-[#1C1C18] font-bold">Rp
-                                {{ number_format($pesananHariIni > 0 ? $pendapatan / $pesananHariIni : 0, 0, ',', '.') }}</strong></span>
-                        <span class="px-2 py-0.5 rounded-full bg-[#B1F1C2]/30 text-[10px] font-bold text-[#0B4D2B]">
-                            {{ $pesananTotal > 0 ? number_format(($pesananHariIni / $pesananTotal) * 100, 1) : 0 }}% Sukses
-                        </span>
-                    </div>
+                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
+                    {{ $rataMenit ? number_format($rataMenit, 1) : '-' }} Menit
+                </span>
+                <div class="flex items-center gap-1.5 mt-2 text-xs">
+                    <span class="font-bold text-[#00341A]">{{ $rataMenit ? number_format(15 - $rataMenit, 1) . 'm lebih gesit' : 'Belum ada data' }}</span>
+                    <span class="text-[#707971]">dari target (15.0m)</span>
                 </div>
-            </div>
+        </div>
 
             <div
                 class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[190px]">
@@ -370,10 +384,14 @@
                                 stroke-dashoffset="-{{ $bagianQris }}" />
                         </svg>
 
-                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                            <span class="font-display font-bold text-3xl text-[#1C1C18]">{{ $persenQris }}%</span>
-                            <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">NON-TUNAI</span>
-                        </div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <div class="lg:col-span-6 bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-gray-100 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between pb-1">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#7A5900]"></span>
+                        <h2 class="font-bold text-lg sm:text-xl text-[#1C1C18]">5 Menu Terlaris Hari Ini</h2>
                     </div>
                 </div>
 
@@ -390,6 +408,11 @@
                         <span class="font-bold text-xs text-[#00341A]">Rp
                             {{ number_format($omzetQris, 0, ',', '.') }}</span>
                     </div>
+                    @empty
+                    <div class="p-3 text-xs text-[#707971] italic">Belum ada penjualan hari ini.</div>
+                    @endforelse
+                </div>
+            </div>
 
                     <div class="p-3 bg-[#F0EEE7] rounded-xl flex items-center justify-between">
                         <div class="flex items-center gap-2.5">
