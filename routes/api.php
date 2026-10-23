@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
+use App\Models\Pesanan;
 use App\Models\SesiMeja;
 
 Route::post('/iot/panggil-pelayan', function (Request $request) {
@@ -60,7 +61,9 @@ Route::get('/iot/status-meja', function () {
     ]);
 });
 
-// Public endpoint untuk LCD/ESP32 - kode sesi aktif satu meja (berdasarkan id_device atau kode_meja).
+// Public endpoint untuk LCD/ESP32 - kode sesi + daftar pesanan + total bayar satu meja
+// (berdasarkan id_device atau kode_meja). Dipakai LCD untuk 3 layar:
+// status pesanan, total bayar seluruh pesanan, dan kode verif saung.
 Route::get('/iot/meja/{ident}', function (string $ident) {
     $meja = MejaMakan::where('id_device', $ident)
         ->orWhere('kode_meja', $ident)
@@ -72,6 +75,14 @@ Route::get('/iot/meja/{ident}', function (string $ident) {
 
     $sesi = SesiMeja::aktifUntuk($meja);
 
+    // Seluruh pesanan pada sesi ini (setelah sesi dibuka), kecuali yang dibatalkan.
+    $pesanan = Pesanan::query()
+        ->where('meja_id', $meja->id)
+        ->where('status_pesanan', '!=', Pesanan::STATUS_DIBATALKAN)
+        ->where('waktu_pesan', '>=', $sesi->dibuka_pada)
+        ->orderByDesc('waktu_pesan')
+        ->get();
+
     return response()->json([
         'success' => true,
         'message' => 'Berhasil mengambil sesi meja',
@@ -81,6 +92,14 @@ Route::get('/iot/meja/{ident}', function (string $ident) {
             'area' => $meja->area,
             'status_meja' => $meja->status_meja,
             'kode_sesi' => $sesi->kode_unik,
+            'total_bayar' => (float) $pesanan->sum('total_bayar'),
+            'jumlah_pesanan' => $pesanan->count(),
+            'pesanan' => $pesanan->map(fn ($p) => [
+                'kode_pesanan' => $p->kode_pesanan,
+                'status_pesanan' => $p->status_pesanan,
+                'status_pembayaran' => $p->status_pembayaran,
+                'total_bayar' => (float) $p->total_bayar,
+            ])->values(),
         ],
     ]);
 });

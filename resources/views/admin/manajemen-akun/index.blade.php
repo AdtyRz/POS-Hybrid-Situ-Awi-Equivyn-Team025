@@ -4,31 +4,31 @@
 @section('page_category', 'Keamanan & Staf')
 
 @section('content')
-<div class="flex flex-col gap-8 pb-16" x-data="manajemenAkunApp()">
+    <div class="flex flex-col gap-8 pb-16" x-data="manajemenAkunApp()">
 
-    <div class="flex flex-col gap-3">
-        <div class="flex flex-wrap items-center justify-between gap-4 text-xs font-semibold">
-            <div class="flex items-center gap-2 text-[#707971]">
-                <span>SITU AWI SAUNG LESEHAN</span>
-                <span>/</span>
-                <span class="text-[#0B4D2B]">Keamanan &amp; Staf</span>
-            </div>
+        <div class="flex flex-col gap-3">
+            <div class="flex flex-wrap items-center justify-between gap-4 text-xs font-semibold">
+                <div class="flex items-center gap-2 text-[#707971]">
+                    <span>SITU AWI SAUNG LESEHAN</span>
+                    <span>/</span>
+                    <span class="text-[#0B4D2B]">Keamanan &amp; Staf</span>
+                </div>
 
             <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0B4D2B] text-[10px] font-bold text-white shadow-2xs">
                 <span class="w-2 h-2 rounded-full bg-[#FFDEA1]"></span>
                 <span class="tracking-wide">LARAVEL BREEZE / SANCTUM GUARD</span>
             </div>
-        </div>
 
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pt-1">
-            <div class="flex flex-col max-w-2xl">
-                <h1 class="font-display font-bold text-3xl sm:text-4xl text-[#00341A] tracking-tight leading-tight">
-                    Manajemen Akun Staf &amp; Hak Akses 6 Role
-                </h1>
-                <p class="text-xs sm:text-sm text-[#404941] mt-2 leading-relaxed">
-                    Kelola kredensial login, PIN operasional, hak akses multi-role (Admin, Kasir, Koki, Barista, Pelayan, Pengguna), dan riwayat sesi staf aktif dalam satu kendali terpusat.
-                </p>
-            </div>
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pt-1">
+                <div class="flex flex-col max-w-2xl">
+                    <h1 class="font-display font-bold text-3xl sm:text-4xl text-[#00341A] tracking-tight leading-tight">
+                        Manajemen Akun Staf &amp; Hak Akses 6 Role
+                    </h1>
+                    <p class="text-xs sm:text-sm text-[#404941] mt-2 leading-relaxed">
+                        Kelola kredensial login, PIN operasional, hak akses multi-role (Admin, Kasir, Koki, Barista,
+                        Pelayan, Pengguna), dan riwayat sesi staf aktif dalam satu kendali terpusat.
+                    </p>
+                </div>
 
             <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end mt-24">
                 <button 
@@ -42,7 +42,6 @@
                 </button>
             </div>
         </div>
-    </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
@@ -58,7 +57,6 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                 </div>
-            </div>
 
             <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
                 14 Akun
@@ -88,7 +86,6 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                 </div>
-            </div>
 
             <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
                 5 Perangkat
@@ -98,7 +95,6 @@
                 <span class="w-2 h-2 rounded-full bg-[#0B4D2B] animate-pulse"></span>
                 <span>1 Kasir, 1 Dapur, 1 Bar, 2 Mobile</span>
             </div>
-        </div>
 
         <!-- CARD 3: Proteksi Kredensial -->
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[190px]">
@@ -112,7 +108,6 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                 </div>
-            </div>
 
             <div class="flex items-baseline gap-1.5">
                 <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
@@ -125,7 +120,6 @@
                 <span>PIN-6 &amp; Sandi Terhash Aktif</span>
                 <span class="text-[#0B4D2B]">TLS 1.3</span>
             </div>
-        </div>
 
         <!-- CARD 4: Rata-Rata Sesi Shift -->
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[190px] relative overflow-hidden">
@@ -134,13 +128,18 @@
                     <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">RATA–RATA SESI SHIFT</span>
                     <h4 class="text-xs font-semibold text-[#404941] mt-0.5">Rotasi Jam Kerja Staf</h4>
                 </div>
-                <div class="w-10 h-10 rounded-xl bg-[#E5E2DB] flex items-center justify-center text-[#1C1C18]">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" />
-                    </svg>
+
+                <div
+                    class="flex items-center justify-between text-[10px] font-bold text-[#404941] pt-3 border-t border-gray-100">
+                    <span>Rotasi Shift Saung</span>
+                    <span class="text-[#0B4D2B] flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Stabil</span>
+                    </span>
                 </div>
-            </div>
 
             <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
                 6.5 Jam
@@ -159,7 +158,18 @@
             <div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-[#FFDEA1]/20 blur-xl pointer-events-none"></div>
         </div>
 
-    </div>
+        <div
+            class="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
+
+            <div class="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 text-xs">
+                <button type="button" @click="activeRoleFilter = 'all'"
+                    :class="activeRoleFilter === 'all' ? 'bg-[#0B4D2B] text-white shadow-xs font-bold' :
+                        'bg-[#F0EEE7] text-[#404941] hover:text-black font-semibold'"
+                    class="px-3.5 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer">
+                    <span>Semua Staf</span>
+                    <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold"
+                        :class="activeRoleFilter === 'all' ? 'bg-white/20 text-white' : 'bg-gray-200 text-[#1C1C18]'">14</span>
+                </button>
 
     <div class="bg-[#F6F3EC] rounded-2xl p-4 shadow-xs border border-[#C0C9BF]/20 flex flex-col md:flex-row items-center justify-between gap-4">
         
@@ -231,7 +241,23 @@
             </svg>
         </div>
 
-    </div>
+                <button type="button" @click="activeRoleFilter = 'koki'"
+                    :class="activeRoleFilter === 'koki' ? 'bg-[#0B4D2B] text-white shadow-xs font-bold' :
+                        'bg-[#F0EEE7] text-[#404941] hover:text-black font-semibold'"
+                    class="px-3.5 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer">
+                    <span>Koki Dapur</span>
+                    <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold"
+                        :class="activeRoleFilter === 'koki' ? 'bg-white/20 text-white' : 'bg-[#E5E2DB] text-[#1C1C18]'">3</span>
+                </button>
+
+                <button type="button" @click="activeRoleFilter = 'barista'"
+                    :class="activeRoleFilter === 'barista' ? 'bg-[#0B4D2B] text-white shadow-xs font-bold' :
+                        'bg-[#F0EEE7] text-[#404941] hover:text-black font-semibold'"
+                    class="px-3.5 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer">
+                    <span>Barista</span>
+                    <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold"
+                        :class="activeRoleFilter === 'barista' ? 'bg-white/20 text-white' : 'bg-[#E5E2DB] text-[#1C1C18]'">2</span>
+                </button>
 
     <div class="bg-white rounded-2xl shadow-xs border border-[#C0C9BF]/20 overflow-hidden">
         
@@ -241,8 +267,8 @@
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
-                <span>Enkripsi Sesi Aktif</span>
-            </span>
+            </div>
+
         </div>
 
         <div class="overflow-x-auto">
@@ -270,83 +296,28 @@
                                         :class="s.avatarBg"
                                         x-text="s.avatar">
                                     </div>
-                                    <div class="flex flex-col">
-                                        <strong class="font-bold text-sm text-[#1C1C18] leading-tight" x-text="s.name"></strong>
-                                        <span class="text-[10px] font-bold text-[#707971] mt-0.5" x-text="s.title"></span>
-                                    </div>
-                                </div>
-                            </td>
+                                </td>
 
-                            <td class="py-3.5 px-4">
-                                <span 
-                                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold"
-                                    :class="{
-                                        'bg-[#FFDEA1] text-[#261900]': s.roleBadge === 'owner',
-                                        'bg-[#0B4D2B] text-white shadow-2xs': s.roleBadge === 'kasir',
-                                        'bg-[#334A00] text-[#99BB5C]': s.roleBadge === 'kitchen',
-                                        'bg-[#E5E2DB] text-[#404941]': s.roleBadge === 'runner'
-                                    }"
-                                    x-text="s.role">
-                                </span>
-                            </td>
-
-                            <td class="py-3.5 px-4">
-                                <div class="flex flex-col">
-                                    <span class="text-xs font-medium text-[#1C1C18]" x-text="s.email"></span>
-                                    <span class="font-mono text-[10px] font-bold text-[#707971] mt-0.5" x-text="'ID: ' + s.id"></span>
-                                </div>
-                            </td>
-
-                            <td class="py-3.5 px-4 text-[#404941]" x-text="s.device"></td>
-
-                            <td class="py-3.5 px-4 text-center">
-                                <span class="px-2.5 py-1 rounded-md bg-[#F0EEE7] font-mono font-bold tracking-widest text-xs text-[#404941]">
-                                    ••••••
-                                </span>
-                            </td>
-
-                            <td class="py-3.5 px-4 text-center">
-                                <span 
-                                    class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold"
-                                    :class="s.status === 'online' ? 'bg-[#B1F1C2]/40 text-[#00341A]' : 'bg-[#E5E2DB] text-[#707971]'">
-                                    <span 
-                                        class="w-1.5 h-1.5 rounded-full"
-                                        :class="s.status === 'online' ? 'bg-[#0B4D2B]' : 'bg-[#707971]'">
+                                <td class="py-3.5 px-4">
+                                    <span
+                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold"
+                                        :class="{
+                                            'bg-[#FFDEA1] text-[#261900]': s.roleBadge === 'owner',
+                                            'bg-[#0B4D2B] text-white shadow-2xs': s.roleBadge === 'kasir',
+                                            'bg-[#334A00] text-[#99BB5C]': s.roleBadge === 'kitchen',
+                                            'bg-[#E5E2DB] text-[#404941]': s.roleBadge === 'runner'
+                                        }"
+                                        x-text="s.role">
                                     </span>
-                                    <span x-text="s.statusText"></span>
-                                </span>
-                            </td>
+                                </td>
 
-                            <td class="py-3.5 px-4">
-                                <div class="flex flex-col">
-                                    <span class="text-xs text-[#1C1C18] leading-tight" x-text="s.lastActive"></span>
-                                    <span class="text-[10px] font-bold text-[#707971] mt-0.5" x-text="s.lastActiveTime"></span>
-                                </div>
-                            </td>
-
-                            <td class="py-3.5 px-4 text-right">
-                                <div class="flex items-center justify-end gap-1.5">
-                                    <template x-if="s.roleKey !== 'admin'">
-                                        <button 
-                                            type="button" 
-                                            @click="showToast('Permintaan reset PIN untuk ' + s.name + ' telah dikirim.')"
-                                            class="px-2 py-1 rounded-lg bg-[#F0EEE7] hover:bg-gray-200 text-[#1C1C18] font-bold text-[10px] transition-all cursor-pointer">
-                                            Reset PIN
-                                        </button>
-                                    </template>
-                                    <button 
-                                        type="button" 
-                                        @click="showToast('Membuka rincian sesi dan log ' + s.name)"
-                                        class="px-2 py-1 rounded-lg bg-[#F6F3EC] hover:bg-gray-200 text-[#707971] font-bold text-[10px] transition-all cursor-pointer">
-                                        Detail
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
-        </div>
+                                <td class="py-3.5 px-4">
+                                    <div class="flex flex-col">
+                                        <span class="text-xs font-medium text-[#1C1C18]" x-text="s.email"></span>
+                                        <span class="font-mono text-[10px] font-bold text-[#707971] mt-0.5"
+                                            x-text="'ID: ' + s.id"></span>
+                                    </div>
+                                </td>
 
         <div class="p-4 bg-[#F6F3EC] border-t border-[#C0C9BF]/20 flex flex-wrap items-center justify-between gap-4 text-xs font-semibold text-[#707971]">
             <span>Sebelumnya</span>
@@ -356,32 +327,50 @@
                 <button type="button" class="w-8 h-8 rounded-lg bg-white border border-[#C0C9BF]/30 text-[#1C1C18] hover:bg-gray-100 flex items-center justify-center font-bold">2</button>
             </div>
 
-            <button type="button" class="hover:text-black">Berikutnya</button>
-        </div>
+                                <td class="py-3.5 px-4">
+                                    <div class="flex flex-col">
+                                        <span class="text-xs text-[#1C1C18] leading-tight" x-text="s.lastActive"></span>
+                                        <span class="text-[10px] font-bold text-[#707971] mt-0.5"
+                                            x-text="s.lastActiveTime"></span>
+                                    </div>
+                                </td>
 
-    </div>
-
-    <div class="bg-[#F0EEE7] rounded-3xl p-6 sm:p-8 shadow-xs border border-[#C0C9BF]/30 flex flex-col gap-6">
-        
-        <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#C0C9BF]/30">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-[#0B4D2B] flex items-center justify-center text-white shadow-xs">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                </div>
-                <div>
-                    <h2 class="font-bold text-lg text-[#1C1C18]">Matrix Perizinan Hak Akses (Permissions Guard)</h2>
-                    <p class="text-xs text-[#707971]">Pemisahan wewenang berdasar token bearer &amp; session guard Laravel Sanctum</p>
-                </div>
+                                <td class="py-3.5 px-4 text-right">
+                                    <div class="flex items-center justify-end gap-1.5">
+                                        <template x-if="s.roleKey !== 'admin'">
+                                            <button type="button"
+                                                @click="showToast('Permintaan reset PIN untuk ' + s.name + ' telah dikirim.')"
+                                                class="px-2 py-1 rounded-lg bg-[#F0EEE7] hover:bg-gray-200 text-[#1C1C18] font-bold text-[10px] transition-all cursor-pointer">
+                                                Reset PIN
+                                            </button>
+                                        </template>
+                                        <button type="button"
+                                            @click="showToast('Membuka rincian sesi dan log ' + s.name)"
+                                            class="px-2 py-1 rounded-lg bg-[#F6F3EC] hover:bg-gray-200 text-[#707971] font-bold text-[10px] transition-all cursor-pointer">
+                                            Detail
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
             </div>
 
-            <span class="px-3 py-1 rounded-full bg-[#B1F1C2] text-[10px] font-bold text-[#00341A] shadow-2xs flex items-center gap-1">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Enforced by Policy &amp; Gate</span>
-            </span>
+            <div
+                class="p-4 bg-[#F6F3EC] border-t border-gray-200 flex flex-wrap items-center justify-between gap-4 text-xs font-semibold text-[#707971]">
+                <span>Sebelumnya</span>
+
+                <div class="flex items-center gap-1">
+                    <button type="button"
+                        class="w-8 h-8 rounded-lg bg-[#0B4D2B] text-white font-bold flex items-center justify-center">1</button>
+                    <button type="button"
+                        class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-[#1C1C18] hover:bg-gray-100 flex items-center justify-center font-bold">2</button>
+                </div>
+
+                <button type="button" class="hover:text-black">Berikutnya</button>
+            </div>
+
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -400,6 +389,15 @@
                     <span class="text-[#707971]">Tingkat Akses</span>
                     <span class="text-[#7A5900]">Level 0 (Super)</span>
                 </div>
+
+                <span
+                    class="px-3 py-1 rounded-full bg-[#B1F1C2] text-[10px] font-bold text-[#00341A] shadow-2xs flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Enforced by Policy &amp; Gate</span>
+                </span>
             </div>
 
             <div class="bg-[#F6F3EC] rounded-xl p-4 shadow-2xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[220px]">
@@ -416,7 +414,6 @@
                     <span class="text-[#707971]">Tingkat Akses</span>
                     <span class="text-[#0B4D2B]">Level 1 (POS Finansial)</span>
                 </div>
-            </div>
 
             <div class="bg-[#F6F3EC] rounded-xl p-4 shadow-2xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[220px]">
                 <div>
@@ -432,7 +429,6 @@
                     <span class="text-[#707971]">Tingkat Akses</span>
                     <span class="text-[#213200]">Level 2 (Produksi KDS)</span>
                 </div>
-            </div>
 
             <div class="bg-[#F6F3EC] rounded-xl p-4 shadow-2xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[220px]">
                 <div>
@@ -448,7 +444,6 @@
                     <span class="text-[#707971]">Tingkat Akses</span>
                     <span class="text-[#1C1C18]">Level 3 (Mobile Floor)</span>
                 </div>
-            </div>
 
             <div class="bg-[#F6F3EC] rounded-xl p-4 shadow-2xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[220px]">
                 <div>
@@ -456,136 +451,134 @@
                         <h4 class="font-bold text-sm text-[#1C1C18]">Tamu (Self-Order)</h4>
                         <span class="w-2.5 h-2.5 rounded-full bg-[#707971]"></span>
                     </div>
-                    <p class="text-xs text-[#404941] mt-2 leading-relaxed">
-                        Pemesanan mandiri via scan Token QR Saung. Akses dibatasi ketat tanpa izin membaca konsol internal manajemen resto.
-                    </p>
                 </div>
                 <div class="flex items-center justify-between pt-3 border-t border-[#C0C9BF]/20 text-[10px] font-bold">
                     <span class="text-[#707971]">Tingkat Akses</span>
                     <span class="text-[#707971]">Level 4 (Guest Token)</span>
                 </div>
-            </div>
 
+            </div>
         </div>
-    </div>
 
-    <div 
-        x-cloak
-        x-show="addModalOpen" 
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
-        x-transition:enter="transition ease-out duration-200"
-        x-transition:enter-start="opacity-0"
-        x-transition:enter-end="opacity-100"
-        x-transition:leave="transition ease-in duration-150"
-        x-transition:leave-start="opacity-100"
-        x-transition:leave-end="opacity-0">
-        
-        <div 
-            class="w-full max-w-lg bg-white rounded-3xl border border-gray-200 shadow-2xl p-6 sm:p-8 flex flex-col gap-5"
-            @click.outside="addModalOpen = false">
-            
-            <div class="flex items-center justify-between pb-3 border-b border-gray-100">
-                <div>
-                    <h3 class="font-display font-bold text-xl text-[#00341A]">Tambah Akun Staf Baru</h3>
-                    <p class="text-xs text-[#707971] mt-0.5">Konfigurasi peran operasional &amp; PIN login POS</p>
-                </div>
-                <button type="button" @click="addModalOpen = false" class="text-gray-400 hover:text-black p-1 cursor-pointer">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
+        <div x-cloak x-show="addModalOpen"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+            x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
-            <form method="POST" action="{{ route('admin.akun.simpan') }}" class="flex flex-col gap-4 text-xs">
-                @csrf
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="flex flex-col gap-1.5">
-                        <label class="font-bold text-[#1C1C18]">Nama Lengkap *</label>
-                        <input type="text" name="nama" placeholder="Contoh: Kang Dani" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
-                    </div>
-                    <div class="flex flex-col gap-1.5">
-                        <label class="font-bold text-[#1C1C18]">Peran Operasional *</label>
-                        <select name="role" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
-                            <option value="kasir">Kasir Utama</option>
-                            <option value="koki">Koki Dapur</option>
-                            <option value="barista">Barista Bar</option>
-                            <option value="pelayan">Pelayan / Runner</option>
-                            <option value="admin">Admin Konsol</option>
-                        </select>
-                    </div>
-                </div>
+            <div class="w-full max-w-lg bg-white rounded-3xl border border-gray-200 shadow-2xl p-6 sm:p-8 flex flex-col gap-5"
+                @click.outside="addModalOpen = false">
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="flex flex-col gap-1.5">
-                        <label class="font-bold text-[#1C1C18]">Email Akun *</label>
-                        <input type="email" name="email" placeholder="staf@situawi.com" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
+                <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                    <div>
+                        <h3 class="font-display font-bold text-xl text-[#00341A]">Tambah Akun Staf Baru</h3>
+                        <p class="text-xs text-[#707971] mt-0.5">Konfigurasi peran operasional &amp; PIN login POS</p>
                     </div>
-                    <div class="flex flex-col gap-1.5">
-                        <label class="font-bold text-[#1C1C18]">Kata Sandi (min 6) *</label>
-                        <input type="password" name="password" placeholder="123456" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]" required>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
-                    <button 
-                        type="button" 
-                        @click="addModalOpen = false" 
-                        class="flex-1 py-3 rounded-xl border border-gray-300 text-gray-700 font-bold hover:bg-gray-50 active:scale-95 transition-all cursor-pointer">
-                        Batal
-                    </button>
-                    <button 
-                        type="submit" 
-                        class="flex-1 py-3 rounded-xl bg-[#0B4D2B] text-white font-bold hover:bg-[#08381F] active:scale-95 transition-all shadow-xs cursor-pointer">
-                        Simpan Akun
+                    <button type="button" @click="addModalOpen = false"
+                        class="text-gray-400 hover:text-black p-1 cursor-pointer">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
-            </form>
+
+                <form method="POST" action="{{ route('admin.akun.simpan') }}" class="flex flex-col gap-4 text-xs">
+                    @csrf
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-1.5">
+                            <label class="font-bold text-[#1C1C18]">Nama Lengkap *</label>
+                            <input type="text" name="nama" placeholder="Contoh: Kang Dani"
+                                class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]"
+                                required>
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="font-bold text-[#1C1C18]">Peran Operasional *</label>
+                            <select name="role"
+                                class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]"
+                                required>
+                                <option value="kasir">Kasir Utama</option>
+                                <option value="koki">Koki Dapur</option>
+                                <option value="barista">Barista Bar</option>
+                                <option value="pelayan">Pelayan / Runner</option>
+                                <option value="admin">Admin Konsol</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-1.5">
+                            <label class="font-bold text-[#1C1C18]">Email Akun *</label>
+                            <input type="email" name="email" placeholder="staf@situawi.com"
+                                class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]"
+                                required>
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="font-bold text-[#1C1C18]">Kata Sandi (min 6) *</label>
+                            <input type="password" name="password" placeholder="123456"
+                                class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]"
+                                required>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
+                        <button type="button" @click="addModalOpen = false"
+                            class="flex-1 py-3 rounded-xl border border-gray-300 text-gray-700 font-bold hover:bg-gray-50 active:scale-95 transition-all cursor-pointer">
+                            Batal
+                        </button>
+                        <button type="submit"
+                            class="flex-1 py-3 rounded-xl bg-[#0B4D2B] text-white font-bold hover:bg-[#08381F] active:scale-95 transition-all shadow-xs cursor-pointer">
+                            Simpan Akun
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
+
+        <div x-cloak x-show="toast.show" x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0"
+            x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0"
+            x-transition:leave-end="opacity-0 translate-y-4"
+            class="fixed bottom-8 right-8 z-50 bg-[#00341A] text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 border border-[#FECE66]/30 text-sm font-semibold">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            <span x-text="toast.message"></span>
+        </div>
+
     </div>
 
-    <div 
-        x-cloak
-        x-show="toast.show" 
-        x-transition:enter="transition ease-out duration-300"
-        x-transition:enter-start="opacity-0 translate-y-4"
-        x-transition:enter-end="opacity-100 translate-y-0"
-        x-transition:leave="transition ease-in duration-200"
-        x-transition:leave-start="opacity-100 translate-y-0"
-        x-transition:leave-end="opacity-0 translate-y-4"
-        class="fixed bottom-8 right-8 z-50 bg-[#00341A] text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 border border-[#FECE66]/30 text-sm font-semibold">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-        <span x-text="toast.message"></span>
-    </div>
+    <script>
+        function manajemenAkunApp() {
+            return {
+                activeRoleFilter: 'all',
+                searchQuery: '',
+                addModalOpen: false,
+                toast: {
+                    show: false,
+                    message: ''
+                },
+                staffs: @json($stafJson),
 
-</div>
+                showToast(msg) {
+                    this.toast.message = msg;
+                    this.toast.show = true;
+                    setTimeout(() => this.toast.show = false, 3000);
+                },
 
-<script>
-    function manajemenAkunApp() {
-        return {
-            activeRoleFilter: 'all',
-            searchQuery: '',
-            addModalOpen: false,
-            toast: { show: false, message: '' },
-            staffs: @json($stafJson),
-
-            showToast(msg) {
-                this.toast.message = msg;
-                this.toast.show = true;
-                setTimeout(() => this.toast.show = false, 3000);
-            },
-
-            get filteredStaffs() {
-                return this.staffs.filter(s => {
-                    if (this.activeRoleFilter !== 'all' && s.roleKey !== this.activeRoleFilter) return false;
-                    if (this.searchQuery) {
-                        const q = this.searchQuery.toLowerCase();
-                        return s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q) || s.id.toLowerCase().includes(q) || s.role.toLowerCase().includes(q);
-                    }
-                    return true;
-                });
-            }
-        };
-    }
-</script>
+                get filteredStaffs() {
+                    return this.staffs.filter(s => {
+                        if (this.activeRoleFilter !== 'all' && s.roleKey !== this.activeRoleFilter)
+                    return false;
+                        if (this.searchQuery) {
+                            const q = this.searchQuery.toLowerCase();
+                            return s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q) || s.id
+                                .toLowerCase().includes(q) || s.role.toLowerCase().includes(q);
+                        }
+                        return true;
+                    });
+                }
+            };
+        }
+    </script>
 @endsection
-

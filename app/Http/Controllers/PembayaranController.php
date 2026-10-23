@@ -38,7 +38,7 @@ class PembayaranController extends Controller
         $pesanan = Pesanan::with(['detailPesanan.menu', 'meja'])
             ->where(function ($q) use ($kode) {
                 $q->where('kode_pembayaran', $kode)
-                  ->orWhere('kode_pesanan', $kode);
+                    ->orWhere('kode_pesanan', $kode);
             })
             ->first();
 
@@ -66,6 +66,10 @@ class PembayaranController extends Controller
 
         if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
             return back()->withErrors(['kode_pesanan' => 'Pesanan ini sudah dibayar.']);
+        }
+
+        if ($pesanan->status_pesanan === Pesanan::STATUS_DIBATALKAN) {
+            return back()->withErrors(['kode_pesanan' => 'Pesanan ini sudah dibatalkan.']);
         }
 
         if ($data['jumlah_bayar'] < (float) $pesanan->total_bayar) {

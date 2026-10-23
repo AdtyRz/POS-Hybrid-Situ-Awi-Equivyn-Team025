@@ -7,6 +7,17 @@
 .phpunit.result.cache
 .DesignV1_3.md
 .PRD_Situ_Awi_Hybrid_POS_IoT_System.md
+
+# Dokumentasi internal & tooling lokal (tidak untuk repo publik)
+/AGENTS.md
+/CLAUDE.md
+/DesignV1_3.md
+/PRD_Situ_Awi_Hybrid_POS_IoT_System.md
+/.agents/
+/.postman/
+/postman/
+/skills-lock.json
+/opencode.json
 /.codex
 /.cursor/
 /.idea

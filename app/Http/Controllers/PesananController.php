@@ -8,13 +8,11 @@ use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
-use App\Models\StokMutasi;
+use App\Services\PesananService;
 use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str; // Bug 4 FIX: tambahkan Str untuk generate kode_pembayaran
 use Illuminate\View\View;
 
 class PesananController extends Controller
@@ -39,9 +37,9 @@ class PesananController extends Controller
                 'id' => $m->kode_meja,
                 'dbId' => $m->id,
                 'cluster' => explode('-', $m->kode_meja)[0],
-                'name' => 'SAUNG ' . $m->kode_meja,
-                'tableName' => $m->area . ' ' . $m->kode_meja,
-                'capacity' => $m->area . ' Kap. ' . $m->kapasitas . ' org',
+                'name' => 'SAUNG '.$m->kode_meja,
+                'tableName' => $m->area.' '.$m->kode_meja,
+                'capacity' => $m->area.' Kap. '.$m->kapasitas.' org',
                 'status' => 'empty',
                 'paymentType' => null,
                 'hasAlert' => in_array($m->id, $tunggu),
@@ -73,14 +71,14 @@ class PesananController extends Controller
             }
 
             $statusMap = [
-                Pesanan::STATUS_MENUNGGU             => 'waiting_cash',
-                Pesanan::STATUS_MENUNGGU_VERIFIKASI  => 'waiting_qris',
-                Pesanan::STATUS_MENUNGGU_PEMBAYARAN  => 'waiting_cash',
-                Pesanan::STATUS_DIPROSES             => 'preparing',
-                Pesanan::STATUS_SIAP                 => 'ready',
-                Pesanan::STATUS_DIANTAR              => 'delivering',
-                Pesanan::STATUS_SELESAI              => 'completed',
-                Pesanan::STATUS_DIBATALKAN           => 'cancelled',
+                Pesanan::STATUS_MENUNGGU => 'waiting_cash',
+                Pesanan::STATUS_MENUNGGU_VERIFIKASI => 'waiting_qris',
+                Pesanan::STATUS_MENUNGGU_PEMBAYARAN => 'waiting_cash',
+                Pesanan::STATUS_DIPROSES => 'preparing',
+                Pesanan::STATUS_SIAP => 'ready',
+                Pesanan::STATUS_DIANTAR => 'delivering',
+                Pesanan::STATUS_SELESAI => 'completed',
+                Pesanan::STATUS_DIBATALKAN => 'cancelled',
             ];
 
             $alpineStatus = $statusMap[$p->status_pesanan] ?? 'empty';
@@ -88,7 +86,7 @@ class PesananController extends Controller
             // Bug C FIX: Jika pesanan sudah dibayar (status_pembayaran = sudah_bayar)
             // dan bukan lagi menunggu pembayaran, kategorikan sebagai 'paid' di kasir
             // agar saung masuk ke filter "Sudah Lunas" dan panel kanan ter-lock.
-            $sudahBayar    = $p->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR;
+            $sudahBayar = $p->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR;
             $masihMenunggu = in_array($p->status_pesanan, [
                 Pesanan::STATUS_MENUNGGU,
                 Pesanan::STATUS_MENUNGGU_PEMBAYARAN,
@@ -98,15 +96,15 @@ class PesananController extends Controller
                 $alpineStatus = 'paid';
             }
 
-            $dasar['status']      = $alpineStatus;
+            $dasar['status'] = $alpineStatus;
             $dasar['paymentType'] = $p->metode_pembayaran;
             $dasar['paymentStatus'] = $p->status_pembayaran;
             $dasar['orderStatus'] = $p->status_pesanan;
             $dasar['orderId'] = $p->kode_pesanan;
             $dasar['kodePesanan'] = $p->kode_pesanan;
-            $dasar['customer'] = 'Tamu ' . $m->kode_meja;
+            $dasar['customer'] = 'Tamu '.$m->kode_meja;
             $dasar['qrTime'] = $p->waktu_pesan->format('H:i');
-            $dasar['elapsedTime'] = now()->diffInMinutes($p->waktu_pesan) . ' mnt lalu';
+            $dasar['elapsedTime'] = now()->diffInMinutes($p->waktu_pesan).' mnt lalu';
             $dasar['itemCount'] = (int) $p->detailPesanan->sum('jumlah');
             $dasar['totalPortions'] = (int) $p->detailPesanan->sum('jumlah');
             $dasar['subtotal'] = $subtotal;
@@ -117,7 +115,7 @@ class PesananController extends Controller
                     'name' => $d->menu->nama_menu,
                     'qty' => (int) $d->jumlah,
                     'price' => (float) $d->harga_satuan,
-                    'note' => $d->catatan ? 'Catatan: ' . $d->catatan : 'Tanpa catatan',
+                    'note' => $d->catatan ? 'Catatan: '.$d->catatan : 'Tanpa catatan',
                     'noteColor' => 'text-[#6B6A63]',
                 ];
             })->values();
@@ -135,8 +133,8 @@ class PesananController extends Controller
                 'active' => true,
                 'id' => $panggil->id,
                 'saungId' => $panggil->meja->kode_meja,
-                'title' => 'PANGGILAN PELAYAN AKTIF: SAUNG ' . $panggil->meja->kode_meja . ' (' . $panggil->meja->area . ')',
-                'subtitle' => 'Panggilan masuk (' . $panggil->waktu_panggil->format('H:i:s') . ') Tamu butuh bantuan pelayan',
+                'title' => 'PANGGILAN PELAYAN AKTIF: SAUNG '.$panggil->meja->kode_meja.' ('.$panggil->meja->area.')',
+                'subtitle' => 'Panggilan masuk ('.$panggil->waktu_panggil->format('H:i:s').') Tamu butuh bantuan pelayan',
             ];
         } else {
             $iotAlertJson = [
@@ -190,61 +188,22 @@ class PesananController extends Controller
         }
 
         $meja = MejaMakan::findOrFail($data['meja_id']);
-        $daftarMenu = Menu::whereIn('id', $dipilih->keys())->get()->keyBy('id');
 
-        foreach ($dipilih as $id => $jml) {
-            if (! isset($daftarMenu[$id]) || $daftarMenu[$id]->stok_menu < $jml) {
-                $nama = isset($daftarMenu[$id]) ? $daftarMenu[$id]->nama_menu : 'menu';
-                return back()->withErrors(['jumlah' => 'Stok ' . $nama . ' tidak cukup.'])->withInput();
-            }
+        try {
+            $pesanan = app(PesananService::class)->buat(
+                $meja,
+                $dipilih->all(),
+                [],
+                [
+                    'asal' => 'kasir',
+                    'metode' => $data['metode_pembayaran'] ?? 'tunai',
+                    'kasir_id' => $request->user()->id,
+                    'catatan' => $data['catatan'] ?? null,
+                ]
+            );
+        } catch (\RuntimeException $e) {
+            return back()->withErrors(['jumlah' => $e->getMessage()])->withInput();
         }
-
-        $pesanan = DB::transaction(function () use ($data, $meja, $daftarMenu, $dipilih) {
-            $subtotal = 0;
-
-            foreach ($dipilih as $id => $jml) {
-                $subtotal += $daftarMenu[$id]->harga * $jml;
-            }
-
-            $baru = Pesanan::create([
-                'kode_pesanan'     => 'SW-' . now()->format('YmdHis') . '-' . $meja->id,
-                'kode_pembayaran'  => 'PAY-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(6)), // Bug 4 FIX
-                'meja_id'          => $meja->id,
-                'kasir_id'         => auth()->id(),
-                'total_bayar'      => $subtotal + round($subtotal * 0.1),
-                'status_pesanan'   => 'menunggu',
-                'status_pembayaran' => 'belum_bayar',
-                'metode_pembayaran' => $data['metode_pembayaran'] ?? 'tunai',
-                'catatan'          => $data['catatan'] ?? null,
-            ]);
-
-            foreach ($dipilih as $id => $jml) {
-                $m = $daftarMenu[$id];
-
-                $baru->detailPesanan()->create([
-                    'menu_id' => $m->id,
-                    'jumlah' => $jml,
-                    'harga_satuan' => $m->harga,
-                    'subtotal' => $m->harga * $jml,
-                    'status_item' => 'menunggu',
-                ]);
-
-                $m->decrement('stok_menu', $jml);
-
-                StokMutasi::create([
-                    'menu_id' => $m->id,
-                    'pesanan_id' => $baru->id,
-                    'jenis' => 'penjualan',
-                    'jumlah_delta' => -$jml,
-                    'stok_akhir' => $m->fresh()->stok_menu,
-                    'created_by' => auth()->id(),
-                ]);
-            }
-
-            $meja->update(['status_meja' => 'terisi']);
-
-            return $baru;
-        });
 
         Realtime::emit(new PesananBaru([
             'kode_pesanan' => $pesanan->kode_pesanan,
@@ -272,6 +231,7 @@ class PesananController extends Controller
     {
         $data = $request->validate([
             'status_pesanan' => ['required', 'in:menunggu,diproses,siap,diantar,selesai,dibatalkan'],
+            'alasan' => ['nullable', 'string', 'max:255'],
         ]);
 
         $pesanan = Pesanan::where('kode_pesanan', $kode)->firstOrFail();
@@ -280,37 +240,35 @@ class PesananController extends Controller
         // Status menunggu_pembayaran & menunggu_verifikasi berasal dari e-menu checkout
         // Tanpa ini, PATCH ke /pesanan/{kode}/status crash dengan undefined array key
         $alur = [
-            'menunggu'              => ['diproses', 'dibatalkan'],
-            'menunggu_pembayaran'   => ['diproses', 'dibatalkan'],
-            'menunggu_verifikasi'   => ['diproses', 'dibatalkan'],
-            'diproses'              => ['siap', 'dibatalkan'],
-            'siap'                  => ['diantar', 'dibatalkan'],
-            'diantar'               => ['selesai', 'dibatalkan'],
-            'selesai'               => [],
-            'dibatalkan'            => [],
+            'menunggu' => ['diproses', 'dibatalkan'],
+            'menunggu_pembayaran' => ['diproses', 'dibatalkan'],
+            'menunggu_verifikasi' => ['diproses', 'dibatalkan'],
+            'diproses' => ['siap', 'dibatalkan'],
+            'siap' => ['diantar', 'dibatalkan'],
+            'diantar' => ['selesai', 'dibatalkan'],
+            'selesai' => [],
+            'dibatalkan' => [],
         ];
 
         if (! in_array($data['status_pesanan'], $alur[$pesanan->status_pesanan])) {
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json(['message' => 'Perpindahan status tidak diizinkan.'], 422);
             }
+
             return back()->withErrors(['status_pesanan' => 'Perpindahan status tidak diizinkan.']);
         }
 
-        DB::transaction(function () use ($pesanan, $data) {
-            $isi = ['status_pesanan' => $data['status_pesanan']];
+        if ($data['status_pesanan'] === 'dibatalkan') {
+            app(PesananService::class)->batalkan(
+                $pesanan,
+                $request->user()->id,
+                $data['alasan'] ?? 'Dibatalkan oleh kasir.'
+            );
+        } else {
+            $pesanan->update(['status_pesanan' => $data['status_pesanan']]);
+        }
 
-            if ($data['status_pesanan'] === 'dibatalkan') {
-                $isi['void_by'] = auth()->id();
-                $isi['void_at'] = now();
-            }
-
-            if (in_array($data['status_pesanan'], ['selesai', 'dibatalkan'])) {
-                $pesanan->meja()->update(['status_meja' => 'kosong']);
-            }
-
-            $pesanan->update($isi);
-        });
+        $pesanan->refresh();
 
         Realtime::emit(new StatusPesananBerubah([
             'kode_pesanan' => $pesanan->kode_pesanan,
@@ -323,10 +281,10 @@ class PesananController extends Controller
         // Return redirect untuk form biasa (kasir dashboard)
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
-                'status'  => 'ok',
+                'status' => 'ok',
                 'message' => 'Status pesanan diperbarui',
                 'pesanan' => [
-                    'kode_pesanan'   => $pesanan->kode_pesanan,
+                    'kode_pesanan' => $pesanan->kode_pesanan,
                     'status_pesanan' => $data['status_pesanan'],
                 ],
             ]);
