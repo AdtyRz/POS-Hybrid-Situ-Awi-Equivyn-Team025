@@ -130,7 +130,15 @@ dapat memesan.
 Endpoint API untuk perangkat IoT meja menyertakan kode sesi:
 
 - `GET /api/iot/status-meja` — status semua meja + `kode_sesi`.
-- `GET /api/iot/meja/{ident}` — detail satu meja (dicari via `id_device` atau `kode_meja`) + `kode_sesi`.
+- `GET /api/iot/meja/{ident}` — detail satu meja (dicari via `id_device` atau `kode_meja`) + `kode_sesi`,
+  `pesanan[]` (kode, status pesanan/pembayaran, total) pada sesi berjalan, `total_bayar`, dan `jumlah_pesanan`.
+
+**Sensor sentuh (ESP32, `esp32-iot/esp32_iot_complete.ino`)** — sensor sentuh dipakai untuk
+berpindah tampilan LCD 16x2:
+
+- **Tap singkat** bergiliran: `Status Pesanan` → `Total Bayar` → `Kode Verif Saung` (kode unik sesi),
+  sehingga pelanggan yang lupa kode verifikasi cukup tap untuk menampilkannya kembali.
+- **Tahan ~1.5 detik** untuk memanggil pelayan (fungsi lama tetap ada).
 
 ### Realtime
 

@@ -60,9 +60,9 @@ class SesiMejaTest extends TestCase
 
         $this->post(route('emenu.buka', $meja->id), ['kode_unik' => $sesi->kode_unik])
             ->assertRedirect(route('emenu.meja', $meja->kode_meja))
-            ->assertSessionHas('sesi_meja_' . $meja->id, $sesi->id);
+            ->assertSessionHas('sesi_meja_'.$meja->id, $sesi->id);
 
-        $this->withSession(['sesi_meja_' . $meja->id => $sesi->id])
+        $this->withSession(['sesi_meja_'.$meja->id => $sesi->id])
             ->get(route('emenu.meja', $meja->id))
             ->assertOk();
     }
@@ -104,8 +104,48 @@ class SesiMejaTest extends TestCase
         $this->assertSame('selesai', $lama->fresh()->status);
         $this->assertSame('aktif', $baru->status);
         $this->assertNotSame($lama->kode_unik, $baru->kode_unik);
-        $this->assertSame('selesai', $pesanan->fresh()->status_pesanan);
+
+        // Pesanan yang belum dibayar dibatalkan, bukan dipalsukan menjadi lunas.
+        $this->assertSame(Pesanan::STATUS_DIBATALKAN, $pesanan->fresh()->status_pesanan);
+        $this->assertSame(Pesanan::PAYMENT_PENDING_PEMBAYARAN, $pesanan->fresh()->status_pembayaran);
+        $this->assertNotNull($pesanan->fresh()->void_at);
+
+        // Stok yang sempat terpakai dikembalikan saat sesi ditutup.
+        $this->assertSame(11, $menu->fresh()->stok_menu);
+
         $this->assertSame('kosong', $meja->fresh()->status_meja);
         $this->assertSame('aktif', SesiMeja::aktifUntuk($meja)->status);
+    }
+
+    public function test_endpoint_iot_meja_mengembalikan_pesanan_dan_total(): void
+    {
+        $meja = $this->siapkanMeja();
+        $sesi = SesiMeja::aktifUntuk($meja);
+
+        Pesanan::create([
+            'meja_id' => $meja->id,
+            'kode_pesanan' => 'SW-IOT-1',
+            'total_bayar' => 15000,
+            'status_pesanan' => Pesanan::STATUS_DIPROSES,
+            'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+            'waktu_pesan' => now()->addMinute(),
+        ]);
+
+        // Pesanan dibatalkan tidak boleh ikut dihitung.
+        Pesanan::create([
+            'meja_id' => $meja->id,
+            'kode_pesanan' => 'SW-IOT-2',
+            'total_bayar' => 5000,
+            'status_pesanan' => Pesanan::STATUS_DIBATALKAN,
+            'status_pembayaran' => Pesanan::PAYMENT_BELUM_BAYAR,
+            'waktu_pesan' => now()->addMinute(),
+        ]);
+
+        $response = $this->getJson('/api/iot/meja/'.$meja->kode_meja)->assertOk();
+
+        $this->assertSame($sesi->kode_unik, $response->json('data.kode_sesi'));
+        $this->assertSame(15000.0, (float) $response->json('data.total_bayar'));
+        $this->assertSame(1, $response->json('data.jumlah_pesanan'));
+        $this->assertSame('diproses', $response->json('data.pesanan.0.status_pesanan'));
     }
 }

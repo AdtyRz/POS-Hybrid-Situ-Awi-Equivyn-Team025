@@ -73,9 +73,45 @@
         if(confirm('Apakah Anda yakin ingin me-restart semua 11 node hardware ESP32 di saung?')) {
             this.restarting = true;
             setTimeout(() => {
-                this.restarting = false;
-                alert('Semua node ESP32 berhasil di-reboot.');
-            }, 1500);
+                this.isSaving = false;
+                this.saveSuccess = true;
+                setTimeout(() => this.saveSuccess = false, 3000);
+            }, 800);
+        },
+
+        testPing() {
+            this.pinging = true;
+            setTimeout(() => {
+                this.pinging = false;
+                this.pingSuccess = true;
+                setTimeout(() => this.pingSuccess = false, 3000);
+            }, 1200);
+        },
+
+        testBuzzer() {
+            this.buzzerTesting = true;
+            setTimeout(() => {
+                this.buzzerTesting = false;
+                alert('Sinyal buzzer uji coba dikirim ke 11 node saung.');
+            }, 700);
+        },
+
+        restartNodes() {
+            if (confirm('Apakah Anda yakin ingin me-restart semua 11 node hardware ESP32 di saung?')) {
+                this.restarting = true;
+                setTimeout(() => {
+                    this.restarting = false;
+                    alert('Semua node ESP32 berhasil di-reboot.');
+                }, 1500);
+            }
+        },
+
+        printSample() {
+            this.isPrintingSample = true;
+            setTimeout(() => {
+                this.isPrintingSample = false;
+                alert('Perintah uji cetak struk sampel terkirim ke EPSON TM-T82X (192.168.1.150:9100).');
+            }, 1000);
         }
     },
 
@@ -185,7 +221,6 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
                     </svg>
                 </div>
-            </div>
 
             <div class="flex items-baseline gap-2">
                 <span class="font-display font-bold text-xl sm:text-2xl text-[#00341A] tracking-tight leading-tight whitespace-nowrap">
@@ -220,6 +255,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                 </div>
+                <button @click="pingSuccess = false" class="text-[#00341A] font-bold hover:underline">Tutup</button>
             </div>
 
             <div class="flex items-baseline gap-2">
@@ -246,7 +282,6 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                     </svg>
                 </div>
-            </div>
 
             <div class="flex items-baseline gap-2">
                 <span class="font-display font-bold text-xl sm:text-2xl text-[#00341A] tracking-tight leading-tight whitespace-nowrap">
@@ -852,7 +887,6 @@
                                 x-model="npwpd"
                                 class="w-full bg-[#FCF9F2] border border-[#C0C9BF]/40 rounded-xl px-3.5 py-2.5 font-mono text-xs font-bold text-[#1C1C18] focus:outline-hidden focus:border-[#0B4D2B] shadow-inner">
                         </div>
-                    </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="space-y-1.5">
@@ -1207,7 +1241,6 @@
                                 <span class="font-bold text-[#1C1C18]" x-text="autoCutter ? 'Aktif' : 'Non-aktif'">Aktif</span>
                             </div>
                         </div>
-                    </div>
 
                     <!-- Live Preview Struk Kasir -->
                     <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/30 space-y-3">
@@ -1417,6 +1450,4 @@
         </div>
 
     </div>
-
-</div>
 @endsection
