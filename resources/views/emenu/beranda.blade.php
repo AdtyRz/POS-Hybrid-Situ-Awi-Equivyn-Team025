@@ -42,14 +42,8 @@
 <body class="min-h-screen bg-cream-50 text-stone-800 antialiased font-sans">
     <div class="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 pt-6 pb-10">
         <div class="text-center">
-            <div class="w-20 h-20 mx-auto rounded-3xl bg-forest-900 flex items-center justify-center shadow-lg">
-                <svg class="w-11 h-11 text-gold-500" fill="none" stroke="currentColor" stroke-width="1.5"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M18 8h1a3 3 0 0 1 0 6h-1M4 8h14v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8z" />
-                    <path stroke-linecap="round" d="M7 2v2M11 2v2M15 2v2" />
-                </svg>
-            </div>
+            <img src="{{ asset('asset/Logo.png') }}" alt="Logo" class="mx-auto md:w-24 h-auto">
+
             <p class="text-[11px] font-bold tracking-[0.2em] text-[#8a6d1f] mt-4">TRADISI SUNDA • PRESISI DIGITAL</p>
             <h1 class="font-display font-bold text-4xl md:text-5xl text-forest-900 mt-1">Saung Situ Awi</h1>
             <p class="text-stone-500 text-sm md:text-base mt-2 max-w-xl mx-auto">Resto & saung lesehan tepi danau

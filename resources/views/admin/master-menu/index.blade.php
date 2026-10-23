@@ -14,11 +14,9 @@
                     <span class="text-[#404941]">KATALOG & MANAJEMEN STOK</span>
                 </div>
 
-                <div
-                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFDEA1]/40 text-[10px] font-bold text-[#261900]">
-                    <span class="w-2 h-2 rounded-full bg-[#7A5900]"></span>
-                    <span class="tracking-wide">FR-002 • PB-002 • AUTO-CUT SYSTEM</span>
-                </div>
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFDEA1]/40 text-[10px] font-bold text-[#261900]">
+                <span class="w-2 h-2 rounded-full bg-[#7A5900]"></span>
+                <span class="tracking-wide">AUTO-CUT SYSTEM</span>
             </div>
 
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pt-1">
@@ -32,15 +30,16 @@
                     </p>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-3">
-                    <button type="button" @click="showToast('Membuka sakelar cepat habis darurat...')"
-                        class="h-10 px-4 rounded-xl bg-[#EBE8E1] hover:bg-[#ded9cf] active:scale-95 text-[#1C1C18] font-semibold text-xs flex items-center gap-2 transition-all shadow-xs cursor-pointer">
-                        <svg class="w-4 h-4 text-[#7A5900]" fill="none" stroke="currentColor" stroke-width="2"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                        <span>Sakelar Cepat Habis</span>
-                    </button>
+            <div class="flex flex-wrap items-center gap-3 w-full ">
+                <button 
+                    type="button" 
+                    @click="showToast('Membuka sakelar cepat habis darurat...')"
+                    class="h-10 px-4 rounded-xl bg-[#EBE8E1] hover:bg-[#ded9cf] active:scale-95 text-[#1C1C18] font-semibold text-xs flex items-center gap-2 transition-all shadow-xs cursor-pointer">
+                    <svg class="w-4 h-4 text-[#7A5900]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span>Sakelar Cepat Habis</span>
+                </button>
 
                     <button type="button" @click="showToast('Membuka dialog Impor / Ekspor data menu CSV...')"
                         class="h-10 px-4 rounded-xl bg-white hover:bg-gray-50 active:scale-95 text-[#1C1C18] font-semibold text-xs flex items-center gap-2 border border-gray-200 transition-all shadow-xs cursor-pointer">
@@ -52,15 +51,15 @@
                         <span>Impor / Ekspor CSV</span>
                     </button>
 
-                    <button type="button" @click="addModalOpen = true"
-                        class="h-10 px-5 rounded-xl bg-[#0B4D2B] hover:bg-[#08381F] active:scale-95 text-white font-semibold text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer">
-                        <svg class="w-4 h-4 text-[#B1F1C2] stroke-[2.5]" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                        </svg>
-                        <span>+ Tambah Menu Baru</span>
-                    </button>
-                </div>
+                <button 
+                    type="button" 
+                    @click="addModalOpen = true"
+                    class="h-10 px-5 rounded-xl bg-[#0B4D2B] hover:bg-[#08381F] active:scale-95 text-white font-semibold text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer">
+                    <svg class="w-4 h-4 text-[#B1F1C2] stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Tambah Menu Baru</span>
+                </button>
             </div>
         </div>
 
@@ -78,10 +77,17 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col mt-2">
-                    <span
-                        class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
-                        42 Item
+                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
+                    42 Item
+                </span>
+                <div class="p-2 bg-[#F0EEE7]/60 rounded-lg flex items-center justify-between mt-3 text-[10px] font-bold text-[#404941]">
+                    <span class="flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#0B4D2B]"></span>
+                        26 Makanan Dapur
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#7A5900]"></span>
+                        16 Minuman Bar
                     </span>
                     <div
                         class="p-2 bg-[#F0EEE7]/60 rounded-lg flex items-center justify-between mt-3 text-[10px] font-bold text-[#404941]">
@@ -96,22 +102,27 @@
                     </div>
                 </div>
 
-                <div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-[#FFDEA1]/25 blur-xl pointer-events-none">
+            <div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-[#FFDEA1]/25 blur-xl pointer-events-none"></div>
+        </div>
+
+        <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[160px]">
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">PERINGATAN STOK<br>MENIPIS</span> 
+                <div class="w-10 h-10 rounded-xl bg-[#FFDEA1]/60 flex items-center justify-center text-[#261900]">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
                 </div>
             </div>
 
-            <div
-                class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[160px]">
-                <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">PERINGATAN STOK
-                        MENIPIS</span>
-                    <div class="w-10 h-10 rounded-xl bg-[#FFDEA1]/60 flex items-center justify-center text-[#261900]">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                    </div>
+                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
+                    3 Bahan
+                </span>
+                <div class="p-2 bg-[#FFDEA1]/20 rounded-lg flex items-center justify-between mt-3 text-[10px] font-bold text-[#1C1C18]">
+                    <span class="truncate">Gurame Kolam, Kelapa Ijo, Maranggi</span>
+                    <span class="text-[#7A5900]">→</span>
                 </div>
+        </div>
 
                 <div class="flex flex-col mt-2">
                     <span
@@ -126,39 +137,34 @@
                 </div>
             </div>
 
-            <div
-                class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[160px]">
-                <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">ITEM NONAKTIF / HABIS</span>
-                    <div class="w-10 h-10 rounded-xl bg-[#FFDAD6] flex items-center justify-center text-[#93000A]">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                        </svg>
-                    </div>
+            <div class="flex flex-col mt-2">
+                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
+                    2 Menu
+                </span>
+                <div class="p-2 bg-[#FFDAD6]/40 rounded-lg flex items-center justify-between mt-3 text-[10px] font-bold text-[#93000A]">
+                    <span class="truncate">Sate Maranggi, Es Cincau</span>
+                    <button type="button" @click="showToast('Buka antrean restock')" class="underline hover:text-black">Restock</button>
                 </div>
 
-                <div class="flex flex-col mt-2">
-                    <span
-                        class="font-display font-bold text-2xl sm:text-[26px] text-[#BA1A1A] tracking-tight leading-tight">
-                        2 Menu
-                    </span>
-                    <div
-                        class="p-2 bg-[#FFDAD6]/40 rounded-lg flex items-center justify-between mt-3 text-[10px] font-bold text-[#93000A]">
-                        <span class="truncate">Sate Maranggi, Es Cincau</span>
-                        <button type="button" @click="showToast('Buka antrean restock')"
-                            class="underline hover:text-black">Restock</button>
-                    </div>
+        <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[160px] relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">RATA–RATA MARGIN<br>MENU</span>
+                <div class="w-10 h-10 rounded-xl bg-[#CBEF89]/60 flex items-center justify-center text-[#213200]">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
                 </div>
             </div>
 
-            <div
-                class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[160px] relative overflow-hidden">
-                <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">RATA–RATA MARGIN MENU</span>
-                    <div class="w-10 h-10 rounded-xl bg-[#CBEF89]/60 flex items-center justify-center text-[#213200]">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            <div class="flex flex-col mt-2">
+                <span class="font-display font-bold text-2xl sm:text-[26px] text-[#00341A] tracking-tight leading-tight">
+                    68.4%
+                </span>
+                <div class="p-2 bg-[#CBEF89]/20 rounded-lg flex items-center justify-between mt-3 text-[10px] font-bold">
+                    <span class="text-[#213200]">Target Cost 31.6%</span>
+                    <span class="text-[#0B4D2B] flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                     </div>
                 </div>
@@ -270,25 +276,25 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
-                <button type="button" @click="showToast('Sinyal sinkronisasi dikirim ke KDS Dapur & Bar.')"
-                    class="h-10 px-4 rounded-xl bg-[#EBE8E1] hover:bg-[#ded9cf] text-[#1C1C18] font-semibold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
-                    <svg class="w-4 h-4 text-[#7A5900]" fill="none" stroke="currentColor" stroke-width="2"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    <span>Sinkronkan ke KDS Dapur & Bar</span>
-                </button>
-                <button type="button" @click="showToast('Seluruh perubahan stok massal berhasil disimpan.')"
-                    class="h-10 px-5 rounded-xl bg-[#FECE66] hover:bg-[#ebd055] active:scale-95 text-[#765600] font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2M8 7h8M12 12v5m0 0l-2-2m2 2l2-2" />
-                    </svg>
-                    <span>Simpan Perubahan Stok Masal</span>
-                </button>
-            </div>
+        <div class="flex flex-wrap items-center justify-end gap-2 md:gap-3 gap-y-2 w-full md:w-auto">
+            <button 
+                type="button" 
+                @click="showToast('Sinyal sinkronisasi dikirim ke KDS Dapur & Bar.')"
+                class="h-10 px-4 rounded-xl bg-[#EBE8E1] hover:bg-[#ded9cf] text-[#1C1C18] font-semibold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
+                <svg class="w-4 h-4 text-[#7A5900]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>Sinkronkan ke KDS Dapur & Bar</span>
+            </button>
+            <button 
+                type="button" 
+                @click="showToast('Seluruh perubahan stok massal berhasil disimpan.')"
+                class="h-10 px-5 rounded-xl bg-[#FECE66] hover:bg-[#ebd055] active:scale-95 text-[#765600] font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2M8 7h8M12 12v5m0 0l-2-2m2 2l2-2" />
+                </svg>
+                <span>Simpan Perubahan Stok Masal</span>
+            </button>
         </div>
 
         <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">

@@ -62,10 +62,10 @@
                                 <p class="font-bold text-[#0B4D2B]">{{ $p->kode_pesanan }}</p>
                                 <p class="text-[#404941] text-xs">Meja {{ $p->meja->kode_meja }} • {{ $p->detailPesanan->sum('jumlah') }} item</p>
                             </div>
-                            <form method="POST" action="{{ route('pelayan.panggilan.ubah', $p->id) }}" class="shrink-0">
+                            <form method="POST" action="{{ route('pesanan.status', $p->kode_pesanan) }}" class="shrink-0">
                                 @csrf
                                 @method('PATCH')
-                                <input type="hidden" name="status_panggilan" value="selesai">
+                                <input type="hidden" name="status_pesanan" value="diantar">
                                 <button type="submit" class="px-3 py-1.5 rounded-lg bg-[#0B4D2B] hover:bg-[#052E1B] text-white text-xs font-bold transition">Selesai Antar</button>
                             </form>
                         </div>

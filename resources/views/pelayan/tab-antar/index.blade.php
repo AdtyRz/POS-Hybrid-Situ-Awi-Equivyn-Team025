@@ -24,7 +24,7 @@
 
             <!-- Avatar -->
             <div class="w-8 h-8 rounded-full bg-[#0B4D2B] text-white font-bold text-xs flex items-center justify-center shadow-[0_0_0_2px_rgba(11,77,43,0.2),0_1px_4px_rgba(0,0,0,0.08)]">
-                KA
+                {{ strtoupper(substr(auth()->user()->nama ?? auth()->user()->name ?? 'P', 0, 2)) }}
             </div>
         </div>
     </header>
@@ -136,36 +136,31 @@
                     $itemCount = count($order['detailPesanan']);
                 @endphp
                 {{-- Card order --}}
-                <div x-show="activeFilter === 'all' || activeFilter === '{{ $sourceFilter }}'"
+                <div x-show="(activeFilter === 'all' || activeFilter === '{{ $sourceFilter }}') && !delivered"
                      x-data="{ delivered: false }"
-                     x-show="!delivered"
                      class="bg-[#F6F3EC] rounded-xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-col gap-3">
 
                     <!-- Metadata Header -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-1.5">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded {{ $sourceBadgeClass }} text-[10px] font-bold tracking-[0.4px]">
-                                {{ $sourceLabel }}
-                            </span>
-                            <div class="flex items-center gap-0.5 text-[#7A5900] text-[10px] font-semibold tracking-[0.4px]">
-                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <polyline points="12 6 12 12 16 14" />
-                                </svg>
-                                <span>{{ $order['timeAgo'] }}</span>
+                    <div class="flex items-start justify-between gap-2 border-b border-[#E5E2DB]/60 pb-2.5">
+                        <div class="flex flex-col gap-1 min-w-0">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded {{ $sourceBadgeClass }} text-[10px] font-bold tracking-[0.4px]">
+                                    {{ $sourceLabel }}
+                                </span>
+                                <div class="flex items-center gap-1 text-[#7A5900] text-[10px] font-semibold whitespace-nowrap">
+                                    <svg class="w-2.5 h-2.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <polyline points="12 6 12 12 16 14" />
+                                    </svg>
+                                    <span>{{ $order['timeAgo'] }}</span>
+                                </div>
                             </div>
+                            <span class="text-[11px] font-mono font-bold text-[#404941] truncate">#{{ $order['kode_pesanan'] }}</span>
                         </div>
 
-                        <div class="flex items-center gap-2">
-                            <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px]">#{{ $order['kode_pesanan'] }}</span>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-[#F0EEE7] text-[#00341A] text-xs font-bold tracking-[0.24px]">
-                                {{ $itemCount }} Item
-                            </span>
-                        </div>
-                        <button @click="markDelivered(pesanan.id, pesanan.meja.kode_meja)" class="px-4 py-2 bg-[#0B4D2B] hover:bg-[#052E1B] text-white text-xs font-bold rounded-xl transition-all active:scale-95 flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                            <span>Selesai Antar</span>
-                        </button>
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-[#E5E2DB] text-[#00341A] text-xs font-bold tracking-[0.24px] flex-shrink-0">
+                            {{ $itemCount }} Item
+                        </span>
                     </div>
 
                     <!-- Table Heading -->
@@ -191,23 +186,7 @@
 
                     <!-- Action Buttons -->
                     <div class="flex flex-col gap-2 pt-1">
-                        <button @click="
-                                delivered = true;
-                                displayReadyCount = Math.max(0, displayReadyCount - 1);
-                                {{ $isBar ? 'displayBarCount = Math.max(0, displayBarCount - 1);' : 'displayKitchenCount = Math.max(0, displayKitchenCount - 1);' }}
-                                displayDeliveringCount++;
-                                fetch('/pesanan/{{ $order['kode_pesanan'] }}/status', {
-                                    method: 'PATCH',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-TOKEN': document.querySelector(\'meta[name=\"csrf-token\"]\')?.content ?? \'\',
-                                        'Accept': 'application/json',
-                                        'X-Requested-With': 'XMLHttpRequest'
-                                    },
-                                    body: JSON.stringify({ status_pesanan: 'diantar' })
-                                }).catch(()=>{});
-                                triggerToast('Pesanan {{ $order["kode_pesanan"] }} ditandai diantar ke {{ $order["meja"]["kode_meja"] }}.')
-                            "
+                        <button @click="delivered = true; deliverOrder('{{ $order['kode_pesanan'] }}', '{{ $order['meja']['kode_meja'] }}', {{ $isBar ? 'true' : 'false' }})"
                                 type="button"
                                 class="w-full h-12 rounded-xl bg-[#0B4D2B] hover:bg-[#00341A] text-white font-bold text-sm tracking-[0.14px] flex items-center justify-center gap-2 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all cursor-pointer active:scale-98">
                             <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -255,28 +234,35 @@
                 <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px]">Live Mesh</span>
             </div>
 
-            <!-- Mini Card Live Runner -->
-            <div class="bg-[#F0EEE7] rounded-xl p-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-between h-[60px]">
+            <!-- Live Runner List -->
+            @forelse ($deliveringRunners ?? [] as $runner)
+            <div class="bg-[#F0EEE7] rounded-xl p-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-between min-h-[60px]">
                 <div class="flex items-center gap-2.5">
                     <div class="w-9 h-9 rounded-full bg-[#FFDEA1] text-[#261900] font-bold text-sm flex items-center justify-center flex-shrink-0">
-                        KD
+                        {{ $runner['initials'] ?? 'RN' }}
                     </div>
                     <div class="flex flex-col">
                         <div class="flex items-center gap-1.5 leading-4">
-                            <span class="font-bold text-xs text-[#1C1C18] tracking-[0.24px]">Kang Dadan</span>
+                            <span class="font-bold text-xs text-[#1C1C18] tracking-[0.24px]">{{ $runner['name'] ?? 'Runner' }}</span>
                             <span class="w-1.5 h-1.5 rounded-full bg-[#7A5900]"></span>
                         </div>
                         <span class="font-semibold text-xs text-[#00341A] leading-4 mt-0.5">
-                            LA-02 Kicau Burung (2x Nasi Timbel)
+                            {{ $runner['currentTask'] ?? '-' }}
                         </span>
                     </div>
                 </div>
 
                 <div class="flex flex-col items-end leading-3">
-                    <span class="font-bold text-[10px] text-[#7A5900] tracking-[0.4px]">4 mnt lalu</span>
+                    <span class="font-bold text-[10px] text-[#7A5900] tracking-[0.4px]">{{ $runner['elapsedTime'] ?? '-' }}</span>
                     <span class="font-bold text-[10px] text-[#404941] tracking-[0.4px] mt-1">Di Jalur</span>
                 </div>
             </div>
+            @empty
+            <div class="bg-[#F0EEE7] rounded-xl p-4 flex flex-col items-center justify-center text-center">
+                <p class="font-bold text-xs text-[#1C1C18]">Tidak ada rekan yang sedang antar</p>
+                <p class="text-[10px] text-[#404941] font-normal mt-0.5">Semua runner standby di area masing-masing.</p>
+            </div>
+            @endforelse
         </section>
 
         <!-- Sound / Vibration Toggle Action Bar -->
@@ -419,9 +405,32 @@
                 this.denahTitle = title;
                 this.showDenahModal = true;
             },
+
+            deliverOrder(kodePesanan, kodeMeja, isBar) {
+                this.displayReadyCount = Math.max(0, this.displayReadyCount - 1);
+                if (isBar) {
+                    this.displayBarCount = Math.max(0, this.displayBarCount - 1);
+                } else {
+                    this.displayKitchenCount = Math.max(0, this.displayKitchenCount - 1);
+                }
+                this.displayDeliveringCount++;
+
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+                fetch(`/pesanan/${kodePesanan}/status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ status_pesanan: 'diantar' })
+                }).catch(() => {});
+
+                this.triggerToast(`Pesanan ${kodePesanan} ditandai diantar ke ${kodeMeja}.`);
+            },
         };
     }
-}
 </script>
 @endsection
 
