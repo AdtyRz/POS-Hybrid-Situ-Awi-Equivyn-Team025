@@ -56,35 +56,24 @@
                     class="px-3.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer">
                     Bulanan
                 </button>
-                <button 
-                    type="button" 
-                    @click="dateFilter = 'kustom'"
-                    :class="dateFilter === 'kustom' ? 'bg-white text-[#00341A] shadow-xs font-bold' : 'text-[#404941] font-semibold hover:text-black'"
-                    class="px-3.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer">
-                    Kustom
-                </button>
             </div>
 
             <div class="flex items-center gap-2">
-                <button 
-                    type="button" 
-                    @click="showToast('Memproses cetak PDF ringkasan penjualan...')"
+                <a href="{{ route('admin.analitik-laporan.cetak-pdf') }}" target="_blank"
                     class="h-10 px-4 rounded-xl bg-[#FECE66]/25 hover:bg-[#FECE66]/40 active:scale-95 text-[#765600] font-semibold text-xs flex items-center gap-2 transition-all cursor-pointer">
                     <svg class="w-4 h-4 text-[#765600]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                     </svg>
                     <span>Cetak PDF</span>
-                </button>
+                </a>
 
-                <button 
-                    type="button" 
-                    @click="showToast('Mengekspor data ke Microsoft Excel (.xlsx)...')"
+                <a href="{{ route('admin.analitik-laporan.ekspor-xlsx') }}"
                     class="h-10 px-4 rounded-xl bg-[#0B4D2B] hover:bg-[#08381F] active:scale-95 text-white font-semibold text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer">
                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
                     <span>Ekspor XLSX</span>
-                </button>
+                </a>
             </div>
         </div>
     </div>
@@ -93,7 +82,7 @@
         
         <div class="relative overflow-hidden bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[190px]">
             <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">TOTAL OMZET HARI INI</span>
+                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">PENDAPATAN HARI INI</span>
                 <div class="w-10 h-10 rounded-xl bg-[#FECE66]/30 flex items-center justify-center text-[#765600]">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <rect x="2" y="5" width="20" height="14" rx="2" />
@@ -120,7 +109,7 @@
 
         <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[190px]">
             <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">PESANAN SELESAI</span>
+                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">TOTAL PESANAN HARI INI</span>
                 <div class="w-10 h-10 rounded-xl bg-[#B1F1C2]/40 flex items-center justify-center text-[#0B4D2B]">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -129,57 +118,56 @@
             </div>
 
                 <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
-                    {{ $pesananHariIni }} Tiket
+                    {{ $pesananHariIni }} Pesanan
                 </span>
                 <div class="flex items-center justify-between mt-2 text-xs">
                     <span class="text-[#707971]">Rata-rata: <strong class="text-[#1C1C18] font-bold">Rp {{ number_format($pesananHariIni > 0 ? $pendapatan / $pesananHariIni : 0, 0, ',', '.') }}</strong></span>
                     <span class="px-2 py-0.5 rounded-full bg-[#B1F1C2]/30 text-[10px] font-bold text-[#0B4D2B] flex flex-col justify-center items-center text-center">
-                        {{ $pesananTotal > 0 ? number_format($pesananHariIni / $pesananTotal * 100, 1) : 0 }}% Sukses
+                        Non-Batal
                     </span>
                 </div>
         </div>
 
         <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[190px]">
             <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">OKUPANSI SAUNG</span>
-                <div class="w-10 h-10 rounded-xl bg-[#FFDEA1]/50 flex items-center justify-center text-[#7A5900]">
+                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">TOTAL MENU TERSEDIA</span>
+                <div class="w-10 h-10 rounded-xl bg-[#E8F5E9] flex items-center justify-center text-[#0B4D2B]">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
                 </div>
             </div>
 
                 <div class="items-center gap-2 my-auto">
                     <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
-                        {{ $mejaTotal > 0 ? round($mejaTerisi / $mejaTotal * 100) : 0 }}%
+                        {{ $menuTersediaTotal }} Menu
                     </span>
-                    <span class="px-2 py-0.5 rounded-full bg-[#EFC05A]/40 text-[10px] font-bold text-[#261900]">
-                        Puncak Lesehan
-                    </span>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="px-2 py-0.5 rounded-full bg-[#B1F1C2]/30 text-[10px] font-bold text-[#0B4D2B]">Makanan: {{ $menuMakananTersedia }}</span>
+                        <span class="px-2 py-0.5 rounded-full bg-[#FFDEA1]/40 text-[10px] font-bold text-[#7A5900]">Minuman: {{ $menuMinumanTersedia }}</span>
+                    </div>
                 </div>
                 <div class="flex items-center gap-1.5 mt-2 text-xs">
-                    <span class="w-2 h-2 rounded-full bg-[#00341A]"></span>
-                    <span class="text-[#707971] font-medium">{{ $mejaTerisi }} dari {{ $mejaTotal }} Saung terisi penuh</span>
+                    <span class="text-[#707971] font-medium">Menu dengan stok > 0</span>
                 </div>
         </div>
 
         <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[190px]">
             <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">KDS KECEPATAN SAJI</span>
+                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">MEJA / SESSION AKTIF</span>
                 <div class="w-10 h-10 rounded-xl bg-[#F0EEE7] flex items-center justify-center text-[#00341A]">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                     </svg>
                 </div>
             </div>
 
                 <span class="font-display font-bold text-2xl sm:text-[26px] text-[#1C1C18] tracking-tight leading-tight">
-                    {{ $rataMenit ? number_format($rataMenit, 1) : '-' }} Menit
+                    {{ $sesiAktif }} Aktif
                 </span>
                 <div class="flex items-center gap-1.5 mt-2 text-xs">
-                    <span class="font-bold text-[#00341A]">{{ $rataMenit ? number_format(15 - $rataMenit, 1) . 'm lebih gesit' : 'Belum ada data' }}</span>
-                    <span class="text-[#707971]">dari target (15.0m)</span>
+                    <span class="font-bold text-[#00341A]">Meja terisi: {{ $mejaTerisi }} / {{ $mejaTotal }}</span>
+                    <span class="text-[#707971]">Sesi aktif saat ini</span>
                 </div>
         </div>
 
@@ -210,7 +198,35 @@
                 </div>
             </div>
 
-            <div class="w-full my-4 relative">
+            <div class="w-full my-4 relative" x-data="{
+                showTooltip: false,
+                tooltipX: 0,
+                tooltipY: 0,
+                tooltipLabel: '',
+                tooltipTotal: 0,
+                tooltipCount: 0,
+                grafik: @js($grafik),
+                updateTooltip(event, idx) {
+                    const svg = event.currentTarget.ownerSVGElement;
+                    const rect = svg.getBoundingClientRect();
+                    const pt = svg.createSVGPoint();
+                    pt.x = event.clientX;
+                    pt.y = event.clientY;
+                    const ctm = svg.getScreenCTM();
+                    if (!ctm) {
+                        this.tooltipX = ((event.clientX - rect.left) / rect.width) * 800;
+                        this.tooltipY = ((event.clientY - rect.top) / rect.height) * 320;
+                    } else {
+                        const loc = pt.matrixTransform(ctm.inverse());
+                        this.tooltipX = loc.x;
+                        this.tooltipY = loc.y;
+                    }
+                    this.tooltipLabel = this.grafik[idx].label;
+                    this.tooltipTotal = this.grafik[idx].total;
+                    this.tooltipCount = this.grafik[idx].jumlah;
+                    this.showTooltip = true;
+                }
+            }">
                 @php
                     $nilaiMaks = max(array_column($grafik, 'total')) ?: 1;
                     $koordinat = [];
@@ -249,6 +265,14 @@
                     <path d="{{ $garis }}"
                              stroke="#0B4D2B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
 
+                    @foreach($koordinat as $i => $p)
+                    <circle cx="{{ round($p[0], 1) }}" cy="{{ round($p[1], 1) }}" r="6" fill="transparent" stroke="transparent" stroke-width="0" class="cursor-pointer"
+                        @mouseenter="updateTooltip($event, {{ $i }})"
+                        @mousemove="updateTooltip($event, {{ $i }})"
+                        @mouseleave="showTooltip = false" />
+                    <circle cx="{{ round($p[0], 1) }}" cy="{{ round($p[1], 1) }}" r="4" fill="#0B4D2B" stroke="#FCF9F2" stroke-width="2" pointer-events="none" />
+                    @endforeach
+
                     <circle cx="{{ round($titikPuncak[0], 1) }}" cy="{{ round($titikPuncak[1], 1) }}" r="6" fill="#7A5900" stroke="#FCF9F2" stroke-width="3" />
 
                     <g transform="translate({{ round($kotakX, 1) }}, {{ round($kotakY, 1) }})">
@@ -257,6 +281,15 @@
                         <text x="85" y="29" fill="#FECE66" font-size="11" font-weight="700" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Rp {{ number_format($grafik[$indeksPuncak]['total'], 0, ',', '.') }}</text>
                     </g>
                 </svg>
+
+                <div x-cloak x-show="showTooltip" x-transition class="absolute z-10 -translate-x-1/2 -translate-y-full pointer-events-none"
+                    :style="'left:' + (tooltipX / 800 * 100) + '%; top:' + (tooltipY / 320 * 100) + '%'">
+                    <div class="mb-2 px-3 py-2 rounded-xl bg-[#00341A] text-white shadow-xl border border-[#FECE66]/30">
+                        <div class="text-[10px] font-bold uppercase tracking-wider" x-text="tooltipLabel"></div>
+                        <div class="text-xs font-bold mt-0.5">Rp <span x-text="Number(tooltipTotal).toLocaleString('id-ID')"></span></div>
+                        <div class="text-[10px] text-white/80"><span x-text="tooltipCount"></span> Pesanan</div>
+                    </div>
+                </div>
 
                 <div class="flex items-center justify-between text-[10px] font-bold text-[#707971] px-2 pt-2 border-t border-[#EBE8E1]">
                     @foreach ($grafik as $hari)
@@ -412,73 +445,28 @@
                 </p>
 
                 <div class="flex flex-col gap-3">
+                    @forelse($logAudit as $log)
                     <div class="p-3.5 bg-[#F0EEE7] rounded-2xl flex items-center justify-between gap-3">
                         <div class="flex flex-col">
                             <div class="flex items-center gap-2 text-xs">
-                                <span class="font-bold text-[#1C1C18]">#ORD-9821</span>
+                                <span class="font-bold text-[#1C1C18]">{{ $log['kode'] }}</span>
                                 <span class="text-[#707971]">•</span>
-                                <span class="font-semibold text-[#0B4D2B]">Saung 02 (LB-02)</span>
+                                <span class="font-semibold text-[#0B4D2B]">{{ $log['meja'] }}</span>
+                                <span class="text-[#707971]">•</span>
+                                <span class="text-[#707971]">{{ $log['waktu'] }} WIB</span>
                             </div>
-                            <span class="text-xs text-[#707971] mt-1">Pak Dedi • 4 Item (Gurame Bakar + Liwet Komplit)</span>
+                            <span class="text-xs text-[#707971] mt-1">{{ $log['detail'] }}</span>
                         </div>
                         <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                            <span class="font-bold text-sm text-[#1C1C18]">Rp 482.000</span>
+                            <span class="font-bold text-sm text-[#1C1C18]">Rp {{ number_format($log['total'], 0, ',', '.') }}</span>
                             <span class="px-2 py-0.5 rounded-full bg-[#B1F1C2]/40 text-[10px] font-semibold text-[#0B4D2B]">
-                                QRIS Lunas
+                                {{ $log['metode'] }}
                             </span>
                         </div>
                     </div>
-
-                    <div class="p-3.5 bg-[#F0EEE7] rounded-2xl flex items-center justify-between gap-3">
-                        <div class="flex flex-col">
-                            <div class="flex items-center gap-2 text-xs">
-                                <span class="font-bold text-[#1C1C18]">#ORD-9820</span>
-                                <span class="text-[#707971]">•</span>
-                                <span class="font-semibold text-[#0B4D2B]">Saung Gandasoli (LB-04)</span>
-                            </div>
-                            <span class="text-xs text-[#707971] mt-1">Keluarga Ibu Maya • 3 Item Santapan Sunda</span>
-                        </div>
-                        <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                            <span class="font-bold text-sm text-[#1C1C18]">Rp 315.000</span>
-                            <span class="px-2 py-0.5 rounded-full bg-[#FFDEA1]/50 text-[10px] font-semibold text-[#7A5900]">
-                                Tunai Kasir Lunas
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="p-3.5 bg-[#FFDAD6]/30 border border-[#FFDAD6] rounded-2xl flex items-center justify-between gap-3">
-                        <div class="flex flex-col">
-                            <div class="flex items-center gap-2 text-xs">
-                                <span class="font-bold text-[#BA1A1A]">#ORD-9819</span>
-                                <span class="text-[#707971]">•</span>
-                                <span class="font-semibold text-[#BA1A1A]">Kursi Kayu KA-02</span>
-                            </div>
-                            <span class="text-xs text-[#404941] mt-1">VOID Disetujui: Batal Sop Gurame (Salah Input)</span>
-                        </div>
-                        <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                            <span class="font-bold text-sm text-[#707971]">Rp 0</span>
-                            <span class="px-2 py-0.5 rounded-full bg-[#FFDAD6] text-[10px] font-semibold text-[#93000A]">
-                                VOID Dibatalkan
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="p-3.5 bg-[#F0EEE7] rounded-2xl flex items-center justify-between gap-3">
-                        <div class="flex flex-col">
-                            <div class="flex items-center gap-2 text-xs">
-                                <span class="font-bold text-[#1C1C18]">#ORD-9818</span>
-                                <span class="text-[#707971]">•</span>
-                                <span class="font-semibold text-[#0B4D2B]">Saung Dermaga (LB-05)</span>
-                            </div>
-                            <span class="text-xs text-[#707971] mt-1">Rombongan Dinas Pertanian • Paket Prasmanan</span>
-                        </div>
-                        <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                            <span class="font-bold text-sm text-[#1C1C18]">Rp 890.000</span>
-                            <span class="px-2 py-0.5 rounded-full bg-[#B1F1C2]/40 text-[10px] font-semibold text-[#0B4D2B]">
-                                QRIS Lunas
-                            </span>
-                        </div>
-                    </div>
+                    @empty
+                    <div class="p-3.5 bg-[#F0EEE7] rounded-2xl text-xs text-[#707971]">Belum ada transaksi hari ini.</div>
+                    @endforelse
                 </div>
             </div>
 

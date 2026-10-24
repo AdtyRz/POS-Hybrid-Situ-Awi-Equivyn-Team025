@@ -9,6 +9,7 @@ use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
+use App\Models\SesiMeja;
 use App\Models\User;
 use App\Support\Realtime;
 use Illuminate\Http\RedirectResponse;
@@ -16,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminController extends Controller
 {
@@ -33,7 +35,7 @@ class AdminController extends Controller
             ->sum('total_bayar');
 
         $pesananHariIni = Pesanan::whereDate('waktu_pesan', $hariIni)
-            ->where('status_pesanan', 'selesai')
+            ->whereNotIn('status_pesanan', ['dibatalkan'])
             ->count();
         $pesananTotal = Pesanan::whereDate('waktu_pesan', $hariIni)
             ->whereNotIn('status_pesanan', ['dibatalkan'])
@@ -42,6 +44,20 @@ class AdminController extends Controller
         $mejaTerisi = MejaMakan::where('status_meja', 'terisi')->count();
         $mejaTotal = MejaMakan::count();
         $stokMenipis = Menu::where('stok_menu', '<=', 5)->count();
+
+        $menuMakananTersedia = Menu::where('stok_menu', '>', 0)
+            ->whereHas('kategori', function ($q) {
+                $q->where('target_kds', 'dapur');
+            })
+            ->count();
+        $menuMinumanTersedia = Menu::where('stok_menu', '>', 0)
+            ->whereHas('kategori', function ($q) {
+                $q->where('target_kds', 'bar');
+            })
+            ->count();
+        $menuTersediaTotal = $menuMakananTersedia + $menuMinumanTersedia;
+
+        $sesiAktif = SesiMeja::aktif()->count();
 
         $rataMenit = DetailPesanan::where('status_item', 'siap')
             ->whereDate('detail_pesanan.updated_at', $hariIni)
@@ -91,20 +107,97 @@ class AdminController extends Controller
         $grafik = [];
         for ($i = 6; $i >= 0; $i--) {
             $tanggal = today()->subDays($i);
+            $total = (float) Pesanan::whereDate('waktu_pesan', $tanggal)
+                ->where('status_pembayaran', 'sudah_bayar')
+                ->sum('total_bayar');
+            $jumlahPesanan = Pesanan::whereDate('waktu_pesan', $tanggal)
+                ->whereNotIn('status_pesanan', ['dibatalkan'])
+                ->count();
             $grafik[] = [
                 'label' => $tanggal->format('d M'),
-                'total' => (float) Pesanan::whereDate('waktu_pesan', $tanggal)
-                    ->where('status_pembayaran', 'sudah_bayar')
-                    ->sum('total_bayar'),
+                'total' => $total,
+                'jumlah' => $jumlahPesanan,
             ];
         }
+
+        $logAudit = Pesanan::with(['meja', 'kasir', 'detailPesanan.menu'])
+            ->whereNotIn('status_pesanan', ['dibatalkan'])
+            ->orderByDesc('waktu_pesan')
+            ->limit(4)
+            ->get()
+            ->map(function ($pesanan) {
+                $namaMenu = $pesanan->detailPesanan->take(2)->map(fn ($d) => $d->menu->nama_menu)->filter()->join(', ');
+                $jumlahItem = $pesanan->detailPesanan->sum('jumlah');
+                $metode = $pesanan->metode_pembayaran === 'qris' ? 'QRIS Lunas' : ($pesanan->status_pembayaran === 'sudah_bayar' ? 'Tunai Kasir Lunas' : 'Menunggu Pembayaran');
+
+                return [
+                    'kode' => '#' . $pesanan->kode_pesanan,
+                    'meja' => $pesanan->meja ? ($pesanan->meja->area . ' (' . $pesanan->meja->kode_meja . ')') : '-',
+                    'detail' => ($pesanan->kasir ? $pesanan->kasir->nama : 'Tamu') . ' • ' . $jumlahItem . ' Item' . ($namaMenu ? ' (' . $namaMenu . ')' : ''),
+                    'total' => (float) $pesanan->total_bayar,
+                    'metode' => $metode,
+                    'waktu' => $pesanan->waktu_pesan ? $pesanan->waktu_pesan->format('H:i') : '-',
+                ];
+            });
 
         return view('admin.analitik-laporan.index', compact(
             'pendapatan', 'pendapatanKemarin', 'pesananHariIni', 'pesananTotal',
             'mejaTerisi', 'mejaTotal', 'stokMenipis', 'grafik',
             'rataMenit', 'qrisHariIni', 'tunaiHariIni', 'omzetQris', 'omzetTunai', 'terlaris',
-            'putaran'
+            'putaran', 'menuMakananTersedia', 'menuMinumanTersedia', 'menuTersediaTotal', 'sesiAktif', 'logAudit'
         ));
+    }
+
+    public function cetakAnalitikPdf(): View
+    {
+        $hariIni = today();
+        $pendapatan = Pesanan::whereDate('waktu_pesan', $hariIni)->where('status_pembayaran', 'sudah_bayar')->sum('total_bayar');
+        $pesananHariIni = Pesanan::whereDate('waktu_pesan', $hariIni)->whereNotIn('status_pesanan', ['dibatalkan'])->count();
+        $qrisHariIni = Pesanan::whereDate('waktu_pesan', $hariIni)->where('metode_pembayaran', 'qris')->whereNotIn('status_pesanan', ['dibatalkan'])->count();
+        $tunaiHariIni = Pesanan::whereDate('waktu_pesan', $hariIni)->where(function ($q) { $q->where('metode_pembayaran', 'tunai')->orWhereNull('metode_pembayaran'); })->whereNotIn('status_pesanan', ['dibatalkan'])->count();
+        $terlaris = DetailPesanan::selectRaw('menu_id, SUM(jumlah) as porsi, SUM(subtotal) as omzet')
+            ->whereHas('pesanan', function ($q) use ($hariIni) { $q->whereDate('waktu_pesan', $hariIni)->whereNotIn('status_pesanan', ['dibatalkan']); })
+            ->with('menu')
+            ->groupBy('menu_id')
+            ->orderByDesc('porsi')
+            ->limit(5)
+            ->get();
+        $logAudit = Pesanan::with(['meja', 'kasir'])->whereNotIn('status_pesanan', ['dibatalkan'])->orderByDesc('waktu_pesan')->limit(10)->get();
+
+        return view('admin.analitik-laporan.cetak', compact('hariIni', 'pendapatan', 'pesananHariIni', 'qrisHariIni', 'tunaiHariIni', 'terlaris', 'logAudit'));
+    }
+
+    public function eksporAnalitikXlsx(): StreamedResponse
+    {
+        $hariIni = today();
+        $filename = 'laporan-analitik-' . $hariIni->format('Y-m-d') . '.csv';
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function () use ($hariIni) {
+            $handle = fopen('php://output', 'w');
+            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
+            fputcsv($handle, ['Tanggal', 'Kode Pesanan', 'Meja', 'Kasir', 'Metode Pembayaran', 'Status Pembayaran', 'Total Bayar', 'Waktu']);
+            Pesanan::with(['meja', 'kasir'])->whereDate('waktu_pesan', $hariIni)->orderBy('waktu_pesan')->chunk(500, function ($pesananList) use ($handle) {
+                foreach ($pesananList as $p) {
+                    fputcsv($handle, [
+                        optional($p->waktu_pesan)->format('Y-m-d'),
+                        $p->kode_pesanan,
+                        $p->meja ? $p->meja->kode_meja : '-',
+                        $p->kasir ? $p->kasir->nama : '-',
+                        $p->metode_pembayaran,
+                        $p->status_pembayaran,
+                        $p->total_bayar,
+                        optional($p->waktu_pesan)->format('H:i:s'),
+                    ]);
+                }
+            });
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     public function index(): View
