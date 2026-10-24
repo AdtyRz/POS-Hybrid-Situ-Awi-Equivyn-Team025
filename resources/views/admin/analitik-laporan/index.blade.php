@@ -59,7 +59,7 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <a href="{{ route('admin.analitik-laporan.cetak-pdf') }}" target="_blank"
+                <a :href="'{{ route('admin.analitik-laporan.cetak-pdf') }}?periode=' + dateFilter" target="_blank"
                     class="h-10 px-4 rounded-xl bg-[#FECE66]/25 hover:bg-[#FECE66]/40 active:scale-95 text-[#765600] font-semibold text-xs flex items-center gap-2 transition-all cursor-pointer">
                     <svg class="w-4 h-4 text-[#765600]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -67,7 +67,7 @@
                     <span>Cetak PDF</span>
                 </a>
 
-                <a href="{{ route('admin.analitik-laporan.ekspor-xlsx') }}"
+                <a :href="'{{ route('admin.analitik-laporan.ekspor-xlsx') }}?periode=' + dateFilter"
                     class="h-10 px-4 rounded-xl bg-[#0B4D2B] hover:bg-[#08381F] active:scale-95 text-white font-semibold text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer">
                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -205,8 +205,9 @@
                 }
                 $koordinat = [];
                 $countGrafik = count($grafik);
+                $jarakX = $countGrafik <= 1 ? 740 : 740 / ($countGrafik - 1);
                 foreach ($grafik as $i => $hari) {
-                    $x = 30 + $i * (740 / max(1, $countGrafik - 1));
+                    $x = 30 + $i * $jarakX;
                     $y = 240 - (($hari['total'] / $nilaiMaks) * 180);
                     $koordinat[] = [$x, $y];
                 }

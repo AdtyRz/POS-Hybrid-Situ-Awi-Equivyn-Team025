@@ -148,53 +148,92 @@ class AdminController extends Controller
         ));
     }
 
-    public function cetakAnalitikPdf(): View
+    public function cetakAnalitikPdf(Request $request): View
     {
+        $periode = $request->get('periode', 'hari_ini');
         $hariIni = today();
-        $pendapatan = Pesanan::whereDate('waktu_pesan', $hariIni)->where('status_pembayaran', 'sudah_bayar')->sum('total_bayar');
-        $pesananHariIni = Pesanan::whereDate('waktu_pesan', $hariIni)->whereNotIn('status_pesanan', ['dibatalkan'])->count();
-        $qrisHariIni = Pesanan::whereDate('waktu_pesan', $hariIni)->where('metode_pembayaran', 'qris')->whereNotIn('status_pesanan', ['dibatalkan'])->count();
-        $tunaiHariIni = Pesanan::whereDate('waktu_pesan', $hariIni)->where(function ($q) { $q->where('metode_pembayaran', 'tunai')->orWhereNull('metode_pembayaran'); })->whereNotIn('status_pesanan', ['dibatalkan'])->count();
+
+        if ($periode === 'mingguan') {
+            $start = today()->startOfWeek();
+            $end = today()->endOfWeek();
+        } elseif ($periode === 'bulanan') {
+            $start = today()->startOfMonth();
+            $end = today()->endOfMonth();
+        } else {
+            $start = $hariIni;
+            $end = $hariIni;
+        }
+
+        $pendapatan = Pesanan::whereBetween(DB::raw('DATE(waktu_pesan)'), [$start->toDateString(), $end->toDateString()])->where('status_pembayaran', 'sudah_bayar')->sum('total_bayar');
+        $pesananHariIni = Pesanan::whereBetween(DB::raw('DATE(waktu_pesan)'), [$start->toDateString(), $end->toDateString()])->whereNotIn('status_pesanan', ['dibatalkan'])->count();
+        $qrisHariIni = Pesanan::whereBetween(DB::raw('DATE(waktu_pesan)'), [$start->toDateString(), $end->toDateString()])->where('metode_pembayaran', 'qris')->whereNotIn('status_pesanan', ['dibatalkan'])->count();
+        $tunaiHariIni = Pesanan::whereBetween(DB::raw('DATE(waktu_pesan)'), [$start->toDateString(), $end->toDateString()])->where(function ($q) { $q->where('metode_pembayaran', 'tunai')->orWhereNull('metode_pembayaran'); })->whereNotIn('status_pesanan', ['dibatalkan'])->count();
         $terlaris = DetailPesanan::selectRaw('menu_id, SUM(jumlah) as porsi, SUM(subtotal) as omzet')
-            ->whereHas('pesanan', function ($q) use ($hariIni) { $q->whereDate('waktu_pesan', $hariIni)->whereNotIn('status_pesanan', ['dibatalkan']); })
+            ->whereHas('pesanan', function ($q) use ($start, $end) { $q->whereBetween(DB::raw('DATE(waktu_pesan)'), [$start->toDateString(), $end->toDateString()])->whereNotIn('status_pesanan', ['dibatalkan']); })
             ->with('menu')
             ->groupBy('menu_id')
             ->orderByDesc('porsi')
             ->limit(5)
             ->get();
-        $logAudit = Pesanan::with(['meja', 'kasir'])->whereNotIn('status_pesanan', ['dibatalkan'])->orderByDesc('waktu_pesan')->limit(10)->get();
+        $logAudit = Pesanan::with(['meja', 'kasir'])->whereBetween(DB::raw('DATE(waktu_pesan)'), [$start->toDateString(), $end->toDateString()])->whereNotIn('status_pesanan', ['dibatalkan'])->orderByDesc('waktu_pesan')->limit(15)->get();
 
-        return view('admin.analitik-laporan.cetak', compact('hariIni', 'pendapatan', 'pesananHariIni', 'qrisHariIni', 'tunaiHariIni', 'terlaris', 'logAudit'));
+        $labelPeriode = $periode === 'mingguan' ? 'Mingguan (' . $start->format('d M') . ' - ' . $end->format('d M Y') . ')' : ($periode === 'bulanan' ? 'Bulanan (' . $start->format('M Y') . ')' : 'Harian (' . $hariIni->format('d M Y') . ')');
+
+        return view('admin.analitik-laporan.cetak', compact('hariIni', 'pendapatan', 'pesananHariIni', 'qrisHariIni', 'tunaiHariIni', 'terlaris', 'logAudit', 'labelPeriode', 'start', 'end'));
     }
 
-    public function eksporAnalitikXlsx(): StreamedResponse
+    public function eksporAnalitikXlsx(Request $request): StreamedResponse
     {
+        $periode = $request->get('periode', 'hari_ini');
         $hariIni = today();
-        $filename = 'laporan-analitik-' . $hariIni->format('Y-m-d') . '.csv';
+
+        if ($periode === 'mingguan') {
+            $start = today()->startOfWeek();
+            $end = today()->endOfWeek();
+            $filename = 'laporan-analitik-mingguan-' . $start->format('Y-m-d') . '.xls';
+        } elseif ($periode === 'bulanan') {
+            $start = today()->startOfMonth();
+            $end = today()->endOfMonth();
+            $filename = 'laporan-analitik-bulanan-' . $start->format('Y-m') . '.xls';
+        } else {
+            $start = $hariIni;
+            $end = $hariIni;
+            $filename = 'laporan-analitik-harian-' . $hariIni->format('Y-m-d') . '.xls';
+        }
+
         $headers = [
-            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ];
 
-        $callback = function () use ($hariIni) {
-            $handle = fopen('php://output', 'w');
-            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
-            fputcsv($handle, ['Tanggal', 'Kode Pesanan', 'Meja', 'Kasir', 'Metode Pembayaran', 'Status Pembayaran', 'Total Bayar', 'Waktu']);
-            Pesanan::with(['meja', 'kasir'])->whereDate('waktu_pesan', $hariIni)->orderBy('waktu_pesan')->chunk(500, function ($pesananList) use ($handle) {
+        $callback = function () use ($start, $end, $periode) {
+            echo "\xEF\xBB\xBF";
+            echo '<html xmlns:x="urn:schemas-microsoft-com:office:excel">';
+            echo '<head><meta charset="UTF-8"><style>table{border-collapse:collapse}th{background:#0B4D2B;color:#fff;font-weight:bold;border:1px solid #08381F;padding:6px}td{border:1px solid #C0C9BF;padding:6px}tr:nth-child(even){background:#F6F3EC}</style></head>';
+            echo '<body>';
+            echo '<table>';
+            echo '<tr><th colspan="8">LAPORAN ANALITIK SAUNG SITU AWI - ' . strtoupper(str_replace('_', ' ', $periode)) . '</th></tr>';
+            echo '<tr><th colspan="8">PERIODE: ' . $start->format('d M Y') . ' - ' . $end->format('d M Y') . '</th></tr>';
+            echo '<tr><th>TANGGAL</th><th>KODE PESANAN</th><th>MEJA</th><th>KASIR</th><th>METODE PEMBAYARAN</th><th>STATUS PEMBAYARAN</th><th>TOTAL BAYAR (Rp)</th><th>WAKTU</th></tr>';
+
+            Pesanan::with(['meja', 'kasir'])->whereBetween(DB::raw('DATE(waktu_pesan)'), [$start->toDateString(), $end->toDateString()])->orderBy('waktu_pesan')->chunk(500, function ($pesananList) use ($end) {
                 foreach ($pesananList as $p) {
-                    fputcsv($handle, [
-                        optional($p->waktu_pesan)->format('Y-m-d'),
-                        $p->kode_pesanan,
-                        $p->meja ? $p->meja->kode_meja : '-',
-                        $p->kasir ? $p->kasir->nama : '-',
-                        $p->metode_pembayaran,
-                        $p->status_pembayaran,
-                        $p->total_bayar,
-                        optional($p->waktu_pesan)->format('H:i:s'),
-                    ]);
+                    $metode = $p->metode_pembayaran === 'qris' ? 'QRIS' : 'TUNAI';
+                    echo '<tr>';
+                    echo '<td>' . optional($p->waktu_pesan)->format('d/m/Y') . '</td>';
+                    echo '<td>#' . $p->kode_pesanan . '</td>';
+                    echo '<td>' . ($p->meja ? $p->meja->kode_meja . ' (' . $p->meja->area . ')' : '-') . '</td>';
+                    echo '<td>' . ($p->kasir ? $p->kasir->nama : '-') . '</td>';
+                    echo '<td>' . $metode . '</td>';
+                    echo '<td>' . strtoupper(str_replace('_', ' ', $p->status_pembayaran)) . '</td>';
+                    echo '<td>' . (int) $p->total_bayar . '</td>';
+                    echo '<td>' . optional($p->waktu_pesan)->format('H:i:s') . '</td>';
+                    echo '</tr>';
                 }
             });
-            fclose($handle);
+
+            echo '</table>';
+            echo '</body></html>';
         };
 
         return response()->stream($callback, 200, $headers);
