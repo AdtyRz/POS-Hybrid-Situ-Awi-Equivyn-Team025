@@ -30,22 +30,7 @@ Route::get('/qris/status/{kode_pesanan}', [EMenuController::class, 'qrisStatus']
 Route::get('/status/{kode_pesanan}', [EMenuController::class, 'status'])->name('emenu.status');
 Route::get('/verifikasi/{kode_pesanan}', [EMenuController::class, 'verifikasi'])->name('emenu.verifikasi');
 Route::get('/bayar-tunai/{kode_pesanan}', [EMenuController::class, 'bayarTunai'])->name('emenu.bayar-tunai');
-<<<<<<< HEAD
-=======
 Route::post('/qris/callback', [EMenuController::class, 'qrisCallback'])->name('emenu.qris.callback');
-
-Route::get('/admin/analitik-laporan', [AdminController::class, 'dashboard'])->name('admin.analitik-laporan');
-Route::get('/admin/analitik-laporan/cetak-pdf', [AdminController::class, 'cetakAnalitikPdf'])->name('admin.analitik-laporan.cetak-pdf');
-Route::get('/admin/analitik-laporan/ekspor-xlsx', [AdminController::class, 'eksporAnalitikXlsx'])->name('admin.analitik-laporan.ekspor-xlsx');
-Route::get('/admin/master-meja', [AdminController::class, 'daftarMeja'])->name('admin.master-meja');
-Route::get('/admin/master-menu', [AdminController::class, 'daftarMenu'])->name('admin.master-menu');
-Route::get('/admin/laporan-penjualan', [AdminController::class, 'index'])->name('admin.laporan-penjualan');
-Route::get('/admin/manajemen-akun', [AdminController::class, 'daftarAkun'])->name('admin.manajemen-akun');
-
-Route::get('/admin/pengaturan-sistem', function () {
-    return view('admin.pengaturan-sistem.index');
-})->name('admin.pengaturan-sistem');
->>>>>>> 5c0d7be (feat(admin): rapikan dashboard analitik dengan data dinamis dan ekspor laporan)
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
