@@ -119,6 +119,7 @@ class AdminController extends Controller
                 'jumlah' => $jumlahPesanan,
             ];
         }
+        $grafik = array_reverse($grafik);
 
         $logAudit = Pesanan::with(['meja', 'kasir', 'detailPesanan.menu'])
             ->whereNotIn('status_pesanan', ['dibatalkan'])
