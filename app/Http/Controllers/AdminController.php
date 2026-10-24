@@ -106,7 +106,7 @@ class AdminController extends Controller
 
         $grafik = [];
         for ($i = 6; $i >= 0; $i--) {
-            $tanggal = today()->subDays($i);
+            $tanggal = today()->subDays(6 - $i);
             $total = (float) Pesanan::whereDate('waktu_pesan', $tanggal)
                 ->where('status_pembayaran', 'sudah_bayar')
                 ->sum('total_bayar');
@@ -119,7 +119,6 @@ class AdminController extends Controller
                 'jumlah' => $jumlahPesanan,
             ];
         }
-        $grafik = array_reverse($grafik);
 
         $logAudit = Pesanan::with(['meja', 'kasir', 'detailPesanan.menu'])
             ->whereNotIn('status_pesanan', ['dibatalkan'])
