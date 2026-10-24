@@ -206,32 +206,39 @@
                 tooltipTotal: 0,
                 tooltipCount: 0,
                 grafik: @js($grafik),
-                updateTooltip(event, idx) {
-                    const svg = event.currentTarget.ownerSVGElement;
+                koordinat: @js($koordinat),
+                findTooltip(event) {
+                    const svg = event.currentTarget;
                     const rect = svg.getBoundingClientRect();
-                    const pt = svg.createSVGPoint();
-                    pt.x = event.clientX;
-                    pt.y = event.clientY;
-                    const ctm = svg.getScreenCTM();
-                    if (!ctm) {
-                        this.tooltipX = ((event.clientX - rect.left) / rect.width) * 800;
-                        this.tooltipY = ((event.clientY - rect.top) / rect.height) * 320;
-                    } else {
-                        const loc = pt.matrixTransform(ctm.inverse());
-                        this.tooltipX = loc.x;
-                        this.tooltipY = loc.y;
-                    }
+                    const vb = svg.viewBox.baseVal;
+                    if (!vb || rect.width === 0) return;
+                    const x = ((event.clientX - rect.left) / rect.width) * vb.width;
+                    let idx = 0;
+                    let minDist = Infinity;
+                    this.koordinat.forEach((p, i) => {
+                        const dist = Math.abs(p[0] - x);
+                        if (dist < minDist) {
+                            minDist = dist;
+                            idx = i;
+                        }
+                    });
+                    const p = this.koordinat[idx];
+                    this.tooltipX = p[0];
+                    this.tooltipY = p[1];
                     this.tooltipLabel = this.grafik[idx].label;
                     this.tooltipTotal = this.grafik[idx].total;
                     this.tooltipCount = this.grafik[idx].jumlah;
                     this.showTooltip = true;
+                },
+                hideTooltip() {
+                    this.showTooltip = false;
                 }
             }">
                 @php
                     $nilaiMaks = max(array_column($grafik, 'total')) ?: 1;
                     $koordinat = [];
                     foreach ($grafik as $i => $hari) {
-                        $koordinat[] = [30 + $i * (740 / 6), 240 - ($hari['total'] / $nilaiMaks) * 180];
+                        $koordinat[] = [30 + $i * (740 / max(1, count($grafik) - 1)), 240 - ($hari['total'] / $nilaiMaks) * 180];
                     }
                     $garis = 'M ' . round($koordinat[0][0], 1) . ' ' . round($koordinat[0][1], 1);
                     for ($i = 0; $i < count($koordinat) - 1; $i++) {
@@ -246,7 +253,7 @@
                     $kotakX = min(max($titikPuncak[0] - 85, 0), 600);
                     $kotakY = max($titikPuncak[1] - 52, 0);
                 @endphp
-                <svg viewBox="0 0 800 320" class="w-full h-64 overflow-visible" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg viewBox="0 0 800 320" class="w-full h-64 overflow-visible" fill="none" xmlns="http://www.w3.org/2000/svg" @mousemove="findTooltip($event)" @mouseleave="hideTooltip()">
                     <defs>
                         <linearGradient id="curveGradient" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stop-color="#0B4D2B" stop-opacity="0.35" />
@@ -266,11 +273,7 @@
                              stroke="#0B4D2B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
 
                     @foreach($koordinat as $i => $p)
-                    <circle cx="{{ round($p[0], 1) }}" cy="{{ round($p[1], 1) }}" r="6" fill="transparent" stroke="transparent" stroke-width="0" class="cursor-pointer"
-                        @mouseenter="updateTooltip($event, {{ $i }})"
-                        @mousemove="updateTooltip($event, {{ $i }})"
-                        @mouseleave="showTooltip = false" />
-                    <circle cx="{{ round($p[0], 1) }}" cy="{{ round($p[1], 1) }}" r="4" fill="#0B4D2B" stroke="#FCF9F2" stroke-width="2" pointer-events="none" />
+                    <circle cx="{{ round($p[0], 1) }}" cy="{{ round($p[1], 1) }}" r="4" fill="#0B4D2B" stroke="#FCF9F2" stroke-width="2" />
                     @endforeach
 
                     <circle cx="{{ round($titikPuncak[0], 1) }}" cy="{{ round($titikPuncak[1], 1) }}" r="6" fill="#7A5900" stroke="#FCF9F2" stroke-width="3" />
