@@ -295,7 +295,7 @@
                     $kotakX = min(max($titikPuncak[0] - 85, 0), 600);
                     $kotakY = max($titikPuncak[1] - 52, 0);
                 @endphp
-                <svg viewBox="0 0 800 320" preserveAspectRatio="none" class="w-full h-64 overflow-visible" fill="none" xmlns="http://www.w3.org/2000/svg" @mousemove="findTooltip($event)" @mouseleave="hideTooltip()">
+                <svg viewBox="0 0 800 320" preserveAspectRatio="xMidYMid meet" class="w-full h-64 overflow-visible" fill="none" xmlns="http://www.w3.org/2000/svg" @mousemove="findTooltip($event)" @mouseleave="hideTooltip()">
                     <defs>
                         <linearGradient id="curveGradient" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stop-color="#0B4D2B" stop-opacity="0.35" />
