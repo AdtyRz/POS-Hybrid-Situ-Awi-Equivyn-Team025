@@ -30,6 +30,7 @@ Route::get('/qris/status/{kode_pesanan}', [EMenuController::class, 'qrisStatus']
 Route::get('/status/{kode_pesanan}', [EMenuController::class, 'status'])->name('emenu.status');
 Route::get('/verifikasi/{kode_pesanan}', [EMenuController::class, 'verifikasi'])->name('emenu.verifikasi');
 Route::get('/bayar-tunai/{kode_pesanan}', [EMenuController::class, 'bayarTunai'])->name('emenu.bayar-tunai');
+Route::post('/qris/callback', [EMenuController::class, 'qrisCallback'])->name('emenu.qris.callback');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -38,6 +39,8 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/admin/analitik-laporan', [AdminController::class, 'dashboard'])->name('admin.analitik-laporan');
+Route::get('/admin/analitik-laporan/cetak-pdf', [AdminController::class, 'cetakAnalitikPdf'])->name('admin.analitik-laporan.cetak-pdf');
+Route::get('/admin/analitik-laporan/ekspor-xlsx', [AdminController::class, 'eksporAnalitikXlsx'])->name('admin.analitik-laporan.ekspor-xlsx');
     Route::get('/admin/laporan', [AdminController::class, 'index'])->name('admin.laporan');
     Route::get('/admin/laporan-penjualan', [AdminController::class, 'index'])->name('admin.laporan-penjualan');
 
