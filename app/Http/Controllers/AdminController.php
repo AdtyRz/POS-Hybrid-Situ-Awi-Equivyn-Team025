@@ -106,7 +106,7 @@ class AdminController extends Controller
 
         $grafik = [];
         for ($i = 6; $i >= 0; $i--) {
-            $tanggal = today()->subDays(6 - $i);
+            $tanggal = today()->subDays($i);
             $total = (float) Pesanan::whereDate('waktu_pesan', $tanggal)
                 ->where('status_pembayaran', 'sudah_bayar')
                 ->sum('total_bayar');

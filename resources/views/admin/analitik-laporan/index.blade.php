@@ -203,10 +203,11 @@
                 if ($nilaiMaks == 0) {
                     $nilaiMaks = 1;
                 }
+                $grafikTampil = array_reverse($grafik);
                 $koordinat = [];
-                $countGrafik = count($grafik);
+                $countGrafik = count($grafikTampil);
                 $jarakX = $countGrafik <= 1 ? 740 : 740 / ($countGrafik - 1);
-                foreach ($grafik as $i => $hari) {
+                foreach ($grafikTampil as $i => $hari) {
                     $x = 30 + $i * $jarakX;
                     $y = 240 - (($hari['total'] / $nilaiMaks) * 180);
                     $koordinat[] = [$x, $y];
@@ -223,7 +224,7 @@
                         $garisUtama .= ' C ' . round($p1[0] + ($p2[0] - $p0[0]) / 6, 1) . ' ' . round($p1[1] + ($p2[1] - $p0[1]) / 6, 1) . ', ' . round($p2[0] - ($p3[0] - $p1[0]) / 6, 1) . ' ' . round($p2[1] - ($p3[1] - $p1[1]) / 6, 1) . ', ' . round($p2[0], 1) . ' ' . round($p2[1], 1);
                     }
                     $garis = $garisUtama . ' L 770 240 L 30 240 Z';
-                    $indeksPuncak = array_search(max(array_column($grafik, 'total')), array_column($grafik, 'total'));
+                    $indeksPuncak = array_search(max(array_column($grafikTampil, 'total')), array_column($grafikTampil, 'total'));
                     if ($indeksPuncak === false) {
                         $indeksPuncak = 0;
                     }
@@ -239,6 +240,7 @@
                     $kotakY = 188;
                 }
             @endphp
+            @endphp
 
             <div class="w-full my-4 relative" x-data="{
                 showTooltip: false,
@@ -247,7 +249,7 @@
                 tooltipLabel: '',
                 tooltipTotal: 0,
                 tooltipCount: 0,
-                grafik: @js($grafik),
+                grafik: @js($grafikTampil),
                 koordinat: @js($koordinat),
                 findTooltip(event) {
                     const svg = event.currentTarget;
@@ -295,7 +297,7 @@
                     $kotakX = min(max($titikPuncak[0] - 85, 0), 600);
                     $kotakY = max($titikPuncak[1] - 52, 0);
                 @endphp
-                <svg viewBox="0 0 800 320" preserveAspectRatio="xMidYMid meet" class="w-full h-64 overflow-visible" fill="none" xmlns="http://www.w3.org/2000/svg" @mousemove="findTooltip($event)" @mouseleave="hideTooltip()">
+                <svg viewBox="0 0 800 320" preserveAspectRatio="xMinYMid meet" class="w-full h-64 overflow-visible" fill="none" xmlns="http://www.w3.org/2000/svg" @mousemove="findTooltip($event)" @mouseleave="hideTooltip()">
                     <defs>
                         <linearGradient id="curveGradient" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stop-color="#0B4D2B" stop-opacity="0.35" />
@@ -337,7 +339,7 @@
                 </div>
 
                 <div class="flex items-center justify-between text-[10px] font-bold text-[#707971] px-2 pt-2 border-t border-[#EBE8E1]">
-                    @foreach ($grafik as $hari)
+                    @foreach ($grafikTampil as $hari)
                     <span>{{ $hari['label'] }}</span>
                     @endforeach
                 </div>
