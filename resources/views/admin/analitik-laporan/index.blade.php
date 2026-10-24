@@ -203,11 +203,12 @@
                 if ($nilaiMaks == 0) {
                     $nilaiMaks = 1;
                 }
+                $grafikTampil = array_reverse($grafik);
                 $koordinat = [];
-                $countGrafik = count($grafik);
-                $jarakX = $countGrafik <= 1 ? 760 : 760 / ($countGrafik - 1);
-                foreach ($grafik as $i => $hari) {
-                    $x = 10 + $i * $jarakX;
+                $countGrafik = count($grafikTampil);
+                $jarakX = $countGrafik <= 1 ? 740 : 740 / ($countGrafik - 1);
+                foreach ($grafikTampil as $i => $hari) {
+                    $x = 30 + $i * $jarakX;
                     $y = 240 - (($hari['total'] / $nilaiMaks) * 180);
                     $koordinat[] = [$x, $y];
                 }
@@ -222,22 +223,23 @@
                         $p3 = $koordinat[min(count($koordinat) - 1, $i + 2)];
                         $garisUtama .= ' C ' . round($p1[0] + ($p2[0] - $p0[0]) / 6, 1) . ' ' . round($p1[1] + ($p2[1] - $p0[1]) / 6, 1) . ', ' . round($p2[0] - ($p3[0] - $p1[0]) / 6, 1) . ' ' . round($p2[1] - ($p3[1] - $p1[1]) / 6, 1) . ', ' . round($p2[0], 1) . ' ' . round($p2[1], 1);
                     }
-                    $garis = $garisUtama . ' L ' . round($koordinat[count($koordinat)-1][0], 1) . ' 240 L ' . round($koordinat[0][0], 1) . ' 240 Z';
-                    $indeksPuncak = array_search(max(array_column($grafik, 'total')), array_column($grafik, 'total'));
+                    $garis = $garisUtama . ' L 770 240 L 30 240 Z';
+                    $indeksPuncak = array_search(max(array_column($grafikTampil, 'total')), array_column($grafikTampil, 'total'));
                     if ($indeksPuncak === false) {
                         $indeksPuncak = 0;
                     }
                     $titikPuncak = $koordinat[$indeksPuncak];
-                    $kotakX = min(max($titikPuncak[0] - 85, 0), 650);
+                    $kotakX = min(max($titikPuncak[0] - 85, 0), 600);
                     $kotakY = max($titikPuncak[1] - 52, 0);
                 } else {
-                    $garisUtama = 'M 10 240 L 790 240';
-                    $garis = 'M 10 240 L 790 240 L 10 240 Z';
+                    $garisUtama = 'M 30 240 L 770 240';
+                    $garis = 'M 30 240 L 770 240 L 30 240 Z';
                     $indeksPuncak = 0;
                     $titikPuncak = [400, 240];
                     $kotakX = 315;
                     $kotakY = 188;
                 }
+            @endphp
             @endphp
 
             <div class="w-full my-4 relative" x-data="{
@@ -247,7 +249,7 @@
                 tooltipLabel: '',
                 tooltipTotal: 0,
                 tooltipCount: 0,
-                grafik: @js($grafik),
+                grafik: @js($grafikTampil),
                 koordinat: @js($koordinat),
                 findTooltip(event) {
                     const svg = event.currentTarget;
@@ -295,7 +297,7 @@
                     $kotakX = min(max($titikPuncak[0] - 85, 0), 600);
                     $kotakY = max($titikPuncak[1] - 52, 0);
                 @endphp
-                <svg viewBox="0 0 800 320" preserveAspectRatio="none" class="w-full h-64 overflow-visible" fill="none" xmlns="http://www.w3.org/2000/svg" @mousemove="findTooltip($event)" @mouseleave="hideTooltip()">
+                <svg viewBox="0 0 800 320" preserveAspectRatio="xMinYMid meet" class="w-full h-64 overflow-visible" fill="none" xmlns="http://www.w3.org/2000/svg" @mousemove="findTooltip($event)" @mouseleave="hideTooltip()">
                     <defs>
                         <linearGradient id="curveGradient" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stop-color="#0B4D2B" stop-opacity="0.35" />
@@ -304,10 +306,10 @@
                         </linearGradient>
                     </defs>
 
-                    <line x1="10" y1="60" x2="790" y2="60" stroke="#F0EEE7" stroke-width="1.5" stroke-dasharray="4 4" />
-                    <line x1="10" y1="120" x2="790" y2="120" stroke="#F0EEE7" stroke-width="1.5" stroke-dasharray="4 4" />
-                    <line x1="10" y1="180" x2="790" y2="180" stroke="#F0EEE7" stroke-width="1.5" stroke-dasharray="4 4" />
-                    <line x1="10" y1="240" x2="790" y2="240" stroke="#EBE8E1" stroke-width="1.5" />
+                    <line x1="30" y1="60" x2="770" y2="60" stroke="#F0EEE7" stroke-width="1.5" stroke-dasharray="4 4" />
+                    <line x1="30" y1="120" x2="770" y2="120" stroke="#F0EEE7" stroke-width="1.5" stroke-dasharray="4 4" />
+                    <line x1="30" y1="180" x2="770" y2="180" stroke="#F0EEE7" stroke-width="1.5" stroke-dasharray="4 4" />
+                    <line x1="30" y1="240" x2="770" y2="240" stroke="#EBE8E1" stroke-width="1.5" />
 
                     <path d="{{ $garis }}" fill="url(#curveGradient)" />
 
@@ -337,7 +339,7 @@
                 </div>
 
                 <div class="flex items-center justify-between text-[10px] font-bold text-[#707971] px-2 pt-2 border-t border-[#EBE8E1]">
-                    @foreach ($grafik as $hari)
+                    @foreach ($grafikTampil as $hari)
                     <span>{{ $hari['label'] }}</span>
                     @endforeach
                 </div>
