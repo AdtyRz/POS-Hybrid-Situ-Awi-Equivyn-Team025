@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Laporan Analitik - {{ $hariIni->format('d M Y') }}</title>
+    <title>Laporan Analitik - {{ isset($labelPeriode) ? $labelPeriode : $hariIni->format('d M Y') }}</title>
     <style>
         body { font-family: Arial, sans-serif; font-size: 11px; color: #1C1C18; }
         h1 { font-size: 16px; margin: 0; }
@@ -14,15 +14,16 @@
         .label { font-size: 9px; text-transform: uppercase; color: #707971; font-weight: bold; }
         .value { font-size: 14px; font-weight: bold; margin-top: 6px; }
         table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; font-size: 9px; text-transform: uppercase; color: #707971; background: #F6F3EC; padding: 6px 8px; }
+        th { text-align: left; font-size: 9px; text-transform: uppercase; color: #fff; background: #0B4D2B; padding: 6px 8px; }
         td { border-top: 1px solid #F0EEE7; padding: 6px 8px; }
+        tr:nth-child(even) td { background: #F6F3EC; }
         .right { text-align: right; }
     </style>
 </head>
 
 <body>
     <h1>Laporan Analitik Saung Situ Awi</h1>
-    <div class="sub">Periode: {{ $hariIni->format('d M Y') }}</div>
+    <div class="sub">Periode: {{ isset($labelPeriode) ? $labelPeriode : $hariIni->format('d M Y') }}</div>
 
     <div class="grid" style="margin-top:12px;">
         <div class="card">
