@@ -198,6 +198,44 @@
                 </div>
             </div>
 
+            @php
+                $nilaiMaks = !empty($grafik) ? max(array_column($grafik, 'total')) : 1;
+                if ($nilaiMaks == 0) {
+                    $nilaiMaks = 1;
+                }
+                $koordinat = [];
+                $countGrafik = count($grafik);
+                foreach ($grafik as $i => $hari) {
+                    $x = 30 + $i * (740 / max(1, $countGrafik - 1));
+                    $y = 240 - (($hari['total'] / $nilaiMaks) * 180);
+                    $koordinat[] = [$x, $y];
+                }
+                $garis = '';
+                if (!empty($koordinat)) {
+                    $garis = 'M ' . round($koordinat[0][0], 1) . ' ' . round($koordinat[0][1], 1);
+                    for ($i = 0; $i < count($koordinat) - 1; $i++) {
+                        $p0 = $koordinat[max(0, $i - 1)];
+                        $p1 = $koordinat[$i];
+                        $p2 = $koordinat[$i + 1];
+                        $p3 = $koordinat[min(count($koordinat) - 1, $i + 2)];
+                        $garis .= ' C ' . round($p1[0] + ($p2[0] - $p0[0]) / 6, 1) . ' ' . round($p1[1] + ($p2[1] - $p0[1]) / 6, 1) . ', ' . round($p2[0] - ($p3[0] - $p1[0]) / 6, 1) . ' ' . round($p2[1] - ($p3[1] - $p1[1]) / 6, 1) . ', ' . round($p2[0], 1) . ' ' . round($p2[1], 1);
+                    }
+                    $indeksPuncak = array_search(max(array_column($grafik, 'total')), array_column($grafik, 'total'));
+                    if ($indeksPuncak === false) {
+                        $indeksPuncak = 0;
+                    }
+                    $titikPuncak = $koordinat[$indeksPuncak];
+                    $kotakX = min(max($titikPuncak[0] - 85, 0), 600);
+                    $kotakY = max($titikPuncak[1] - 52, 0);
+                } else {
+                    $garis = 'M 30 240 L 770 240';
+                    $indeksPuncak = 0;
+                    $titikPuncak = [400, 240];
+                    $kotakX = 315;
+                    $kotakY = 188;
+                }
+            @endphp
+
             <div class="w-full my-4 relative" x-data="{
                 showTooltip: false,
                 tooltipX: 0,
