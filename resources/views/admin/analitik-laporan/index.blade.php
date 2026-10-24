@@ -205,9 +205,9 @@
                 }
                 $koordinat = [];
                 $countGrafik = count($grafik);
-                $jarakX = $countGrafik <= 1 ? 760 : 760 / ($countGrafik - 1);
+                $jarakX = $countGrafik <= 1 ? 740 : 740 / ($countGrafik - 1);
                 foreach ($grafik as $i => $hari) {
-                    $x = 10 + $i * $jarakX;
+                    $x = 30 + $i * $jarakX;
                     $y = 240 - (($hari['total'] / $nilaiMaks) * 180);
                     $koordinat[] = [$x, $y];
                 }
@@ -222,17 +222,17 @@
                         $p3 = $koordinat[min(count($koordinat) - 1, $i + 2)];
                         $garisUtama .= ' C ' . round($p1[0] + ($p2[0] - $p0[0]) / 6, 1) . ' ' . round($p1[1] + ($p2[1] - $p0[1]) / 6, 1) . ', ' . round($p2[0] - ($p3[0] - $p1[0]) / 6, 1) . ' ' . round($p2[1] - ($p3[1] - $p1[1]) / 6, 1) . ', ' . round($p2[0], 1) . ' ' . round($p2[1], 1);
                     }
-                    $garis = $garisUtama . ' L ' . round($koordinat[count($koordinat)-1][0], 1) . ' 240 L ' . round($koordinat[0][0], 1) . ' 240 Z';
+                    $garis = $garisUtama . ' L 770 240 L 30 240 Z';
                     $indeksPuncak = array_search(max(array_column($grafik, 'total')), array_column($grafik, 'total'));
                     if ($indeksPuncak === false) {
                         $indeksPuncak = 0;
                     }
                     $titikPuncak = $koordinat[$indeksPuncak];
-                    $kotakX = min(max($titikPuncak[0] - 85, 0), 650);
+                    $kotakX = min(max($titikPuncak[0] - 85, 0), 600);
                     $kotakY = max($titikPuncak[1] - 52, 0);
                 } else {
-                    $garisUtama = 'M 10 240 L 790 240';
-                    $garis = 'M 10 240 L 790 240 L 10 240 Z';
+                    $garisUtama = 'M 30 240 L 770 240';
+                    $garis = 'M 30 240 L 770 240 L 30 240 Z';
                     $indeksPuncak = 0;
                     $titikPuncak = [400, 240];
                     $kotakX = 315;
@@ -304,10 +304,10 @@
                         </linearGradient>
                     </defs>
 
-                    <line x1="10" y1="60" x2="790" y2="60" stroke="#F0EEE7" stroke-width="1.5" stroke-dasharray="4 4" />
-                    <line x1="10" y1="120" x2="790" y2="120" stroke="#F0EEE7" stroke-width="1.5" stroke-dasharray="4 4" />
-                    <line x1="10" y1="180" x2="790" y2="180" stroke="#F0EEE7" stroke-width="1.5" stroke-dasharray="4 4" />
-                    <line x1="10" y1="240" x2="790" y2="240" stroke="#EBE8E1" stroke-width="1.5" />
+                    <line x1="30" y1="60" x2="770" y2="60" stroke="#F0EEE7" stroke-width="1.5" stroke-dasharray="4 4" />
+                    <line x1="30" y1="120" x2="770" y2="120" stroke="#F0EEE7" stroke-width="1.5" stroke-dasharray="4 4" />
+                    <line x1="30" y1="180" x2="770" y2="180" stroke="#F0EEE7" stroke-width="1.5" stroke-dasharray="4 4" />
+                    <line x1="30" y1="240" x2="770" y2="240" stroke="#EBE8E1" stroke-width="1.5" />
 
                     <path d="{{ $garis }}" fill="url(#curveGradient)" />
 
