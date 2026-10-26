@@ -186,7 +186,7 @@
                     window.location.href = tujuan;
                 }
             }, function(err) {
-                /* ignore scan errors */ });
+                 });
         }
 
         function tutupKamera() {

@@ -56,7 +56,21 @@ class PesananApiController extends Controller
         }
 
         $data = $request->validated();
-        $pesanan->update(['status_pesanan' => $data['status_pesanan']]);
+
+        if ($data['status_pesanan'] === Pesanan::STATUS_DIBATALKAN) {
+            app(PesananService::class)->batalkan($pesanan, auth()->id(), 'Dibatalkan melalui API.');
+        } else {
+            $pesanan->update(['status_pesanan' => $data['status_pesanan']]);
+        }
+
+        $masihAdaPesananAktif = Pesanan::query()
+            ->where('meja_id', $pesanan->meja_id)
+            ->whereNotIn('status_pesanan', [Pesanan::STATUS_SELESAI, Pesanan::STATUS_DIBATALKAN])
+            ->exists();
+
+        if (! $masihAdaPesananAktif) {
+            $pesanan->meja()->update(['status_meja' => 'kosong']);
+        }
 
         return ApiResponse::success($pesanan->fresh());
     }

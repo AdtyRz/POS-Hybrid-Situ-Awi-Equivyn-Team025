@@ -99,7 +99,7 @@
                                         Staf</span>
                                 </div>
                                 <p class="text-stone-600 text-[11.5px] mt-1 leading-relaxed">Setiap staf wajib login
-                                    menggunakan ID akun masing-masing. Dilarang berbagi PIN operasional kasir atau
+                                    menggunakan ID akun masing-masing. Dilarang berbagi kata sandi kasir atau
                                     stasiun KDS demi akurasi pelaporan shift.</p>
                             </div>
                         </div>
@@ -119,12 +119,11 @@
                                     <h3 class="font-bold text-[#7a5c0f] text-[12px]">Sinkronisasi IoT &amp; Pesanan
                                         Real-time</h3>
                                     <span
-                                        class="bg-[#fdebc8] text-[#7a5c0f] text-[10px] font-semibold rounded px-2 py-0.5 shrink-0">MQTT
-                                        Live</span>
+                                        class="bg-[#fdebc8] text-[#7a5c0f] text-[10px] font-semibold rounded px-2 py-0.5 shrink-0">Realtime</span>
                                 </div>
                                 <p class="text-stone-600 text-[11.5px] mt-1 leading-relaxed">Seluruh pesanan tamu
-                                    berbasis QR saung tersinkron otomatis ke KDS Dapur &amp; Bar via WebSocket &amp;
-                                    MQTT Broker. Pastikan status koneksi selalu Online.</p>
+                                    berbasis QR saung tersinkron otomatis ke KDS Dapur &amp; Bar melalui server realtime.
+                                    Pastikan status koneksi selalu Online.</p>
                             </div>
                         </div>
 
@@ -155,7 +154,6 @@
                         <div
                             class="pointer-events-none absolute -bottom-40 -left-32 w-[234px] h-[234px] rounded-full bg-[#052E1B] opacity-15 blur-3xl">
                         </div>
-
 
                         <div
                             class="flex items-center justify-center mt-auto pt-7 text-[11.5px] relative overflow-hidden">

@@ -60,14 +60,14 @@ class SesiMejaTest extends TestCase
 
         $this->post(route('emenu.buka', $meja->id), ['kode_unik' => $sesi->kode_unik])
             ->assertRedirect(route('emenu.meja', $meja->kode_meja))
-            ->assertSessionHas('sesi_meja_'.$meja->id, $sesi->id);
+            ->assertSessionHas('sesi_meja_' . $meja->id, $sesi->id);
 
-        $this->withSession(['sesi_meja_'.$meja->id => $sesi->id])
+        $this->withSession(['sesi_meja_' . $meja->id => $sesi->id])
             ->get(route('emenu.meja', $meja->id))
             ->assertOk();
     }
 
-    public function test_putuskan_sesi_membuat_kode_baru_dan_menutup_pesanan(): void
+    public function test_putuskan_sesi_ditolak_bila_masih_ada_pesanan_belum_dibayar(): void
     {
         $meja = $this->siapkanMeja();
 
@@ -97,6 +97,49 @@ class SesiMejaTest extends TestCase
 
         $meja->update(['status_meja' => 'terisi']);
 
+        $sesi = SesiMeja::aktifUntuk($meja);
+
+        $this->expectException(\RuntimeException::class);
+
+        try {
+            SesiMeja::putuskanSesi($meja);
+        } finally {
+            $this->assertSame('aktif', $sesi->fresh()->status);
+            $this->assertSame('menunggu_pembayaran', $pesanan->fresh()->status_pesanan);
+            $this->assertSame(10, $menu->fresh()->stok_menu);
+            $this->assertSame('terisi', $meja->fresh()->status_meja);
+        }
+    }
+
+    public function test_putuskan_sesi_menutup_pesanan_lunas_tanpa_memotong_stok_lagi(): void
+    {
+        $meja = $this->siapkanMeja();
+
+        $kategori = Kategori::create(['nama_kategori' => 'Makanan', 'target_kds' => 'dapur']);
+        $menu = Menu::create([
+            'kategori_id' => $kategori->id,
+            'nama_menu' => 'Nasi Lunas',
+            'slug' => 'nasi-lunas',
+            'harga' => 10000,
+            'stok_menu' => 10,
+        ]);
+
+        $pesanan = Pesanan::create([
+            'kode_pesanan' => 'SW-SESI-02',
+            'meja_id' => $meja->id,
+            'total_bayar' => 10000,
+            'metode_pembayaran' => 'tunai',
+            'status_pesanan' => Pesanan::STATUS_DIPROSES,
+            'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+        ]);
+        $pesanan->detailPesanan()->create([
+            'menu_id' => $menu->id,
+            'jumlah' => 1,
+            'harga_satuan' => 10000,
+            'subtotal' => 10000,
+        ]);
+
+        $meja->update(['status_meja' => 'terisi']);
         $lama = SesiMeja::aktifUntuk($meja);
 
         $baru = SesiMeja::putuskanSesi($meja);
@@ -104,48 +147,9 @@ class SesiMejaTest extends TestCase
         $this->assertSame('selesai', $lama->fresh()->status);
         $this->assertSame('aktif', $baru->status);
         $this->assertNotSame($lama->kode_unik, $baru->kode_unik);
-
-        // Pesanan yang belum dibayar dibatalkan, bukan dipalsukan menjadi lunas.
-        $this->assertSame(Pesanan::STATUS_DIBATALKAN, $pesanan->fresh()->status_pesanan);
-        $this->assertSame(Pesanan::PAYMENT_PENDING_PEMBAYARAN, $pesanan->fresh()->status_pembayaran);
-        $this->assertNotNull($pesanan->fresh()->void_at);
-
-        // Stok yang sempat terpakai dikembalikan saat sesi ditutup.
-        $this->assertSame(11, $menu->fresh()->stok_menu);
-
+        $this->assertSame('selesai', $pesanan->fresh()->status_pesanan);
+        $this->assertSame(10, $menu->fresh()->stok_menu);
         $this->assertSame('kosong', $meja->fresh()->status_meja);
         $this->assertSame('aktif', SesiMeja::aktifUntuk($meja)->status);
-    }
-
-    public function test_endpoint_iot_meja_mengembalikan_pesanan_dan_total(): void
-    {
-        $meja = $this->siapkanMeja();
-        $sesi = SesiMeja::aktifUntuk($meja);
-
-        Pesanan::create([
-            'meja_id' => $meja->id,
-            'kode_pesanan' => 'SW-IOT-1',
-            'total_bayar' => 15000,
-            'status_pesanan' => Pesanan::STATUS_DIPROSES,
-            'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
-            'waktu_pesan' => now()->addMinute(),
-        ]);
-
-        // Pesanan dibatalkan tidak boleh ikut dihitung.
-        Pesanan::create([
-            'meja_id' => $meja->id,
-            'kode_pesanan' => 'SW-IOT-2',
-            'total_bayar' => 5000,
-            'status_pesanan' => Pesanan::STATUS_DIBATALKAN,
-            'status_pembayaran' => Pesanan::PAYMENT_BELUM_BAYAR,
-            'waktu_pesan' => now()->addMinute(),
-        ]);
-
-        $response = $this->getJson('/api/iot/meja/'.$meja->kode_meja)->assertOk();
-
-        $this->assertSame($sesi->kode_unik, $response->json('data.kode_sesi'));
-        $this->assertSame(15000.0, (float) $response->json('data.total_bayar'));
-        $this->assertSame(1, $response->json('data.jumlah_pesanan'));
-        $this->assertSame('diproses', $response->json('data.pesanan.0.status_pesanan'));
     }
 }

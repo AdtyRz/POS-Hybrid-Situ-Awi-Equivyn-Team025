@@ -31,7 +31,7 @@
                         <div class="flex items-start justify-between gap-4">
                             <div class="flex-1">
                                 <p class="font-bold text-lg text-[#1C1C18]">Meja {{ $p->meja->kode_meja }} ({{ $p->meja->area }})</p>
-                                <p class="text-[#404941] text-sm mt-1">Dipanggil: {{ $p->waktu_panggil->format('H:i:s') }} WIB</p>
+                                <p class="text-[#404941] text-sm mt-1">Dipanggil: {{ $p->waktu_panggil->timezone('Asia/Jakarta')->format('H:i:s') }} WIB</p>
                                 <p class="text-[#908E8A] text-xs mt-0.5">Waktu tunggu: {{ $p->waktu_panggil->diffForHumans() }}</p>
                             </div>
                             <div class="flex items-center gap-2 shrink-0">

@@ -9,6 +9,7 @@ use App\Models\Pesanan;
 use App\Models\SesiMeja;
 use App\Models\User;
 use App\Services\PesananService;
+use App\Services\StokService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -86,7 +87,7 @@ class BackendHardeningTest extends TestCase
         ])->assertNotFound();
     }
 
-    public function test_api_pesanan_memakai_kode_kanonik_pajak_dan_mengurangi_stok(): void
+    public function test_api_pesanan_memakai_kode_kanonik_tanpa_pajak_dan_stok_baru_dipotong_setelah_bayar(): void
     {
         $meja = $this->meja();
         $menu = $this->menu(10, 10000);
@@ -101,15 +102,14 @@ class BackendHardeningTest extends TestCase
 
         $this->assertStringStartsWith('SW-', $data['kode_pesanan']);
         $this->assertStringContainsString('-'.$meja->id, $data['kode_pesanan']);
-        $this->assertSame(22000.0, (float) $data['total_bayar']);
+        $this->assertSame(20000.0, (float) $data['total_bayar']);
         $this->assertSame(Pesanan::STATUS_MENUNGGU, $data['status_pesanan']);
         $this->assertSame(Pesanan::PAYMENT_BELUM_BAYAR, $data['status_pembayaran']);
-        $this->assertSame(8, $menu->fresh()->stok_menu);
+        $this->assertSame(10, $menu->fresh()->stok_menu);
         $this->assertSame('terisi', $meja->fresh()->status_meja);
-        $this->assertDatabaseHas('stok_mutasi', [
+        $this->assertDatabaseMissing('stok_mutasi', [
             'menu_id' => $menu->id,
             'jenis' => 'penjualan',
-            'jumlah_delta' => -2,
         ]);
     }
 
@@ -157,14 +157,14 @@ class BackendHardeningTest extends TestCase
             'kode_pesanan' => $pesanan->kode_pesanan,
             'metode_pembayaran' => 'tunai',
             'jumlah_bayar' => 11000,
-        ])->assertRedirect(route('kasir.dashboard'));
+        ])->assertRedirect(route('kasir.dashboard', ['meja' => $meja->kode_meja]));
 
         $this->assertSame('terisi', $meja->fresh()->status_meja);
         $this->assertSame(Pesanan::PAYMENT_SUDAH_BAYAR, $pesanan->fresh()->status_pembayaran);
         $this->assertSame(Pesanan::STATUS_DIPROSES, $pesanan->fresh()->status_pesanan);
     }
 
-    public function test_tutup_sesi_tidak_memalsukan_status_pembayaran(): void
+    public function test_tutup_sesi_ditolak_bila_masih_ada_tagihan_belum_dibayar(): void
     {
         $meja = $this->meja();
         $menu = $this->menu(10);
@@ -175,17 +175,19 @@ class BackendHardeningTest extends TestCase
 
         $belumBayar = $service->buat($meja, [$menu->id => 2], [], ['asal' => 'kasir']);
 
-        SesiMeja::putuskanSesi($meja);
+        $this->expectException(\RuntimeException::class);
 
-        $this->assertSame(Pesanan::STATUS_SELESAI, $lunas->fresh()->status_pesanan);
-        $this->assertSame(Pesanan::PAYMENT_SUDAH_BAYAR, $lunas->fresh()->status_pembayaran);
-
-        $this->assertSame(Pesanan::STATUS_DIBATALKAN, $belumBayar->fresh()->status_pesanan);
-        $this->assertSame(Pesanan::PAYMENT_BELUM_BAYAR, $belumBayar->fresh()->status_pembayaran);
-        $this->assertNotNull($belumBayar->fresh()->void_at);
-
-        // 10 - 1 - 2 + 2 (stok pesanan yang dibatalkan kembali).
-        $this->assertSame(9, $menu->fresh()->stok_menu);
+        try {
+            SesiMeja::putuskanSesi($meja);
+        } finally {
+            $this->assertSame(Pesanan::STATUS_MENUNGGU, $lunas->fresh()->status_pesanan);
+            $this->assertSame(Pesanan::STATUS_MENUNGGU, $belumBayar->fresh()->status_pesanan);
+            $this->assertSame(Pesanan::PAYMENT_SUDAH_BAYAR, $lunas->fresh()->status_pembayaran);
+            $this->assertSame(Pesanan::PAYMENT_BELUM_BAYAR, $belumBayar->fresh()->status_pembayaran);
+            $this->assertNull($belumBayar->fresh()->void_at);
+            $this->assertSame('terisi', $meja->fresh()->status_meja);
+            $this->assertSame(10, $menu->fresh()->stok_menu);
+        }
     }
 
     public function test_pembatalan_lewat_kasir_mengembalikan_stok(): void
@@ -200,6 +202,10 @@ class BackendHardeningTest extends TestCase
             [],
             ['asal' => 'kasir', 'metode' => 'tunai', 'kasir_id' => $kasir->id]
         );
+
+        // Stok baru dipotong setelah pembayaran.
+        app(StokService::class)->potongSetelahPembayaran($pesanan, $kasir->id);
+        $pesanan->update(['status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR]);
 
         $this->assertSame(8, $menu->fresh()->stok_menu);
 

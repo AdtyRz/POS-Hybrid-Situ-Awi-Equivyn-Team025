@@ -20,12 +20,6 @@ const echo = new Echo({
 
 window.Echo = echo;
 
-// ---------------------------------------------------------------------------
-// Realtime relay: langganan channel publik lalu teruskan event ke DOM.
-// Halaman cukup mendengarkan window event `realtime` / `realtime:<nama>`.
-// Daftar channel: halaman standalone (emenu pelanggan) boleh mengeset
-// window.__CHANNELS__ = ['pesanan.KODE'] sebelum bundle ini dieksekusi.
-// ---------------------------------------------------------------------------
 const REALTIME_EVENTS = ['pesanan.baru', 'status.berubah', 'panggilan.pelayan', 'menu.diperbarui', 'sesi.berubah'];
 
 const DEFAULT_CHANNELS = ['kds.dapur', 'kds.bar', 'kasir', 'pelayan', 'admin', 'menu'];
@@ -46,7 +40,6 @@ channels.forEach((channelName) => {
     });
 });
 
-// Reload halaman sekali (debounced) sebagai reaksi default event realtime.
 window.realtimeReload = (delay = 500) => {
     if (window.realtimeReload._timer) return;
     window.realtimeReload._timer = setTimeout(() => window.location.reload(), delay);
