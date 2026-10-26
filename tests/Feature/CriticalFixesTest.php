@@ -8,6 +8,8 @@ use App\Models\Menu;
 use App\Models\Pesanan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -108,16 +110,12 @@ class CriticalFixesTest extends TestCase
         $this->assertSame('diproses', $pesanan->fresh()->status_pesanan);
     }
 
-    public function test_api_ubah_status_role_salah_ditolak(): void
+    public function test_api_iot_panggilan_role_salah_ditolak(): void
     {
-        $meja = $this->buatMeja();
-        $pesanan = $this->buatPesanan($meja);
-        $pelanggan = User::factory()->create(['role' => 'pelanggan']);
+        $kasir = User::factory()->create(['role' => 'kasir']);
 
-        $this->actingAs($pelanggan)
-            ->patchJson('/api/v1/pesanan/' . $pesanan->kode_pesanan . '/status', [
-                'status_pesanan' => 'diproses',
-            ])
+        $this->actingAs($kasir)
+            ->getJson('/api/v1/iot/panggilan')
             ->assertStatus(403);
     }
 
@@ -139,6 +137,173 @@ class CriticalFixesTest extends TestCase
 
         $kasir = User::factory()->create(['role' => 'kasir']);
         $this->actingAs($kasir)->postJson('/api/v1/pembayaran', $body)->assertStatus(201);
+    }
+
+    public function test_halaman_master_menu_menampilkan_data_database(): void
+    {
+        $this->withoutVite();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $kategori = Kategori::create([
+            'nama_kategori' => 'Makanan',
+            'target_kds' => 'dapur',
+        ]);
+        Menu::create([
+            'kategori_id' => $kategori->id,
+            'nama_menu' => 'Menu Tampil Database',
+            'slug' => 'menu-tampil-database',
+            'harga' => 18000,
+            'stok_menu' => 6,
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.master-menu'))
+            ->assertOk()
+            ->assertSee('Master Data Menu & Stok')
+            ->assertSee('Menu Tampil Database')
+            ->assertDontSee('Muat Ulang');
+
+        $this->actingAs($admin)->getJson(route('admin.menu.data'))
+            ->assertOk()
+            ->assertJsonFragment(['name' => 'Menu Tampil Database'])
+            ->assertJsonFragment(['photo' => '']);
+    }
+
+    public function test_harga_menu_melebihi_batas_kolom_ditolak(): void
+    {
+        Storage::fake('public');
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $kategori = Kategori::create([
+            'nama_kategori' => 'Makanan',
+            'target_kds' => 'dapur',
+        ]);
+
+        $this->actingAs($admin)->post(route('admin.menu.simpan'), [
+            'nama_menu' => 'Menu Harga Overflow',
+            'kategori_id' => $kategori->id,
+            'harga' => 9999999999999,
+            'stok_menu' => 1,
+            'foto_menu' => UploadedFile::fake()->create('menu.jpg', 100, 'image/jpeg'),
+        ])->assertSessionHasErrors('harga');
+
+        $this->assertDatabaseMissing('menu', ['nama_menu' => 'Menu Harga Overflow']);
+        $this->assertSame([], Storage::disk('public')->files('menu'));
+    }
+
+    public function test_admin_dapat_mengunggah_foto_menu(): void
+    {
+        Storage::fake('public');
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $kategori = Kategori::create([
+            'nama_kategori' => 'Makanan',
+            'target_kds' => 'dapur',
+        ]);
+
+        $this->actingAs($admin)->post(route('admin.menu.simpan'), [
+            'nama_menu' => 'Menu Foto Uji',
+            'kategori_id' => $kategori->id,
+            'harga' => 15000,
+            'stok_menu' => 5,
+            'deskripsi' => 'Menu dengan foto',
+            'foto_menu' => UploadedFile::fake()->create('menu.jpg', 100, 'image/jpeg'),
+        ])->assertRedirect();
+
+        $menu = Menu::where('nama_menu', 'Menu Foto Uji')->firstOrFail();
+
+        $this->assertNotNull($menu->foto_menu);
+        Storage::disk('public')->assertExists($menu->foto_menu);
+    }
+
+    public function test_admin_dapat_mengganti_foto_menu_dan_foto_lama_dihapus(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('menu/foto-lama.jpg', 'lama');
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $kategori = Kategori::create([
+            'nama_kategori' => 'Makanan',
+            'target_kds' => 'dapur',
+        ]);
+        $menu = Menu::create([
+            'kategori_id' => $kategori->id,
+            'nama_menu' => 'Menu Ganti Foto',
+            'slug' => 'menu-ganti-foto',
+            'harga' => 15000,
+            'stok_menu' => 5,
+            'foto_menu' => 'menu/foto-lama.jpg',
+        ]);
+
+        $this->actingAs($admin)->put(route('admin.menu.ubah', $menu->id), [
+            'nama_menu' => 'Menu Ganti Foto',
+            'kategori_id' => $kategori->id,
+            'harga' => 15000,
+            'stok_menu' => 5,
+            'foto_menu' => UploadedFile::fake()->create('foto-baru.jpg', 100, 'image/jpeg'),
+        ])->assertRedirect();
+
+        $menu->refresh();
+
+        Storage::disk('public')->assertMissing('menu/foto-lama.jpg');
+        Storage::disk('public')->assertExists($menu->foto_menu);
+        $this->assertNotSame('menu/foto-lama.jpg', $menu->foto_menu);
+    }
+
+    public function test_upload_foto_menu_menolak_ekstensi_php(): void
+    {
+        Storage::fake('public');
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $kategori = Kategori::create([
+            'nama_kategori' => 'Makanan',
+            'target_kds' => 'dapur',
+        ]);
+
+        $this->actingAs($admin)->post(route('admin.menu.simpan'), [
+            'nama_menu' => 'Menu Ekstensi PHP',
+            'kategori_id' => $kategori->id,
+            'harga' => 15000,
+            'stok_menu' => 5,
+            'foto_menu' => UploadedFile::fake()->create('shell.php', 100, 'image/jpeg'),
+        ])->assertSessionHasErrors('foto_menu');
+
+        $this->assertDatabaseMissing('menu', ['nama_menu' => 'Menu Ekstensi PHP']);
+        $this->assertSame([], Storage::disk('public')->files('menu'));
+    }
+
+    public function test_stok_dipotong_setelah_pembayaran_dan_tidak_dua_kali(): void
+    {
+        $meja = $this->buatMeja('LB-21');
+        $menu = $this->buatMenu(10);
+        $pesanan = $this->buatPesanan($meja);
+        $pesanan->update(['total_bayar' => 50000]);
+        $pesanan->detailPesanan()->create([
+            'menu_id' => $menu->id,
+            'jumlah' => 2,
+            'harga_satuan' => 25000,
+            'subtotal' => 50000,
+        ]);
+
+        $kasir = User::factory()->create(['role' => 'kasir']);
+        $body = [
+            'kode_pesanan' => $pesanan->kode_pesanan,
+            'metode_pembayaran' => 'tunai',
+            'jumlah_bayar' => 50000,
+        ];
+
+        $this->actingAs($kasir)->postJson('/api/v1/pembayaran', $body)->assertStatus(201);
+
+        $this->assertSame(8, $menu->fresh()->stok_menu);
+        $this->assertDatabaseHas('stok_mutasi', [
+            'menu_id' => $menu->id,
+            'pesanan_id' => $pesanan->id,
+            'jenis' => 'penjualan',
+            'jumlah_delta' => -2,
+            'stok_akhir' => 8,
+        ]);
+
+        $this->actingAs($kasir)->postJson('/api/v1/pembayaran', $body)->assertStatus(409);
+        $this->assertSame(8, $menu->fresh()->stok_menu);
     }
 
     public function test_api_antrean_panggilan_iot_butuh_pelayan(): void
@@ -192,6 +357,7 @@ class CriticalFixesTest extends TestCase
         ])->assertStatus(201);
 
         $this->assertSame(1, Pesanan::count());
+        $this->assertSame(10, $menu->fresh()->stok_menu);
     }
 
     public function test_api_daftar_meja_tidak_membocorkan_qr_token(): void

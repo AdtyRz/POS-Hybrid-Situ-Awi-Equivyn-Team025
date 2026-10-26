@@ -5,7 +5,6 @@
 @section('content')
 <div x-data="pelayanTabSaung()" class="relative flex flex-col min-h-screen bg-[#FCF9F2]" x-init="init()">
 
-    <!-- Header (07C - Mobile POS Header) -->
     <header class="sticky top-0 z-40 bg-[rgba(252,249,242,0.85)] backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] px-4 py-2.5 h-16 flex items-center justify-between border-b border-[#E5E2DB]/50">
         <div class="flex items-center gap-2">
             <img src="{{ asset('asset/Logo.png') }}" alt="Logo Situ Awi" class="h-8 max-w-[45.25px] w-auto object-contain flex-shrink-0">
@@ -16,23 +15,20 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <!-- LIVE Pill -->
+
             <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F0EEE7] shadow-[0_1px_4px_rgba(43,42,38,0.04)]">
                 <span class="w-2 h-2 rounded-full bg-[#7A5900]"></span>
                 <span class="text-[10px] font-bold text-[#404941] tracking-[-0.25px]">LIVE</span>
             </div>
 
-            <!-- Avatar -->
             <div class="w-8 h-8 rounded-full bg-[#0B4D2B] text-[#B1F1C2] font-bold text-[10px] flex items-center justify-center shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
                 {{ strtoupper(substr(auth()->user()->nama ?? auth()->user()->name ?? 'P', 0, 2)) }}
             </div>
         </div>
     </header>
 
-    <!-- Main Container -->
     <div class="px-4 py-3 space-y-4 flex-1">
 
-        <!-- Runner Context & IoT Mesh Status Header Card -->
         <section class="bg-[#F6F3EC] rounded-2xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-col gap-2">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2.5">
@@ -60,8 +56,7 @@
                     </div>
                 </div>
 
-                <!-- Quick QR Scanner Action for Table Check-in -->
-                <button @click="showQrModal = true" type="button" 
+                <button @click="showQrModal = true" type="button"
                         class="w-10 h-10 rounded-xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-center transition-all active:scale-95 cursor-pointer">
                     <svg class="w-[18.33px] h-[18.33px] text-[#0B4D2B]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
@@ -69,7 +64,6 @@
                 </button>
             </div>
 
-            <!-- Active Area & IoT Mesh Status Strip -->
             <div class="bg-[#F0EEE7] rounded-xl px-3 py-2 flex items-center justify-between text-xs h-8">
                 <div class="flex items-center gap-1.5 text-[#1C1C18] font-semibold tracking-[0.24px] truncate">
                     <svg class="w-[13.88px] h-[15.36px] text-[#00341A] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -85,27 +79,23 @@
             </div>
         </section>
 
-        <!-- Occupancy Overview Metrics (4 Cards) -->
         <section class="grid grid-cols-4 gap-2">
-            <!-- Total -->
+
             <div class="bg-[#F6F3EC] rounded-xl p-2.5 flex flex-col items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] h-[62px]">
                 <span class="font-bold text-[20px] text-[#1C1C18] leading-7" x-text="totalMeja">{{ $totalMeja ?? 11 }}</span>
                 <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px] mt-0.5" x-text="'Total (' + totalPercentage + '%)'">Total ({{ ($totalMeja ?? 0) > 0 ? round((($terisiCount ?? 0) / $totalMeja) * 100) : 0 }}%)</span>
             </div>
 
-            <!-- Terisi -->
             <div class="bg-[#F6F3EC] rounded-xl p-2.5 flex flex-col items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] h-[62px]">
                 <span class="font-bold text-[20px] text-[#0B4D2B] leading-7" x-text="terisiCount">{{ $terisiCount ?? 0 }}</span>
                 <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px] mt-0.5">Terisi</span>
             </div>
 
-            <!-- Tersedia -->
             <div class="bg-[#F6F3EC] rounded-xl p-2.5 flex flex-col items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] h-[62px]">
                 <span class="font-bold text-[20px] text-[#7A5900] leading-7" x-text="tersediaCount">{{ $tersediaCount ?? 0 }}</span>
                 <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px] mt-0.5">Tersedia</span>
             </div>
 
-            <!-- Panggilan -->
             <div class="bg-[#FFDAD6] rounded-xl p-2.5 flex flex-col items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] h-[62px] relative">
                 <span class="font-bold text-[20px] text-[#93000A] leading-7" x-text="panggilanCount">{{ $panggilanCount ?? 0 }}</span>
                 <span class="text-[10px] font-semibold text-[#93000A] tracking-[0.4px] mt-0.5">Panggilan</span>
@@ -115,10 +105,9 @@
             </div>
         </section>
 
-        <!-- Cluster Filter Chips (Horizontal Scroll) -->
         <section class="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none">
-            <!-- Semua Saung -->
-            <button @click="selectedCluster = 'all'" type="button" 
+
+            <button @click="selectedCluster = 'all'" type="button"
                     :class="selectedCluster === 'all' ? 'bg-[#0B4D2B] text-white' : 'bg-[#EBE8E1] text-[#1C1C18]'"
                     class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-xs font-semibold tracking-[0.24px] whitespace-nowrap transition-all active:scale-95 cursor-pointer flex-shrink-0">
                 <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
@@ -127,8 +116,7 @@
                 <span x-text="'Semua Saung (' + totalMeja + ')'">Semua Saung ({{ $totalMeja ?? 11 }})</span>
             </button>
 
-            <!-- Cluster Danau -->
-            <button @click="selectedCluster = 'danau'" type="button" 
+            <button @click="selectedCluster = 'danau'" type="button"
                     :class="selectedCluster === 'danau' ? 'bg-[#0B4D2B] text-white' : 'bg-[#EBE8E1] text-[#1C1C18]'"
                     class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-xs font-semibold tracking-[0.24px] whitespace-nowrap transition-all active:scale-95 cursor-pointer flex-shrink-0">
                 <svg class="w-3.5 h-3 text-[#00341A]" fill="currentColor" viewBox="0 0 20 20">
@@ -137,8 +125,7 @@
                 <span>Cluster Danau ({{ $clusters->firstWhere('key', 'lb')['count'] ?? 5 }})</span>
             </button>
 
-            <!-- Cluster Balong -->
-            <button @click="selectedCluster = 'balong'" type="button" 
+            <button @click="selectedCluster = 'balong'" type="button"
                     :class="selectedCluster === 'balong' ? 'bg-[#0B4D2B] text-white' : 'bg-[#EBE8E1] text-[#1C1C18]'"
                     class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-xs font-semibold tracking-[0.24px] whitespace-nowrap transition-all active:scale-95 cursor-pointer flex-shrink-0">
                 <svg class="w-3.5 h-3.5 text-[#7A5900]" fill="currentColor" viewBox="0 0 20 20">
@@ -147,8 +134,7 @@
                 <span>Cluster Balong ({{ $clusters->firstWhere('key', 'la')['count'] ?? 2 }})</span>
             </button>
 
-            <!-- Meja Kayu -->
-            <button @click="selectedCluster = 'kayu'" type="button" 
+            <button @click="selectedCluster = 'kayu'" type="button"
                     :class="selectedCluster === 'kayu' ? 'bg-[#0B4D2B] text-white' : 'bg-[#EBE8E1] text-[#1C1C18]'"
                     class="inline-flex items-center gap-1.5 px-4 h-9 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-xs font-semibold tracking-[0.24px] whitespace-nowrap transition-all active:scale-95 cursor-pointer flex-shrink-0">
                 <svg class="w-3.5 h-3 text-[#707971]" fill="currentColor" viewBox="0 0 20 20">
@@ -158,7 +144,6 @@
             </button>
         </section>
 
-        <!-- CLUSTER A: Lesehan Tepi Danau (Runner's Assigned Sector) -->
         <section x-show="selectedCluster === 'all' || selectedCluster === 'danau'" class="space-y-3 pt-1">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
@@ -171,18 +156,16 @@
                 <span class="text-xs font-medium text-[#404941]">5 Saung</span>
             </div>
 
-            <!-- CARD LB-02: ACTIVE CRITICAL CALL / NORMAL STATE -->
             <div class="bg-white rounded-2xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.1)] relative overflow-hidden flex flex-col gap-2 transition-all"
                  :class="lb02Calling ? 'border border-[#BA1A1A]/30 ring-1 ring-[#BA1A1A]' : 'border border-[#F0EEE7]'">
-                
-                <!-- Glow & Warning Accent Bar (Shown only when calling) -->
+
                 <div x-show="lb02Calling" class="h-1.5 bg-[#BA1A1A] w-full"></div>
 
                 <div class="p-3.5 space-y-2.5">
-                    <!-- Top Info Row -->
+
                     <div class="flex items-start justify-between">
                         <div class="flex items-center gap-2.5">
-                            <!-- Square Badge -->
+
                             <div class="w-12 h-12 rounded-xl flex flex-col items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex-shrink-0"
                                  :class="lb02Calling ? 'bg-[#FFDAD6] text-[#93000A]' : 'bg-[#F0EEE7] text-[#1C1C18]'">
                                 <span class="text-[10px] font-bold uppercase tracking-[0.4px]">SAUNG</span>
@@ -192,7 +175,7 @@
                             <div class="flex flex-col">
                                 <div class="flex items-center gap-2">
                                     <h3 class="font-bold text-base text-[#1C1C18] leading-6">{{ $panggilanAktif->first() ? $panggilanAktif->first()->meja->kode_meja : 'LB-02' }} Teratai 2</h3>
-                                    <!-- Bell on badge: ONLY when calling -->
+
                                     <template x-if="lb02Calling">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-[#BA1A1A] text-white text-[10px] font-bold tracking-[0.4px] animate-pulse">
                                             BELL ON
@@ -208,7 +191,6 @@
                             </div>
                         </div>
 
-                        <!-- Time Ago -->
                         <div class="flex items-center gap-1 text-[10px] font-bold"
                              :class="lb02Calling ? 'text-[#BA1A1A]' : 'text-[#404941]'">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -219,8 +201,7 @@
                         </div>
                     </div>
 
-                    <!-- Request Note Banner (Shown ONLY when calling) -->
-                    <div x-show="lb02Calling" 
+                    <div x-show="lb02Calling"
                          x-transition:leave="transition ease-in duration-200 transform opacity-0 -translate-y-2"
                          class="bg-[rgba(255,218,214,0.6)] rounded-xl p-2.5 flex items-start gap-2 border border-[#BA1A1A]/20">
                         <svg class="w-4 h-4 text-[#BA1A1A] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -236,10 +217,9 @@
                         </div>
                     </div>
 
-                    <!-- Quick Action Buttons for Call (Shown ONLY when calling) -->
                     <div x-show="lb02Calling" class="flex items-center gap-2 pt-1">
-                        <!-- Button 1: Respon & Temui (Clicking clears call) -->
-                        <button @click="respondCall()" type="button" 
+
+                        <button @click="respondCall()" type="button"
                                 class="flex-1 h-12 rounded-xl bg-[#FECE66] hover:bg-[#F5BF45] text-[#765600] font-bold text-sm tracking-[0.14px] shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-center gap-1.5 transition-all active:scale-98 cursor-pointer">
                             <svg class="w-3.5 h-4.5 text-[#765600]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -247,7 +227,6 @@
                             <span>Respon & Temui</span>
                         </button>
 
-                        <!-- Button 2: Matikan Buzzer -->
                         <button @click="muteBuzzer()" type="button" :disabled="!buzzerActive"
                                 class="flex-1 h-12 rounded-xl bg-[#F0EEE7] hover:bg-[#E5E2DB] text-[#404941] font-semibold text-sm tracking-[0.14px] flex items-center justify-center gap-1.5 transition-all active:scale-98 cursor-pointer disabled:opacity-50">
                             <svg class="w-4 h-4 text-[#404941]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -258,7 +237,6 @@
                         </button>
                     </div>
 
-                    <!-- Normal State Bottom Footer (When NOT calling) -->
                     <div x-show="!lb02Calling" class="flex items-center justify-between text-xs pt-2 border-t border-[#F0EEE7]">
                         <span class="text-[#404941] flex items-center gap-1">
                             <svg class="w-3.5 h-3.5 text-[#00341A]" fill="currentColor" viewBox="0 0 20 20">
@@ -274,7 +252,6 @@
                 </div>
             </div>
 
-            <!-- CARD LB-05: Siap Antar Bar Pass -->
             <div class="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-[#F0EEE7] p-4 flex flex-col gap-2">
                 <div class="flex items-start justify-between">
                     <div class="flex items-center gap-2.5">
@@ -299,7 +276,6 @@
                     </div>
                 </div>
 
-                <!-- Drink Order Summary Strip -->
                 <div class="bg-[#F6F3EC] rounded-xl p-2.5 flex items-center justify-between text-xs">
                     <div class="flex items-center gap-2 font-semibold text-sm text-[#1C1C18] leading-5">
                         <svg class="w-4 h-4 text-[#7A5900]" fill="currentColor" viewBox="0 0 20 20">
@@ -310,8 +286,7 @@
                     <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px]">5 Item</span>
                 </div>
 
-                <!-- Action Button -->
-                <button @click="triggerToast('Pesanan minuman Saung 05 diambil dari Bar Counter.')" type="button" 
+                <button @click="triggerToast('Pesanan minuman Saung 05 diambil dari Bar Counter.')" type="button"
                         class="w-full h-11 rounded-xl bg-[#0B4D2B] hover:bg-[#00341A] text-white font-bold text-sm tracking-[0.14px] shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer">
                     <svg class="w-4 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
@@ -320,7 +295,6 @@
                 </button>
             </div>
 
-            <!-- CARD LB-01: Dining in Progress -->
             <div class="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-[#F0EEE7] p-4 flex flex-col gap-2">
                 <div class="flex items-start justify-between">
                     <div class="flex items-center gap-2.5">
@@ -361,7 +335,6 @@
                 </div>
             </div>
 
-            <!-- CARD LB-04: Cooking in Kitchen Progress -->
             <div class="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-[#F0EEE7] p-4 flex flex-col gap-2">
                 <div class="flex items-start justify-between">
                     <div class="flex items-center gap-2.5">
@@ -382,7 +355,6 @@
                     <span class="text-[10px] font-bold text-[#7A5900] tracking-[0.4px]">Est. 12 mnt</span>
                 </div>
 
-                <!-- Cooking Progress Bar -->
                 <div class="space-y-1 pt-1">
                     <div class="flex items-center justify-between text-[10px] font-bold text-[#404941] tracking-[0.4px]">
                         <span>Gurame Bakar Cobek & Karedok</span>
@@ -394,7 +366,6 @@
                 </div>
             </div>
 
-            <!-- CARD LB-03: Empty & Ready for Guests -->
             <div class="bg-[#F6F3EC] rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-[#E5E2DB]/70 p-4 flex flex-col gap-2.5">
                 <div class="flex items-start justify-between">
                     <div class="flex items-center gap-2.5">
@@ -418,7 +389,7 @@
                 </div>
 
                 <div class="flex items-center gap-2 pt-1">
-                    <button @click="triggerToast('Token QR Meja LB-03 siap discan oleh tamu baru.')" type="button" 
+                    <button @click="triggerToast('Token QR Meja LB-03 siap discan oleh tamu baru.')" type="button"
                             class="flex-1 h-11 rounded-xl bg-white text-[#1C1C18] font-semibold text-xs tracking-[0.24px] shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-[#E5E2DB] flex items-center justify-center gap-1.5 active:scale-98 cursor-pointer">
                         <svg class="w-3.5 h-3.5 text-[#00341A]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
@@ -426,7 +397,7 @@
                         <span>QR Meja Aktif</span>
                     </button>
 
-                    <button @click="openTable('LB-03')" type="button" 
+                    <button @click="openTable('LB-03')" type="button"
                             class="flex-1 h-11 rounded-xl bg-[#0B4D2B] hover:bg-[#00341A] text-white font-bold text-xs tracking-[0.24px] shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-center gap-1.5 active:scale-98 cursor-pointer">
                         <svg class="w-4 h-3 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -437,7 +408,6 @@
             </div>
         </section>
 
-        <!-- CLUSTER B: Lesehan Atas Balong Indah (2 Saung) -->
         <section x-show="selectedCluster === 'all' || selectedCluster === 'balong'" class="space-y-3 pt-1">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
@@ -447,7 +417,6 @@
                 <span class="text-xs font-medium text-[#404941]">2 Saung</span>
             </div>
 
-            <!-- Card LA-01 -->
             <div class="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-[#F0EEE7] p-4 flex items-center justify-between h-[76px]">
                 <div class="flex items-center gap-2.5">
                     <div class="w-11 h-11 rounded-xl bg-[#F0EEE7] text-[#1C1C18] flex flex-col items-center justify-center flex-shrink-0">
@@ -465,7 +434,6 @@
                 </span>
             </div>
 
-            <!-- Card LA-02 (Reserved) -->
             <div class="bg-white rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-[#F0EEE7] p-4 flex items-center justify-between h-[76px]">
                 <div class="flex items-center gap-2.5">
                     <div class="w-11 h-11 rounded-xl bg-[#FFDEA1] text-[#261900] flex flex-col items-center justify-center flex-shrink-0">
@@ -490,7 +458,6 @@
             </div>
         </section>
 
-        <!-- CLUSTER C: Area Meja Kursi Kayu (4 Meja - 2x2 Grid) -->
         <section x-show="selectedCluster === 'all' || selectedCluster === 'kayu'" class="space-y-3 pt-1">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
@@ -500,9 +467,8 @@
                 <span class="text-xs font-medium text-[#404941]">4 Meja</span>
             </div>
 
-            <!-- 2x2 Grid -->
             <div class="grid grid-cols-2 gap-3">
-                <!-- KA-01 -->
+
                 <div class="bg-white rounded-2xl p-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-[#F0EEE7] h-28 flex flex-col justify-between">
                     <div class="flex items-center justify-between">
                         <span class="font-bold text-base text-[#1C1C18]">KA-01</span>
@@ -516,7 +482,6 @@
                     </div>
                 </div>
 
-                <!-- KA-02 -->
                 <div class="bg-[#F6F3EC] rounded-2xl p-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-[#E5E2DB]/60 h-28 flex flex-col justify-between">
                     <div class="flex items-center justify-between">
                         <span class="font-bold text-base text-[#1C1C18]">KA-02</span>
@@ -530,7 +495,6 @@
                     </div>
                 </div>
 
-                <!-- KA-03 -->
                 <div class="bg-[#F6F3EC] rounded-2xl p-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-[#E5E2DB]/60 h-28 flex flex-col justify-between">
                     <div class="flex items-center justify-between">
                         <span class="font-bold text-base text-[#1C1C18]">KA-03</span>
@@ -544,7 +508,6 @@
                     </div>
                 </div>
 
-                <!-- KA-04 -->
                 <div class="bg-white rounded-2xl p-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-[#F0EEE7] h-28 flex flex-col justify-between">
                     <div class="flex items-center justify-between">
                         <span class="font-bold text-base text-[#1C1C18]">KA-04</span>
@@ -560,9 +523,8 @@
             </div>
         </section>
 
-        <!-- Primary Action Trigger (Input Pesanan Tambahan / Walk-in) -->
         <div class="pt-3 pb-2">
-            <button @click="showNewOrderModal = true" type="button" 
+            <button @click="showNewOrderModal = true" type="button"
                     class="w-full h-14 rounded-2xl bg-[#FECE66] hover:bg-[#F5BF45] text-[#765600] font-bold text-sm tracking-[0.35px] shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)] flex items-center justify-center gap-2.5 transition-all active:scale-98 cursor-pointer">
                 <div class="w-7 h-7 rounded-full bg-[#765600] text-[#FECE66] flex items-center justify-center font-bold text-sm">
                     +
@@ -573,7 +535,6 @@
 
     </div>
 
-    <!-- Modal QR Scanner -->
     <div x-show="showQrModal" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
         <div @click.away="showQrModal = false" class="bg-white rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-[#E5E2DB]">
             <div class="flex items-center justify-between pb-2 border-b border-[#F0EEE7]">
@@ -586,7 +547,10 @@
             <div class="bg-[#1C1C18] rounded-xl h-48 flex flex-col items-center justify-center relative overflow-hidden border-2 border-dashed border-[#B1F1C2]">
                 <div class="w-28 h-28 border-2 border-[#FECE66] rounded-xl relative flex items-center justify-center">
                     <span class="w-full h-0.5 bg-[#FECE66] absolute animate-pulse"></span>
-                    <span class="text-3xl text-white">📷</span>
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
                 </div>
                 <span class="text-xs text-white/80 mt-3 font-mono">Arahkan ke QR Saung...</span>
             </div>
@@ -596,7 +560,6 @@
         </div>
     </div>
 
-    <!-- Modal Input Pesanan Tambahan -->
     <div x-show="showNewOrderModal" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
         <div @click.away="showNewOrderModal = false" class="bg-white rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-[#E5E2DB]">
             <div class="flex items-center justify-between pb-2 border-b border-[#F0EEE7]">
@@ -633,14 +596,13 @@
                     </div>
                 </div>
             </div>
-            <button @click="showNewOrderModal = false; triggerToast('Pesanan tambahan terkirim ke KDS Dapur & Bar.')" type="button" 
+            <button @click="showNewOrderModal = false; triggerToast('Pesanan tambahan terkirim ke KDS Dapur & Bar.')" type="button"
                     class="w-full py-3 bg-[#0B4D2B] hover:bg-[#00341A] text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-98 cursor-pointer">
                 Kirim ke Dapur / Bar
             </button>
         </div>
     </div>
 
-    <!-- Modal Rincian Pesanan -->
     <div x-show="showDetailModal" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
         <div @click.away="showDetailModal = false" class="bg-white rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-[#E5E2DB]">
             <div class="flex items-center justify-between pb-2 border-b border-[#F0EEE7]">
@@ -670,14 +632,13 @@
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div x-show="showToast" 
-         x-transition:enter="transition ease-out duration-300" 
-         x-transition:enter-start="opacity-0 translate-y-4" 
-         x-transition:enter-end="opacity-100 translate-y-0" 
-         x-transition:leave="transition ease-in duration-200" 
-         x-transition:leave-start="opacity-100 translate-y-0" 
-         x-transition:leave-end="opacity-0 translate-y-4" 
+    <div x-show="showToast"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-4"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 translate-y-4"
          class="fixed bottom-20 left-4 right-4 z-50 max-w-[390px] mx-auto pointer-events-none">
         <div class="bg-[#31312C] text-[#F3F0EA] rounded-xl px-4 py-3 flex items-center gap-3 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] border border-white/10 pointer-events-auto">
             <svg class="w-[18.33px] h-[18.33px] text-[#FFDEA1] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -703,9 +664,8 @@
             tersediaCount: {{ $tersediaCount ?? 3 }},
             panggilanCount: {{ $panggilanCount ?? 1 }},
 
-            selectedCluster: 'all', // 'all', 'danau', 'balong', 'kayu'
+            selectedCluster: 'all',
 
-            // CRITICAL: Bell ON & Permintaan Tamu merah on LB-02 only active while calling!
             lb02Calling: {{ ($panggilanCount ?? 0) > 0 ? 'true' : 'false' }},
             buzzerActive: true,
 
@@ -721,7 +681,7 @@
             showToast: false,
 
             init() {
-                // Selalu assign dari backend — tanpa kondisi > 0 agar 0 pun terbaca
+
                 this.currentArea     = '{{ $currentArea ?? "Tepi Danau (LB-01 – LB-05)" }}';
                 this.totalMeja       = {{ $totalMeja ?? 0 }};
                 this.terisiCount     = {{ $terisiCount ?? 0 }};
@@ -743,14 +703,13 @@
             },
 
             async respondCall() {
-                // When waiter clicks Respon & Temui, clear the urgent calling state!
+
                 this.lb02Calling = false;
                 this.panggilanCount = Math.max(0, this.panggilanCount - 1);
 
-                // Optional: find active call ID to send PATCH to backend
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
                 try {
-                    // Try to send update to backend if route exists
+
                     @if(isset($panggilanAktif) && count($panggilanAktif) > 0)
                         const callId = {{ $panggilanAktif[0]->id }};
                         await fetch(`/pelayan/panggilan/${callId}`, {
@@ -771,7 +730,7 @@
 
             muteBuzzer() {
                 this.buzzerActive = false;
-                this.triggerToast('Sinyal MQTT terkirim: Buzzer meja dinonaktifkan.');
+                this.triggerToast('Perintah WiFi + HTTP terkirim: Buzzer meja dinonaktifkan.');
             },
 
             openTable(saungCode) {

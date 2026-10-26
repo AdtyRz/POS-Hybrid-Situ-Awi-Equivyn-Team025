@@ -6,8 +6,10 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EMenuController;
 use App\Http\Controllers\KasirController;
 use App\Http\Controllers\KdsController;
+use App\Http\Controllers\LaporanPenjualanController;
 use App\Http\Controllers\PelayanController;
 use App\Http\Controllers\PembayaranController;
+use App\Http\Controllers\PengaturanController;
 use App\Http\Controllers\PesananController;
 use Illuminate\Support\Facades\Route;
 
@@ -30,7 +32,6 @@ Route::get('/qris/status/{kode_pesanan}', [EMenuController::class, 'qrisStatus']
 Route::get('/status/{kode_pesanan}', [EMenuController::class, 'status'])->name('emenu.status');
 Route::get('/verifikasi/{kode_pesanan}', [EMenuController::class, 'verifikasi'])->name('emenu.verifikasi');
 Route::get('/bayar-tunai/{kode_pesanan}', [EMenuController::class, 'bayarTunai'])->name('emenu.bayar-tunai');
-Route::post('/qris/callback', [EMenuController::class, 'qrisCallback'])->name('emenu.qris.callback');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -41,17 +42,27 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/analitik-laporan', [AdminController::class, 'dashboard'])->name('admin.analitik-laporan');
 Route::get('/admin/analitik-laporan/cetak-pdf', [AdminController::class, 'cetakAnalitikPdf'])->name('admin.analitik-laporan.cetak-pdf');
 Route::get('/admin/analitik-laporan/ekspor-xlsx', [AdminController::class, 'eksporAnalitikXlsx'])->name('admin.analitik-laporan.ekspor-xlsx');
-    Route::get('/admin/laporan', [AdminController::class, 'index'])->name('admin.laporan');
-    Route::get('/admin/laporan-penjualan', [AdminController::class, 'index'])->name('admin.laporan-penjualan');
+    Route::get('/admin/laporan', [LaporanPenjualanController::class, 'index'])->name('admin.laporan');
+    Route::get('/admin/laporan-penjualan', [LaporanPenjualanController::class, 'index'])->name('admin.laporan-penjualan');
+    Route::get('/admin/laporan-penjualan/cetak', [LaporanPenjualanController::class, 'cetak'])->name('admin.laporan-penjualan.cetak');
+    Route::get('/admin/laporan-penjualan/cetak-shift', [LaporanPenjualanController::class, 'cetakShift'])->name('admin.laporan-penjualan.cetak-shift');
+    Route::get('/admin/laporan-penjualan/ekspor/{format}', [LaporanPenjualanController::class, 'ekspor'])
+        ->whereIn('format', ['csv', 'xls'])
+        ->name('admin.laporan-penjualan.ekspor');
 
-    Route::get('/admin/pengaturan-sistem', function () {
-        return view('admin.pengaturan-sistem.index');
-    })->name('admin.pengaturan-sistem');
+    Route::get('/admin/pengaturan-sistem', [PengaturanController::class, 'index'])->name('admin.pengaturan-sistem');
+    Route::post('/admin/pengaturan-sistem', [PengaturanController::class, 'simpan'])->name('admin.pengaturan-sistem.simpan');
+    Route::post('/admin/pengaturan-sistem/logo', [PengaturanController::class, 'unggahLogo'])->name('admin.pengaturan-sistem.logo');
+    Route::get('/admin/pengaturan-sistem/diagnostik', [PengaturanController::class, 'diagnostik'])->name('admin.pengaturan-sistem.diagnostik');
+    Route::post('/admin/pengaturan-sistem/cache', [PengaturanController::class, 'bersihkanCache'])->name('admin.pengaturan-sistem.cache');
+    Route::get('/admin/pengaturan-sistem/cadangan', [PengaturanController::class, 'unduhCadangan'])->name('admin.pengaturan-sistem.cadangan');
 
     Route::get('/admin/menu', [AdminController::class, 'daftarMenu'])->name('admin.menu');
     Route::get('/admin/master-menu', [AdminController::class, 'daftarMenu'])->name('admin.master-menu');
+    Route::get('/admin/menu/data', [AdminController::class, 'dataMenu'])->name('admin.menu.data');
     Route::post('/admin/menu', [AdminController::class, 'simpanMenu'])->name('admin.menu.simpan');
     Route::put('/admin/menu/{id}', [AdminController::class, 'ubahMenu'])->name('admin.menu.ubah');
+    Route::patch('/admin/menu/{id}/ketersediaan', [AdminController::class, 'ubahKetersediaanMenu'])->name('admin.menu.ketersediaan');
     Route::delete('/admin/menu/{id}', [AdminController::class, 'hapusMenu'])->name('admin.menu.hapus');
 
     Route::get('/admin/kategori', [AdminController::class, 'daftarKategori'])->name('admin.kategori');
@@ -59,12 +70,20 @@ Route::get('/admin/analitik-laporan/ekspor-xlsx', [AdminController::class, 'eksp
 
     Route::get('/admin/meja', [AdminController::class, 'daftarMeja'])->name('admin.meja');
     Route::get('/admin/master-meja', [AdminController::class, 'daftarMeja'])->name('admin.master-meja');
+    Route::post('/admin/master-meja/area', [AdminController::class, 'tambahArea'])->name('admin.master-meja.tambah-area');
+    Route::post('/admin/master-meja/hapus-area', [AdminController::class, 'hapusArea'])->name('admin.master-meja.hapus-area');
+    Route::post('/admin/master-meja/regenerasi-token', [AdminController::class, 'regenerasiToken'])->name('admin.master-meja.regenerasi-token');
+    Route::post('/admin/master-meja/panggil-pelayan', [AdminController::class, 'panggilPelayan'])->name('admin.master-meja.panggil-pelayan');
+    Route::post('/admin/master-meja/selesaikan-panggilan', [AdminController::class, 'selesaikanPanggilan'])->name('admin.master-meja.selesaikan-panggilan');
+    Route::post('/admin/master-meja/hapus-meja', [AdminController::class, 'hapusMeja'])->name('admin.master-meja.hapus-meja');
+    Route::get('/admin/master-meja/cetak-qr', [AdminController::class, 'cetakQrMeja'])->name('admin.master-meja.cetak-qr');
     Route::post('/admin/meja', [AdminController::class, 'simpanMeja'])->name('admin.meja.simpan');
 
     Route::get('/admin/akun', [AdminController::class, 'daftarAkun'])->name('admin.akun');
     Route::get('/admin/manajemen-akun', [AdminController::class, 'daftarAkun'])->name('admin.manajemen-akun');
     Route::post('/admin/akun', [AdminController::class, 'simpanAkun'])->name('admin.akun.simpan');
-    Route::patch('/admin/akun/{id}', [AdminController::class, 'ubahStatusAkun'])->name('admin.akun.status');
+    Route::put('/admin/akun/{id}', [AdminController::class, 'ubahAkun'])->name('admin.akun.ubah');
+    Route::patch('/admin/akun/{id}/status', [AdminController::class, 'ubahStatusAkun'])->name('admin.akun.status');
 });
 
 Route::middleware(['auth', 'role:kasir'])->group(function () {
@@ -74,6 +93,7 @@ Route::middleware(['auth', 'role:kasir'])->group(function () {
     Route::get('/kasir/pembayaran/cari', [PembayaranController::class, 'cari'])->name('kasir.pembayaran.cari');
     Route::get('/kasir/pembayaran/{kode}', [PembayaranController::class, 'create'])->name('kasir.pembayaran.create');
     Route::post('/kasir/pembayaran', [PembayaranController::class, 'store'])->name('kasir.pembayaran.store');
+    Route::post('/kasir/struk/tandai', [PembayaranController::class, 'tandaiStruk'])->name('kasir.struk.tandai');
     Route::get('/kasir/session', [KasirController::class, 'daftarMejaSession'])->name('kasir.session.index');
     Route::patch('/kasir/session/{meja}', [KasirController::class, 'akhiriSession'])->name('kasir.session.tutup');
 });

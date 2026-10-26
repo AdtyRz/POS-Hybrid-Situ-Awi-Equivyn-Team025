@@ -15,4 +15,14 @@ class Kategori extends Model
     {
         return $this->hasMany(Menu::class, 'kategori_id');
     }
+
+    public function scopeUntukMenu($query)
+    {
+        return $query->where('jenis', 'menu');
+    }
+
+    public function scopeUntukArea($query)
+    {
+        return $query->where('jenis', 'area');
+    }
 }

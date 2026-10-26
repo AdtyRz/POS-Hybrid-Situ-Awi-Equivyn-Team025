@@ -5,7 +5,6 @@
 @section('content')
 <div x-data="pelayanTabShift()" class="relative flex flex-col min-h-screen bg-[#FCF9F2]" x-init="init()">
 
-    <!-- Header (07D - Mobile POS Header) -->
     <header class="sticky top-0 z-40 bg-[rgba(252,249,242,0.85)] backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] px-4 py-2.5 h-16 flex items-center justify-between border-b border-[#E5E2DB]/50">
         <div class="flex items-center gap-2">
             <img src="{{ asset('asset/Logo.png') }}" alt="Logo Situ Awi" class="h-8 max-w-[45.25px] w-auto object-contain flex-shrink-0">
@@ -16,30 +15,26 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <!-- LIVE Pill -->
+
             <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F0EEE7] shadow-[0_1px_4px_rgba(43,42,38,0.04)]">
                 <span class="w-2 h-2 rounded-full bg-[#7A5900]"></span>
                 <span class="text-[10px] font-bold text-[#404941] tracking-[-0.25px]">LIVE</span>
             </div>
 
-            <!-- Avatar -->
             <div class="w-8 h-8 rounded-full bg-[#0B4D2B] text-[#B1F1C2] font-bold text-[10px] flex items-center justify-center shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
                 {{ strtoupper(substr(auth()->user()->nama ?? auth()->user()->name ?? 'P', 0, 2)) }}
             </div>
         </div>
     </header>
 
-    <!-- Main Container -->
     <div class="px-4 py-3 space-y-4 flex-1">
 
-        <!-- Section 1: Waiter Profile & Operational Node Card -->
         <section class="bg-white rounded-xl p-4 shadow-[0_2px_12px_rgba(43,42,38,0.06)] relative overflow-hidden flex flex-col gap-2 border border-[#F0EEE7]">
-            <!-- Ambient Gradient Blur Decorator -->
+
             <div class="absolute -right-10 -top-10 w-36 h-36 bg-gradient-to-br from-[#FECE66]/20 to-transparent rounded-full blur-xl pointer-events-none"></div>
 
-            <!-- Profile Info Row -->
             <div class="flex items-center gap-4 relative z-10">
-                <!-- Avatar with Badge -->
+
                 <div class="relative flex-shrink-0">
                     <div class="w-16 h-16 rounded-xl bg-[#0B4D2B] text-[#B1F1C2] font-bold text-[20px] tracking-[1px] flex items-center justify-center shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.1)]">
                         {{ strtoupper(substr(auth()->user()->nama ?? auth()->user()->name ?? 'P', 0, 2)) }}
@@ -51,7 +46,6 @@
                     </div>
                 </div>
 
-                <!-- Column Text -->
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between">
                         <span class="text-[10px] font-bold text-[#7A5900] tracking-[0.5px] uppercase">ID: {{ auth()->user()->id ?? 'STF' }}</span>
@@ -65,7 +59,6 @@
                 </div>
             </div>
 
-            <!-- Duty Box -->
             <div class="bg-[#F6F3EC] rounded-lg p-2 flex flex-col gap-2 relative z-10 border border-[#E5E2DB]/60">
                 <div class="flex items-center gap-2">
                     <div class="w-6 h-6 rounded-md bg-[rgba(122,89,0,0.1)] text-[#7A5900] flex items-center justify-center flex-shrink-0">
@@ -88,8 +81,8 @@
                         <span class="text-xs text-[#1C1C18] font-normal">Shift Siang (12:00 - 18:00 WIB)</span>
                     </div>
                     @php
-                        $shiftEnd = \Carbon\Carbon::today()->setTime(18, 0, 0);
-                        $now = \Carbon\Carbon::now();
+                        $shiftEnd = \Carbon\Carbon::today('Asia/Jakarta')->setTime(18, 0, 0);
+                        $now = \Carbon\Carbon::now('Asia/Jakarta');
                         $sisaMinutes = max(0, $now->diffInMinutes($shiftEnd, false));
                         $sisaJam = intdiv($sisaMinutes, 60);
                         $sisaMnt = $sisaMinutes % 60;
@@ -103,14 +96,13 @@
                 </div>
             </div>
 
-            <!-- Hardware Node Strip -->
             <div class="bg-[#F0EEE7] rounded-lg px-2 py-1.5 flex items-center justify-between text-xs relative z-10">
                 <div class="flex items-center gap-2">
                     <svg class="w-3 h-3 text-[#00341A]" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
                         <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd" />
                     </svg>
-                    <span class="text-[10px] font-medium text-[#1C1C18] tracking-[0.4px]">POS #02 • MQTT Mesh Synced</span>
+                    <span class="text-[10px] font-medium text-[#1C1C18] tracking-[0.4px]">POS #02 • Sinkron Server</span>
                 </div>
                 <div class="flex items-center gap-1">
                     <svg class="w-2.5 h-2.5 text-[#00341A]" fill="currentColor" viewBox="0 0 20 20">
@@ -121,7 +113,6 @@
             </div>
         </section>
 
-        <!-- Section 2: Shift Performance Indicators (KPI 2x2 Grid) -->
         <section class="space-y-1.5 pt-1">
             <div class="flex items-center justify-between">
                 <h3 class="font-bold text-base text-[#1C1C18] leading-6">Kinerja Shift Hari Ini</h3>
@@ -133,9 +124,8 @@
                 </div>
             </div>
 
-            <!-- 2x2 Grid of 110px Cards -->
             <div class="grid grid-cols-2 gap-3">
-                <!-- KPI 1: Pesanan Diantar -->
+
                 <div class="bg-white rounded-xl p-2.5 shadow-[0_2px_8px_rgba(43,42,38,0.04)] border border-[#F0EEE7] h-[110px] flex flex-col justify-between">
                     <div class="flex items-center justify-between">
                         <div class="w-8 h-8 rounded-lg bg-[rgba(11,77,43,0.1)] flex items-center justify-center">
@@ -150,7 +140,6 @@
                     </div>
                 </div>
 
-                <!-- KPI 2: Respon Sensor Meja -->
                 <div class="bg-white rounded-xl p-2.5 shadow-[0_2px_8px_rgba(43,42,38,0.04)] border border-[#F0EEE7] h-[110px] flex flex-col justify-between">
                     <div class="flex items-center justify-between">
                         <div class="w-8 h-8 rounded-lg bg-[rgba(122,89,0,0.1)] flex items-center justify-center">
@@ -173,7 +162,6 @@
                     </div>
                 </div>
 
-                <!-- KPI 3: Panggilan Selesai -->
                 <div class="bg-white rounded-xl p-2.5 shadow-[0_2px_8px_rgba(43,42,38,0.04)] border border-[#F0EEE7] h-[110px] flex flex-col justify-between">
                     <div class="flex items-center justify-between">
                         <div class="w-8 h-8 rounded-lg bg-[#F0EEE7] flex items-center justify-center">
@@ -189,7 +177,6 @@
                     </div>
                 </div>
 
-                <!-- KPI 4: Kepuasan Tamu Saung -->
                 <div class="bg-white rounded-xl p-2.5 shadow-[0_2px_8px_rgba(43,42,38,0.04)] border border-[#F0EEE7] h-[110px] flex flex-col justify-between">
                     <div class="flex items-center justify-between">
                         <div class="w-8 h-8 rounded-lg bg-[rgba(254,206,102,0.3)] flex items-center justify-center">
@@ -209,7 +196,6 @@
             </div>
         </section>
 
-        <!-- Section 3: Handover Checklist Section -->
         <section class="bg-white rounded-xl p-4 shadow-[0_2px_12px_rgba(43,42,38,0.05)] border border-[#F0EEE7] space-y-2.5">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
@@ -229,7 +215,7 @@
             </p>
 
             <div class="space-y-2 pt-1">
-                <!-- Item 1: Checked -->
+
                 <label class="bg-[#F6F3EC] rounded-lg p-2.5 flex items-start gap-3 cursor-pointer select-none">
                     <input type="checkbox" x-model="checkCleanliness" class="w-5 h-5 rounded text-[#0B4D2B] focus:ring-[#0B4D2B] border-[#E5E2DB] mt-0.5">
                     <div class="flex flex-col">
@@ -238,7 +224,6 @@
                     </div>
                 </label>
 
-                <!-- Item 2: Checked -->
                 <label class="bg-[#F6F3EC] rounded-lg p-2.5 flex items-start gap-3 cursor-pointer select-none">
                     <input type="checkbox" x-model="checkSensors" class="w-5 h-5 rounded text-[#0B4D2B] focus:ring-[#0B4D2B] border-[#E5E2DB] mt-0.5">
                     <div class="flex flex-col">
@@ -247,7 +232,6 @@
                     </div>
                 </label>
 
-                <!-- Item 3: Pending -->
                 <label class="bg-[#F6F3EC] rounded-lg p-2.5 flex items-start gap-3 cursor-pointer select-none">
                     <input type="checkbox" x-model="checkHandover" class="w-5 h-5 rounded text-[#0B4D2B] focus:ring-[#0B4D2B] border-[#767676] mt-0.5">
                     <div class="flex flex-col">
@@ -256,7 +240,6 @@
                     </div>
                 </label>
 
-                <!-- Item 4: Pending -->
                 <label class="bg-[#F6F3EC] rounded-lg p-2.5 flex items-start gap-3 cursor-pointer select-none">
                     <input type="checkbox" x-model="checkDock" class="w-5 h-5 rounded text-[#0B4D2B] focus:ring-[#0B4D2B] border-[#767676] mt-0.5">
                     <div class="flex flex-col">
@@ -267,7 +250,6 @@
             </div>
         </section>
 
-        <!-- Section 4: Log Aktivitas Terakhir -->
         <section class="bg-white rounded-xl p-4 shadow-[0_2px_12px_rgba(43,42,38,0.05)] border border-[#F0EEE7] space-y-2.5">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
@@ -277,23 +259,21 @@
                     </svg>
                     <h3 class="font-bold text-base text-[#1C1C18] leading-6">Log Aktivitas Terakhir</h3>
                 </div>
-                <button @click="triggerToast('Menampilkan seluruh riwayat log aktivitas shift...')" type="button" 
+                <button @click="triggerToast('Menampilkan seluruh riwayat log aktivitas shift...')" type="button"
                         class="text-[10px] font-bold text-[#7A5900] tracking-[0.4px] hover:underline cursor-pointer">
                     Lihat Semua
                 </button>
             </div>
 
-            <!-- Timeline items: data log aktivitas dari controller jika tersedia -->
             <div class="relative pl-5 space-y-3 pt-1">
                 <div class="absolute left-1.5 top-2 bottom-2 w-0.5 bg-[#EBE8E1]"></div>
 
-                {{-- Tampilkan pesan jika tidak ada log aktivitas hari ini --}}
                 @if(isset($logAktivitas) && $logAktivitas->count() > 0)
                     @foreach($logAktivitas as $log)
                     <div class="relative bg-[#F6F3EC] rounded-lg p-2.5 flex flex-col gap-1">
                         <span class="absolute -left-[23px] top-2.5 w-2.5 h-2.5 rounded-full bg-[#0B4D2B] shadow-[0_0_0_4px_#FFFFFF]"></span>
                         <div class="flex items-center justify-between text-xs">
-                            <span class="font-bold text-[10px] text-[#00341A] tracking-[0.4px]">{{ $log->waktu_selesai ? $log->waktu_selesai->format('H:i') . ' WIB • Selesai' : $log->waktu_panggil->format('H:i') . ' WIB' }}</span>
+                            <span class="font-bold text-[10px] text-[#00341A] tracking-[0.4px]">{{ $log->waktu_selesai ? $log->waktu_selesai->timezone('Asia/Jakarta')->format('H:i') . ' WIB • Selesai' : $log->waktu_panggil->timezone('Asia/Jakarta')->format('H:i') . ' WIB' }}</span>
                             <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-[#F0EEE7] text-[#404941] text-[10px] font-bold tracking-[0.4px]">
                                 Sensor Meja
                             </span>
@@ -317,7 +297,6 @@
             </div>
         </section>
 
-        <!-- Section 5: Hardware & Notification Settings Drawer-like Card -->
         <section class="bg-white rounded-xl p-4 shadow-[0_2px_12px_rgba(43,42,38,0.05)] border border-[#F0EEE7] space-y-3">
             <div class="flex items-center gap-2">
                 <svg class="w-[15px] h-[15px] text-[#00341A]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -327,7 +306,7 @@
             </div>
 
             <div class="space-y-3 pt-1">
-                <!-- Switch 1: Bunyi Panggilan Meja -->
+
                 <div class="bg-[#F6F3EC] rounded-lg p-2.5 flex items-center justify-between">
                     <div class="flex items-center gap-2.5">
                         <svg class="w-[15px] h-[14.58px] text-[#00341A] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -338,16 +317,15 @@
                             <span class="text-xs text-[#404941] font-normal leading-4">Volume maksimal saat bel sensor ditekan</span>
                         </div>
                     </div>
-                    <button @click="soundAlert = !soundAlert; triggerToast(soundAlert ? 'Bunyi panggilan aktif.' : 'Bunyi panggilan senyap.')" 
-                            type="button" 
-                            :class="soundAlert ? 'bg-[#0B4D2B]' : 'bg-[#E5E2DB]'" 
+                    <button @click="soundAlert = !soundAlert; triggerToast(soundAlert ? 'Bunyi panggilan aktif.' : 'Bunyi panggilan senyap.')"
+                            type="button"
+                            :class="soundAlert ? 'bg-[#0B4D2B]' : 'bg-[#E5E2DB]'"
                             class="relative inline-flex h-6 w-12 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none">
-                        <span :class="soundAlert ? 'translate-x-6' : 'translate-x-0.5'" 
+                        <span :class="soundAlert ? 'translate-x-6' : 'translate-x-0.5'"
                               class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.1)] transition duration-200 ease-in-out mt-0.5"></span>
                     </button>
                 </div>
 
-                <!-- Switch 2: Notifikasi KDS Dapur Siap -->
                 <div class="bg-[#F6F3EC] rounded-lg p-2.5 flex items-center justify-between">
                     <div class="flex items-center gap-2.5">
                         <svg class="w-5 h-[15px] text-[#7A5900] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -358,16 +336,15 @@
                             <span class="text-xs text-[#404941] font-normal leading-4">Getar berulang saat pesanan siap di pick-up</span>
                         </div>
                     </div>
-                    <button @click="vibrateAlert = !vibrateAlert; triggerToast(vibrateAlert ? 'Getar KDS aktif.' : 'Getar KDS nonaktif.')" 
-                            type="button" 
-                            :class="vibrateAlert ? 'bg-[#0B4D2B]' : 'bg-[#E5E2DB]'" 
+                    <button @click="vibrateAlert = !vibrateAlert; triggerToast(vibrateAlert ? 'Getar KDS aktif.' : 'Getar KDS nonaktif.')"
+                            type="button"
+                            :class="vibrateAlert ? 'bg-[#0B4D2B]' : 'bg-[#E5E2DB]'"
                             class="relative inline-flex h-6 w-12 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none">
-                        <span :class="vibrateAlert ? 'translate-x-6' : 'translate-x-0.5'" 
+                        <span :class="vibrateAlert ? 'translate-x-6' : 'translate-x-0.5'"
                               class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.1)] transition duration-200 ease-in-out mt-0.5"></span>
                     </button>
                 </div>
 
-                <!-- Switch 3: Mode Hemat Luar Ruang -->
                 <div class="bg-[#F6F3EC] rounded-lg p-2.5 flex items-center justify-between">
                     <div class="flex items-center gap-2.5">
                         <svg class="w-[11.67px] h-[16.67px] text-[#404941] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -379,21 +356,20 @@
                             <span class="text-xs text-[#404941] font-normal leading-4">Redupkan layar di area saung terbuka</span>
                         </div>
                     </div>
-                    <button @click="powerSave = !powerSave; triggerToast(powerSave ? 'Mode hemat baterai aktif.' : 'Mode normal aktif.')" 
-                            type="button" 
-                            :class="powerSave ? 'bg-[#0B4D2B]' : 'bg-[#E5E2DB]'" 
+                    <button @click="powerSave = !powerSave; triggerToast(powerSave ? 'Mode hemat baterai aktif.' : 'Mode normal aktif.')"
+                            type="button"
+                            :class="powerSave ? 'bg-[#0B4D2B]' : 'bg-[#E5E2DB]'"
                             class="relative inline-flex h-6 w-12 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none">
-                        <span :class="powerSave ? 'translate-x-6' : 'translate-x-0.5'" 
+                        <span :class="powerSave ? 'translate-x-6' : 'translate-x-0.5'"
                               class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.1)] transition duration-200 ease-in-out mt-0.5"></span>
                     </button>
                 </div>
             </div>
         </section>
 
-        <!-- Section 6: Shift Handover Action Tray -->
         <section class="space-y-2 pt-2 pb-2">
-            <!-- Button 1: Mulai Serah Terima Shift Sore -->
-            <button @click="startHandover()" type="button" 
+
+            <button @click="startHandover()" type="button"
                     class="w-full h-14 rounded-xl bg-[#0B4D2B] hover:bg-[#00341A] text-[#FCF9F2] font-bold text-sm tracking-[0.14px] shadow-[0_4px_16px_rgba(11,77,43,0.25)] flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer">
                 <svg class="w-[18.33px] h-[16.5px] text-[#FECE66]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -401,10 +377,9 @@
                 <span>Mulai Serah Terima Shift Sore</span>
             </button>
 
-            <!-- Button 2: Keluar / Ganti Akun PIN (Laravel Auth Logout) -->
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit" 
+                <button type="submit"
                         class="w-full h-12 rounded-xl bg-[#F0EEE7] hover:bg-[#E5E2DB] text-[#1C1C18] font-medium text-sm tracking-[0.14px] flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer">
                     <svg class="w-[15px] h-[15px] text-[#BA1A1A]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -416,7 +391,6 @@
 
     </div>
 
-    <!-- Modal Handover Confirmation -->
     <div x-show="showHandoverModal" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
         <div @click.away="showHandoverModal = false" class="bg-white rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-[#E5E2DB]">
             <div class="flex items-center justify-between pb-2 border-b border-[#F0EEE7]">
@@ -440,14 +414,13 @@
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div x-show="showToast" 
-         x-transition:enter="transition ease-out duration-300" 
-         x-transition:enter-start="opacity-0 translate-y-4" 
-         x-transition:enter-end="opacity-100 translate-y-0" 
-         x-transition:leave="transition ease-in duration-200" 
-         x-transition:leave-start="opacity-100 translate-y-0" 
-         x-transition:leave-end="opacity-0 translate-y-4" 
+    <div x-show="showToast"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-4"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 translate-y-4"
          class="fixed bottom-20 left-4 right-4 z-50 max-w-[390px] mx-auto pointer-events-none">
         <div class="bg-[#31312C] text-[#F3F0EA] rounded-xl px-4 py-3 flex items-center gap-3 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] border border-white/10 pointer-events-auto">
             <svg class="w-[18.33px] h-[18.33px] text-[#FFDEA1] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -462,10 +435,9 @@
 <script>
     function pelayanTabShift() {
         return {
-            // Nama dari auth user — tidak hardcode
+
             runnerFullName: '{{ auth()->user()->nama ?? auth()->user()->name ?? "Pelayan" }}',
 
-            // KPI: default 0, akan di-overwrite oleh init() dengan data backend
             pesananDiantar: 0,
             avgRespon: 0,
             panggilanSelesai: 0,
@@ -488,7 +460,7 @@
             },
 
             init() {
-                // Selalu assign dari backend — tanpa kondisi > 0 agar nilai 0 setelah fresh seed juga terbaca
+
                 this.pesananDiantar   = {{ $shiftAktif ?? 0 }};
                 this.panggilanSelesai = {{ $panggilanDitangani ?? 0 }};
                 this.avgRespon        = {{ $avgRespon ?? 0 }};

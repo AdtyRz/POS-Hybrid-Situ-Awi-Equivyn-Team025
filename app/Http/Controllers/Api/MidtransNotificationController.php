@@ -6,6 +6,7 @@ use App\Events\StatusPesananBerubah;
 use App\Http\Controllers\Controller;
 use App\Models\Pesanan;
 use App\Services\MidtransService;
+use App\Services\StokService;
 use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -74,6 +75,8 @@ class MidtransNotificationController extends Controller
                         'order_id' => $orderId,
                     ]);
                 }
+
+                app(StokService::class)->potongSetelahPembayaran($pesanan, null);
             } elseif (in_array($transactionStatus, ['deny', 'cancel', 'expire', 'failure'])) {
                 // On failure, don't change meja status immediately - let business logic decide
                 // Just ensure we don't mark as paid

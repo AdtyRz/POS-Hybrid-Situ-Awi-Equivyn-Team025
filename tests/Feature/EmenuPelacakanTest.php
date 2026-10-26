@@ -51,7 +51,7 @@ class EmenuPelacakanTest extends TestCase
         return [$meja, $menu];
     }
 
-    public function test_checkout_menyimpan_riwayat_ke_session(): void
+    public function test_checkout_menyimpan_riwayat_tanpa_memotong_stok(): void
     {
         [$meja, $menu] = $this->siapkanMejaDanMenu();
 
@@ -67,7 +67,7 @@ class EmenuPelacakanTest extends TestCase
         $pesanan = Pesanan::first();
         $this->assertNotNull($pesanan);
         $this->assertSame('terisi', $meja->fresh()->status_meja);
-        $this->assertSame(8, $menu->fresh()->stok_menu);
+        $this->assertSame(10, $menu->fresh()->stok_menu);
     }
 
     public function test_tombol_pelacakan_muncul_saat_ada_riwayat(): void

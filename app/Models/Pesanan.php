@@ -33,6 +33,7 @@ class Pesanan extends Model
             'total_bayar' => 'decimal:2',
             'waktu_pesan' => 'datetime',
             'void_at' => 'datetime',
+            'printed_at' => 'datetime',
         ];
     }
 

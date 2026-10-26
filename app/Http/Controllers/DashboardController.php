@@ -15,7 +15,6 @@ class DashboardController extends Controller
             'koki' => '/kds/dapur',
             'barista' => '/kds/bar',
             'pelayan' => '/pelayan/notifikasi-panggilan',
-            'pelanggan' => '/',
         ];
 
         return redirect($tujuan[$request->user()->role] ?? '/');

@@ -104,7 +104,7 @@
                     <p class="font-bold text-forest-900 mb-2">Total Bayar</p>
                     <p class="font-display font-bold text-3xl text-forest-600">
                         Rp{{ number_format($pesanan->total_bayar, 0, ',', '.') }}</p>
-                    <p class="text-stone-500 text-xs mt-1">Termasuk pajak 10%</p>
+                    <p class="text-stone-500 text-xs mt-1">Total pembayaran</p>
                 </div>
             </div>
 
@@ -132,8 +132,11 @@
 
             <div class="space-y-3 mt-6">
                 <a href="{{ route('emenu.status', $pesanan->kode_pesanan) }}"
-                    class="block w-full text-center bg-forest-900 text-white font-extrabold rounded-2xl py-4 shadow-sm hover:bg-forest-600 transition active:scale-95">
-                    🔍 Lihat Status Pesanan
+                    class="flex w-full items-center justify-center gap-2 text-center bg-forest-900 text-white font-extrabold rounded-2xl py-4 shadow-sm hover:bg-forest-600 transition active:scale-95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <span>Lihat Status Pesanan</span>
                 </a>
                 <a href="{{ route('emenu.meja', $pesanan->meja_id) }}"
                     class="block w-full text-center bg-white border border-stone-200 text-stone-700 font-semibold rounded-2xl py-3 hover:bg-stone-50 transition active:scale-95">
@@ -146,7 +149,7 @@
     </div>
 
     <script>
-        // Auto-copy payment code on click
+
         document.addEventListener('DOMContentLoaded', function() {
                     const codeElement = document.querySelector('[x-text="kodePembayaran"]');
                     if (codeElement) {

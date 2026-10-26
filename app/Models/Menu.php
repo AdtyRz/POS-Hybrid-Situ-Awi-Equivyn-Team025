@@ -17,6 +17,7 @@ class Menu extends Model
         return [
             'harga' => 'decimal:2',
             'stok_menu' => 'integer',
+            'is_aktif' => 'boolean',
         ];
     }
 

@@ -12,6 +12,7 @@ class MenuController extends Controller
     public function index(): JsonResponse
     {
         $menu = Menu::with('kategori')
+            ->where('is_aktif', true)
             ->where('stok_menu', '>', 0)
             ->orderBy('nama_menu')
             ->get();

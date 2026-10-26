@@ -7,7 +7,9 @@ use App\Events\StatusPesananBerubah;
 use App\Models\Pembayaran;
 use App\Models\Pesanan;
 use App\Models\SesiMeja;
+use App\Services\StokService;
 use App\Support\Realtime;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -79,6 +81,8 @@ class PembayaranController extends Controller
         $kembalian = $data['jumlah_bayar'] - (float) $pesanan->total_bayar;
 
         DB::transaction(function () use ($pesanan, $data, $kembalian) {
+            app(StokService::class)->potongSetelahPembayaran($pesanan, auth()->id());
+
             Pembayaran::create([
                 'pesanan_id' => $pesanan->id,
                 'metode_pembayaran' => $data['metode_pembayaran'],
@@ -113,11 +117,18 @@ class PembayaranController extends Controller
             'metode_pembayaran' => $pesanan->metode_pembayaran,
         ]));
 
-        // Bila kasir memilih "Selesaikan sesi" saat mencetak struk, tutup sesi meja
-        // dan buat kode unik baru untuk sesi berikutnya.
+        // Opsional: tutup sesi meja setelah pembayaran (dipakai form lain bila ada).
+        // Tombol cetak struk di POS tidak lagi otomatis menutup sesi.
         if ($request->boolean('selesaikan_sesi') && $pesanan->meja) {
             $meja = $pesanan->meja;
-            SesiMeja::putuskanSesi($meja);
+
+            try {
+                SesiMeja::putuskanSesi($meja);
+            } catch (\RuntimeException $exception) {
+                return redirect()
+                    ->route('kasir.dashboard', ['meja' => $meja->kode_meja])
+                    ->with('error', $exception->getMessage());
+            }
 
             Realtime::emit(new SesiMejaBerubah(
                 $meja->kode_meja,
@@ -126,6 +137,33 @@ class PembayaranController extends Controller
             ));
         }
 
-        return redirect()->route('kasir.dashboard');
+        return redirect()
+            ->route('kasir.dashboard', $pesanan->meja ? ['meja' => $pesanan->meja->kode_meja] : [])
+            ->with('sukses', 'Pembayaran lunas. Cetak struk dapat dilakukan dari tombol Cetak Struk.');
+    }
+
+    /**
+     * Tandai pesanan lunas yang struknya sudah dicetak. Pesanan yang sudah
+     * ditandai tidak akan muncul lagi pada cetak struk berikutnya.
+     */
+    public function tandaiStruk(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'meja_id' => ['required', 'integer', 'exists:meja_makan,id'],
+            'kode_pesanan' => ['required', 'array', 'min:1'],
+            'kode_pesanan.*' => ['string', 'max:30'],
+        ]);
+
+        $jumlah = Pesanan::query()
+            ->where('meja_id', $data['meja_id'])
+            ->whereIn('kode_pesanan', $data['kode_pesanan'])
+            ->where('status_pembayaran', Pesanan::PAYMENT_SUDAH_BAYAR)
+            ->whereNull('printed_at')
+            ->update(['printed_at' => now()]);
+
+        return response()->json([
+            'success' => true,
+            'jumlah' => $jumlah,
+        ]);
     }
 }

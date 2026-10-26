@@ -5,7 +5,6 @@
 @section('content')
 <div x-data="pelayanNotifikasiPanggilan()" class="relative flex flex-col min-h-screen bg-[#FCF9F2]" x-init="init()">
 
-    <!-- Header (07 - Mobile POS Header) -->
     <header class="sticky top-0 z-40 bg-[rgba(252,249,242,0.85)] backdrop-blur-md shadow-[0_2px_12px_rgba(43,42,38,0.04)] px-4 py-3 h-20 flex items-center justify-between border-b border-[#E5E2DB]/50">
         <div class="flex items-center gap-2">
             <img src="{{ asset('asset/Logo.png') }}" alt="Logo Situ Awi" class="h-8 max-w-[45.25px] w-auto object-contain flex-shrink-0">
@@ -22,27 +21,24 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <!-- Button - Alerts -->
-            <button @click="triggerToast('Semua notifikasi sinkron dengan EMQX Broker & Reverb.')" type="button" class="w-11 h-11 rounded-full bg-[#F6F3EC] flex items-center justify-center relative active:scale-95 transition-transform cursor-pointer">
+
+            <button @click="triggerToast('Semua notifikasi sinkron dengan server realtime & Reverb.')" type="button" class="w-11 h-11 rounded-full bg-[#F6F3EC] flex items-center justify-center relative active:scale-95 transition-transform cursor-pointer">
                 <svg class="w-[14.67px] h-[18.33px] text-[#404941]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
                 <span class="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-[#FECE66] shadow-[0_0_0_2px_#FCF9F2]"></span>
             </button>
 
-            <!-- User Avatar Badge -->
             <div class="w-8 h-8 rounded-full bg-[#0B4D2B] text-white font-bold text-[10px] tracking-[0.4px] flex items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
                 {{ strtoupper(substr(auth()->user()->nama ?? auth()->user()->name ?? 'P', 0, 2)) }}
             </div>
         </div>
     </header>
 
-    <!-- Main Container -->
     <div class="px-4 py-3 space-y-4 flex-1">
 
-        <!-- Section 1: Runner Shift Context & KPI Micro-Bar -->
         <section class="bg-[#F6F3EC] rounded-xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-col gap-2">
-            <!-- Row 1: Location & Mesh status -->
+
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-1">
                     <svg class="w-[13.33px] h-[16.67px] text-[#00341A] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -58,7 +54,6 @@
                 </div>
             </div>
 
-            <!-- Row 2: Shift info & Sync status -->
             <div class="flex items-center justify-between pb-1">
                 <div class="flex items-center gap-1 text-[#404941]">
                     <svg class="w-[12.5px] h-[12.5px] text-[#404941]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -73,7 +68,6 @@
                 </div>
             </div>
 
-            <!-- Row 3: KPI Metrics Grid -->
             <div class="grid grid-cols-3 gap-1 pt-1">
                 <div class="bg-white rounded-lg p-2 flex flex-col items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] h-[69px]">
                     <span class="font-bold text-[20px] text-[#00341A] leading-7" x-text="callsAnswered">3</span>
@@ -90,16 +84,12 @@
             </div>
         </section>
 
-        <!-- Section 2: URGENT SECTION: Critical Touch Sensor Alert Banner -->
-        <!-- Only shown if there is an active table call, and vanishes when responded -->
-        <section x-show="hasUrgentAlert && !alertResponded" 
+        <section x-show="hasUrgentAlert && !alertResponded"
                  x-transition:leave="transition ease-in duration-300 transform opacity-0 -translate-y-4"
                  class="bg-[#FFDAD6] rounded-xl p-4 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] relative overflow-hidden flex flex-col gap-2 isolation-auto">
 
-            <!-- Ambient Glow Decorator -->
             <div class="absolute -right-8 -top-8 w-28 h-28 bg-[rgba(254,206,102,0.4)] blur-md rounded-full pointer-events-none"></div>
 
-            <!-- Header Row -->
             <div class="flex items-start justify-between relative z-10">
                 <div class="flex items-start gap-2">
                     <div class="w-10 h-10 rounded-full bg-[#BA1A1A] flex items-center justify-center shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] flex-shrink-0">
@@ -131,7 +121,6 @@
                 </div>
             </div>
 
-            <!-- Overlay + OverlayBlur Container -->
             <div class="bg-[rgba(255,255,255,0.8)] backdrop-blur-xs rounded-lg p-2 flex flex-col gap-1 relative z-10 border border-white/60">
                 <div class="flex items-center justify-between text-xs">
                     <div class="inline-flex items-center gap-1 font-bold text-xs text-[#1C1C18] tracking-[0.24px]">
@@ -160,9 +149,8 @@
                 </div>
             </div>
 
-            <!-- Quick Action Buttons -->
             <div class="flex flex-col gap-2 pt-2 relative z-10">
-                <button @click="respondToAlert()" type="button" 
+                <button @click="respondToAlert()" type="button"
                         class="w-full h-12 rounded-full bg-[#00341A] hover:bg-[#0B4D2B] active:scale-98 text-white font-semibold text-sm tracking-[0.14px] flex items-center justify-center gap-2 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] transition-all cursor-pointer">
                     <svg class="w-3.5 h-4.5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -181,7 +169,6 @@
             </div>
         </section>
 
-        <!-- Section 3: ACTIVE ORDERS READY TO SERVE (KDS Pass Queue) -->
         <section class="flex flex-col gap-2 pt-1">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-1">
@@ -198,10 +185,8 @@
                 Ambil dari Meja Pass Dapur / Bar & verifikasi nomor saung.
             </p>
 
-            <!-- Cards List -->
             <div class="space-y-3 pt-1">
 
-            {{-- Dynamic order cards from KDS / Pelanggan (real backend data) --}}
             @forelse ($siapAntarFormatted as $order)
                 <div class="bg-[#F6F3EC] rounded-xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-col gap-2"
                      x-data="{ delivered: false }"
@@ -224,10 +209,18 @@
                         </div>
                     </div>
 
-                    {{-- Order items --}}
                     <div class="bg-white rounded-lg p-2.5 flex items-start gap-2">
                         <div class="w-16 h-16 rounded-lg {{ $order['source'] === 'bar' ? 'bg-gradient-to-br from-[#CBEF89] to-[#8BAA3F]' : 'bg-gradient-to-br from-[#FFDEA1] to-[#FECE66]' }} flex items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex-shrink-0">
-                            <span class="text-2xl" role="img">{{ $order['source'] === 'bar' ? '🍹' : '🍽️' }}</span>
+                            @if ($order['source'] === 'bar')
+                                <svg class="w-7 h-7 text-[#00341A]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4h16l-8 9-8-9z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 13v7M8 20h8" />
+                                </svg>
+                            @else
+                                <svg class="w-7 h-7 text-[#00341A]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 17h18M5 17a7 7 0 0114 0M12 5v3" />
+                                </svg>
+                            @endif
                         </div>
                         <div class="flex-1 flex flex-col justify-center gap-0.5">
                             <h5 class="font-semibold text-sm text-[#1C1C18] leading-5 tracking-[0.14px]">{{ $order['mainItem'] }}</h5>
@@ -238,7 +231,6 @@
                         </div>
                     </div>
 
-                    {{-- Action Button --}}
                     <button @click="delivered = true; deliverOrder('{{ $order['kode_pesanan'] }}', '{{ $order['meja']['kode_meja'] }}')"
                         type="button"
                         class="w-full h-12 rounded-xl {{ $order['source'] === 'bar' ? 'bg-[#FECE66] hover:bg-[#F5BF45] text-[#765600]' : 'bg-[#0B4D2B] hover:bg-[#00341A] text-white' }} font-semibold text-sm tracking-[0.14px] flex items-center justify-center gap-2 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all cursor-pointer active:scale-98">
@@ -260,7 +252,6 @@
             </div>
         </section>
 
-        <!-- Section 4: STATUS AREA LESEHAN (Floor Monitoring Quick Glance Grid) -->
         <section class="bg-[#F6F3EC] rounded-xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-col gap-2">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-1.5">
@@ -272,7 +263,6 @@
                 <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px]">Area Situ Bawah</span>
             </div>
 
-            {{-- Dynamic Saung Status Grid from backend (real IoT + panggilan state) --}}
             <div class="grid grid-cols-3 gap-2 pt-1">
                 @foreach ($saungStatus as $saung)
                     <div class="{{ $saung['borderClass'] }} rounded-lg p-2.5 flex flex-col items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] h-[60px]">
@@ -286,7 +276,6 @@
             </div>
         </section>
 
-        <!-- Section 5: Environmental & Runner Mode Bar -->
         <section class="bg-[#F0EEE7] rounded-xl p-2 px-3 flex items-center justify-between h-[52px]">
             <div class="flex items-center gap-2">
                 <svg class="w-5 h-[15px] text-[#7A5900] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -298,26 +287,24 @@
                 </div>
             </div>
 
-            <!-- Toggle switch -->
-            <button @click="soundVibrationActive = !soundVibrationActive; triggerToast(soundVibrationActive ? 'Mode suara & getar diaktifkan.' : 'Mode suara & getar dinonaktifkan.')" 
-                    type="button" 
-                    :class="soundVibrationActive ? 'bg-[#0B4D2B]' : 'bg-[#E5E2DB]'" 
+            <button @click="soundVibrationActive = !soundVibrationActive; triggerToast(soundVibrationActive ? 'Mode suara & getar diaktifkan.' : 'Mode suara & getar dinonaktifkan.')"
+                    type="button"
+                    :class="soundVibrationActive ? 'bg-[#0B4D2B]' : 'bg-[#E5E2DB]'"
                     class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none">
-                <span :class="soundVibrationActive ? 'translate-x-5' : 'translate-x-0.5'" 
+                <span :class="soundVibrationActive ? 'translate-x-5' : 'translate-x-0.5'"
                       class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out mt-0.5"></span>
             </button>
         </section>
 
     </div>
 
-    <!-- Toast Notification (Floating at bottom) -->
-    <div x-show="showToast" 
-         x-transition:enter="transition ease-out duration-300" 
-         x-transition:enter-start="opacity-0 translate-y-4" 
-         x-transition:enter-end="opacity-100 translate-y-0" 
-         x-transition:leave="transition ease-in duration-200" 
-         x-transition:leave-start="opacity-100 translate-y-0" 
-         x-transition:leave-end="opacity-0 translate-y-4" 
+    <div x-show="showToast"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-4"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 translate-y-4"
          class="fixed bottom-20 left-4 right-4 z-50 max-w-[390px] mx-auto pointer-events-none">
         <div class="bg-[#31312C] text-[#F3F0EA] rounded-xl px-4 py-3 flex items-center gap-3 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] border border-white/10 pointer-events-auto">
             <svg class="w-[18.33px] h-[18.33px] text-[#FFDEA1] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -356,9 +343,8 @@
             urgentLcdTitle: "LCD: 'Memanggil Pelayan...'",
             urgentTimeAgo: '{{ $panggilan->first() && $panggilan->first()->waktu_panggil ? $panggilan->first()->waktu_panggil->diffForHumans() : "1 mnt yang lalu" }}',
 
-
             init() {
-                // Countdown timer for urgent alert
+
                 setInterval(() => {
                     if (this.hasUrgentAlert && !this.alertResponded && this.alertSecondsLeft > 0) {
                         this.alertSecondsLeft--;
@@ -388,7 +374,6 @@
                 this.hasUrgentAlert = false;
                 this.callsAnswered++;
 
-                // If real panggilan ID exists, send PATCH to backend
                 if (this.urgentPanggilanId) {
                     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
                     try {
@@ -410,7 +395,7 @@
 
             muteBuzzer() {
                 this.buzzerActive = false;
-                this.triggerToast('Sinyal MQTT terkirim: Buzzer dinonaktifkan.');
+                this.triggerToast('Perintah WiFi + HTTP terkirim: Buzzer dinonaktifkan.');
             },
 
             deliverOrder(kodePesanan, kodeMeja) {
