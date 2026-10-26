@@ -99,8 +99,7 @@
         <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 mt-3">
             <div class="flex items-center justify-between">
                 <h2 class="font-bold">Status Pesanan {{ $pesanan->meja->kode_meja }}</h2>
-                <span class="bg-stone-100 text-stone-500 text-[11px] font-bold rounded-full px-3 py-1">Realtime
-                    MQTT</span>
+                <span class="bg-stone-100 text-stone-500 text-[11px] font-bold rounded-full px-3 py-1">Realtime</span>
             </div>
             <div class="mt-3">
                 <div class="flex gap-3">
@@ -122,7 +121,7 @@
                     <div class="pb-4">
                         <p class="font-bold text-sm">Pesanan Diterima</p>
                         <p class="text-stone-500 text-xs">Tiket order masuk ke sistem antrean dapur</p>
-                        <p class="text-stone-400 text-[11px] mt-0.5">{{ $pesanan->waktu_pesan->format('H.i') }} WIB</p>
+                        <p class="text-stone-400 text-[11px] mt-0.5">{{ $pesanan->waktu_pesan->timezone('Asia/Jakarta')->format('H.i') }} WIB</p>
                     </div>
                 </div>
                 <div class="flex gap-3">
@@ -210,15 +209,14 @@
         <div class="bg-forest-900 text-white rounded-2xl p-4 mt-3">
             <div class="flex items-center justify-between">
                 <h2 class="font-bold text-sm">IoT Table Node {{ $pesanan->meja->kode_meja }}</h2>
-                <span class="bg-white/15 text-[11px] font-bold rounded-full px-3 py-1">• MQTT Synced</span>
+                <span class="bg-white/15 text-[11px] font-bold rounded-full px-3 py-1">• HTTP Tersinkron</span>
             </div>
             <div class="font-mono text-[13px] mt-3 leading-relaxed text-forest-100">
                 <p>SAUNG-IOT-{{ str_replace('-', '', $pesanan->meja->kode_meja) }} // ESP32 CH-02 WIFI: -54dBm</p>
                 <p class="text-white font-bold tracking-widest">STATUS: {{ strtoupper($pesanan->status_pesanan) }}</p>
-                <p>{{ $pesanan->meja->kode_meja }} &nbsp;&nbsp; {{ now()->format('H:i') }} WIB</p>
+                <p>{{ $pesanan->meja->kode_meja }} &nbsp;&nbsp; {{ now('Asia/Jakarta')->format('H:i') }} WIB</p>
             </div>
-            <p class="text-white/70 text-xs mt-3">Layar LCD fisik di saung Anda telah terupdate otomatis via MQTT
-                WebSocket.</p>
+            <p class="text-white/70 text-xs mt-3">Layar LCD fisik di saung Anda telah terupdate otomatis via WiFi + HTTP REST.</p>
         </div>
         @if ($pesanan->metode_pembayaran === 'qris')
             <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 mt-3">
@@ -254,8 +252,7 @@
                             lagi.</p>
                     </div>
                 @endif
-                <p class="text-stone-500 text-xs mt-3">Pembayaran QRIS diproses otomatis melalui Midtrans (GoPay, OVO,
-                    Dana, ShopeePay, BCA Mobile, m-Banking).</p>
+                <p class="text-stone-500 text-xs mt-3">Pembayaran QRIS diproses otomatis melalui Midtrans.</p>
             </div>
         @else
             <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 mt-3">
@@ -358,7 +355,7 @@
     @endif
 
     <script>
-        // Realtime: perubahan status pesanan/pembayaran → muat ulang pelacakan.
+
         window.addEventListener('realtime', () => window.realtimeReload(600));
     </script>
 </body>

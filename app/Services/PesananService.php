@@ -13,10 +13,11 @@ use RuntimeException;
 
 class PesananService
 {
-    public const PAJAK_PERSEN = 10;
-
     /**
      * Buat pesanan dari satu pintu (e-menu, kasir, atau API).
+     *
+     * Stok sengaja tidak dipotong di sini. Sesuai alur POS, stok baru
+     * dikurangi setelah pembayaran berhasil melalui StokService.
      *
      * Opsi yang didukung:
      * - asal: emenu|kasir|api (menentukan status awal)
@@ -49,6 +50,10 @@ class PesananService
                     throw new RuntimeException('Menu yang dipilih tidak ditemukan.');
                 }
 
+                if (! $menu->is_aktif) {
+                    throw new RuntimeException('Menu '.$menu->nama_menu.' sedang tidak tersedia.');
+                }
+
                 if ($menu->stok_menu < $jumlah) {
                     throw new RuntimeException('Stok '.$menu->nama_menu.' tidak cukup.');
                 }
@@ -56,8 +61,8 @@ class PesananService
                 $subtotal += (float) $menu->harga * $jumlah;
             }
 
-            $pajak = (int) round($subtotal * self::PAJAK_PERSEN / 100);
-            $totalBayar = $subtotal + $pajak;
+            // Tidak ada pajak/biaya tambahan. Total tagihan murni subtotal menu.
+            $totalBayar = $subtotal;
 
             $asal = $opsi['asal'] ?? 'api';
             $metode = $opsi['metode'] ?? null;
@@ -98,18 +103,6 @@ class PesananService
                     'status_item' => 'menunggu',
                     'catatan' => $catatanPerMenu[$menuId] ?? null,
                 ]);
-
-                $menu->decrement('stok_menu', $jumlah);
-
-                StokMutasi::create([
-                    'menu_id' => $menu->id,
-                    'pesanan_id' => $pesanan->id,
-                    'jenis' => 'penjualan',
-                    'jumlah_delta' => -$jumlah,
-                    'stok_akhir' => (int) $menu->fresh()->stok_menu,
-                    'keterangan' => 'Pesanan '.$kodePesanan,
-                    'created_by' => $opsi['kasir_id'] ?? null,
-                ]);
             }
 
             $meja->update(['status_meja' => 'terisi']);
@@ -119,7 +112,8 @@ class PesananService
     }
 
     /**
-     * Batalkan pesanan dan kembalikan stok menu (idempoten).
+     * Batalkan pesanan. Stok hanya dikembalikan bila stok memang sudah
+     * dipotong setelah pembayaran. Proses idempoten agar void ganda aman.
      */
     public function batalkan(Pesanan $pesanan, ?int $userId = null, string $alasan = 'Pesanan dibatalkan.'): void
     {
@@ -130,26 +124,38 @@ class PesananService
                 return;
             }
 
-            $detail = $terkunci->detailPesanan()->get();
+            $sudahDiproses = StokMutasi::query()
+                ->where('pesanan_id', $terkunci->id)
+                ->where('jenis', 'penjualan')
+                ->exists();
 
-            foreach ($detail as $item) {
-                $menu = Menu::whereKey($item->menu_id)->lockForUpdate()->first();
+            $sudahDikembalikan = StokMutasi::query()
+                ->where('pesanan_id', $terkunci->id)
+                ->where('jenis', 'pembatalan')
+                ->exists();
 
-                if (! $menu) {
-                    continue;
+            if ($sudahDiproses && ! $sudahDikembalikan) {
+                $detail = $terkunci->detailPesanan()->get();
+
+                foreach ($detail as $item) {
+                    $menu = Menu::whereKey($item->menu_id)->lockForUpdate()->first();
+
+                    if (! $menu) {
+                        continue;
+                    }
+
+                    $menu->increment('stok_menu', $item->jumlah);
+
+                    StokMutasi::create([
+                        'menu_id' => $menu->id,
+                        'pesanan_id' => $terkunci->id,
+                        'jenis' => 'pembatalan',
+                        'jumlah_delta' => $item->jumlah,
+                        'stok_akhir' => (int) $menu->fresh()->stok_menu,
+                        'keterangan' => $alasan,
+                        'created_by' => $userId,
+                    ]);
                 }
-
-                $menu->increment('stok_menu', $item->jumlah);
-
-                StokMutasi::create([
-                    'menu_id' => $menu->id,
-                    'pesanan_id' => $terkunci->id,
-                    'jenis' => 'pembatalan',
-                    'jumlah_delta' => $item->jumlah,
-                    'stok_akhir' => (int) $menu->fresh()->stok_menu,
-                    'keterangan' => $alasan,
-                    'created_by' => $userId,
-                ]);
             }
 
             $terkunci->update([

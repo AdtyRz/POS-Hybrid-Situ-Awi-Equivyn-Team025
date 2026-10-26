@@ -87,7 +87,7 @@
                 <td>#{{ $log->kode_pesanan }}</td>
                 <td>{{ $log->meja ? $log->meja->area.' ('.$log->meja->kode_meja.')' : '-' }}</td>
                 <td>{{ $log->kasir ? $log->kasir->nama : '-' }}</td>
-                <td>{{ optional($log->waktu_pesan)->format('H:i') }} WIB</td>
+                <td>{{ optional($log->waktu_pesan)->timezone('Asia/Jakarta')->format('H:i') }} WIB</td>
                 <td class="right">Rp {{ number_format($log->total_bayar, 0, ',', '.') }}</td>
             </tr>
             @empty

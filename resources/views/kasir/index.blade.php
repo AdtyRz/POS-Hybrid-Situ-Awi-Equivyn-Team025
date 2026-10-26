@@ -27,7 +27,7 @@
         }
         .font-display { font-family: 'Playfair Display', Georgia, serif; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
-        
+
         .thermal-tear-top {
             background: radial-gradient(circle at 10px -5px, transparent 12px, #FFFFFF 13px);
             background-size: 20px 20px;
@@ -66,11 +66,11 @@
 
     <header class="sticky top-0 z-40 bg-[#FBF8F1]/95 backdrop-blur-md border-b border-[#C8C2B3]/60 shadow-[0_2px_8px_-2px_rgba(26,38,20,0.06)]">
         <div class="max-w-[1366px] w-full mx-auto px-6 py-3.5 flex items-center justify-between gap-6 min-h-[68px]">
-            
+
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-full bg-[#0B4D2B] border-2 border-[#E0B24E] overflow-hidden flex items-center justify-center shadow-sm shrink-0">
-                    <img src="{{ asset('asset/Logo.png') }}" 
-                         alt="Logo Saung Situ Awi" 
+                    <img src="{{ asset('asset/Logo.png') }}"
+                         alt="Logo Saung Situ Awi"
                          class="w-full h-full object-cover"
                          onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\'text-[#E0B24E] font-bold text-xs\'>SA</span>';">
                 </div>
@@ -88,13 +88,13 @@
             </div>
 
             <div class="flex items-center gap-2.5">
-                
+
                 <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F3EEDF] border border-[#C8C2B3]/50 text-xs text-[#00341A] font-semibold">
                     <span class="relative flex h-2 w-2">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
                     </span>
-                    <span>MQTT Broker: Online & Synced</span>
+                    <span>Koneksi Server: Online &amp; Synced</span>
                 </div>
 
                 <div class="flex items-center gap-2 px-3 py-1 rounded-xl bg-[#F3EEDF] border border-[#C8C2B3]/50 text-xs">
@@ -132,7 +132,7 @@
                     </button>
                 </form>
 
-                <button type="button" 
+                <button type="button"
                         @click="lockTerminal()"
                         class="w-8 h-8 rounded-xl bg-[#F3EEDF] hover:bg-[#EAE4D3] border border-[#C8C2B3]/50 flex items-center justify-center text-[#6B6A63] hover:text-[#2B2A26] transition active:scale-95"
                         title="Kunci Terminal (Shift Lock)">
@@ -146,7 +146,25 @@
 
     <main class="flex-1 max-w-[1366px] w-full mx-auto px-6 py-4 flex flex-col gap-3">
 
-        <div x-show="iotAlert.active" 
+        @if (session('error'))
+        <div class="bg-[#FEF2F2] border border-[#FCA5A5] text-[#991B1B] rounded-xl px-4 py-3 text-xs font-semibold flex items-center gap-2">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            </svg>
+            <span>{{ session('error') }}</span>
+        </div>
+        @endif
+
+        @if (session('sukses'))
+        <div class="bg-[#ECFDF5] border border-[#6EE7B7] text-[#065F46] rounded-xl px-4 py-3 text-xs font-semibold flex items-center gap-2">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span>{{ session('sukses') }}</span>
+        </div>
+        @endif
+
+        <div x-show="iotAlert.active"
              x-transition:enter="transition ease-out duration-300 transform"
              x-transition:enter-start="-translate-y-4 opacity-0"
              x-transition:enter-end="translate-y-0 opacity-100"
@@ -154,7 +172,7 @@
              x-transition:leave-start="translate-y-0 opacity-100"
              x-transition:leave-end="-translate-y-4 opacity-0"
              class="bg-[#FBF3DD] border-2 border-[#E0B24E] rounded-xl p-3 shadow-[0px_0px_20px_-2px_rgba(224,178,78,0.35)] flex items-center justify-between gap-4">
-            
+
             <div class="flex items-center gap-3">
                 <div class="relative w-9 h-9 rounded-lg bg-[#0B4D2B] text-[#E0B24E] flex items-center justify-center shrink-0 shadow-sm">
                     <svg class="w-5 h-5 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -179,7 +197,7 @@
             </div>
 
             <div class="flex items-center gap-2 shrink-0">
-                <button type="button" 
+                <button type="button"
                         @click="dismissAlert()"
                         class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-[#C8C2B3]/60 hover:bg-[#FAF7F0] text-xs font-semibold text-[#2B2A26] shadow-xs transition active:scale-95 min-h-[44px]">
                     <svg class="w-3.5 h-3.5 text-[#7A7E6F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -188,7 +206,7 @@
                     <span>Matikan Buzzer / Tandai Selesai</span>
                 </button>
 
-                <button type="button" 
+                <button type="button"
                         @click="assignWaiter()"
                         class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0B4D2B] hover:bg-[#0A4A28] text-white text-xs font-bold shadow-xs transition active:scale-95 min-h-[44px]">
                     <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -200,17 +218,17 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-            
+
             <section class="lg:col-span-8 flex flex-col gap-3.5">
-                
+
                 <div class="bg-[#FAF7F0] border border-[#C8C2B3]/60 rounded-xl p-2.5 shadow-xs flex items-center justify-between gap-3">
                     <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-                        
-                        <button type="button" 
+
+                        <button type="button"
                                 @click="activeFilter = 'all'"
                                 class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition active:scale-95 shrink-0 min-h-[38px]"
-                                :class="activeFilter === 'all' 
-                                    ? 'bg-[#0B4D2B] text-white shadow-xs' 
+                                :class="activeFilter === 'all'
+                                    ? 'bg-[#0B4D2B] text-white shadow-xs'
                                     : 'bg-[#F3EEDF] text-[#2B2A26] hover:bg-[#EAE4D3]'">
                             <span>Semua Saung</span>
                             <span class="inline-flex items-center px-1.5 py-0.2 rounded-full font-mono text-[10px] font-bold"
@@ -219,11 +237,11 @@
                             </span>
                         </button>
 
-                        <button type="button" 
+                        <button type="button"
                                 @click="activeFilter = 'waiting_cash'"
                                 class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition active:scale-95 shrink-0 min-h-[38px]"
-                                :class="activeFilter === 'waiting_cash' 
-                                    ? 'bg-[#FFFBEB] border border-[#E0B24E]/70 text-[#C9982F] font-bold shadow-xs' 
+                                :class="activeFilter === 'waiting_cash'
+                                    ? 'bg-[#FFFBEB] border border-[#E0B24E]/70 text-[#C9982F] font-bold shadow-xs'
                                     : 'bg-[#F3EEDF] text-[#2B2A26] hover:bg-[#EAE4D3]'">
                             <svg class="w-3.5 h-3.5 text-[#C9982F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -233,11 +251,11 @@
                             </span>
                         </button>
 
-                        <button type="button" 
+                        <button type="button"
                                 @click="activeFilter = 'paid'"
                                 class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition active:scale-95 shrink-0 min-h-[38px]"
-                                :class="activeFilter === 'paid' 
-                                    ? 'bg-[#ECFDF5] border border-[#6EE7B7] text-[#065F46] font-bold shadow-xs' 
+                                :class="activeFilter === 'paid'
+                                    ? 'bg-[#ECFDF5] border border-[#6EE7B7] text-[#065F46] font-bold shadow-xs'
                                     : 'bg-[#F3EEDF] text-[#2B2A26] hover:bg-[#EAE4D3]'">
                             <svg class="w-3.5 h-3.5 text-[#047857]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -247,11 +265,11 @@
                             </span>
                         </button>
 
-                        <button type="button" 
+                        <button type="button"
                                 @click="activeFilter = 'empty'"
                                 class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition active:scale-95 shrink-0 min-h-[38px]"
-                                :class="activeFilter === 'empty' 
-                                    ? 'bg-white border border-[#C8C2B3] text-[#2B2A26] font-bold shadow-xs' 
+                                :class="activeFilter === 'empty'
+                                    ? 'bg-white border border-[#C8C2B3] text-[#2B2A26] font-bold shadow-xs'
                                     : 'bg-[#F3EEDF] text-[#6B6A63] hover:bg-[#EAE4D3]'">
                             <span class="w-2 h-2 rounded-full bg-[#7A7E6F]"></span>
                             <span>Kosong / Available</span>
@@ -304,7 +322,7 @@
                                                         :class="saung.status === 'empty' ? 'text-[#6B6A63]' : 'text-[#00341A]'"
                                                         x-text="saung.name">
                                                     </h4>
-                                                    <span x-show="selectedSaungId === saung.id" 
+                                                    <span x-show="selectedSaungId === saung.id"
                                                           class="px-1.5 py-0.2 rounded bg-[#0B4D2B] text-white text-[9px] font-bold uppercase tracking-wider">
                                                         TERPILIH
                                                     </span>
@@ -313,28 +331,35 @@
                                             </div>
 
                                             <div>
-                                                
+
                                                 <template x-if="saung.hasAlert">
                                                     <div class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#C1442C] text-white text-[9px] font-extrabold uppercase shadow-2xs">
                                                         <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                                                         <span>PANGGILAN</span>
                                                     </div>
                                                 </template>
-                                                
+
                                                 <template x-if="!saung.hasAlert && saung.status === 'waiting_cash'">
                                                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E0B24E]/20 border border-[#E0B24E]/50 text-[#C9982F]">
                                                         <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                                         <span>Menunggu Bayar Kasir</span>
                                                     </span>
                                                 </template>
-                                                
+
+                                                <template x-if="!saung.hasAlert && !['waiting_cash', 'paid', 'empty'].includes(saung.status)">
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F0E9] border border-[#A7C4AB] text-[#0B4D2B]">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-[#0B4D2B]"></span>
+                                                        <span>Terisi</span>
+                                                    </span>
+                                                </template>
+
                                                 <template x-if="saung.status === 'paid'">
                                                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ECFDF5] border border-[#6EE7B7] text-[#065F46]">
                                                         <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                                                         <span x-text="saung.paymentType === 'qris' ? 'Lunas (QRIS)' : 'Lunas (Tunai)'"></span>
                                                     </span>
                                                 </template>
-                                                
+
                                                 <template x-if="saung.status === 'empty'">
                                                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#EAE4D3] text-[#6B6A63]">
                                                         <span class="w-1.5 h-1.5 rounded-full bg-[#7A7E6F]"></span>
@@ -357,9 +382,9 @@
                                         <template x-if="saung.status !== 'empty'">
                                             <div class="rounded-lg p-2 border text-[10px] space-y-1"
                                                  :class="selectedSaungId === saung.id ? 'bg-white/80 border-[#C8C2B3]/40' : 'bg-[#FAF7F0] border-[#C8C2B3]/30'">
-                                                <div class="flex items-center justify-between text-[#6B6A63]">
-                                                    <span class="font-mono" x-text="saung.orderId"></span>
-                                                    <span class="font-semibold text-[#92400E] flex items-center gap-0.5">
+                                                <div class="flex items-start justify-between gap-2 text-[#6B6A63]">
+                                                    <span class="font-mono text-[9px] leading-snug break-all min-w-0 flex-1" x-text="saung.orderId"></span>
+                                                    <span class="font-semibold text-[#92400E] flex items-center gap-0.5 shrink-0 whitespace-nowrap">
                                                         <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                                         <span x-text="saung.elapsedTime"></span>
                                                     </span>
@@ -379,7 +404,7 @@
                                     </div>
 
                                     <div class="pt-2 mt-2 border-t border-[#C8C2B3]/30 flex items-center justify-between">
-                                        <span class="text-[11px] text-[#6B6A63] font-medium" 
+                                        <span class="text-[11px] text-[#6B6A63] font-medium"
                                               x-text="saung.status === 'empty' ? 'Status:' : 'Total Tagihan:'">
                                         </span>
                                         <span class="font-bold"
@@ -413,13 +438,13 @@
                                          'bg-white border border-[#C8C2B3]/60 hover:shadow-md': selectedSaungId !== saung.id && saung.status !== 'empty',
                                          'bg-[#FAF7F0]/60 border border-dashed border-[#C8C2B3]/70 opacity-80': saung.status === 'empty'
                                      }">
-                                    
+
                                     <div class="space-y-2">
                                         <div class="flex items-start justify-between gap-1.5">
                                             <div>
                                                 <div class="flex items-center gap-1.5">
                                                     <h4 class="font-bold text-sm tracking-tight text-[#00341A]" x-text="saung.name"></h4>
-                                                    <span x-show="selectedSaungId === saung.id" 
+                                                    <span x-show="selectedSaungId === saung.id"
                                                           class="px-1.5 py-0.2 rounded bg-[#0B4D2B] text-white text-[9px] font-bold uppercase tracking-wider">
                                                         TERPILIH
                                                     </span>
@@ -433,19 +458,31 @@
                                                         <span>Menunggu Bayar Kasir</span>
                                                     </span>
                                                 </template>
+                                                <template x-if="!['waiting_cash', 'paid', 'empty'].includes(saung.status)">
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F0E9] border border-[#A7C4AB] text-[#0B4D2B]">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-[#0B4D2B]"></span>
+                                                        <span>Terisi</span>
+                                                    </span>
+                                                </template>
                                                 <template x-if="saung.status === 'paid'">
                                                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ECFDF5] border border-[#6EE7B7] text-[#065F46]">
                                                         <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                                                         <span x-text="saung.paymentType === 'qris' ? 'Lunas (QRIS)' : 'Lunas (Tunai)'"></span>
                                                     </span>
                                                 </template>
+                                                <template x-if="saung.status === 'empty'">
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#EAE4D3] text-[#6B6A63]">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-[#7A7E6F]"></span>
+                                                        <span>Kosong</span>
+                                                    </span>
+                                                </template>
                                             </div>
                                         </div>
 
                                         <div class="rounded-lg p-2 bg-[#FAF7F0] border border-[#C8C2B3]/30 text-[10px] space-y-1">
-                                            <div class="flex items-center justify-between text-[#6B6A63]">
-                                                <span class="font-mono" x-text="saung.orderId"></span>
-                                                <span class="font-semibold text-[#92400E] flex items-center gap-0.5">
+                                            <div class="flex items-start justify-between gap-2 text-[#6B6A63]">
+                                                <span class="font-mono text-[9px] leading-snug break-all min-w-0 flex-1" x-text="saung.orderId"></span>
+                                                <span class="font-semibold text-[#92400E] flex items-center gap-0.5 shrink-0 whitespace-nowrap">
                                                     <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                                     <span x-text="saung.elapsedTime"></span>
                                                 </span>
@@ -487,7 +524,7 @@
                                          'bg-white border border-[#C8C2B3]/60 hover:shadow-md': selectedSaungId !== saung.id && saung.status !== 'empty',
                                          'bg-[#FAF7F0]/60 border border-dashed border-[#C8C2B3]/70 opacity-80 hover:opacity-100': saung.status === 'empty'
                                      }">
-                                    
+
                                     <div class="space-y-2">
                                         <div class="flex items-start justify-between gap-1.5">
                                             <div>
@@ -496,7 +533,7 @@
                                                         :class="saung.status === 'empty' ? 'text-[#6B6A63]' : 'text-[#00341A]'"
                                                         x-text="saung.name">
                                                     </h4>
-                                                    <span x-show="selectedSaungId === saung.id" 
+                                                    <span x-show="selectedSaungId === saung.id"
                                                           class="px-1.5 py-0.2 rounded bg-[#0B4D2B] text-white text-[9px] font-bold uppercase tracking-wider">
                                                         TERPILIH
                                                     </span>
@@ -508,6 +545,12 @@
                                                 <template x-if="saung.status === 'waiting_cash'">
                                                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E0B24E]/20 border border-[#E0B24E]/50 text-[#C9982F]">
                                                         <span>Menunggu Bayar Kasir</span>
+                                                    </span>
+                                                </template>
+                                                <template x-if="!['waiting_cash', 'paid', 'empty'].includes(saung.status)">
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F0E9] border border-[#A7C4AB] text-[#0B4D2B]">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-[#0B4D2B]"></span>
+                                                        <span>Terisi</span>
                                                     </span>
                                                 </template>
                                                 <template x-if="saung.status === 'paid'">
@@ -527,9 +570,9 @@
 
                                         <template x-if="saung.status !== 'empty'">
                                             <div class="rounded-lg p-2 bg-[#FAF7F0] border border-[#C8C2B3]/30 text-[10px] space-y-1">
-                                                <div class="flex items-center justify-between text-[#6B6A63]">
-                                                    <span class="font-mono" x-text="saung.orderId"></span>
-                                                    <span class="font-semibold text-[#92400E] flex items-center gap-0.5">
+                                                <div class="flex items-start justify-between gap-2 text-[#6B6A63]">
+                                                    <span class="font-mono text-[9px] leading-snug break-all min-w-0 flex-1" x-text="saung.orderId"></span>
+                                                    <span class="font-semibold text-[#92400E] flex items-center gap-0.5 shrink-0 whitespace-nowrap">
                                                         <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                                         <span x-text="saung.elapsedTime"></span>
                                                     </span>
@@ -549,7 +592,7 @@
                                     </div>
 
                                     <div class="pt-2 mt-2 border-t border-[#C8C2B3]/30 flex items-center justify-between">
-                                        <span class="text-[11px] text-[#6B6A63] font-medium" 
+                                        <span class="text-[11px] text-[#6B6A63] font-medium"
                                               x-text="saung.status === 'empty' ? 'Status:' : 'Total Tagihan:'">
                                         </span>
                                         <span class="font-bold"
@@ -566,9 +609,9 @@
             </section>
 
             <aside class="lg:col-span-4 sticky top-20 flex flex-col gap-3">
-                
+
                 <div class="bg-white border border-[#C8C2B3]/60 rounded-xl p-4 shadow-[0_6px_16px_-4px_rgba(26,38,20,0.08)] space-y-3">
-                    
+
                     <div class="pb-2.5 border-b border-[#C8C2B3]/40 space-y-1.5">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-1.5 font-bold text-sm text-[#00341A] uppercase tracking-wide">
@@ -603,8 +646,8 @@
                                 </div>
 
                                 <div class="mt-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1.5"
-                                     :class="currentSaung.status === 'waiting_cash' 
-                                         ? 'bg-[#FBF3DD] border-[#E0B24E]/40 text-[#C9982F]' 
+                                     :class="currentSaung.status === 'waiting_cash'
+                                         ? 'bg-[#FBF3DD] border-[#E0B24E]/40 text-[#C9982F]'
                                          : 'bg-[#ECFDF5] border-[#6EE7B7] text-[#065F46]'">
                                     <span class="w-2 h-2 rounded-full"
                                           :class="currentSaung.status === 'waiting_cash' ? 'bg-[#E0B24E] animate-pulse' : 'bg-[#059669]'"></span>
@@ -628,7 +671,7 @@
                                         <span class="text-[#2B2A26]" x-text="item.qty + 'x ' + item.name"></span>
                                         <span class="text-[#00341A]" x-text="formatRupiah(item.price * item.qty)"></span>
                                     </div>
-                                    <div class="text-[10px] font-medium" 
+                                    <div class="text-[10px] font-medium"
                                          :class="item.noteColor || 'text-[#C9982F]'"
                                          x-text="item.note"></div>
                                     <div class="text-[10px] font-mono text-[#6B6A63]" x-text="'@ ' + formatRupiah(item.price)"></div>
@@ -639,13 +682,9 @@
 
                     <template x-if="currentSaung.status !== 'empty'">
                         <div class="bg-[#F3EEDF] border border-[#C8C2B3]/40 rounded-lg p-2.5 text-xs space-y-1">
-                            <div class="flex items-center justify-between text-[#6B6A63]">
+                            <div class="flex items-start justify-between gap-2 text-[#6B6A63]">
                                 <span x-text="'Subtotal (' + currentSaung.totalPortions + ' porsi):'"></span>
                                 <span class="font-mono font-semibold text-[#2B2A26]" x-text="formatRupiah(currentSaung.subtotal)"></span>
-                            </div>
-                            <div class="flex items-center justify-between text-[#6B6A63]">
-                                <span>Pajak PB1 Resto (10%):</span>
-                                <span class="font-mono font-semibold text-[#2B2A26]" x-text="formatRupiah(currentSaung.tax)"></span>
                             </div>
                             <div class="pt-1.5 mt-1 border-t border-[#C8C2B3]/50 flex items-baseline justify-between">
                                 <span class="font-extrabold text-[11px] text-[#00341A] uppercase tracking-wider">
@@ -665,44 +704,43 @@
                             </label>
 
                             <div class="grid grid-cols-2 gap-1.5">
-                                <button type="button" 
+                                <button type="button"
                                         @click="setQuickCash(currentSaung.total)"
                                         class="py-2.5 px-2 rounded-lg text-xs font-bold transition active:scale-95 text-center min-h-[40px]"
-                                        :class="cashReceived === currentSaung.total 
-                                            ? 'bg-[#E0B24E]/20 border border-[#E0B24E]/70 text-[#C9982F] shadow-xs' 
+                                        :class="cashReceived === currentSaung.total
+                                            ? 'bg-[#E0B24E]/20 border border-[#E0B24E]/70 text-[#C9982F] shadow-xs'
                                             : 'bg-[#FAF7F0] border border-[#C8C2B3]/50 text-[#2B2A26] hover:bg-[#F3EEDF]'">
                                     <span x-text="'Uang Pas (' + formatRupiah(currentSaung.total) + ')'"></span>
                                 </button>
 
-                                <button type="button" 
+                                <button type="button"
                                         @click="setQuickCash(150000)"
                                         class="py-2.5 px-2 rounded-lg text-xs font-bold transition active:scale-95 text-center min-h-[40px]"
-                                        :class="cashReceived === 150000 
-                                            ? 'bg-[#E0B24E]/20 border border-[#E0B24E]/70 text-[#C9982F] shadow-xs' 
+                                        :class="cashReceived === 150000
+                                            ? 'bg-[#E0B24E]/20 border border-[#E0B24E]/70 text-[#C9982F] shadow-xs'
                                             : 'bg-[#FAF7F0] border border-[#C8C2B3]/50 text-[#2B2A26] hover:bg-[#F3EEDF]'">
                                     Rp 150.000
                                 </button>
 
-                                <button type="button" 
+                                <button type="button"
                                         @click="setQuickCash(200000)"
                                         class="py-2.5 px-2 rounded-lg text-xs font-bold transition active:scale-95 text-center min-h-[40px]"
-                                        :class="cashReceived === 200000 
-                                            ? 'bg-[#E0B24E]/20 border border-[#E0B24E]/70 text-[#C9982F] shadow-xs' 
+                                        :class="cashReceived === 200000
+                                            ? 'bg-[#E0B24E]/20 border border-[#E0B24E]/70 text-[#C9982F] shadow-xs'
                                             : 'bg-[#FAF7F0] border border-[#C8C2B3]/50 text-[#2B2A26] hover:bg-[#F3EEDF]'">
                                     Rp 200.000
                                 </button>
 
-                                <button type="button" 
+                                <button type="button"
                                         @click="setQuickCash(300000)"
                                         class="py-2.5 px-2 rounded-lg text-xs font-bold transition active:scale-95 text-center min-h-[40px]"
-                                        :class="cashReceived === 300000 
-                                            ? 'bg-[#E0B24E]/20 border border-[#E0B24E]/70 text-[#C9982F] shadow-xs' 
+                                        :class="cashReceived === 300000
+                                            ? 'bg-[#E0B24E]/20 border border-[#E0B24E]/70 text-[#C9982F] shadow-xs'
                                             : 'bg-[#FAF7F0] border border-[#C8C2B3]/50 text-[#2B2A26] hover:bg-[#F3EEDF]'">
                                     Rp 300.000
                                 </button>
                             </div>
 
-                            <!-- Display Uang Diterima -->
                             <div class="relative bg-white border-2 border-[#C8C2B3]/70 rounded-xl px-3 py-2 flex items-center justify-between shadow-xs">
                                 <div class="flex items-center gap-1.5">
                                     <span class="px-1.5 py-0.5 rounded bg-[#FAF7F0] border border-[#C8C2B3]/50 text-[10px] font-extrabold text-[#6B6A63] tracking-wider uppercase">
@@ -714,7 +752,7 @@
                                           x-text="formatNumber(cashReceived)">
                                         0
                                     </span>
-                                    <button type="button" 
+                                    <button type="button"
                                             @click="pressNumpad('clear')"
                                             x-show="cashReceived > 0"
                                             title="Reset Uang Diterima"
@@ -726,48 +764,46 @@
                                 </div>
                             </div>
 
-                            <!-- Number Pad / Keypad Kasir -->
                             <div class="grid grid-cols-4 gap-1.5 pt-0.5 select-none">
-                                {{-- Baris 1: 1, 2, 3, C (Clear) --}}
-                                <button type="button" 
+
+                                <button type="button"
                                         @click="pressNumpad('1')"
                                         class="h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
                                     1
                                 </button>
-                                <button type="button" 
+                                <button type="button"
                                         @click="pressNumpad('2')"
                                         class="h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
                                     2
                                 </button>
-                                <button type="button" 
+                                <button type="button"
                                         @click="pressNumpad('3')"
                                         class="h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
                                     3
                                 </button>
-                                <button type="button" 
+                                <button type="button"
                                         @click="pressNumpad('clear')"
                                         class="h-10 rounded-lg bg-[#FEF2F2] hover:bg-red-100 border border-[#FCA5A5]/60 text-[#C1442C] font-mono font-extrabold text-sm shadow-xs active:scale-95 transition flex items-center justify-center tracking-wider"
                                         title="Reset ke 0">
                                     C
                                 </button>
 
-                                {{-- Baris 2: 4, 5, 6, ⌫ (Backspace) --}}
-                                <button type="button" 
+                                <button type="button"
                                         @click="pressNumpad('4')"
                                         class="h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
                                     4
                                 </button>
-                                <button type="button" 
+                                <button type="button"
                                         @click="pressNumpad('5')"
                                         class="h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
                                     5
                                 </button>
-                                <button type="button" 
+                                <button type="button"
                                         @click="pressNumpad('6')"
                                         class="h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
                                     6
                                 </button>
-                                <button type="button" 
+                                <button type="button"
                                         @click="pressNumpad('backspace')"
                                         class="h-10 rounded-lg bg-[#FAF7F0] hover:bg-[#EAE4D3] border border-[#C8C2B3]/70 text-[#6B6A63] hover:text-[#2B2A26] shadow-xs active:scale-95 transition flex items-center justify-center"
                                         title="Hapus 1 angka">
@@ -776,35 +812,33 @@
                                     </svg>
                                 </button>
 
-                                {{-- Baris 3: 7, 8, 9, 00 --}}
-                                <button type="button" 
+                                <button type="button"
                                         @click="pressNumpad('7')"
                                         class="h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
                                     7
                                 </button>
-                                <button type="button" 
+                                <button type="button"
                                         @click="pressNumpad('8')"
                                         class="h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
                                     8
                                 </button>
-                                <button type="button" 
+                                <button type="button"
                                         @click="pressNumpad('9')"
                                         class="h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
                                     9
                                 </button>
-                                <button type="button" 
+                                <button type="button"
                                         @click="pressNumpad('00')"
                                         class="h-10 rounded-lg bg-[#FAF7F0] hover:bg-[#EAE4D3] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-xs shadow-xs active:scale-95 transition flex items-center justify-center">
                                     00
                                 </button>
 
-                                {{-- Baris 4: 0 (span 2), 000 (span 2) --}}
-                                <button type="button" 
+                                <button type="button"
                                         @click="pressNumpad('0')"
                                         class="col-span-2 h-10 rounded-lg bg-white hover:bg-[#F3EEDF] border border-[#C8C2B3]/70 text-[#2B2A26] font-mono font-extrabold text-base shadow-xs active:scale-95 transition flex items-center justify-center">
                                     0
                                 </button>
-                                <button type="button" 
+                                <button type="button"
                                         @click="pressNumpad('000')"
                                         class="col-span-2 h-10 rounded-lg bg-[#E0B24E]/15 hover:bg-[#E0B24E]/25 border border-[#E0B24E]/50 text-[#C9982F] font-mono font-extrabold text-xs shadow-xs active:scale-95 transition flex items-center justify-center">
                                     000
@@ -818,7 +852,7 @@
                                     </svg>
                                     <span>Kembalian:</span>
                                 </div>
-                                <div class="font-extrabold text-base text-[#065F46]" 
+                                <div class="font-extrabold text-base text-[#065F46]"
                                      x-text="formatRupiah(calculateChange())">
                                     Rp 5.900
                                 </div>
@@ -828,7 +862,6 @@
 
                     <div class="space-y-2 pt-1">
 
-                        {{-- Banner khusus saat saung sudah lunas --}}
                         <template x-if="currentSaung.status === 'paid'">
                             <div class="bg-[#ECFDF5] border-2 border-[#6EE7B7] rounded-xl p-4 text-center space-y-1">
                                 <div class="flex items-center justify-center gap-2 text-[#065F46] font-extrabold text-sm">
@@ -837,31 +870,34 @@
                                     </svg>
                                     <span>TRANSAKSI SELESAI — SUDAH LUNAS</span>
                                 </div>
-                                <p class="text-[11px] text-[#047857]" x-text="'Metode: ' + (currentSaung.paymentType === 'qris' ? 'QRIS / Transfer' : 'Tunai')"></p>
+                                <p class="text-[11px] text-[#047857]" x-text="'Metode: ' + (currentSaung.paymentType === 'qris' ? 'QRIS Midtrans' : 'Tunai Kasir')"></p>
                                 <p class="text-[11px] text-[#6B6A63]">Pesanan sedang diproses di dapur / bar.</p>
                             </div>
                         </template>
-                        
-                        <button type="button" 
-                                @click="confirmPaymentAndPrint()"
+
+                        <button type="button"
+                                @click="confirmPayment()"
                                 :disabled="currentSaung.status === 'empty' || currentSaung.status === 'paid' || (currentSaung.status === 'waiting_cash' && cashReceived < currentSaung.total)"
                                 class="w-full py-3.5 px-4 rounded-xl bg-[#0B4D2B] hover:bg-[#0A4A28] disabled:bg-gray-400 disabled:cursor-not-allowed text-[#FBF3DD] font-extrabold text-xs tracking-wider uppercase flex items-center justify-center gap-2 shadow-sm transition active:scale-98 min-h-[48px]">
                             <svg class="w-4 h-4 text-[#FBF3DD]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
                             </svg>
-                            <span x-text="currentSaung.status === 'paid' ? 'SUDAH LUNAS — TIDAK BISA DIKONFIRMASI ULANG' : 'KONFIRMASI LUNAS & CETAK STRUK (ENTER)'"></span>
+                            <span x-text="currentSaung.status === 'paid' ? 'SUDAH LUNAS' : 'KONFIRMASI LUNAS (ENTER)'"></span>
                         </button>
 
                         <div class="grid grid-cols-2 gap-2">
-                            <button type="button" 
-                                    @click="reprintReceipt()"
-                                    :disabled="currentSaung.status === 'empty'"
-                                    class="py-2.5 px-3 rounded-lg bg-[#E0B24E]/15 hover:bg-[#E0B24E]/25 border border-[#E0B24E]/40 text-[#C9982F] font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 min-h-[44px]">
+                            <button type="button"
+                                    @click="cetakStruk()"
+                                    :disabled="!currentSaung.hasUnprintedPaid"
+                                    class="py-2.5 px-3 rounded-lg bg-[#E0B24E]/15 hover:bg-[#E0B24E]/25 border border-[#E0B24E]/40 text-[#C9982F] font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                                <span>Cetak Ulang [F3]</span>
+                                <span>Cetak Struk [F3]</span>
+                                <span x-show="currentSaung.hasUnprintedPaid"
+                                      class="px-1.5 py-0.5 rounded-full bg-[#C9982F] text-white text-[10px] font-extrabold"
+                                      x-text="currentSaung.receiptOrderIds.length"></span>
                             </button>
 
-                            <button type="button" 
+                            <button type="button"
                                     @click="voidOrder()"
                                     :disabled="currentSaung.status === 'empty' || currentSaung.status === 'paid'"
                                     class="py-2.5 px-3 rounded-lg bg-[#FEF2F2] hover:bg-red-100 border border-[#C1442C]/30 text-[#C1442C] font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed">
@@ -869,45 +905,67 @@
                                 <span>Batalkan Order [F9]</span>
                             </button>
                         </div>
+
+                        <button type="button"
+                                @click="akhiriSesiMeja()"
+                                :disabled="currentSaung.status !== 'paid'"
+                                class="w-full py-2.5 px-3 rounded-lg bg-[#F3EEDF] hover:bg-[#EFE8D6] border border-[#C8C2B3]/60 text-[#2B2A26] font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed">
+                            <svg class="w-3.5 h-3.5 text-[#7A5900]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                            </svg>
+                            <span>Akhiri Sesi Meja</span>
+                        </button>
                     </div>
                 </div>
 
                 <div class="bg-white border border-[#C8C2B3]/60 rounded-xl overflow-hidden shadow-xs">
-                    
+
                     <div class="bg-[#F3EEDF] px-3 py-2 flex items-center justify-between text-xs font-bold text-[#2B2A26] border-b border-[#C8C2B3]/30">
                         <div class="flex items-center gap-1.5">
                             <svg class="w-3.5 h-3.5 text-[#0B4D2B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
-                            <span>Pratinjau ESC/POS 80mm</span>
+                            <span>Pratinjau Struk Berikutnya</span>
                         </div>
-                        <span class="font-mono text-[10px] text-[#6B6A63]" x-text="currentSaung.orderId + ' • ' + currentSaung.id"></span>
+                        <span class="font-mono text-[10px] text-[#6B6A63]"
+                              x-text="currentSaung.hasUnprintedPaid ? (currentSaung.receiptOrderIds.length + ' pesanan lunas') : 'Belum ada struk'"></span>
                     </div>
 
                     <div class="p-3 bg-[#FAF7F0] flex justify-center">
-                        <div class="w-full bg-white p-3 rounded shadow-xs font-mono text-[10px] leading-tight text-[#262626] border border-[#E5E0D5]"
+                        <div x-show="currentSaung.hasUnprintedPaid"
+                             x-cloak
+                             class="w-full bg-white p-3 rounded shadow-xs font-mono text-[10px] leading-tight text-[#262626] border border-[#E5E0D5]"
                              :class="isPrinting ? 'receipt-printed' : ''">
-                            
+
                             <div class="text-center space-y-0.5 pb-2">
-                                <div class="font-bold text-xs uppercase text-black tracking-wider">SAUNG SITU AWI • CIWIDEY</div>
-                                <div class="text-[9px] text-[#737373]">Jl. Raya Situ Awi Km. 4 Ciwidey - Bandung</div>
+                                @if ($printLogo)
+                                    <div class="flex justify-center pb-1">
+                                        <img src="{{ $logoSrc }}"
+                                             alt="Logo {{ $receiptHeader }}"
+                                             class="h-10 w-auto max-w-[88px] object-contain"
+                                             onerror="this.style.display='none'">
+                                    </div>
+                                @endif
+                                <div class="font-bold text-xs uppercase text-black tracking-wider">{{ $receiptHeader }}</div>
+                                <div class="text-[9px] text-[#737373]">{{ $restoAddress }}</div>
+                                <div class="text-[9px] text-[#737373]">Telp: {{ $restoPhone }}</div>
                             </div>
 
                             <div class="border-t border-dashed border-[#A3A3A3] my-1.5"></div>
 
-                            <div class="flex justify-between text-[9px]">
-                                <span x-text="'No: ' + (currentSaung.orderId || '#SA-20260915-084')"></span>
-                                <span>Kasir: {{ auth()->user()->nama ?? 'Kasir' }}</span>
+                            <div class="flex justify-between gap-2 text-[9px]">
+                                <span class="break-all" x-text="'No: ' + (currentSaung.receiptOrderId || '-')"></span>
+                                <span class="shrink-0">Kasir: {{ auth()->user()->nama ?? 'Kasir' }}</span>
                             </div>
                             <div class="flex justify-between text-[9px]">
                                 <span x-text="'Meja: ' + (currentSaung.name || 'SAUNG LB-01')"></span>
-                                <span x-text="'15/09 ' + (currentSaung.qrTime || '12:04')"></span>
+                                <span x-text="'Waktu: ' + liveTimeString.replace(' WIB', '')"></span>
                             </div>
 
                             <div class="border-t border-dashed border-[#A3A3A3] my-1.5"></div>
 
                             <div class="space-y-1">
-                                <template x-for="item in currentSaung.items" :key="item.name">
+                                <template x-for="(item, index) in currentSaung.receiptItems" :key="index + '-' + item.name">
                                     <div class="flex justify-between">
                                         <span class="truncate max-w-[190px]" x-text="item.qty + 'x ' + item.name"></span>
                                         <span x-text="formatNumber(item.price * item.qty)"></span>
@@ -919,27 +977,42 @@
 
                             <div class="flex justify-between text-[9px]">
                                 <span>Subtotal:</span>
-                                <span x-text="formatNumber(currentSaung.subtotal)"></span>
-                            </div>
-                            <div class="flex justify-between text-[9px]">
-                                <span>Pajak PB1 (10%):</span>
-                                <span x-text="formatNumber(currentSaung.tax)"></span>
+                                <span x-text="formatNumber(currentSaung.receiptSubtotal)"></span>
                             </div>
 
                             <div class="border-t border-dashed border-[#A3A3A3] my-1 pt-1 flex justify-between font-bold text-xs text-black">
                                 <span>TOTAL:</span>
-                                <span x-text="formatRupiah(currentSaung.total)"></span>
+                                <span x-text="formatRupiah(currentSaung.receiptTotal)"></span>
                             </div>
 
                             <div class="flex justify-between text-[9px] pt-0.5">
-                                <span x-text="'Tunai: ' + formatNumber(cashReceived)"></span>
-                                <span class="font-bold text-[#00341A]" x-text="'Kemb: ' + formatRupiah(calculateChange())"></span>
+                                <span>Status:</span>
+                                <span class="font-bold text-[#00341A]">LUNAS</span>
+                            </div>
+                            <div class="flex justify-between text-[9px] pt-0.5">
+                                <span>Pembayaran:</span>
+                                <span x-text="currentSaung.receiptPaymentType || '-'"></span>
                             </div>
 
                             <div class="border-t border-dashed border-[#A3A3A3] my-1.5"></div>
 
                             <div class="text-center text-[9px] text-[#737373] pt-0.5 tracking-wider">
-                                *** HATUR NUHUN PISAN ***
+                                *** {{ strtoupper($receiptFooter) }} ***
+                            </div>
+                        </div>
+
+                        <div x-show="!currentSaung.hasUnprintedPaid"
+                             x-cloak
+                             class="w-full bg-white p-5 rounded border border-dashed border-[#C8C2B3] text-center space-y-2">
+                            <div class="w-10 h-10 rounded-full bg-[#FAF7F0] border border-[#C8C2B3]/60 flex items-center justify-center mx-auto text-[#C9982F]">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                </svg>
+                            </div>
+                            <div class="text-[11px] font-bold text-[#2B2A26]">Belum ada pesanan lunas yang belum dicetak</div>
+                            <div class="text-[10px] text-[#6B6A63] leading-relaxed">
+                                Setelah pembayaran dikonfirmasi, pesanan lunas akan muncul di sini.
+                                Struk hanya memuat pesanan baru yang belum pernah dicetak.
                             </div>
                         </div>
                     </div>
@@ -955,7 +1028,6 @@
         <input type="hidden" name="kode_pesanan" :value="currentSaung.kodePesanan">
         <input type="hidden" name="metode_pembayaran" value="tunai">
         <input type="hidden" name="jumlah_bayar" :value="cashReceived">
-        <input type="hidden" name="selesaikan_sesi" :value="selesaikanSesi">
     </form>
     <form id="formSelesaikanSesi" method="POST" :action="sesiTutupTemplate.replace('__MEJA__', currentSaung.id)" class="hidden">
         @csrf
@@ -997,7 +1069,7 @@
         </div>
     </footer>
 
-    <div x-show="toast.visible" 
+    <div x-show="toast.visible"
          x-transition:enter="transition ease-out duration-300 transform"
          x-transition:enter-start="translate-y-6 opacity-0"
          x-transition:enter-end="translate-y-0 opacity-100"
@@ -1011,7 +1083,17 @@
                  'bg-[#FBF3DD] text-[#00341A] border-[#E0B24E]': toast.type === 'gold',
                  'bg-[#FEF2F2] text-[#991B1B] border-[#FCA5A5]': toast.type === 'danger'
              }">
-            <span class="text-lg" x-text="toast.icon"></span>
+            <div class="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                <svg x-show="toast.type === 'success'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <svg x-show="toast.type === 'gold'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <svg x-show="toast.type === 'danger'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+            </div>
             <div>
                 <div class="font-bold text-xs" x-text="toast.title"></div>
                 <div class="text-[11px] opacity-90" x-text="toast.message"></div>
@@ -1019,7 +1101,7 @@
         </div>
     </div>
 
-    <div x-show="isLocked" 
+    <div x-show="isLocked"
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
@@ -1034,7 +1116,7 @@
                 <h3 class="font-bold text-lg text-[#00341A]">Terminal Terkunci</h3>
                 <p class="text-xs text-[#6B6A63]">Operator: {{ auth()->user()->nama ?? 'Kasir' }}</p>
             </div>
-            <button type="button" 
+            <button type="button"
                     @click="isLocked = false"
                     class="w-full py-3 rounded-xl bg-[#0B4D2B] hover:bg-[#0A4A28] text-white font-bold text-xs uppercase tracking-wide transition active:scale-95">
                 Buka Kunci Terminal
@@ -1042,49 +1124,10 @@
         </div>
     </div>
 
-    {{-- Modal konfirmasi: selesaikan sesi pelanggan setelah cetak struk --}}
-    <div x-show="sesiModal.visible" x-cloak
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         class="fixed inset-0 z-50 bg-[#00341A]/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-[#E0B24E]">
-            <div class="w-14 h-14 rounded-full bg-[#FBF3DD] border border-[#E0B24E] flex items-center justify-center mx-auto text-[#0B4D2B]">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-            </div>
-            <div class="text-center mt-3">
-                <h3 class="font-bold text-lg text-[#00341A]">Selesaikan Sesi Meja?</h3>
-                <p class="text-xs text-[#6B6A63] mt-1">
-                    Meja <strong x-text="currentSaung.id"></strong>. Bila sesi diselesaikan, semua pesanan aktif ditutup,
-                    meja dikosongkan, dan <strong>kode unik baru</strong> dibuat untuk pengunjung berikutnya.
-                </p>
-            </div>
-            <div class="grid grid-cols-1 gap-2 mt-5">
-                <button type="button"
-                        @click="selesaikanSesiDanCetak()"
-                        class="w-full py-3 rounded-xl bg-[#0B4D2B] hover:bg-[#0A4A28] text-white font-extrabold text-xs uppercase tracking-wide transition active:scale-95">
-                    Selesaikan Sesi &amp; Cetak
-                </button>
-                <button type="button"
-                        @click="cetakTanpaSelesaikan()"
-                        class="w-full py-3 rounded-xl bg-[#F3EEDF] hover:bg-[#EFE8D6] border border-[#C8C2B3]/60 text-[#2B2A26] font-bold text-xs uppercase tracking-wide transition active:scale-95">
-                    Cetak Saja (Sesi Tetap Berjalan)
-                </button>
-                <button type="button"
-                        @click="sesiModal.visible = false"
-                        class="w-full py-2 rounded-xl text-[#6B6A63] hover:text-[#2B2A26] font-bold text-[11px] transition">
-                    Batal
-                </button>
-            </div>
-        </div>
-    </div>
-
     <script>
         function kasirPosApp() {
             return {
-                liveTimeString: '12:08:25 WIB',
+                liveTimeString: '{{ now('Asia/Jakarta')->format('H:i:s') }} WIB',
                 latencyString: '14ms',
                 activeFilter: 'all',
                 selectedSaungId: @json($selectedSaungId),
@@ -1092,17 +1135,22 @@
                 _lastNumpadTime: 0,
                 isPrinting: false,
                 isLocked: false,
-                selesaikanSesi: 0,
-                sesiModal: { visible: false, mode: 'bayar' },
+                strukTandaiUrl: @json(route('kasir.struk.tandai')),
                 statusUrlTemplate: @json(route('pesanan.status', ['kode' => '__KODE__'])),
                 sesiTutupTemplate: @json(route('kasir.session.tutup', ['meja' => '__MEJA__'])),
+                cashierName: @json(auth()->user()->nama ?? 'Kasir'),
+                receiptHeader: @json($receiptHeader),
+                receiptFooter: @json($receiptFooter),
+                restoAddress: @json($restoAddress),
+                restoPhone: @json($restoPhone),
+                printLogo: @json($printLogo),
+                logoSrc: @json($logoSrc),
 
                 iotAlert: @json($iotAlertJson),
 
                 toast: {
                     visible: false,
                     type: 'success',
-                    icon: '✓',
                     title: '',
                     message: '',
                     timeout: null
@@ -1121,11 +1169,13 @@
                 },
 
                 updateClock() {
-                    const now = new Date();
-                    const hours = String(now.getHours()).padStart(2, '0');
-                    const minutes = String(now.getMinutes()).padStart(2, '0');
-                    const seconds = String(now.getSeconds()).padStart(2, '0');
-                    this.liveTimeString = `${hours}:${minutes}:${seconds} WIB`;
+                    this.liveTimeString = new Intl.DateTimeFormat('en-GB', {
+                        timeZone: 'Asia/Jakarta',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false,
+                    }).format(new Date()) + ' WIB';
                 },
 
                 get currentSaung() {
@@ -1221,7 +1271,6 @@
                         return;
                     }
 
-                    // Digit 1 sampai 9
                     let nextStr = (this.cashReceived === 0) ? String(val) : currentStr + String(val);
                     if (nextStr.length <= 10) {
                         this.cashReceived = parseInt(nextStr, 10) || 0;
@@ -1242,50 +1291,145 @@
                     return Number(val || 0).toLocaleString('id-ID');
                 },
 
-                confirmPaymentAndPrint() {
-                    if (!this.currentSaung || this.currentSaung.status !== 'waiting_cash') return;
-                    if (this.cashReceived < this.currentSaung.total) return;
-                    this.bukaModalSesi('bayar');
+                waktuSekarangWib() {
+                    return new Intl.DateTimeFormat('en-GB', {
+                        timeZone: 'Asia/Jakarta',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false,
+                    }).format(new Date());
                 },
 
-                reprintReceipt() {
-                    if (!this.currentSaung || !this.currentSaung.kodePesanan) {
-                        this.showToast('gold', 'i', 'Cetak Ulang Struk', `Mencetak salinan struk ${this.currentSaung.name}.`);
+                cetakStruk() {
+                    const saung = this.currentSaung;
+
+                    if (! saung || ! saung.hasUnprintedPaid || ! (saung.receiptItems || []).length) {
+                        this.showToast('gold', 'Tidak Ada Struk', 'Belum ada pesanan lunas yang belum dicetak pada sesi ini.');
                         return;
                     }
-                    this.bukaModalSesi('cetak');
-                },
 
-                bukaModalSesi(mode) {
-                    this.sesiModal.mode = mode;
-                    this.sesiModal.visible = true;
-                },
+                    const itemLines = (saung.receiptItems || []).map((item) => {
+                        const nama = `${item.qty}x ${item.name}`;
+                        const harga = this.formatNumber(item.qty * item.price);
+                        return nama.slice(0, 30).padEnd(31, ' ') + harga.padStart(12, ' ');
+                    });
 
-                selesaikanSesiDanCetak() {
-                    this.selesaikanSesi = 1;
-                    const mode = this.sesiModal.mode;
-                    this.sesiModal.visible = false;
+                    const lines = [
+                        (this.receiptHeader || 'SAUNG SITU AWI').toUpperCase(),
+                        this.restoAddress,
+                        'Telp: ' + this.restoPhone,
+                        '--------------------------------',
+                        'No: ' + (saung.receiptOrderId || '-'),
+                        'Meja: ' + (saung.name || saung.id),
+                        'Kasir: ' + this.cashierName,
+                        'Waktu: ' + this.waktuSekarangWib() + ' WIB',
+                        '--------------------------------',
+                        ...itemLines,
+                        '--------------------------------',
+                        'Subtotal: ' + this.formatRupiah(saung.receiptSubtotal),
+                        'TOTAL: ' + this.formatRupiah(saung.receiptTotal),
+                        'Status: LUNAS',
+                        'Pembayaran: ' + (saung.receiptPaymentType || '-'),
+                        '--------------------------------',
+                        this.receiptFooter,
+                    ];
+
+                    const jendela = window.open('', '_blank', 'width=420,height=680');
+                    if (! jendela) {
+                        this.showToast('danger', 'Popup Diblokir', 'Izinkan popup browser untuk mencetak struk.');
+                        return;
+                    }
+
+                    const dokumen = jendela.document;
+                    dokumen.title = 'Struk ' + (saung.name || saung.receiptOrderId || '');
+
+                    const gaya = dokumen.createElement('style');
+                    gaya.textContent = '@page{size:' + (this.paperSize || '80mm') + ' auto;margin:6mm 5mm}html,body{margin:0;padding:0}body{font-family:monospace;font-size:10.5px;color:#000;padding:0 2mm 4mm}.logo{display:block;margin:0 auto 8px;height:42px;max-width:52mm;width:auto;object-fit:contain}pre{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;margin:0;padding:0;font:inherit;line-height:1.45}@media screen{body{padding:16px}}';
+                    dokumen.head.appendChild(gaya);
+
+                    if (this.printLogo) {
+                        const logo = dokumen.createElement('img');
+                        logo.src = this.logoSrc;
+                        logo.alt = 'Logo ' + (this.receiptHeader || 'Resto');
+                        logo.className = 'logo';
+                        dokumen.body.appendChild(logo);
+                    }
+
+                    const isi = dokumen.createElement('pre');
+                    isi.textContent = lines.join('\n');
+                    dokumen.body.appendChild(isi);
+
+                    const skrip = dokumen.createElement('script');
+                    skrip.textContent = '(function(){let selesai=false;const cetak=()=>{if(selesai)return;selesai=true;window.focus();window.print();};const logo=document.querySelector("img.logo");if(logo){logo.addEventListener("load",cetak);logo.addEventListener("error",cetak);}window.addEventListener("load",cetak);setTimeout(cetak,900);})();';
+                    dokumen.body.appendChild(skrip);
+
                     this.isPrinting = true;
-                    if (mode === 'bayar') {
-                        document.getElementById('formBayar').requestSubmit();
-                    } else {
-                        setTimeout(() => { this.isPrinting = false; }, 800);
-                        this.showToast('gold', 'i', 'Cetak Ulang Struk', `Struk ${this.currentSaung.name} dicetak & sesi diselesaikan.`);
-                        document.getElementById('formSelesaikanSesi').requestSubmit();
+                    setTimeout(() => { this.isPrinting = false; }, 900);
+                    this.tandaiStrukTercetak(saung);
+                },
+
+                confirmPayment() {
+                    if (! this.currentSaung || this.currentSaung.status !== 'waiting_cash') return;
+
+                    if (Number(this.cashReceived) < Number(this.currentSaung.total)) {
+                        this.showToast('danger', 'Uang Kurang', 'Uang diterima belum mencukupi total tagihan.');
+                        return;
+                    }
+
+                    document.getElementById('formBayar').requestSubmit();
+                },
+
+                async tandaiStrukTercetak(saung) {
+                    const kodePesanan = [...(saung.receiptOrderIds || [])];
+
+                    if (kodePesanan.length === 0) return;
+
+                    try {
+                        const response = await fetch(this.strukTandaiUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                            },
+                            body: JSON.stringify({
+                                meja_id: saung.dbId,
+                                kode_pesanan: kodePesanan,
+                            }),
+                        });
+
+                        if (! response.ok) {
+                            throw new Error('Status cetak gagal disimpan.');
+                        }
+
+                        const hasil = await response.json();
+
+                        saung.receiptItems = [];
+                        saung.receiptOrders = [];
+                        saung.receiptOrderIds = [];
+                        saung.receiptOrderId = null;
+                        saung.receiptSubtotal = 0;
+                        saung.receiptTotal = 0;
+                        saung.receiptPaymentType = null;
+                        saung.hasUnprintedPaid = false;
+
+                        this.showToast('success', 'Struk Dicetak', `${hasil.jumlah || kodePesanan.length} pesanan ditandai sudah dicetak.`);
+                    } catch (error) {
+                        this.showToast('danger', 'Gagal Menandai Struk', error.message || 'Struk tercetak, tetapi status cetak gagal disimpan.');
                     }
                 },
 
-                cetakTanpaSelesaikan() {
-                    this.selesaikanSesi = 0;
-                    const mode = this.sesiModal.mode;
-                    this.sesiModal.visible = false;
-                    this.isPrinting = true;
-                    if (mode === 'bayar') {
-                        document.getElementById('formBayar').requestSubmit();
-                    } else {
-                        setTimeout(() => { this.isPrinting = false; }, 800);
-                        this.showToast('gold', 'i', 'Cetak Ulang Struk', `Mencetak ulang salinan struk thermal ${this.currentSaung.name}.`);
+                akhiriSesiMeja() {
+                    if (! this.currentSaung || this.currentSaung.status !== 'paid') {
+                        this.showToast('danger', 'Belum Lunas', 'Selesaikan pembayaran sebelum mengakhiri sesi meja.');
+                        return;
                     }
+
+                    if (! confirm(`Akhiri sesi ${this.currentSaung.name}? Semua pesanan aktif akan ditutup dan kode sesi baru dibuat untuk pengunjung berikutnya.`)) {
+                        return;
+                    }
+
+                    document.getElementById('formSelesaikanSesi').requestSubmit();
                 },
 
                 voidOrder() {
@@ -1299,11 +1443,11 @@
                     this.iotAlert.active = false;
                     const target = this.saungs.find(s => s.id === this.iotAlert.saungId);
                     if (target) target.hasAlert = false;
-                    this.showToast('success', 'OK', 'Panggilan Selesai', 'Panggilan meja telah ditandai selesai.');
+                    this.showToast('success', 'Panggilan Selesai', 'Panggilan meja telah ditandai selesai.');
                 },
 
                 assignWaiter() {
-                    this.showToast('success', 'OK', 'Pelayan Ditugaskan', 'Pelayan telah dikirim menuju saung pemanggil.');
+                    this.showToast('success', 'Pelayan Ditugaskan', 'Pelayan telah dikirim menuju saung pemanggil.');
                     this.dismissAlert();
                 },
 
@@ -1318,12 +1462,12 @@
 
                     if (e.key === 'Enter' && !this.isLocked && this.currentSaung.status === 'waiting_cash') {
                         e.preventDefault();
-                        this.confirmPaymentAndPrint();
+                        this.confirmPayment();
                         return;
                     }
                     if (e.key === 'F3') {
                         e.preventDefault();
-                        this.reprintReceipt();
+                        this.cetakStruk();
                         return;
                     }
                     if (e.key === 'F9') {
@@ -1332,8 +1476,7 @@
                         return;
                     }
 
-                    // Dukungan input keypad fisik/keyboard saat status waiting_cash
-                    if (!isInputActive && !this.isLocked && this.currentSaung && this.currentSaung.status === 'waiting_cash' && !this.sesiModal.visible) {
+                    if (!isInputActive && !this.isLocked && this.currentSaung && this.currentSaung.status === 'waiting_cash') {
                         if (e.key >= '0' && e.key <= '9') {
                             this.pressNumpad(e.key);
                         } else if (e.key === 'Backspace') {
@@ -1346,12 +1489,11 @@
                     }
                 },
 
-                showToast(type, icon, title, message) {
+                showToast(type, title, message) {
                     clearTimeout(this.toast.timeout);
                     this.toast = {
                         visible: true,
                         type: type,
-                        icon: icon,
                         title: title,
                         message: message,
                         timeout: null
@@ -1365,7 +1507,7 @@
     </script>
 
     <script>
-        // Realtime: pesanan baru / perubahan status → muat ulang papan kasir.
+
         window.addEventListener('realtime', () => window.realtimeReload(800));
     </script>
 </body>

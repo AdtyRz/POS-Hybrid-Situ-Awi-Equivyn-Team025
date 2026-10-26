@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
 use App\Models\Pesanan;
+use App\Models\Pengaturan;
 use App\Models\SesiMeja;
 
 Route::post('/iot/panggil-pelayan', function (Request $request) {
@@ -16,6 +17,20 @@ Route::post('/iot/panggil-pelayan', function (Request $request) {
 
     if (! $meja) {
         return response()->json(['status' => 'error', 'message' => 'Meja tidak ditemukan'], 404);
+    }
+
+    $cooldown = max(1, (int) Pengaturan::nilai('anti_spam_cooldown', 5));
+    $panggilanBaru = LogPanggilPelayan::query()
+        ->where('meja_id', $meja->id)
+        ->where('status_panggilan', 'menunggu')
+        ->where('waktu_panggil', '>=', now()->subSeconds($cooldown))
+        ->exists();
+
+    if ($panggilanBaru) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Panggilan meja ini masih dalam jeda anti-spam.',
+        ], 429);
     }
 
     $log = LogPanggilPelayan::create([
@@ -57,13 +72,16 @@ Route::get('/iot/status-meja', function () {
     return response()->json([
         'success' => true,
         'message' => 'Berhasil mengambil status meja',
+        'konfigurasi' => [
+            'buzzer_duration' => max(1, (int) Pengaturan::nilai('buzzer_duration', 3)),
+            'lcd_message' => (string) Pengaturan::nilai('lcd_message', 'Memanggil Pelayan...'),
+            'polling_detik' => 30,
+        ],
         'data' => $data,
     ]);
 });
 
-// Public endpoint untuk LCD/ESP32 - kode sesi + daftar pesanan + total bayar satu meja
-// (berdasarkan id_device atau kode_meja). Dipakai LCD untuk 3 layar:
-// status pesanan, total bayar seluruh pesanan, dan kode verif saung.
+// Public endpoint untuk LCD/ESP32 - kode sesi aktif satu meja (berdasarkan id_device atau kode_meja).
 Route::get('/iot/meja/{ident}', function (string $ident) {
     $meja = MejaMakan::where('id_device', $ident)
         ->orWhere('kode_meja', $ident)
@@ -75,7 +93,6 @@ Route::get('/iot/meja/{ident}', function (string $ident) {
 
     $sesi = SesiMeja::aktifUntuk($meja);
 
-    // Seluruh pesanan pada sesi ini (setelah sesi dibuka), kecuali yang dibatalkan.
     $pesanan = Pesanan::query()
         ->where('meja_id', $meja->id)
         ->where('status_pesanan', '!=', Pesanan::STATUS_DIBATALKAN)

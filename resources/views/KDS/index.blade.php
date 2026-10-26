@@ -1,19 +1,14 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>KDS {{ $judul }} ({{ $subJudul }}) • Saung Situ Awi</title>
 
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
-
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -23,9 +18,7 @@
     @endif
 
     <style>
-        [x-cloak] {
-            display: none !important;
-        }
+        [x-cloak] { display: none !important; }
 
         body {
             background-color: #FBF8F1;
@@ -36,87 +29,60 @@
             user-select: none;
         }
 
-        .font-display {
-            font-family: 'Playfair Display', Georgia, serif;
-        }
-
-        .font-mono {
-            font-family: 'JetBrains Mono', monospace;
-        }
+        .font-display { font-family: 'Playfair Display', Georgia, serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
 
         .kds-scroll::-webkit-scrollbar {
             height: 10px;
         }
-
         .kds-scroll::-webkit-scrollbar-track {
             background: #EAE4D7;
             border-radius: 9999px;
             margin: 0 24px;
         }
-
         .kds-scroll::-webkit-scrollbar-thumb {
             background: #C4B89B;
             border-radius: 9999px;
             border: 2px solid #EAE4D7;
         }
-
         .kds-scroll::-webkit-scrollbar-thumb:hover {
             background: #A89B7B;
         }
 
         @keyframes overdue-glow {
-
-            0%,
-            100% {
+            0%, 100% {
                 box-shadow: 0 0 0 0 rgba(193, 68, 44, 0.45);
             }
-
             50% {
                 box-shadow: 0 0 16px 3px rgba(193, 68, 44, 0.3);
             }
         }
-
         .animate-overdue-glow {
             animation: overdue-glow 2s infinite ease-in-out;
         }
 
         @keyframes pulse-dot {
-
-            0%,
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-
-            50% {
-                transform: scale(1.35);
-                opacity: 0.6;
-            }
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.35); opacity: 0.6; }
         }
-
         .animate-pulse-dot {
             animation: pulse-dot 1.8s infinite ease-in-out;
         }
     </style>
 </head>
+<body class="min-h-screen bg-[#FBF8F1] flex flex-col justify-between overflow-x-hidden" x-data="kdsApp()" x-init="initKds()">
 
-<body class="min-h-screen bg-[#FBF8F1] flex flex-col justify-between overflow-x-hidden" x-data="kdsApp()"
-    x-init="initKds()">
-
-    <header
-        class="sticky top-0 z-40 w-full bg-[#FFFFFF] border-b border-[#0B4D2B]/10 shadow-[0_1px_3px_rgba(0,0,0,0.04)] px-4 sm:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+    <header class="sticky top-0 z-40 w-full bg-[#FFFFFF] border-b border-[#0B4D2B]/10 shadow-[0_1px_3px_rgba(0,0,0,0.04)] px-4 sm:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-3.5">
             <div class="flex-shrink-0">
-                <img src="{{ asset('asset/Logo.png') }}" alt="Logo Saung Situ Awi"
-                    class="h-11 sm:h-12 w-auto object-contain">
+                <img src="{{ asset('asset/Logo.png') }}" alt="Logo Saung Situ Awi" class="h-11 sm:h-12 w-auto object-contain">
             </div>
             <div class="flex flex-col">
                 <div class="flex items-center gap-2.5">
                     <h1 class="font-display font-bold text-xl sm:text-2xl text-[#052E1B] tracking-tight leading-none">
                         Saung Situ Awi
                     </h1>
-                    <span
-                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-[#0B4D2B]/10 text-[#0B4D2B]">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-[#0B4D2B]/10 text-[#0B4D2B]">
                         {{ $lencana }}
                     </span>
                 </div>
@@ -127,111 +93,98 @@
         </div>
 
         <div class="hidden md:flex items-center">
-            <div
-                class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EBF5EE] border border-[#2E6A45]/30 shadow-xs">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EBF5EE] border border-[#2E6A45]/30 shadow-xs">
                 <span class="relative flex h-2.5 w-2.5">
-                    <span
-                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2E6A45] opacity-75"></span>
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2E6A45] opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#2E6A45]"></span>
                 </span>
                 <span class="text-xs font-bold text-[#0B4D2B] tracking-wide">
-                    WebSocket Terhubung <span
-                        class="font-mono text-[11px] font-semibold text-[#0B4D2B]/80">(12ms)</span>
+                    WebSocket Terhubung <span class="font-mono text-[11px] font-semibold text-[#0B4D2B]/80">(12ms)</span>
                 </span>
             </div>
         </div>
 
         <div class="flex items-center gap-4 sm:gap-6">
             <div class="text-right">
-                <div class="font-mono font-bold text-xl sm:text-2xl text-[#052E1B] tracking-tight leading-none"
-                    x-text="clock">
+                <div class="font-mono font-bold text-xl sm:text-2xl text-[#052E1B] tracking-tight leading-none" x-text="clock">
                     12:08:45
                 </div>
-                <div
-                    class="text-[9px] sm:text-[10px] font-semibold tracking-wider text-[#707971] uppercase mt-1 leading-none">
+                <div class="text-[9px] sm:text-[10px] font-semibold tracking-wider text-[#707971] uppercase mt-1 leading-none">
                     WIB • SERVER SYNCHRONIZED
                 </div>
             </div>
 
             <form method="POST" action="{{ route('logout') }}" class="hidden md:block">
                 @csrf
-                <button type="submit"
-                    class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FDF5E6] border border-[#E0B24E]/40 hover:bg-[#F5ECD8] hover:border-[#E0B24E] active:scale-95 transition text-xs font-bold text-[#7A5C0F] whitespace-nowrap"
-                    title="Keluar">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
+                <button type="submit" class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FDF5E6] border border-[#E0B24E]/40 hover:bg-[#F5ECD8] hover:border-[#E0B24E] active:scale-95 transition text-xs font-bold text-[#7A5C0F] whitespace-nowrap" title="Keluar">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
                     <span>Keluar</span>
                 </button>
             </form>
 
             <div class="flex items-center gap-2">
-                <button type="button" @click="toggleSound()"
+                <button
+                    type="button"
+                    @click="toggleSound()"
                     class="h-11 w-11 sm:h-12 sm:w-12 rounded-xl bg-[#F4EFE6] border border-[#0B4D2B]/10 hover:border-[#0B4D2B]/30 active:scale-95 flex items-center justify-center transition-all shadow-2xs"
                     :title="soundEnabled ? 'Matikan Suara Buzzer' : 'Nyalakan Suara Buzzer'">
                     <template x-if="soundEnabled">
-                        <svg class="w-5 h-5 text-[#0B4D2B]" fill="none" stroke="currentColor" stroke-width="2"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                        <svg class="w-5 h-5 text-[#0B4D2B]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                         </svg>
                     </template>
                     <template x-if="!soundEnabled">
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
                         </svg>
                     </template>
                 </button>
 
-                <button type="button" @click="toggleFullscreen()"
+                <button
+                    type="button"
+                    @click="toggleFullscreen()"
                     class="h-11 w-11 sm:h-12 sm:w-12 rounded-xl bg-[#F4EFE6] border border-[#0B4D2B]/10 hover:border-[#0B4D2B]/30 active:scale-95 flex items-center justify-center transition-all shadow-2xs"
                     title="Layar Penuh (Kios Mode)">
-                    <svg class="w-5 h-5 text-[#0B4D2B]" fill="none" stroke="currentColor" stroke-width="2"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    <svg class="w-5 h-5 text-[#0B4D2B]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                     </svg>
                 </button>
             </div>
         </div>
     </header>
 
-    <section
-        class="w-full bg-[#FBF8F1] px-4 sm:px-8 py-3 border-b border-[#0B4D2B]/10 flex flex-wrap items-center justify-between gap-4">
+    <section class="w-full bg-[#FBF8F1] px-4 sm:px-8 py-3 border-b border-[#0B4D2B]/10 flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center flex-wrap gap-3 sm:gap-4">
-            <div
-                class="h-[52px] bg-white border border-[#0B4D2B]/10 shadow-xs rounded-xl px-3.5 py-2 flex items-center gap-3">
-                <div
-                    class="w-9 h-9 rounded-lg bg-[#EBF5EE] flex items-center justify-center text-[#0B4D2B] flex-shrink-0">
+            <div class="h-[52px] bg-white border border-[#0B4D2B]/10 shadow-xs rounded-xl px-3.5 py-2 flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-[#EBF5EE] flex items-center justify-center text-[#0B4D2B] flex-shrink-0">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M12 3v2m-4-1v2m8-3v2M4 11h16a2 2 0 012 2v1a7 7 0 01-7 7H9a7 7 0 01-7-7v-1a2 2 0 012-2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2m-4-1v2m8-3v2M4 11h16a2 2 0 012 2v1a7 7 0 01-7 7H9a7 7 0 01-7-7v-1a2 2 0 012-2z" />
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 19l-2 2m14-2l2 2" />
                     </svg>
                 </div>
                 <div class="flex flex-col">
                     <span class="font-bold text-[14px] text-[#0B4D2B] leading-tight">{{ $stasiunNama }}</span>
-                    <span
-                        class="text-[10px] font-semibold text-[#707971] uppercase tracking-wide leading-tight">{{ $stasiunSub }}</span>
+                    <span class="text-[10px] font-semibold text-[#707971] uppercase tracking-wide leading-tight">{{ $stasiunSub }}</span>
                 </div>
             </div>
 
             <div class="bg-[#EAE4D7] border border-[#0B4D2B]/10 rounded-full p-1 flex items-center gap-1 shadow-2xs">
-                <button type="button" @click="filter = 'all'"
+                <button
+                    type="button"
+                    @click="filter = 'all'"
                     :class="filter === 'all' ? 'bg-[#E0B24E] text-[#261900] shadow-xs' : 'text-[#404941] hover:text-black'"
                     class="rounded-full px-3.5 py-1 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer">
                     <span>Semua</span>
                     <span
                         :class="filter === 'all' ? 'bg-[#261900]/15 text-[#261900]' : 'bg-[#0B4D2B]/10 text-[#0B4D2B]'"
-                        class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" x-text="tickets.length">5</span>
+                        class="px-1.5 py-0.2 rounded-full text-[10px] font-bold"
+                        x-text="tickets.length">5</span>
                 </button>
 
-                <button type="button" @click="filter = 'menunggu'"
+                <button
+                    type="button"
+                    @click="filter = 'menunggu'"
                     :class="filter === 'menunggu' ? 'bg-[#E0B24E] text-[#261900] shadow-xs' : 'text-[#404941] hover:text-black'"
                     class="rounded-full px-3.5 py-1 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer">
                     <span>Menunggu</span>
@@ -241,7 +194,9 @@
                         x-text="tickets.filter(t => t.status === 'menunggu').length">2</span>
                 </button>
 
-                <button type="button" @click="filter = 'diproses'"
+                <button
+                    type="button"
+                    @click="filter = 'diproses'"
                     :class="filter === 'diproses' ? 'bg-[#E0B24E] text-[#261900] shadow-xs' : 'text-[#404941] hover:text-black'"
                     class="rounded-full px-3.5 py-1 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer">
                     <span>Diproses</span>
@@ -251,7 +206,9 @@
                         x-text="tickets.filter(t => t.status === 'diproses').length">2</span>
                 </button>
 
-                <button type="button" @click="filter = 'siap'"
+                <button
+                    type="button"
+                    @click="filter = 'siap'"
                     :class="filter === 'siap' ? 'bg-[#E0B24E] text-[#261900] shadow-xs' : 'text-[#404941] hover:text-black'"
                     class="rounded-full px-3.5 py-1 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer">
                     <span>Siap</span>
@@ -264,11 +221,9 @@
         </div>
 
         <div class="flex items-center gap-3 sm:gap-4">
-            <div
-                class="flex items-center gap-2.5 px-3.5 py-2 bg-white rounded-xl border border-[#0B4D2B]/10 shadow-xs">
+            <div class="flex items-center gap-2.5 px-3.5 py-2 bg-white rounded-xl border border-[#0B4D2B]/10 shadow-xs">
                 <div class="w-6 h-6 rounded-full bg-[#EBF5EE] flex items-center justify-center text-[#0B4D2B]">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2"
-                        viewBox="0 0 24 24">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="10" />
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" />
                     </svg>
@@ -279,7 +234,9 @@
                 </div>
             </div>
 
-            <button type="button" @click="openGlobalRunnerModal()"
+            <button
+                type="button"
+                @click="openGlobalRunnerModal()"
                 class="h-11 px-4 rounded-xl bg-[#E0B24E] hover:bg-[#d4a33f] active:scale-95 border border-[#C49A3C] shadow-xs text-[#261900] font-bold text-sm flex items-center gap-2 transition-all cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -287,12 +244,13 @@
                 <span>Panggil Runner</span>
             </button>
 
-            <button type="button" @click="testKitchenBell()"
+            <button
+                type="button"
+                @click="testKitchenBell()"
                 class="h-11 w-11 rounded-xl bg-white border border-[#0B4D2B]/15 hover:border-[#0B4D2B]/30 active:scale-95 shadow-xs flex items-center justify-center text-[#0B4D2B] transition-all cursor-pointer"
                 title="Cek Notifikasi / Pager">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
             </button>
         </div>
@@ -312,20 +270,19 @@
         </template>
 
         <div x-show="filteredTickets.length > 0" class="flex items-start gap-5 min-w-max pb-3">
-            
+
             <template x-for="(ticket, tIndex) in filteredTickets" :key="ticket.id">
                 <article
                     class="w-[370px] min-h-[558px] bg-white rounded-2xl flex flex-col justify-between transition-all duration-200"
                     :class="{
-                        'border-2 border-[#C1442C] shadow-[0px_10px_15px_-3px_rgba(193,68,44,0.12),0px_4px_6px_-4px_rgba(193,68,44,0.1)]': ticket
-                            .isOverdue && ticket.status !== 'siap',
+                        'border-2 border-[#C1442C] shadow-[0px_10px_15px_-3px_rgba(193,68,44,0.12),0px_4px_6px_-4px_rgba(193,68,44,0.1)]': ticket.isOverdue && ticket.status !== 'siap',
                         'border-2 border-[#0B4D2B] shadow-sm': !ticket.isOverdue && ticket.status === 'diproses',
                         'border border-gray-200 shadow-2xs': ticket.status === 'menunggu',
                         'border border-[#2E6A45]/30 shadow-2xs': ticket.status === 'siap'
                     }">
 
                     <div class="flex flex-col">
-                        <div 
+                        <div
                             class="p-4 rounded-t-2xl border-b flex items-start justify-between gap-3"
                             :class="{
                                 'bg-[#FDF4F2] border-[#C1442C]/20': ticket.isOverdue && ticket.status !== 'siap',
@@ -334,7 +291,7 @@
                                 'bg-[#F4F8F5] border-[#2E6A45]/15': ticket.status === 'siap'
                             }">
                             <div class="flex flex-col min-w-0 flex-1">
-                                <h3 
+                                <h3
                                     class="font-display font-bold text-xl sm:text-2xl tracking-tight leading-tight text-[#1F2937] whitespace-nowrap truncate"
                                     :class="ticket.status === 'siap' ? 'text-[#0B4D2B]' : 'text-[#1F2937]'"
                                     x-text="ticket.saung"
@@ -413,12 +370,9 @@
                         </div>
 
                         <template x-if="ticket.status === 'siap'">
-                            <div
-                                class="m-3 p-2.5 rounded-xl bg-[#EBF5EE] border border-[#2E6A45]/30 flex items-center gap-2.5 text-[#0B4D2B]">
-                                <svg class="w-4 h-4 text-[#0B4D2B] flex-shrink-0" fill="none"
-                                    stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <div class="m-3 p-2.5 rounded-xl bg-[#EBF5EE] border border-[#2E6A45]/30 flex items-center gap-2.5 text-[#0B4D2B]">
+                                <svg class="w-4 h-4 text-[#0B4D2B] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 <span class="text-xs font-bold leading-tight" x-text="ticket.passBarMessage">
                                     Di Meja Pass Bar: Menunggu pelayan mengantar ke Saung KA-02.
@@ -428,27 +382,25 @@
 
                         <div class="p-4 flex flex-col gap-3">
                             <template x-for="(item, iIndex) in ticket.items" :key="iIndex">
-                                <div class="p-2.5 rounded-xl border transition-all cursor-pointer"
-                                    :class="item.checked ? 'bg-[#F9FAFB] border-gray-200' :
-                                        'bg-white border-gray-100 hover:border-gray-300'"
+                                <div
+                                    class="p-2.5 rounded-xl border transition-all cursor-pointer"
+                                    :class="item.checked ? 'bg-[#F9FAFB] border-gray-200' : 'bg-white border-gray-100 hover:border-gray-300'"
                                     @click="toggleItem(ticket, iIndex)">
 
                                     <div class="flex items-start gap-2.5">
-                                        <div class="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5 transition-all shadow-2xs"
-                                            :class="item.checked ? 'bg-[#0B4D2B] text-white' :
-                                                'border-2 border-gray-300 bg-white'">
+                                        <div
+                                            class="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5 transition-all shadow-2xs"
+                                            :class="item.checked ? 'bg-[#0B4D2B] text-white' : 'border-2 border-gray-300 bg-white'">
                                             <template x-if="item.checked">
-                                                <svg class="w-4 h-4 stroke-[3]" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M5 13l4 4L19 7" />
+                                                <svg class="w-4 h-4 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                                                 </svg>
                                             </template>
                                         </div>
 
                                         <div class="flex-1 flex flex-col gap-1.5 min-w-0">
                                             <div class="flex items-center justify-between gap-2">
-                                                <span 
+                                                <span
                                                     class="font-bold text-[15px] leading-tight text-[#1F2937] break-words"
                                                     :class="item.checked ? 'line-through text-gray-500 font-semibold' : ''"
                                                     x-text="item.name">
@@ -459,16 +411,11 @@
                                             </div>
 
                                             <template x-if="item.note">
-                                                <div class="p-2 rounded-lg text-xs flex items-start gap-1.5 leading-snug"
+                                                <div
+                                                    class="p-2 rounded-lg text-xs flex items-start gap-1.5 leading-snug"
                                                     :class="{
-                                                        'bg-[#FEF9C3] border border-[#FCD34D] text-[#78350F]': item
-                                                            .noteType === 'warning',
-                                                        'bg-[#FFFBEB] border border-[#FDE68A] text-[#92400E]': item
-                                                            .noteType === 'info' || item
-                                                            .noteType === 'rujak' || item
-                                                            .noteType === 'clipboard' || item
-                                                            .noteType === 'chili' || item
-                                                            .noteType === 'leaf' || item.noteType === 'fire'
+                                                        'bg-[#FEF9C3] border border-[#FCD34D] text-[#78350F]': item.noteType === 'warning',
+                                                        'bg-[#FFFBEB] border border-[#FDE68A] text-[#92400E]': item.noteType === 'info' || item.noteType === 'rujak' || item.noteType === 'clipboard' || item.noteType === 'chili' || item.noteType === 'leaf' || item.noteType === 'fire'
                                                     }">
 
                                                     <template x-if="item.noteType === 'warning'">
@@ -481,21 +428,10 @@
 
                                                     </template>
                                                     <template x-if="item.noteType === 'clipboard'">
-                                                        <svg class="w-3.5 h-3.5 text-[#B45309] flex-shrink-0 mt-0.5"
-                                                            fill="none" stroke="currentColor" stroke-width="2"
-                                                            viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                                        </svg>
+                                                        <svg class="w-3.5 h-3.5 text-[#B45309] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
                                                     </template>
-                                                    <template
-                                                        x-if="item.noteType === 'info' || !['warning', 'rujak', 'chili', 'clipboard'].includes(item.noteType)">
-                                                        <svg class="w-3.5 h-3.5 text-[#B45309] flex-shrink-0 mt-0.5"
-                                                            fill="none" stroke="currentColor" stroke-width="2"
-                                                            viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                        </svg>
+                                                    <template x-if="item.noteType === 'info' || !['warning', 'rujak', 'chili', 'clipboard'].includes(item.noteType)">
+                                                        <svg class="w-3.5 h-3.5 text-[#B45309] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                                     </template>
 
                                                     <span class="font-medium" x-text="item.note"></span>
@@ -511,20 +447,21 @@
                     <div class="p-4 pt-2 flex flex-col gap-2">
                         <template x-if="ticket.status === 'diproses'">
                             <div class="flex flex-col gap-2">
-                                <button type="button" @click="markReady(ticket)"
+                                <button
+                                    type="button"
+                                    @click="markReady(ticket)"
                                     class="w-full h-[52px] rounded-xl bg-[#0B4D2B] hover:bg-[#08381F] active:scale-[0.98] text-white font-bold text-base flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer">
-                                    <svg class="w-5 h-5 stroke-[2.5]" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
+                                    <svg class="w-5 h-5 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                                     </svg>
                                     <span>Tandai {{ $kataSiap }} Siap</span>
                                 </button>
-                                <button type="button" @click="callRunnerForTicket(ticket)"
+                                <button
+                                    type="button"
+                                    @click="callRunnerForTicket(ticket)"
                                     class="w-full h-[42px] rounded-xl bg-[#E0B24E] hover:bg-[#d4a33f] active:scale-[0.98] border border-[#C49A3C] text-[#1F2937] font-bold text-sm flex items-center justify-center gap-2 shadow-2xs transition-all cursor-pointer">
-                                    <svg class="w-4 h-4 text-[#1F2937]" fill="none" stroke="currentColor"
-                                        stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                    <svg class="w-4 h-4 text-[#1F2937]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                                     </svg>
                                     <span>Panggil Runner {{ $kataRunner }}</span>
                                 </button>
@@ -532,24 +469,22 @@
                         </template>
 
                         <template x-if="ticket.status === 'menunggu'">
-                            <button type="button" @click="startCooking(ticket)"
+                            <button
+                                type="button"
+                                @click="startCooking(ticket)"
                                 class="w-full h-[54px] rounded-xl bg-[#E0B24E] hover:bg-[#d4a33f] active:scale-[0.98] border border-[#C49A3C] text-[#1F2937] font-bold text-base flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M18 8h1a3 3 0 0 1 0 6h-1M4 8h14v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8z" />
-                                </svg>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 8h1a3 3 0 0 1 0 6h-1M4 8h14v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8z"/></svg>
                                 <span>Mulai {{ $kataMulai }} (Proses)</span>
                             </button>
                         </template>
 
                         <template x-if="ticket.status === 'siap'">
-                            <button type="button" @click="callRunnerForTicket(ticket)"
+                            <button
+                                type="button"
+                                @click="callRunnerForTicket(ticket)"
                                 class="w-full h-[44px] rounded-xl bg-[#E0B24E] hover:bg-[#d4a33f] active:scale-[0.98] border border-[#C49A3C] text-[#1F2937] font-bold text-sm flex items-center justify-center gap-2 shadow-2xs transition-all cursor-pointer">
-                                <svg class="w-4 h-4 text-[#1F2937]" fill="none" stroke="currentColor"
-                                    stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                <svg class="w-4 h-4 text-[#1F2937]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                                 </svg>
                                 <span>Panggil Runner {{ $kataRunner }}</span>
                             </button>
@@ -562,23 +497,18 @@
         </div>
     </main>
 
-    <section
-        class="w-full bg-[#F4EFE6] border-t border-[#0B4D2B]/10 px-4 sm:px-8 py-3.5 shadow-xs flex flex-wrap items-center justify-between gap-4">
+    <section class="w-full bg-[#F4EFE6] border-t border-[#0B4D2B]/10 px-4 sm:px-8 py-3.5 shadow-xs flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center flex-wrap gap-6 sm:gap-8">
             <div class="flex items-center gap-3">
-                <div
-                    class="w-12 h-12 rounded-xl bg-[#0B4D2B] text-[#E0B24E] flex items-center justify-center shadow-xs flex-shrink-0">
+                <div class="w-12 h-12 rounded-xl bg-[#0B4D2B] text-[#E0B24E] flex items-center justify-center shadow-xs flex-shrink-0">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
                 </div>
                 <div class="flex flex-col">
                     <div class="flex items-baseline gap-1.5 leading-none">
-                        <span class="font-display font-bold text-3xl text-[#052E1B]"
-                            x-text="completedPortions">32</span>
-                        <span class="font-bold text-[10px] text-[#0B4D2B] uppercase tracking-wider">PORSI
-                            SELESAI</span>
+                        <span class="font-display font-bold text-3xl text-[#052E1B]" x-text="completedPortions">32</span>
+                        <span class="font-bold text-[10px] text-[#0B4D2B] uppercase tracking-wider">PORSI SELESAI</span>
                     </div>
                     <span class="text-[10px] font-medium text-[#707971] tracking-wide mt-1 leading-none">
                         Shift Sore Berjalan (16:00 - 22:00)
@@ -587,10 +517,8 @@
             </div>
 
             <div class="flex items-center gap-2.5 px-4 py-2 bg-white rounded-xl border border-[#0B4D2B]/10 shadow-2xs">
-                <div
-                    class="w-5 h-5 rounded-full bg-[#EBF5EE] flex items-center justify-center text-[#7A5900] flex-shrink-0">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2"
-                        viewBox="0 0 24 24">
+                <div class="w-5 h-5 rounded-full bg-[#EBF5EE] flex items-center justify-center text-[#7A5900] flex-shrink-0">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="10" />
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" />
                     </svg>
@@ -604,11 +532,9 @@
             <div class="hidden lg:block w-[1px] h-8 bg-[#0B4D2B]/15"></div>
 
             <div class="flex items-center gap-2.5">
-                <div
-                    class="w-10 h-10 rounded-xl bg-[#EBF5EE] border border-[#0B4D2B]/20 flex items-center justify-center text-[#0B4D2B] flex-shrink-0">
+                <div class="w-10 h-10 rounded-xl bg-[#EBF5EE] border border-[#0B4D2B]/20 flex items-center justify-center text-[#0B4D2B] flex-shrink-0">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
                 <div class="flex flex-col">
@@ -621,12 +547,12 @@
         </div>
 
         <div class="flex items-center gap-3">
-            <button type="button" @click="testKitchenBell()"
+            <button
+                type="button"
+                @click="testKitchenBell()"
                 class="h-11 px-4 rounded-xl bg-white border border-[#0B4D2B]/20 hover:border-[#0B4D2B]/40 active:scale-95 shadow-xs flex items-center gap-2 text-xs font-bold text-[#052E1B] transition-all cursor-pointer">
-                <svg class="w-4 h-4 text-[#7A5900]" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M15.536 8.464a5 5 0 010 7.072M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                <svg class="w-4 h-4 text-[#7A5900]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
                 <span>Tes Lonceng KDS (80dB)</span>
             </button>
@@ -638,8 +564,7 @@
         </div>
     </section>
 
-    <footer
-        class="w-full bg-white border-t border-[#0B4D2B]/10 px-4 sm:px-8 py-2 flex flex-wrap items-center justify-between text-[10px] font-medium text-[#707971] leading-none">
+    <footer class="w-full bg-white border-t border-[#0B4D2B]/10 px-4 sm:px-8 py-2 flex flex-wrap items-center justify-between text-[10px] font-medium text-[#707971] leading-none">
         <div class="font-bold text-[#707971]">
             Saung Situ Awi KDS • Node ID: <span class="font-mono text-[#0B4D2B]">AW-KDS-01</span>
         </div>
@@ -650,49 +575,57 @@
         </div>
     </footer>
 
-    <div x-cloak x-show="toast.show" x-transition:enter="transition ease-out duration-300"
-        x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0"
-        x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0"
+    <div
+        x-cloak
+        x-show="toast.show"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 translate-y-4"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 translate-y-0"
         x-transition:leave-end="opacity-0 translate-y-4"
         class="fixed bottom-14 right-6 z-50 max-w-md bg-[#052E1B] text-white p-4 rounded-2xl shadow-xl flex items-center gap-3 border border-[#E0B24E]/30">
-        <div
-            class="w-8 h-8 rounded-xl bg-[#E0B24E] text-[#261900] flex items-center justify-center font-bold flex-shrink-0">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
+        <div class="w-8 h-8 rounded-xl bg-[#E0B24E] text-[#261900] flex items-center justify-center font-bold flex-shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
         </div>
         <div class="flex-1 text-sm font-semibold" x-text="toast.message"></div>
         <button type="button" @click="toast.show = false" class="text-white/60 hover:text-white p-1">
-            ✕
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
         </button>
     </div>
 
-    <div x-cloak x-show="showRunnerModal"
+    <div
+        x-cloak
+        x-show="showRunnerModal"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
-        x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
-        x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
-        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-        <div class="w-full max-w-md bg-[#FFFFFF] rounded-2xl border border-[#0B4D2B]/15 shadow-2xl p-6 flex flex-col gap-4 text-center"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0">
+        <div
+            class="w-full max-w-md bg-[#FFFFFF] rounded-2xl border border-[#0B4D2B]/15 shadow-2xl p-6 flex flex-col gap-4 text-center"
             @click.outside="showRunnerModal = false">
             <div class="w-14 h-14 rounded-2xl bg-[#EBF5EE] text-[#0B4D2B] flex items-center justify-center mx-auto">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
             </div>
             <div>
                 <h4 class="font-display font-bold text-xl text-[#052E1B]">Panggil Runner {{ $kataRunner }}</h4>
-                <p class="text-xs text-[#707971] mt-1"
-                    x-text="'Kirim sinyal lonceng & notifikasi ke pelayan runner untuk stasiun ' + (runnerTarget || stasiunUtama) + '.'">
-                </p>
+                <p class="text-xs text-[#707971] mt-1" x-text="'Kirim sinyal lonceng & notifikasi ke pelayan runner untuk stasiun ' + (runnerTarget || stasiunUtama) + '.'"></p>
             </div>
             <div class="flex items-center gap-3 mt-2">
-                <button type="button" @click="showRunnerModal = false"
+                <button
+                    type="button"
+                    @click="showRunnerModal = false"
                     class="flex-1 py-3 rounded-xl border border-gray-300 text-gray-700 font-bold text-sm hover:bg-gray-50 active:scale-95 transition-all">
                     Batal
                 </button>
-                <button type="button" @click="confirmCallRunner()"
+                <button
+                    type="button"
+                    @click="confirmCallRunner()"
                     class="flex-1 py-3 rounded-xl bg-[#E0B24E] text-[#261900] font-bold text-sm hover:bg-[#d4a33f] active:scale-95 transition-all shadow-xs">
                     Panggil Sekarang
                 </button>
@@ -705,7 +638,7 @@
             return {
                 filter: 'all',
                 soundEnabled: true,
-                clock: '12:08:45',
+                clock: '{{ now('Asia/Jakarta')->format('H:i:s') }}',
                 completedPortions: {{ $selesaiHariIni }},
                 showRunnerModal: false,
                 runnerTarget: '',
@@ -738,8 +671,7 @@
                         this.updateClock();
                         if (Array.isArray(this.tickets)) {
                             this.tickets.forEach(t => {
-                                // Bug FIX: Timer hanya berjalan untuk tiket yang BELUM siap.
-                                // Tiket "siap" memiliki frozen=true → detik sudah di-freeze dari backend.
+
                                 if (t.status !== 'siap' && !t.frozen) {
                                     t.seconds++;
                                     if (t.seconds >= 15 * 60) {
@@ -752,11 +684,13 @@
                 },
 
                 updateClock() {
-                    const now = new Date();
-                    const h = String(now.getHours()).padStart(2, '0');
-                    const m = String(now.getMinutes()).padStart(2, '0');
-                    const s = String(now.getSeconds()).padStart(2, '0');
-                    this.clock = `${h}:${m}:${s}`;
+                    this.clock = new Intl.DateTimeFormat('en-GB', {
+                        timeZone: 'Asia/Jakarta',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false,
+                    }).format(new Date());
                 },
 
                 formatTimer(seconds) {
@@ -807,7 +741,7 @@
                 },
 
                 markReady(ticket) {
-                    // Freeze timer langsung di client sebelum form submit & reload
+
                     ticket.status = 'siap';
                     ticket.frozen = true;
                     ticket.isOverdue = false;
@@ -895,7 +829,7 @@
                         gain2.connect(ctx.destination);
                         osc2.start(now + 0.15);
                         osc2.stop(now + 1.1);
-                    } catch (e) {
+                    } catch(e) {
                         console.log('Audio Context error:', e);
                     }
                 },
@@ -915,16 +849,16 @@
                         gain.connect(ctx.destination);
                         osc.start();
                         osc.stop(ctx.currentTime + duration);
-                    } catch (e) {}
+                    } catch(e) {}
                 }
             }
         }
     </script>
 
     <script>
-        // Realtime: pesanan baru / perubahan status / panggilan → muat ulang tiket.
+
         window.addEventListener('realtime', () => window.realtimeReload(800));
     </script>
 </body>
-
 </html>
+

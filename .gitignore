@@ -50,3 +50,5 @@ Thumbs.db
 !/bootstrap/cache/.gitkeep
 /storage/app/public/*
 !/storage/app/public/.gitkeep
+/public/asset/resto
+/postgres

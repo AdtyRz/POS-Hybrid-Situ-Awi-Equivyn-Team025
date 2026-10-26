@@ -4,11 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\PembayaranApiRequest;
-use App\Models\Pembayaran;
 use App\Models\Pesanan;
+use App\Models\Pembayaran;
+use App\Services\StokService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use App\Http\Requests\Api\PembayaranApiRequest;
 
 class PembayaranApiController extends Controller
 {
@@ -34,6 +35,8 @@ class PembayaranApiController extends Controller
         }
 
         DB::transaction(function () use ($pesanan, $data, $dibayar, $tagihan) {
+            app(StokService::class)->potongSetelahPembayaran($pesanan, auth()->id());
+
             Pembayaran::create([
                 'pesanan_id' => $pesanan->id,
                 'metode_pembayaran' => $data['metode_pembayaran'],

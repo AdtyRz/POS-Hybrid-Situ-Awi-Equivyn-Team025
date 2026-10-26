@@ -5,7 +5,6 @@
 @section('content')
 <div x-data="pelayanTabAntar()" class="relative flex flex-col min-h-screen bg-[#FCF9F2]" x-init="init()">
 
-    <!-- Header (07B - Mobile POS Header) -->
     <header class="sticky top-0 z-40 bg-[rgba(252,249,242,0.85)] backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] px-4 py-2.5 h-16 flex items-center justify-between border-b border-[#E5E2DB]/50">
         <div class="flex items-center gap-2">
             <img src="{{ asset('asset/Logo.png') }}" alt="Logo Situ Awi" class="h-8 max-w-[45.25px] w-auto object-contain flex-shrink-0">
@@ -16,23 +15,20 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <!-- LIVE Pill -->
+
             <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F0EEE7] shadow-[0_1px_4px_rgba(43,42,38,0.04)]">
                 <span class="w-2 h-2 rounded-full bg-[#7A5900]"></span>
                 <span class="text-[10px] font-bold text-[#404941] tracking-[-0.25px]">LIVE</span>
             </div>
 
-            <!-- Avatar -->
             <div class="w-8 h-8 rounded-full bg-[#0B4D2B] text-white font-bold text-xs flex items-center justify-center shadow-[0_0_0_2px_rgba(11,77,43,0.2),0_1px_4px_rgba(0,0,0,0.08)]">
                 {{ strtoupper(substr(auth()->user()->nama ?? auth()->user()->name ?? 'P', 0, 2)) }}
             </div>
         </div>
     </header>
 
-    <!-- Main Container -->
     <div class="px-4 py-3 space-y-4 flex-1">
 
-        <!-- Runner Status Bar -->
         <section class="bg-[#F0EEE7] rounded-xl p-2 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-between h-14">
             <div class="flex items-center gap-2">
                 <div class="w-8 h-8 rounded-full bg-[#0B4D2B] flex items-center justify-center flex-shrink-0">
@@ -49,7 +45,6 @@
                 </div>
             </div>
 
-            <!-- Signal Pill -->
             <div class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#E5E2DB] text-[#404941] text-[10px] font-bold tracking-[0.4px]">
                 <svg class="w-[11.67px] h-[10.06px] text-[#213200]" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M2 11a1 1 0 011-1 8 8 0 0114 0 1 1 0 11-1.732 1A6 6 0 003.732 12 1 1 0 012 11zm3.5 3a1 1 0 011-1 4 4 0 017 0 1 1 0 11-1.732 1 2 2 0 00-3.536 0 1 1 0 01-1.732-1zM9 17a1 1 0 112 0 1 1 0 01-2 0z" />
@@ -58,31 +53,27 @@
             </div>
         </section>
 
-        <!-- Summary Metric Badges (3 Cards Row) -->
         <section class="grid grid-cols-3 gap-1">
-            <!-- Card 1: Hidangan Siap -->
+
             <div class="bg-[#0B4D2B] rounded-xl p-2.5 flex flex-col items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] h-[68px]">
                 <span class="font-display font-bold text-[32px] text-[#B1F1C2] leading-8 tracking-[-0.32px]" x-text="displayReadyCount">5</span>
                 <span class="text-[10px] font-bold text-[#7FBD92] uppercase tracking-[-0.25px] leading-3 mt-1">HIDANGAN SIAP</span>
             </div>
 
-            <!-- Card 2: Diantar -->
             <div class="bg-[#FECE66] rounded-xl p-2.5 flex flex-col items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] h-[68px]">
                 <span class="font-display font-bold text-[32px] text-[#261900] leading-8 tracking-[-0.32px]" x-text="displayDeliveringCount">2</span>
                 <span class="text-[10px] font-bold text-[#765600] uppercase tracking-[-0.25px] leading-3 mt-1">DIANTAR</span>
             </div>
 
-            <!-- Card 3: Selesai -->
             <div class="bg-[#EBE8E1] rounded-xl p-2.5 flex flex-col items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] h-[68px]">
                 <span class="font-display font-bold text-[32px] text-[#1C1C18] leading-8 tracking-[-0.32px]" x-text="displayFinishedCount">12</span>
                 <span class="text-[10px] font-bold text-[#404941] uppercase tracking-[-0.25px] leading-3 mt-1">SELESAI</span>
             </div>
         </section>
 
-        <!-- Filter Chips Bar (Scrollable) -->
         <section class="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none">
-            <!-- Chip 1: Semua Siap -->
-            <button @click="activeFilter = 'all'" type="button" 
+
+            <button @click="activeFilter = 'all'" type="button"
                     :class="activeFilter === 'all' ? 'bg-[#0B4D2B] text-[#B1F1C2]' : 'bg-[#F0EEE7] text-[#1C1C18]'"
                     class="flex items-center gap-1.5 px-4 py-2 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-xs font-semibold tracking-[0.24px] whitespace-nowrap transition-all active:scale-95 cursor-pointer flex-shrink-0">
                 <span>Semua Siap</span>
@@ -90,8 +81,7 @@
                       class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold tracking-[0.24px]" x-text="displayReadyCount">5</span>
             </button>
 
-            <!-- Chip 2: Dapur Makanan -->
-            <button @click="activeFilter = 'kitchen'" type="button" 
+            <button @click="activeFilter = 'kitchen'" type="button"
                     :class="activeFilter === 'kitchen' ? 'bg-[#0B4D2B] text-[#B1F1C2]' : 'bg-[#F0EEE7] text-[#1C1C18]'"
                     class="flex items-center gap-1.5 px-4 py-2 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-xs font-semibold tracking-[0.24px] whitespace-nowrap transition-all active:scale-95 cursor-pointer flex-shrink-0">
                 <span>Dapur Makanan</span>
@@ -99,8 +89,7 @@
                       class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold tracking-[0.24px]" x-text="displayKitchenCount">3</span>
             </button>
 
-            <!-- Chip 3: Bar Minuman -->
-            <button @click="activeFilter = 'bar'" type="button" 
+            <button @click="activeFilter = 'bar'" type="button"
                     :class="activeFilter === 'bar' ? 'bg-[#0B4D2B] text-[#B1F1C2]' : 'bg-[#F0EEE7] text-[#1C1C18]'"
                     class="flex items-center gap-1.5 px-4 py-2 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-xs font-semibold tracking-[0.24px] whitespace-nowrap transition-all active:scale-95 cursor-pointer flex-shrink-0">
                 <span>Bar Minuman</span>
@@ -109,7 +98,6 @@
             </button>
         </section>
 
-        <!-- Priority Queue Group (Siap di Pass Counter) -->
         <section class="space-y-2 pt-1">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-1.5">
@@ -123,7 +111,6 @@
                 </span>
             </div>
 
-            <!-- CARDS CONTAINER — Dynamic dari $siapAntarFormatted controller -->
             <div class="space-y-3 pt-1">
 
                 @forelse ($siapAntarFormatted as $order)
@@ -135,12 +122,11 @@
                     $totalItems = collect($order['detailPesanan'])->sum('jumlah');
                     $itemCount = count($order['detailPesanan']);
                 @endphp
-                {{-- Card order --}}
+
                 <div x-show="(activeFilter === 'all' || activeFilter === '{{ $sourceFilter }}') && !delivered"
                      x-data="{ delivered: false }"
                      class="bg-[#F6F3EC] rounded-xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-col gap-3">
 
-                    <!-- Metadata Header -->
                     <div class="flex items-start justify-between gap-2 border-b border-[#E5E2DB]/60 pb-2.5">
                         <div class="flex flex-col gap-1 min-w-0">
                             <div class="flex items-center gap-1.5 flex-wrap">
@@ -163,13 +149,11 @@
                         </span>
                     </div>
 
-                    <!-- Table Heading -->
                     <div class="flex flex-col gap-0.5">
                         <h3 class="font-bold text-[20px] text-[#1C1C18] leading-[25px]">{{ $order['meja']['kode_meja'] }}</h3>
                         <p class="text-xs text-[#404941] font-normal leading-4">{{ $order['meja']['area'] ?? 'Area Saung' }}</p>
                     </div>
 
-                    <!-- Items Container -->
                     <div class="bg-[#F0EEE7] rounded-lg p-2.5 flex flex-col gap-2">
                         @foreach ($order['detailPesanan'] as $detail)
                         <div class="flex items-start gap-2">
@@ -184,7 +168,6 @@
                         @endforeach
                     </div>
 
-                    <!-- Action Buttons -->
                     <div class="flex flex-col gap-2 pt-1">
                         <button @click="delivered = true; deliverOrder('{{ $order['kode_pesanan'] }}', '{{ $order['meja']['kode_meja'] }}', {{ $isBar ? 'true' : 'false' }})"
                                 type="button"
@@ -207,7 +190,7 @@
                     </div>
                 </div>
                 @empty
-                {{-- Empty state: tidak ada pesanan siap --}}
+
                 <div class="flex flex-col items-center justify-center py-12 text-center">
                     <div class="w-16 h-16 rounded-full bg-[#F0EEE7] flex items-center justify-center mb-3">
                         <svg class="w-8 h-8 text-[#7A5900]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -222,7 +205,6 @@
             </div>
         </section>
 
-        <!-- Live Coworker Tracking Section ("Sedang Diantar Rekan Runner") -->
         <section class="space-y-2 pt-2">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-1.5">
@@ -234,7 +216,6 @@
                 <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px]">Live Mesh</span>
             </div>
 
-            <!-- Live Runner List -->
             @forelse ($deliveringRunners ?? [] as $runner)
             <div class="bg-[#F0EEE7] rounded-xl p-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-between min-h-[60px]">
                 <div class="flex items-center gap-2.5">
@@ -265,7 +246,6 @@
             @endforelse
         </section>
 
-        <!-- Sound / Vibration Toggle Action Bar -->
         <section class="bg-[#EBE8E1] rounded-xl p-2 px-3 flex items-center justify-between h-12 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
             <div class="flex items-center gap-2.5">
                 <div class="w-8 h-8 rounded-lg bg-[#E5E2DB] flex items-center justify-center flex-shrink-0">
@@ -279,29 +259,27 @@
                 </div>
             </div>
 
-            <!-- Toggle switch -->
-            <button @click="soundVibrationActive = !soundVibrationActive; triggerToast(soundVibrationActive ? 'Mode suara & getar diaktifkan.' : 'Mode suara & getar dinonaktifkan.')" 
-                    type="button" 
-                    :class="soundVibrationActive ? 'bg-[#0B4D2B]' : 'bg-[#E5E2DB]'" 
+            <button @click="soundVibrationActive = !soundVibrationActive; triggerToast(soundVibrationActive ? 'Mode suara & getar diaktifkan.' : 'Mode suara & getar dinonaktifkan.')"
+                    type="button"
+                    :class="soundVibrationActive ? 'bg-[#0B4D2B]' : 'bg-[#E5E2DB]'"
                     class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none">
-                <span :class="soundVibrationActive ? 'translate-x-5' : 'translate-x-0.5'" 
+                <span :class="soundVibrationActive ? 'translate-x-5' : 'translate-x-0.5'"
                       class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out mt-0.5"></span>
             </button>
         </section>
 
     </div>
 
-    <!-- Denah Saung Modal -->
-    <div x-show="showDenahModal" 
-         x-transition:enter="transition ease-out duration-200" 
-         x-transition:enter-start="opacity-0" 
-         x-transition:enter-end="opacity-100" 
-         x-transition:leave="transition ease-in duration-150" 
-         x-transition:leave-start="opacity-100" 
-         x-transition:leave-end="opacity-0" 
+    <div x-show="showDenahModal"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
          class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-4">
-        
-        <div @click.away="showDenahModal = false" 
+
+        <div @click.away="showDenahModal = false"
              class="bg-[#FCF9F2] w-full max-w-[390px] rounded-2xl p-5 shadow-2xl border border-[#E5E2DB] space-y-4">
             <div class="flex items-center justify-between pb-2 border-b border-[#E5E2DB]">
                 <div class="flex items-center gap-2">
@@ -315,7 +293,6 @@
                 <button @click="showDenahModal = false" class="text-[#404941] hover:text-[#1C1C18] text-xl font-bold cursor-pointer">&times;</button>
             </div>
 
-            <!-- Route Map Graphic -->
             <div class="bg-[#F6F3EC] rounded-xl p-4 border border-[#E5E2DB] space-y-3">
                 <div class="flex items-center gap-3">
                     <span class="w-6 h-6 rounded-full bg-[#0B4D2B] text-white text-xs font-bold flex items-center justify-center">1</span>
@@ -336,21 +313,20 @@
                 </div>
             </div>
 
-            <button @click="showDenahModal = false" type="button" 
+            <button @click="showDenahModal = false" type="button"
                     class="w-full h-11 rounded-xl bg-[#0B4D2B] text-white font-bold text-sm tracking-[0.14px] cursor-pointer">
                 Tutup Denah
             </button>
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div x-show="showToast" 
-         x-transition:enter="transition ease-out duration-300" 
-         x-transition:enter-start="opacity-0 translate-y-4" 
-         x-transition:enter-end="opacity-100 translate-y-0" 
-         x-transition:leave="transition ease-in duration-200" 
-         x-transition:leave-start="opacity-100 translate-y-0" 
-         x-transition:leave-end="opacity-0 translate-y-4" 
+    <div x-show="showToast"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-4"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 translate-y-4"
          class="fixed bottom-20 left-4 right-4 z-50 max-w-[390px] mx-auto pointer-events-none">
         <div class="bg-[#31312C] text-[#F3F0EA] rounded-xl px-4 py-3 flex items-center gap-3 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] border border-white/10 pointer-events-auto">
             <svg class="w-[18.33px] h-[18.33px] text-[#FFDEA1] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -368,7 +344,7 @@
             shiftInfo: 'Shift Siang (12:00–18:00)',
             signalStrength: '-52 dBm',
 
-            activeFilter: 'all', // 'all', 'kitchen', 'bar'
+            activeFilter: 'all',
             displayReadyCount: 0,
             displayDeliveringCount: 0,
             displayFinishedCount: 0,
@@ -382,7 +358,7 @@
             denahTitle: 'Denah Jalur Antar',
 
             init() {
-                // Selalu assign dari backend — tidak pakai kondisi > 0 agar 0 pun terbaca
+
                 this.displayReadyCount     = {{ $readyCount ?? 0 }};
                 this.displayKitchenCount   = {{ $kitchenCount ?? 0 }};
                 this.displayBarCount       = {{ $barCount ?? 0 }};

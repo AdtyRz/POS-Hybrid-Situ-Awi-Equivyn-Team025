@@ -115,7 +115,7 @@
                             <div>
                                 <p class="font-mono font-bold text-sm">#{{ $pesanan->kode_pesanan }}</p>
                                 <p class="text-stone-500 text-xs mt-0.5">
-                                    {{ $pesanan->waktu_pesan->format('d M Y, H.i') }} WIB • {{ $jumlahItem }} item</p>
+                                    {{ $pesanan->waktu_pesan->timezone('Asia/Jakarta')->format('d M Y, H.i') }} WIB • {{ $jumlahItem }} item</p>
                             </div>
                             <span
                                 class="{{ $gaya }} text-[11px] font-bold rounded-full px-3 py-1 whitespace-nowrap">{{ ucfirst(str_replace('_', ' ', $pesanan->status_pesanan)) }}</span>
@@ -143,7 +143,7 @@
     </div>
 
     <script>
-        // Realtime: perubahan status pesanan pada sesi meja ini → muat ulang daftar.
+
         window.addEventListener('realtime', () => window.realtimeReload(800));
     </script>
 </body>
