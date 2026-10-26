@@ -27,8 +27,9 @@ class KasirController extends Controller
     }
 
     /**
-     * Selesaikan sesi meja (cara manual kasir): semua pesanan aktif ditandai
-     * selesai, meja dikosongkan, lalu kode unik baru di-generate untuk sesi baru.
+     * Selesaikan sesi meja (cara manual kasir): semua pesanan yang sudah
+     * dibayar ditandai selesai, meja dikosongkan, lalu kode unik baru
+     * di-generate untuk sesi baru. Sesi dengan tagihan belum lunas ditolak.
      */
     public function akhiriSession(Request $request, $meja): RedirectResponse
     {
@@ -38,7 +39,11 @@ class KasirController extends Controller
             $mejaMakan = MejaMakan::where('kode_meja', $meja)->firstOrFail();
         }
 
-        SesiMeja::putuskanSesi($mejaMakan);
+        try {
+            SesiMeja::putuskanSesi($mejaMakan);
+        } catch (\RuntimeException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
 
         Realtime::emit(new SesiMejaBerubah(
             $mejaMakan->kode_meja,

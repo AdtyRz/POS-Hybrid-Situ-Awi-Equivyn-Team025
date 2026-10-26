@@ -44,13 +44,6 @@ class SituAwiSeeder extends Seeder
                 'no_telp' => '081200000005', 'is_aktif' => true,
                 'created_at' => $now, 'updated_at' => $now,
             ],
-            [
-
-                'nama' => 'Pelanggan Demo', 'email' => 'pelanggan@situawi.com',
-                'password' => Hash::make('password123'), 'role' => 'pelanggan',
-                'no_telp' => '081200000006', 'is_aktif' => true,
-                'created_at' => $now, 'updated_at' => $now,
-            ],
         ]);
 
         $mejas = [
@@ -80,16 +73,28 @@ class SituAwiSeeder extends Seeder
         }
 
         $idDapur = DB::table('kategori')->insertGetId([
+            'jenis' => 'menu',
             'nama_kategori' => 'Makanan', 'target_kds' => 'dapur',
             'deskripsi' => 'Menu yang dimasak di dapur - dikirim ke KDS Dapur',
             'created_at' => $now, 'updated_at' => $now,
         ]);
 
         $idBar = DB::table('kategori')->insertGetId([
+            'jenis' => 'menu',
             'nama_kategori' => 'Minuman', 'target_kds' => 'bar',
             'deskripsi' => 'Menu yang diracik di bar - dikirim ke KDS Bar',
             'created_at' => $now, 'updated_at' => $now,
         ]);
+
+        foreach (collect($mejas)->pluck('area')->unique() as $area) {
+            DB::table('kategori')->insertOrIgnore([
+                'jenis' => 'area',
+                'nama_kategori' => $area,
+                'target_kds' => null,
+                'deskripsi' => 'Kategori area saung',
+                'created_at' => $now, 'updated_at' => $now,
+            ]);
+        }
 
         $makanan = [
             ['Paket Nasi Liwet 5 Orang', 150000],

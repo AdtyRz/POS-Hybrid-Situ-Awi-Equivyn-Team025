@@ -1,20 +1,9 @@
-/* ==========================================================================
-   Situ Awi — Hybrid POS, Self-Service & IoT Table Node
-   resources/css/app.css  ·  Tailwind v3 + Laravel Blade
-   Design System "Warm Forest Hospitality"
 
-   Pembagian tugas:
-   - tailwind.config.js → token (warna, font, radius, shadow, easing, breakpoint)
-   - app.css            → CSS variable, base, komponen (@layer components),
-                          keyframes & kelas animasi
-   Font: pasang <link> Google Fonts di layout Blade (lihat catatan di chat).
-   ========================================================================== */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ---------- TOKEN (CSS variables, untuk komponen & kode non-Tailwind) ---- */
 :root {
   --forest-900: #052e1b; --forest-800: #06381f; --forest-700: #0a4a28;
   --forest-600: #0b4d2b; --forest-400: #12703f; --forest-100: #d9ebe0;
@@ -43,12 +32,10 @@
   --touch-min: 44px;
 }
 
-/* Mode "outdoor legibility": saturasi sedikit naik di mobile (§7) */
 @media (max-width: 767px) {
   :root { --brand: #0b5a30; --accent: #e6b441; }
 }
 
-/* ---------- BASE ---------- */
 @layer base {
   html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
   body {
@@ -64,7 +51,6 @@
   input[type="radio"], input[type="checkbox"] { accent-color: var(--forest-600); }
 }
 
-/* ---------- KEYFRAMES (calm motion) ---------- */
 @keyframes fade-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
@@ -91,10 +77,8 @@
 }
 @keyframes draw-in { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 
-/* ---------- KOMPONEN ---------- */
 @layer components {
 
-  /* Kelas animasi (pakai bersama utilitas Tailwind) */
   .reveal { opacity: 0; animation: fade-up var(--dur-reveal) var(--ease) forwards; }
   .reveal:nth-child(2) { animation-delay: 80ms; }
   .reveal:nth-child(3) { animation-delay: 160ms; }
@@ -115,21 +99,18 @@
   .anim-collapse { animation: collapse-width 250ms var(--ease) forwards; overflow: hidden; }
   .anim-draw-in { transform-origin: bottom; animation: draw-in 700ms var(--ease) both; }
 
-  /* Tipografi khusus */
   .display-hero { @apply font-display font-bold text-4xl text-forest-900 desktop:text-5xl; line-height: 1.1; }
   .price, .num { @apply font-bold; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
   .price { @apply text-gold-600; }
 
-  /* Container & grid (dinamai ulang agar tidak menimpa .container / .grid Tailwind) */
   .page-container { @apply w-full px-4 md:px-6 desktop:max-w-desktop desktop:mx-auto desktop:px-8; }
   .layout-grid { @apply grid grid-cols-4 gap-4 md:grid-cols-8 md:gap-6 desktop:grid-cols-12 desktop:gap-8; }
-  /* Margin luar desktop = (100vw − 1280px)/2, minimal 48px */
+
   .page-container--bleed { @apply desktop:max-w-none; }
   @media (min-width: 1366px) {
     .page-container--bleed { padding-inline: max(48px, calc((100vw - 1280px) / 2)); }
   }
 
-  /* Tombol */
   .btn {
     @apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-btn
            min-h-touch min-w-touch px-5 py-2.5 text-base font-semibold text-center leading-tight;
@@ -154,7 +135,6 @@
   .btn-quick-add:active { transform: scale(0.94); }
   .btn-quick-add[disabled] { @apply bg-charcoal-500 opacity-40 pointer-events-none; }
 
-  /* Kartu */
   .card { @apply bg-cream-100 rounded-card shadow-card p-4; }
   .card-premium { @apply bg-gold-50 rounded-card shadow-card p-4; }
   .card-menu {
@@ -176,17 +156,15 @@
   .card-menu.is-soldout .btn-quick-add { @apply bg-charcoal-500 opacity-40 pointer-events-none; }
   .card-menu.is-soldout .badge { animation: fade-in var(--dur-page) var(--ease); }
 
-  /* Badge status */
   .badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold text-white bg-charcoal-500; }
-  .badge-warning { @apply bg-warning text-forest-900; }   /* Menunggu Pembayaran */
-  .badge-success { @apply bg-success; }                    /* Lunas / Siap Diantarkan */
-  .badge-danger { @apply bg-danger; }                      /* Batal / Void / Stok habis */
-  .badge-process { @apply bg-forest-400; }                 /* Diproses */
-  .badge-ready { @apply bg-gold-500 text-forest-900; }     /* Siap */
+  .badge-warning { @apply bg-warning text-forest-900; }
+  .badge-success { @apply bg-success; }
+  .badge-danger { @apply bg-danger; }
+  .badge-process { @apply bg-forest-400; }
+  .badge-ready { @apply bg-gold-500 text-forest-900; }
   .badge-promo { @apply bg-gold-300 text-forest-900; }
   .badge-overlay { @apply absolute top-2 left-2; }
 
-  /* Chip */
   .chip {
     @apply inline-flex items-center gap-1.5 min-h-[36px] px-3.5 py-1.5 rounded-full bg-forest-100 text-forest-900 text-sm font-medium whitespace-nowrap;
     transition: background-color var(--dur-micro) var(--ease), color var(--dur-micro) var(--ease);
@@ -196,7 +174,6 @@
   .chip-row::-webkit-scrollbar { display: none; }
   .chip-row > * { @apply flex-none; scroll-snap-align: start; }
 
-  /* Form */
   .input, .select, .textarea {
     @apply w-full min-h-touch px-3.5 py-2.5 bg-white text-charcoal-800 rounded-btn border-[1.5px] border-forest-100;
     transition: border-color var(--dur-micro) var(--ease), box-shadow var(--dur-micro) var(--ease);
@@ -209,17 +186,14 @@
   .field-label { @apply block text-sm font-semibold mb-1.5; }
   .field-error { @apply text-xs text-danger mt-1; }
 
-  /* Progress */
   .progress { @apply h-2 bg-leaf-100 rounded-full overflow-hidden; }
   .progress__bar { @apply h-full bg-leaf-400 rounded-full; transition: width var(--dur-page) var(--ease); }
 
-  /* Tabel (dinamai .data-table agar tidak bentrok dengan utilitas `table`) */
   .data-table { @apply w-full text-sm border-collapse; }
   .data-table th { @apply text-left font-semibold text-charcoal-500 px-3 py-2.5 border-b border-forest-100; }
   .data-table td { @apply px-3 py-3 border-b border-forest-100; }
   .data-table .num { @apply text-right; }
 
-  /* Modal */
   .backdrop { @apply fixed inset-0 z-[80]; background: rgba(5, 46, 27, 0.5); animation: fade-in var(--dur-micro) var(--ease); }
   .modal {
     @apply fixed inset-x-0 bottom-0 z-[90] max-h-[90vh] overflow-y-auto bg-cream-50 px-4 pt-5 pb-6 rounded-t-3xl;
@@ -229,11 +203,9 @@
     .modal { inset: 50% auto auto 50%; width: min(560px, 92vw); transform: translate(-50%, -50%); @apply rounded-card; animation: fade-in var(--dur-page) var(--ease); }
   }
 
-  /* Header sticky: menyusut + blur saat scroll > 40px */
   .header-sticky { @apply sticky top-0 z-50 py-5 bg-transparent; transition: padding var(--dur-page) var(--ease), background-color var(--dur-page) var(--ease); }
   .header-sticky.is-scrolled { @apply py-3; background: color-mix(in srgb, var(--cream-50) 88%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
 
-  /* ---- e-Menu tamu (single-page, tanpa navbar/bottom-nav) ---- */
   .emenu { @apply min-h-screen pb-24; }
   .saung-status { @apply flex items-center gap-3 p-4 bg-gold-50 rounded-card shadow-card; }
   .menu-grid { @apply grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 desktop:grid-cols-4 desktop:gap-8; }
@@ -248,7 +220,6 @@
   .emenu-top { @apply grid grid-cols-1 gap-4 desktop:grid-cols-2 desktop:items-start desktop:gap-8; }
   .order-tracker { @apply grid gap-2 p-4 bg-cream-100 rounded-card shadow-card; }
 
-  /* ---- FAB & keranjang ---- */
   .fab-cart {
     @apply fixed right-4 bottom-4 z-[60] inline-flex items-center justify-center w-14 h-14 rounded-full bg-forest-600 text-cream-50 shadow-fab hover:bg-forest-700;
     transition: background-color var(--dur-micro) var(--ease), transform var(--dur-micro-fast) var(--ease);
@@ -266,17 +237,15 @@
   .qty button { @apply w-touch h-touch rounded-full border-[1.5px] border-forest-100 bg-white text-forest-900 text-xl hover:bg-forest-100; transition: background-color var(--dur-micro) var(--ease); }
   .qty output { @apply min-w-[28px] text-center font-bold; font-variant-numeric: tabular-nums; }
 
-  /* ---- Toast ---- */
   .toast-stack { @apply fixed top-4 left-1/2 -translate-x-1/2 z-[100] grid gap-2 w-[min(92vw,420px)]; }
   .toast { @apply flex items-center gap-3 px-4 py-3 bg-white rounded-toast shadow-toast; animation: slide-down var(--dur-page) var(--ease) both; }
   .toast-success { @apply border-l-4 border-success; }
   .toast-danger { @apply border-l-4 border-danger; }
-  /* Panggil pelayan: satu-satunya motion mendesak (shake 3x + gold pulse) */
+
   .toast-urgent { @apply bg-gold-50 border-l-4 border-gold-500; animation: slide-down var(--dur-page) var(--ease) both, gold-pulse 1s ease-in-out 2; }
   .toast-urgent .toast__icon { transform-origin: top center; animation: shake 600ms ease-in-out 3; }
   .toast.is-leaving { animation: fade-out var(--dur-micro) var(--ease) forwards; }
 
-  /* ---- Pembayaran / QRIS ---- */
   .pay-methods { @apply grid gap-3; }
   .pay-method {
     @apply flex items-center gap-3 min-h-[56px] px-4 py-3 bg-white rounded-btn border-[1.5px] border-forest-100;
@@ -291,7 +260,6 @@
   .summary-row { @apply flex justify-between gap-3 py-1.5; }
   .summary-row-total { @apply border-t-[1.5px] border-forest-100 mt-2 pt-3 text-xl font-bold; }
 
-  /* ---- Mobile POS Pelayan (mobile-only, max 480px di layar besar) ---- */
   .max-w-waiter {
     max-width: 100%;
     width: 100%;
@@ -303,13 +271,12 @@
     }
   }
 
-  /* ---- POS Kasir: mobile = bottom sheet, desktop = dual-panel 65/35 ---- */
   .pos { @apply min-h-screen; }
   .pos__menu { @apply pb-24; }
   .pos__cart {
     @apply fixed inset-x-0 bottom-0 z-[70] max-h-[85vh] flex flex-col bg-cream-50 rounded-t-3xl;
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
-    transform: translateY(calc(100% - 76px)); /* collapsed: tampil total + tombol Bayar */
+    transform: translateY(calc(100% - 76px));
     transition: transform var(--dur-page) var(--ease);
   }
   .pos__cart.is-expanded { transform: translateY(0); }
@@ -326,8 +293,6 @@
     .pos__cart-foot { @apply px-6 pt-4 pb-6 border-t border-forest-100; }
   }
 
-  /* ---- KDS Dapur & Bar ----
-     Default: Light Mode (DesignV1_3). Dark permanen (docx) → tambah .kds-dark */
   .kds {
     --kds-bg: var(--cream-50); --kds-card: var(--forest-600); --kds-card-text: var(--cream-50);
     --kds-head-bg: var(--cream-100); --kds-head-text: var(--forest-900);
@@ -358,12 +323,10 @@
   .kds-card__check { @apply inline-flex w-8 h-8 items-center justify-center rounded-full bg-success text-white; }
   .kds .badge { @apply text-sm px-3.5 py-1; }
 
-  /* ---- Mobile POS Pelayan (mobile-only, max 480px di layar besar) ---- */
   .waiter { @apply max-w-waiter mx-auto min-h-screen p-4; }
   .waiter-order { @apply grid gap-3 p-4 bg-cream-100 rounded-card shadow-card; }
   .waiter-order + .waiter-order { @apply mt-3; }
 
-  /* ---- Dashboard Admin: mobile = drawer, desktop = sidebar tetap 240px ---- */
   .admin { @apply min-h-screen; }
   .sidebar {
     @apply fixed top-0 left-0 bottom-0 z-[90] w-[min(240px,84vw)] px-3 py-5 bg-forest-800 text-cream-50 shadow-sidebar overflow-y-auto -translate-x-full;
@@ -395,12 +358,10 @@
     .sidebar-backdrop, .admin__topbar .hamburger { display: none; }
   }
 
-  /* Login multi-role */
   .auth-wrap { @apply min-h-screen grid place-items-center p-4 bg-forest-800; }
   .auth-card { @apply w-[min(420px,100%)] grid gap-4 px-6 py-7 bg-cream-50 rounded-card shadow-toast; }
 }
 
-/* ---------- AKSESIBILITAS ---------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

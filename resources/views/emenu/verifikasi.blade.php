@@ -110,7 +110,7 @@
                     <div class="flex items-center gap-3">
                         <span
                             class="w-8 h-8 rounded-full bg-forest-100 text-forest-600 flex items-center justify-center font-bold">1</span>
-                        <span>Buka aplikasi e-wallet/banking (GoPay, OVO, Dana, ShopeePay, BCA Mobile, dll)</span>
+                        <span>Buka aplikasi e-wallet atau m-banking yang mendukung QRIS</span>
                     </div>
                     <div class="flex items-center gap-3">
                         <span
@@ -137,8 +137,11 @@
 
             <div class="space-y-3 mt-4">
                 <a href="{{ route('emenu.status', $pesanan->kode_pesanan) }}"
-                    class="block w-full text-center bg-forest-900 text-white font-extrabold rounded-2xl py-4 shadow-sm hover:bg-forest-600 transition active:scale-95">
-                    🔍 Lihat Status Pesanan
+                    class="flex w-full items-center justify-center gap-2 text-center bg-forest-900 text-white font-extrabold rounded-2xl py-4 shadow-sm hover:bg-forest-600 transition active:scale-95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <span>Lihat Status Pesanan</span>
                 </a>
             </div>
 
@@ -205,7 +208,6 @@
         tickCountdown();
         checkPaymentStatus();
 
-        // Realtime: segera cek/lompat ke halaman status begitu pembayaran dikonfirmasi.
         window.addEventListener('realtime:status.berubah', () => {
             fetch(qrisStatusUrl, {
                     headers: {

@@ -8,38 +8,55 @@ use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
+use App\Models\Pengaturan;
+use App\Models\SesiMeja;
 use App\Services\PesananService;
 use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class PesananController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $aktif = Pesanan::with(['detailPesanan.menu', 'meja'])
-            ->whereDate('waktu_pesan', today())
             ->whereNotIn('status_pesanan', ['selesai', 'dibatalkan'])
-            ->orderBy('waktu_pesan')
+            ->orderByDesc('waktu_pesan')
             ->get()
             ->keyBy('meja_id');
 
         $mejaSemua = MejaMakan::orderBy('kode_meja')->get();
 
+        $paidUnprinted = Pesanan::with(['detailPesanan.menu'])
+            ->whereIn('meja_id', $mejaSemua->pluck('id'))
+            ->where('status_pembayaran', Pesanan::PAYMENT_SUDAH_BAYAR)
+            ->whereNull('printed_at')
+            ->orderBy('waktu_pesan')
+            ->get()
+            ->groupBy('meja_id');
+
+        $sesiAktif = SesiMeja::query()
+            ->whereIn('meja_id', $mejaSemua->pluck('id'))
+            ->where('status', 'aktif')
+            ->latest('id')
+            ->get()
+            ->keyBy('meja_id');
+
         $tunggu = LogPanggilPelayan::where('status_panggilan', 'menunggu')
             ->pluck('meja_id')
             ->toArray();
 
-        $saungsJson = $mejaSemua->map(function ($m) use ($aktif, $tunggu) {
+        $saungsJson = $mejaSemua->map(function ($m) use ($aktif, $tunggu, $paidUnprinted, $sesiAktif) {
             $dasar = [
                 'id' => $m->kode_meja,
                 'dbId' => $m->id,
                 'cluster' => explode('-', $m->kode_meja)[0],
-                'name' => 'SAUNG '.$m->kode_meja,
-                'tableName' => $m->area.' '.$m->kode_meja,
-                'capacity' => $m->area.' Kap. '.$m->kapasitas.' org',
+                'name' => 'SAUNG ' . $m->kode_meja,
+                'tableName' => $m->area . ' ' . $m->kode_meja,
+                'capacity' => $m->area . ' Kap. ' . $m->kapasitas . ' org',
                 'status' => 'empty',
                 'paymentType' => null,
                 'hasAlert' => in_array($m->id, $tunggu),
@@ -51,10 +68,60 @@ class PesananController extends Controller
                 'itemCount' => 0,
                 'totalPortions' => 0,
                 'subtotal' => 0,
-                'tax' => 0,
                 'total' => 0,
                 'items' => [],
+                'receiptItems' => [],
+                'receiptOrders' => [],
+                'receiptOrderIds' => [],
+                'receiptOrderId' => null,
+                'receiptSubtotal' => 0,
+                'receiptTotal' => 0,
+                'receiptPaymentType' => null,
+                'hasUnprintedPaid' => false,
             ];
+
+            $receiptOrders = $paidUnprinted->get($m->id, collect());
+
+            if ($sesiAktif->has($m->id)) {
+                $mulaiSesi = $sesiAktif->get($m->id)->dibuka_pada;
+
+                $receiptOrders = $receiptOrders->filter(
+                    fn ($pesanan) => $pesanan->waktu_pesan === null
+                        || $pesanan->waktu_pesan->greaterThanOrEqualTo($mulaiSesi)
+                );
+            }
+
+            $receiptItems = $receiptOrders->flatMap(function ($pesanan) {
+                return $pesanan->detailPesanan->map(fn ($detail) => [
+                    'name' => $detail->menu?->nama_menu ?? 'Menu',
+                    'qty' => (int) $detail->jumlah,
+                    'price' => (float) $detail->harga_satuan,
+                    'note' => $detail->catatan ? 'Catatan: ' . $detail->catatan : 'Tanpa catatan',
+                    'noteColor' => 'text-[#6B6A63]',
+                ]);
+            })->values();
+
+            $receiptOrderIds = $receiptOrders->pluck('kode_pesanan')->values();
+
+            $dasar['receiptItems'] = $receiptItems;
+            $dasar['receiptOrders'] = $receiptOrders->map(fn ($pesanan) => [
+                'kode_pesanan' => $pesanan->kode_pesanan,
+                'waktu_pesan' => $pesanan->waktu_pesan?->timezone('Asia/Jakarta')->format('H:i'),
+                'total_bayar' => (float) $pesanan->total_bayar,
+                'metode_pembayaran' => $pesanan->metode_pembayaran,
+            ])->values();
+            $dasar['receiptOrderIds'] = $receiptOrderIds;
+            $dasar['receiptOrderId'] = $receiptOrderIds->implode(' / ');
+            $dasar['receiptSubtotal'] = (float) $receiptOrders->sum(
+                fn ($pesanan) => $pesanan->detailPesanan->sum('subtotal')
+            );
+            $dasar['receiptTotal'] = (float) $receiptOrders->sum('total_bayar');
+            $dasar['receiptPaymentType'] = $receiptOrders
+                ->pluck('metode_pembayaran')
+                ->filter()
+                ->unique()
+                ->implode(' / ');
+            $dasar['hasUnprintedPaid'] = $receiptOrders->isNotEmpty();
 
             $p = $aktif->get($m->id);
 
@@ -64,21 +131,16 @@ class PesananController extends Controller
 
             $subtotal = (float) $p->detailPesanan->sum('subtotal');
             $total = (float) $p->total_bayar;
-            $pajak = $total - $subtotal;
-
-            if ($pajak < 0) {
-                $pajak = round($subtotal * 0.1);
-            }
 
             $statusMap = [
-                Pesanan::STATUS_MENUNGGU => 'waiting_cash',
-                Pesanan::STATUS_MENUNGGU_VERIFIKASI => 'waiting_qris',
-                Pesanan::STATUS_MENUNGGU_PEMBAYARAN => 'waiting_cash',
-                Pesanan::STATUS_DIPROSES => 'preparing',
-                Pesanan::STATUS_SIAP => 'ready',
-                Pesanan::STATUS_DIANTAR => 'delivering',
-                Pesanan::STATUS_SELESAI => 'completed',
-                Pesanan::STATUS_DIBATALKAN => 'cancelled',
+                Pesanan::STATUS_MENUNGGU             => 'waiting_cash',
+                Pesanan::STATUS_MENUNGGU_VERIFIKASI  => 'waiting_qris',
+                Pesanan::STATUS_MENUNGGU_PEMBAYARAN  => 'waiting_cash',
+                Pesanan::STATUS_DIPROSES             => 'preparing',
+                Pesanan::STATUS_SIAP                 => 'ready',
+                Pesanan::STATUS_DIANTAR              => 'delivering',
+                Pesanan::STATUS_SELESAI              => 'completed',
+                Pesanan::STATUS_DIBATALKAN           => 'cancelled',
             ];
 
             $alpineStatus = $statusMap[$p->status_pesanan] ?? 'empty';
@@ -86,7 +148,7 @@ class PesananController extends Controller
             // Bug C FIX: Jika pesanan sudah dibayar (status_pembayaran = sudah_bayar)
             // dan bukan lagi menunggu pembayaran, kategorikan sebagai 'paid' di kasir
             // agar saung masuk ke filter "Sudah Lunas" dan panel kanan ter-lock.
-            $sudahBayar = $p->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR;
+            $sudahBayar    = $p->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR;
             $masihMenunggu = in_array($p->status_pesanan, [
                 Pesanan::STATUS_MENUNGGU,
                 Pesanan::STATUS_MENUNGGU_PEMBAYARAN,
@@ -96,26 +158,35 @@ class PesananController extends Controller
                 $alpineStatus = 'paid';
             }
 
-            $dasar['status'] = $alpineStatus;
+            $dasar['status']      = $alpineStatus;
             $dasar['paymentType'] = $p->metode_pembayaran;
             $dasar['paymentStatus'] = $p->status_pembayaran;
             $dasar['orderStatus'] = $p->status_pesanan;
             $dasar['orderId'] = $p->kode_pesanan;
             $dasar['kodePesanan'] = $p->kode_pesanan;
-            $dasar['customer'] = 'Tamu '.$m->kode_meja;
-            $dasar['qrTime'] = $p->waktu_pesan->format('H:i');
-            $dasar['elapsedTime'] = now()->diffInMinutes($p->waktu_pesan).' mnt lalu';
+            $dasar['customer'] = 'Tamu ' . $m->kode_meja;
+            $dasar['qrTime'] = $p->waktu_pesan->timezone('Asia/Jakarta')->format('H:i');
+            $selisihMenit = intdiv(max(0, now()->getTimestamp() - $p->waktu_pesan->getTimestamp()), 60);
+
+            if ($selisihMenit < 1) {
+                $dasar['elapsedTime'] = 'Baru saja';
+            } elseif ($selisihMenit < 60) {
+                $dasar['elapsedTime'] = $selisihMenit . ' mnt lalu';
+            } elseif ($selisihMenit < 1440) {
+                $dasar['elapsedTime'] = intdiv($selisihMenit, 60) . ' jam lalu';
+            } else {
+                $dasar['elapsedTime'] = intdiv($selisihMenit, 1440) . ' hari lalu';
+            }
             $dasar['itemCount'] = (int) $p->detailPesanan->sum('jumlah');
             $dasar['totalPortions'] = (int) $p->detailPesanan->sum('jumlah');
             $dasar['subtotal'] = $subtotal;
-            $dasar['tax'] = $pajak;
             $dasar['total'] = $total;
             $dasar['items'] = $p->detailPesanan->map(function ($d) {
                 return [
                     'name' => $d->menu->nama_menu,
                     'qty' => (int) $d->jumlah,
                     'price' => (float) $d->harga_satuan,
-                    'note' => $d->catatan ? 'Catatan: '.$d->catatan : 'Tanpa catatan',
+                    'note' => $d->catatan ? 'Catatan: ' . $d->catatan : 'Tanpa catatan',
                     'noteColor' => 'text-[#6B6A63]',
                 ];
             })->values();
@@ -133,8 +204,8 @@ class PesananController extends Controller
                 'active' => true,
                 'id' => $panggil->id,
                 'saungId' => $panggil->meja->kode_meja,
-                'title' => 'PANGGILAN PELAYAN AKTIF: SAUNG '.$panggil->meja->kode_meja.' ('.$panggil->meja->area.')',
-                'subtitle' => 'Panggilan masuk ('.$panggil->waktu_panggil->format('H:i:s').') Tamu butuh bantuan pelayan',
+                'title' => 'PANGGILAN PELAYAN AKTIF: SAUNG ' . $panggil->meja->kode_meja . ' (' . $panggil->meja->area . ')',
+                'subtitle' => 'Panggilan masuk (' . $panggil->waktu_panggil->timezone('Asia/Jakarta')->format('H:i:s') . ') Tamu butuh bantuan pelayan',
             ];
         } else {
             $iotAlertJson = [
@@ -160,13 +231,37 @@ class PesananController extends Controller
         $pertama = $saungsJson->sortBy(fn ($s) => $statusPriority[$s['status']] ?? 99)->first();
         $selectedSaungId = $pertama ? $pertama['id'] : null;
 
-        return view('kasir.index', compact('saungsJson', 'iotAlertJson', 'selectedSaungId'));
+        // Bila kasir baru menyelesaikan pembayaran, kembalikan fokus ke meja tersebut.
+        $mejaDipilih = $request->query('meja');
+
+        if ($mejaDipilih && $saungsJson->contains('id', $mejaDipilih)) {
+            $selectedSaungId = $mejaDipilih;
+        }
+
+        $printLogo = filter_var(Pengaturan::nilai('print_logo'), FILTER_VALIDATE_BOOLEAN);
+        $logoSrc = Pengaturan::logoUrl();
+        $receiptHeader = Pengaturan::nilai('receipt_header', 'Saung Situ Awi - Ciwidey');
+        $receiptFooter = Pengaturan::nilai('struk_footer', 'Hatur Nuhun Parantos Sumping');
+        $restoAddress = Pengaturan::nilai('alamat_resto', 'Jl. Raya Situ Awi Km. 4, Ciwidey, Kabupaten Bandung');
+        $restoPhone = Pengaturan::nilai('telepon_resto', '0812-3456-7890');
+
+        return view('kasir.index', compact(
+            'saungsJson',
+            'iotAlertJson',
+            'selectedSaungId',
+            'printLogo',
+            'logoSrc',
+            'receiptHeader',
+            'receiptFooter',
+            'restoAddress',
+            'restoPhone',
+        ));
     }
 
     public function create(): View
     {
         $meja = MejaMakan::where('status_meja', 'kosong')->orderBy('kode_meja')->get();
-        $menu = Menu::where('stok_menu', '>', 0)->orderBy('nama_menu')->get();
+        $menu = Menu::where('is_aktif', true)->where('stok_menu', '>', 0)->orderBy('nama_menu')->get();
 
         return view('kasir.tambah', compact('meja', 'menu'));
     }
@@ -197,12 +292,12 @@ class PesananController extends Controller
                 [
                     'asal' => 'kasir',
                     'metode' => $data['metode_pembayaran'] ?? 'tunai',
-                    'kasir_id' => $request->user()->id,
+                    'kasir_id' => auth()->id(),
                     'catatan' => $data['catatan'] ?? null,
-                ]
+                ],
             );
-        } catch (\RuntimeException $e) {
-            return back()->withErrors(['jumlah' => $e->getMessage()])->withInput();
+        } catch (\RuntimeException $exception) {
+            return back()->withErrors(['jumlah' => $exception->getMessage()])->withInput();
         }
 
         Realtime::emit(new PesananBaru([
@@ -240,35 +335,43 @@ class PesananController extends Controller
         // Status menunggu_pembayaran & menunggu_verifikasi berasal dari e-menu checkout
         // Tanpa ini, PATCH ke /pesanan/{kode}/status crash dengan undefined array key
         $alur = [
-            'menunggu' => ['diproses', 'dibatalkan'],
-            'menunggu_pembayaran' => ['diproses', 'dibatalkan'],
-            'menunggu_verifikasi' => ['diproses', 'dibatalkan'],
-            'diproses' => ['siap', 'dibatalkan'],
-            'siap' => ['diantar', 'dibatalkan'],
-            'diantar' => ['selesai', 'dibatalkan'],
-            'selesai' => [],
-            'dibatalkan' => [],
+            'menunggu'              => ['diproses', 'dibatalkan'],
+            'menunggu_pembayaran'   => ['diproses', 'dibatalkan'],
+            'menunggu_verifikasi'   => ['diproses', 'dibatalkan'],
+            'diproses'              => ['siap', 'dibatalkan'],
+            'siap'                  => ['diantar', 'dibatalkan'],
+            'diantar'               => ['selesai', 'dibatalkan'],
+            'selesai'               => [],
+            'dibatalkan'            => [],
         ];
 
         if (! in_array($data['status_pesanan'], $alur[$pesanan->status_pesanan])) {
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json(['message' => 'Perpindahan status tidak diizinkan.'], 422);
             }
-
             return back()->withErrors(['status_pesanan' => 'Perpindahan status tidak diizinkan.']);
         }
 
         if ($data['status_pesanan'] === 'dibatalkan') {
             app(PesananService::class)->batalkan(
                 $pesanan,
-                $request->user()->id,
-                $data['alasan'] ?? 'Dibatalkan oleh kasir.'
+                auth()->id(),
+                $data['alasan'] ?? 'Pesanan dibatalkan.',
             );
         } else {
-            $pesanan->update(['status_pesanan' => $data['status_pesanan']]);
+            DB::transaction(function () use ($pesanan, $data) {
+                $pesanan->update(['status_pesanan' => $data['status_pesanan']]);
+            });
         }
 
-        $pesanan->refresh();
+        $masihAdaPesananAktif = Pesanan::query()
+            ->where('meja_id', $pesanan->meja_id)
+            ->whereNotIn('status_pesanan', [Pesanan::STATUS_SELESAI, Pesanan::STATUS_DIBATALKAN])
+            ->exists();
+
+        if (! $masihAdaPesananAktif) {
+            $pesanan->meja()->update(['status_meja' => 'kosong']);
+        }
 
         Realtime::emit(new StatusPesananBerubah([
             'kode_pesanan' => $pesanan->kode_pesanan,
@@ -281,10 +384,10 @@ class PesananController extends Controller
         // Return redirect untuk form biasa (kasir dashboard)
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
-                'status' => 'ok',
+                'status'  => 'ok',
                 'message' => 'Status pesanan diperbarui',
                 'pesanan' => [
-                    'kode_pesanan' => $pesanan->kode_pesanan,
+                    'kode_pesanan'   => $pesanan->kode_pesanan,
                     'status_pesanan' => $data['status_pesanan'],
                 ],
             ]);

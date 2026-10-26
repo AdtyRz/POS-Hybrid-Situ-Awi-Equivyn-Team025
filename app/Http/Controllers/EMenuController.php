@@ -4,15 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Events\PanggilanPelayan;
 use App\Events\PesananBaru;
+use App\Events\SesiMejaBerubah;
 use App\Events\StatusPesananBerubah;
 use App\Models\Kategori;
 use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
+use App\Models\Pengaturan;
 use App\Models\SesiMeja;
 use App\Services\MidtransService;
 use App\Services\PesananService;
+use App\Services\StokService;
 use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -61,7 +64,7 @@ class EMenuController extends Controller
             ]);
         }
 
-        $request->session()->put('sesi_meja_'.$mejaMakan->id, $sesi->id);
+        $request->session()->put('sesi_meja_' . $mejaMakan->id, $sesi->id);
 
         return redirect()->route('emenu.meja', $mejaMakan->kode_meja);
     }
@@ -74,14 +77,14 @@ class EMenuController extends Controller
             return $this->kunciRedirect($mejaMakan);
         }
 
-        $menuJson = Menu::orderBy('nama_menu')->get()->map(function ($menu) {
+        $menuJson = Menu::where('is_aktif', true)->orderBy('nama_menu')->get()->map(function ($menu) {
             return [
                 'id' => $menu->id,
                 'name' => $menu->nama_menu,
                 'price' => (float) $menu->harga,
                 'desc' => $menu->deskripsi ?? '',
                 'category' => $menu->kategori_id,
-                'image' => $menu->foto_menu ? asset('storage/'.$menu->foto_menu) : '',
+                'image' => $menu->foto_menu ? asset('storage/' . $menu->foto_menu) : '',
                 'isSoldOut' => $menu->stok_menu <= 0,
                 'badge' => $menu->stok_menu <= 0 ? 'Stok Habis' : '',
                 'badgeType' => $menu->stok_menu <= 0 ? 'soldout' : '',
@@ -89,20 +92,20 @@ class EMenuController extends Controller
         })->values();
 
         $kategoriJson = collect([['id' => 'semua', 'name' => 'Semua']])->concat(
-            Kategori::orderBy('id')->get()->map(function ($kategori) {
+            Kategori::untukMenu()->orderBy('id')->get()->map(function ($kategori) {
                 return ['id' => $kategori->id, 'name' => $kategori->nama_kategori];
             })
         )->values();
 
         $inisial = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $mejaMakan->kode_meja), 0, 2));
 
-        $riwayat = session('riwayat_meja_'.$mejaMakan->id, []);
+        $riwayat = session('riwayat_meja_' . $mejaMakan->id, []);
 
         return view('pelanggan.index', [
             'meja' => $mejaMakan,
             'menuJson' => $menuJson,
             'kategoriJson' => $kategoriJson,
-            'orderRef' => '#'.$inisial.'-'.$mejaMakan->id.'04',
+            'orderRef' => '#' . $inisial . '-' . $mejaMakan->id . '04',
             'punyaRiwayat' => count($riwayat) > 0,
         ]);
     }
@@ -134,13 +137,13 @@ class EMenuController extends Controller
                 $mejaMakan,
                 $dipilih->all(),
                 $data['catatan'] ?? [],
-                ['asal' => 'emenu', 'metode' => $data['metode']]
+                ['asal' => 'emenu', 'metode' => $data['metode']],
             );
-        } catch (\RuntimeException $e) {
-            return back()->withErrors(['jumlah' => $e->getMessage()])->withInput();
+        } catch (\RuntimeException $exception) {
+            return back()->withErrors(['jumlah' => $exception->getMessage()])->withInput();
         }
 
-        $request->session()->push('riwayat_meja_'.$mejaMakan->id, $pesanan->kode_pesanan);
+        $request->session()->push('riwayat_meja_' . $mejaMakan->id, $pesanan->kode_pesanan);
 
         // Broadcast realtime: pesanan baru masuk ke KDS, kasir, dan pelayan.
         Realtime::emit(new PesananBaru([
@@ -195,7 +198,7 @@ class EMenuController extends Controller
         // Bila pelanggan membuka halaman status tanpa membayar di halaman verifikasi,
         // tampilkan QRIS di sini agar tetap bisa membayar. QR disembunyikan begitu lunas.
         $qris = null;
-        $qrisTtl = (int) config('midtrans.qris_expiry_minutes', 5) * 60;
+        $qrisTtl = max(5, min(60, (int) Pengaturan::nilai('qris_expiry_minutes'))) * 60;
 
         if ($pesanan->metode_pembayaran === 'qris'
             && $pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR
@@ -214,7 +217,7 @@ class EMenuController extends Controller
             return $this->kunciRedirect($mejaMakan);
         }
 
-        $kodeRiwayat = array_reverse(session('riwayat_meja_'.$mejaMakan->id, []));
+        $kodeRiwayat = array_reverse(session('riwayat_meja_' . $mejaMakan->id, []));
 
         $daftarPesanan = Pesanan::with(['detailPesanan.menu'])
             ->where('meja_id', $mejaMakan->id)
@@ -253,7 +256,7 @@ class EMenuController extends Controller
 
         // Perkiraan masa berlaku QR (untuk countdown di UI). Refresh sesungguhnya
         // terjadi saat Midtrans menandai transaksi expire.
-        $qrisTtl = (int) config('midtrans.qris_expiry_minutes', 5) * 60;
+        $qrisTtl = max(5, min(60, (int) Pengaturan::nilai('qris_expiry_minutes'))) * 60;
 
         return view('emenu.verifikasi', compact('pesanan', 'qris', 'qrisTtl'));
     }
@@ -266,10 +269,7 @@ class EMenuController extends Controller
     {
         $pesanan = Pesanan::where('kode_pesanan', $kode_pesanan)->firstOrFail();
 
-        $bisaDibayar = $pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR
-            && $pesanan->status_pesanan !== Pesanan::STATUS_DIBATALKAN;
-
-        if ($bisaDibayar) {
+        if ($pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR) {
             $midtrans = app(MidtransService::class);
             $status = $midtrans->getTransactionStatus($kode_pesanan);
 
@@ -297,6 +297,8 @@ class EMenuController extends Controller
                             'order_id' => $pesanan->kode_pesanan,
                         ]);
                     }
+
+                    app(StokService::class)->potongSetelahPembayaran($pesanan, null);
                 });
 
                 $pesanan->refresh();
@@ -375,7 +377,7 @@ class EMenuController extends Controller
      */
     private function sesiTerverifikasi(MejaMakan $meja): bool
     {
-        $sesiId = session('sesi_meja_'.$meja->id);
+        $sesiId = session('sesi_meja_' . $meja->id);
 
         if (! $sesiId) {
             return false;

@@ -248,7 +248,7 @@
                 showFilterModal: false,
                 paymentMethod: 'qris',
                 iotChecking: false,
-                liveTimeString: '',
+                liveTimeString: '{{ now('Asia/Jakarta')->format('H:i') }} WIB',
                 toast: {
                     visible: false,
                     type: 'info',
@@ -264,10 +264,12 @@
                     setInterval(() => this.updateClock(), 1000);
                 },
                 updateClock() {
-                    const now = new Date();
-                    const hours = String(now.getHours()).padStart(2, '0');
-                    const minutes = String(now.getMinutes()).padStart(2, '0');
-                    this.liveTimeString = `${hours}:${minutes} WIB`;
+                    this.liveTimeString = new Intl.DateTimeFormat('en-GB', {
+                        timeZone: 'Asia/Jakarta',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false,
+                    }).format(new Date()) + ' WIB';
                 },
                 get filteredMenuItems() {
                     return this.menuItems.filter(item => {
@@ -285,11 +287,8 @@
                 get cartSubtotal() {
                     return this.cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
                 },
-                get cartTax() {
-                    return Math.round(this.cartSubtotal * 0.10);
-                },
                 get cartGrandTotal() {
-                    return this.cartSubtotal + this.cartTax;
+                    return this.cartSubtotal;
                 },
                 formatRupiah(number) {
                     return 'Rp ' + Number(number || 0).toLocaleString('id-ID');
@@ -403,7 +402,7 @@
         }
     </script>
     <script>
-        // Realtime: sesi meja ditutup kasir → muat ulang agar kembali terkunci minta kode baru.
+
         window.addEventListener('realtime:sesi.berubah', () => window.realtimeReload(400));
     </script>
 </body>
