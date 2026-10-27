@@ -151,6 +151,8 @@ Route::middleware(['auth', 'role:pelayan'])->group(function () {
     Route::get('/pelayan/tab-saung', [PelayanController::class, 'tabSaung'])->name('pelayan.tab-saung');
     Route::get('/pelayan/tab-shift', [PelayanController::class, 'tabShift'])->name('pelayan.tab-shift');
     Route::patch('/pelayan/panggilan/{id}', [PelayanController::class, 'ubahStatus'])->name('pelayan.panggilan.ubah');
+    Route::post('/pelayan/pesanan', [PelayanController::class, 'simpanPesanan'])->name('pelayan.pesanan.store');
+    Route::post('/pelayan/meja/{meja}/buka', [PelayanController::class, 'bukaMeja'])->name('pelayan.meja.buka');
 });
 
 require __DIR__.'/auth.php';

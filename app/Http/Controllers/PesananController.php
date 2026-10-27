@@ -442,6 +442,20 @@ class PesananController extends Controller
 
         $pesanan = Pesanan::where('kode_pesanan', $kode)->firstOrFail();
 
+        if (
+            $request->user()?->role === 'pelayan'
+            && filled($request->user()->area)
+            && $pesanan->meja?->area !== $request->user()->area
+        ) {
+            $pesan = 'Pesanan ini berada di luar area tugas Anda.';
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['message' => $pesan], 403);
+            }
+
+            abort(403, $pesan);
+        }
+
         // Bug 3 FIX: Tambahkan semua status yang didefinisikan di model
         // Status menunggu_pembayaran & menunggu_verifikasi berasal dari e-menu checkout
         // Tanpa ini, PATCH ke /pesanan/{kode}/status crash dengan undefined array key

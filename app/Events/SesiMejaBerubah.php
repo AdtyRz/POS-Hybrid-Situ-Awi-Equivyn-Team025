@@ -27,6 +27,7 @@ class SesiMejaBerubah implements ShouldBroadcastNow
     {
         return [
             new Channel('meja.' . $this->kodeMeja),
+            new Channel('pelayan'),
             new Channel('kasir'),
             new Channel('admin'),
         ];
