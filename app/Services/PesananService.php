@@ -124,6 +124,10 @@ class PesananService
                 return;
             }
 
+            if ($terkunci->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
+                throw new RuntimeException('Pesanan yang sudah lunas tidak dapat dibatalkan.');
+            }
+
             $sudahDiproses = StokMutasi::query()
                 ->where('pesanan_id', $terkunci->id)
                 ->where('jenis', 'penjualan')

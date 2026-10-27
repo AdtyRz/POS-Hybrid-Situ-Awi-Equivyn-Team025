@@ -19,6 +19,7 @@ class User extends Authenticatable
         'no_telp',
         'area',
         'is_aktif',
+        'status_operasional',
     ];
 
     protected $hidden = [

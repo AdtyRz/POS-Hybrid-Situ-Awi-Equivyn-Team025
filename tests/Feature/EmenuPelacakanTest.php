@@ -91,6 +91,8 @@ class EmenuPelacakanTest extends TestCase
     {
         [$meja, $menu] = $this->siapkanMejaDanMenu();
 
+        $sesi = SesiMeja::aktifUntuk($meja);
+
         $pesanan = Pesanan::create([
             'kode_pesanan' => 'SW-UJI-01',
             'meja_id' => $meja->id,
@@ -104,9 +106,10 @@ class EmenuPelacakanTest extends TestCase
             'subtotal' => 50000,
         ]);
 
-        $this->withSession(array_merge($this->sesiTerverifikasi($meja), [
+        $this->withSession([
+            'sesi_meja_' . $meja->id => $sesi->id,
             'riwayat_meja_' . $meja->id => ['SW-UJI-01'],
-        ]))
+        ])
             ->get(route('emenu.pelacakan', $meja->id))
             ->assertOk()
             ->assertSee('SW-UJI-01')

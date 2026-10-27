@@ -6,6 +6,7 @@ use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
 use App\Models\Pengaturan;
 use App\Models\SesiMeja;
+use App\Services\IotStatusService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -163,6 +164,17 @@ class PengaturanController extends Controller
     public function diagnostik(): JsonResponse
     {
         return response()->json($this->diagnostikData());
+    }
+
+    /**
+     * Uji endpoint status meja dari halaman admin. Endpoint perangkat asli
+     * tetap memakai token IoT; route ini memakai sesi admin yang sudah login.
+     */
+    public function statusMejaIot(IotStatusService $service): JsonResponse
+    {
+        return response()
+            ->json($service->statusSemuaMeja())
+            ->header('Cache-Control', 'no-store, private, max-age=0');
     }
 
     public function bersihkanCache(): JsonResponse

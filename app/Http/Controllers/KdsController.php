@@ -171,6 +171,9 @@ class KdsController extends Controller
             if ($data['aksi'] === 'item' && $data['item_id']) {
                 $detail = DetailPesanan::where('id', $data['item_id'])
                     ->where('pesanan_id', $pesanan->id)
+                    ->whereHas('menu.kategori', function ($query) use ($target) {
+                        $query->where('target_kds', $target);
+                    })
                     ->firstOrFail();
 
                 $detail->update([

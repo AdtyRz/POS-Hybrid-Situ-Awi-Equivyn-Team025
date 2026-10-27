@@ -9,7 +9,8 @@
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
 </head>
 
-<body class="min-h-screen bg-[#FBF8F1] p-4">
+<body class="min-h-screen bg-[#FBF8F1] p-4" x-data="sessionPage()">
+    <style>[x-cloak] { display: none !important; }</style>
     <div class="max-w-3xl mx-auto">
         <header class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-3">
@@ -55,9 +56,9 @@
                         <form method="POST" action="{{ route('kasir.session.tutup', $m->kode_meja) }}">
                             @csrf
                             @method('PATCH')
-                            <button type="submit"
-                                class="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm shadow-sm transition"
-                                onclick="return confirm('Selesaikan sesi meja ini? Semua pesanan aktif akan ditandai selesai dan kode unik baru akan dibuat.')">
+                            <button type="button"
+                                @click="mintaKonfirmasi($el.closest('form'), 'Selesaikan sesi meja ini? Semua pesanan aktif akan ditandai selesai dan kode unik baru akan dibuat.')"
+                                class="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm shadow-sm transition">
                                 Selesaikan Sesi
                             </button>
                         </form>
@@ -65,9 +66,9 @@
                         <form method="POST" action="{{ route('kasir.session.tutup', $m->kode_meja) }}">
                             @csrf
                             @method('PATCH')
-                            <button type="submit"
-                                class="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold text-sm shadow-sm transition"
-                                onclick="return confirm('Selesaikan sesi meja ini dan buat kode unik baru?')">
+                            <button type="button"
+                                @click="mintaKonfirmasi($el.closest('form'), 'Selesaikan sesi meja ini dan buat kode unik baru?')"
+                                class="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold text-sm shadow-sm transition">
                                 Selesaikan Sesi
                             </button>
                         </form>
@@ -100,6 +101,55 @@
 
         <p class="text-center text-stone-400 text-xs mt-8">© 2026 Saung Situ Awi Ciwidey</p>
     </div>
+
+    <div x-show="konfirmasi.open"
+         x-cloak
+         x-transition.opacity
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+        <div class="w-full max-w-md bg-white rounded-2xl border border-stone-200 shadow-2xl overflow-hidden" @click.outside="konfirmasi.open = false">
+            <div class="px-5 py-4 border-b border-stone-100 flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="font-display font-bold text-lg text-[#00341A]">Selesaikan Sesi Meja</h3>
+                    <p class="text-xs text-stone-500 mt-1 leading-relaxed" x-text="konfirmasi.message"></p>
+                </div>
+            </div>
+            <div class="px-5 py-4 bg-[#FAF7F0] flex items-center justify-end gap-2">
+                <button type="button" @click="konfirmasi.open = false"
+                        class="px-4 py-2.5 rounded-xl border border-stone-300 bg-white text-stone-700 font-bold text-xs hover:bg-stone-50 transition">
+                    Batal
+                </button>
+                <button type="button" @click="jalankanKonfirmasi()"
+                        class="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition">
+                    Ya, Selesaikan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function sessionPage() {
+            return {
+                konfirmasi: {
+                    open: false,
+                    message: '',
+                    form: null,
+                },
+                mintaKonfirmasi(form, message) {
+                    this.konfirmasi = { open: true, message, form };
+                },
+                jalankanKonfirmasi() {
+                    const form = this.konfirmasi.form;
+                    this.konfirmasi.open = false;
+                    form?.requestSubmit();
+                },
+            };
+        }
+    </script>
 </body>
 
 </html>

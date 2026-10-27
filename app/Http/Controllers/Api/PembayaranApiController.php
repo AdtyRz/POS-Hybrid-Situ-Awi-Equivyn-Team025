@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\StatusPesananBerubah;
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Models\Pesanan;
 use App\Models\Pembayaran;
 use App\Services\StokService;
+use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\Api\PembayaranApiRequest;
@@ -49,9 +51,21 @@ class PembayaranApiController extends Controller
                 'status_pesanan' => Pesanan::STATUS_DIPROSES,
                 'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
                 'metode_pembayaran' => $data['metode_pembayaran'],
+                'kasir_id' => auth()->id(),
             ]);
         });
 
-        return ApiResponse::success($pesanan->fresh(), 'Pembayaran berhasil', 201);
+        $pesanan->refresh();
+
+        Realtime::emit(new StatusPesananBerubah([
+            'kode_pesanan' => $pesanan->kode_pesanan,
+            'meja' => $pesanan->meja?->kode_meja,
+            'status_pesanan' => $pesanan->status_pesanan,
+            'status_pembayaran' => $pesanan->status_pembayaran,
+            'metode_pembayaran' => $pesanan->metode_pembayaran,
+        ]));
+
+        return ApiResponse::success($pesanan->fresh(), 'Pembayaran berhasil', 201)
+            ->withHeaders(['Cache-Control' => 'no-store, private, max-age=0']);
     }
 }

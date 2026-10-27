@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="realtime-version-url" content="{{ route('realtime.version') }}">
+    <meta name="realtime-version" content="{{ \App\Support\Realtime::version() }}">
     <title>Terminal Kasir POS • Saung Situ Awi Ciwidey</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,6 +13,9 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+        <script>
+            window.__CHANNELS__ = ['kasir', 'admin', 'menu'];
+        </script>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @else
         <script src="https://cdn.tailwindcss.com"></script>
@@ -62,6 +67,7 @@
       x-data="kasirPosApp()"
       x-init="initApp()"
       @keydown.window="handleKeyboardShortcuts($event)"
+      @realtime.window="refreshKasirState()"
       x-cloak>
 
     <header class="sticky top-0 z-40 bg-[#FBF8F1]/95 backdrop-blur-md border-b border-[#C8C2B3]/60 shadow-[0_2px_8px_-2px_rgba(26,38,20,0.06)]">
@@ -290,321 +296,23 @@
                 </div>
 
                 <div class="space-y-4">
+                    @include('kasir.partials.cluster-saung', [
+                        'prefix' => 'LB',
+                        'judul' => 'Cluster 1: Lesehan Bawah (5 Saung Lesehan)',
+                        'warna' => 'bg-[#E0B24E]',
+                    ])
 
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between px-1">
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-[#E0B24E]"></span>
-                                <h3 class="font-display font-bold text-sm text-[#00341A]">
-                                    Cluster 1: Lesehan Bawah (5 Saung Lesehan)
-                                </h3>
-                            </div>
-                            <span class="text-xs font-mono font-semibold text-[#6B6A63]" x-text="clusterInfo('LB')"></span>
-                        </div>
+                    @include('kasir.partials.cluster-saung', [
+                        'prefix' => 'LA',
+                        'judul' => 'Cluster 2: Lesehan Atas (2 Saung Pemandangan Kebun)',
+                        'warna' => 'bg-[#059669]',
+                    ])
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                            <template x-for="saung in getClusterSaungs('LB')" :key="saung.id">
-                                <div @click="selectSaung(saung)"
-                                     x-show="isSaungVisible(saung)"
-                                     class="rounded-xl p-3 flex flex-col justify-between transition-all duration-200 cursor-pointer select-none relative"
-                                     :class="{
-                                         'bg-[#FBF3DD]/40 border-2 border-[#0B4D2B] shadow-[0_0_0_2px_#E0B24E,0_6px_16px_-4px_rgba(26,38,20,0.08)] ring-2 ring-[#E0B24E]': selectedSaungId === saung.id && !saung.hasAlert,
-                                         'bg-[#FFFBEB]/40 border-2 border-[#C1442C]/70 shadow-[0_0_16px_2px_rgba(193,68,44,0.25)] animate-alert-pulse': saung.hasAlert,
-                                         'bg-white border border-[#C8C2B3]/60 hover:shadow-md': selectedSaungId !== saung.id && saung.status !== 'empty' && !saung.hasAlert,
-                                         'bg-[#FAF7F0]/60 border border-dashed border-[#C8C2B3]/70 opacity-80 hover:opacity-100': saung.status === 'empty'
-                                     }">
-
-                                    <div class="space-y-2">
-                                        <div class="flex items-start justify-between gap-1.5">
-                                            <div>
-                                                <div class="flex items-center gap-1.5">
-                                                    <h4 class="font-bold text-sm tracking-tight"
-                                                        :class="saung.status === 'empty' ? 'text-[#6B6A63]' : 'text-[#00341A]'"
-                                                        x-text="saung.name">
-                                                    </h4>
-                                                    <span x-show="selectedSaungId === saung.id"
-                                                          class="px-1.5 py-0.2 rounded bg-[#0B4D2B] text-white text-[9px] font-bold uppercase tracking-wider">
-                                                        TERPILIH
-                                                    </span>
-                                                </div>
-                                                <div class="text-[11px] text-[#6B6A63]" x-text="saung.capacity"></div>
-                                            </div>
-
-                                            <div>
-
-                                                <template x-if="saung.hasAlert">
-                                                    <div class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#C1442C] text-white text-[9px] font-extrabold uppercase shadow-2xs">
-                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                                                        <span>PANGGILAN</span>
-                                                    </div>
-                                                </template>
-
-                                                <template x-if="!saung.hasAlert && saung.status === 'waiting_cash'">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E0B24E]/20 border border-[#E0B24E]/50 text-[#C9982F]">
-                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                                        <span>Menunggu Bayar Kasir</span>
-                                                    </span>
-                                                </template>
-
-                                                <template x-if="!saung.hasAlert && !['waiting_cash', 'paid', 'empty'].includes(saung.status)">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F0E9] border border-[#A7C4AB] text-[#0B4D2B]">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-[#0B4D2B]"></span>
-                                                        <span>Terisi</span>
-                                                    </span>
-                                                </template>
-
-                                                <template x-if="saung.status === 'paid'">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ECFDF5] border border-[#6EE7B7] text-[#065F46]">
-                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                                        <span x-text="saung.paymentType === 'qris' ? 'Lunas (QRIS)' : 'Lunas (Tunai)'"></span>
-                                                    </span>
-                                                </template>
-
-                                                <template x-if="saung.status === 'empty'">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#EAE4D3] text-[#6B6A63]">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-[#7A7E6F]"></span>
-                                                        <span>Kosong</span>
-                                                    </span>
-                                                </template>
-                                            </div>
-                                        </div>
-
-                                        <div x-show="saung.hasAlert" class="flex items-center justify-between text-[10px]">
-                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#E0B24E]/20 border border-[#E0B24E]/50 text-[#C9982F] font-bold">
-                                                Menunggu Bayar Kasir
-                                            </span>
-                                            <span class="text-[#C1442C] font-bold flex items-center gap-1">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-[#C1442C] animate-ping"></span>
-                                                <span>Buzzer Aktif</span>
-                                            </span>
-                                        </div>
-
-                                        <template x-if="saung.status !== 'empty'">
-                                            <div class="rounded-lg p-2 border text-[10px] space-y-1"
-                                                 :class="selectedSaungId === saung.id ? 'bg-white/80 border-[#C8C2B3]/40' : 'bg-[#FAF7F0] border-[#C8C2B3]/30'">
-                                                <div class="flex items-start justify-between gap-2 text-[#6B6A63]">
-                                                    <span class="font-mono text-[9px] leading-snug break-all min-w-0 flex-1" x-text="saung.orderId"></span>
-                                                    <span class="font-semibold text-[#92400E] flex items-center gap-0.5 shrink-0 whitespace-nowrap">
-                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                                        <span x-text="saung.elapsedTime"></span>
-                                                    </span>
-                                                </div>
-                                                <div class="flex items-center justify-between">
-                                                    <span class="font-bold text-[#2B2A26] truncate max-w-[120px]" x-text="saung.customer"></span>
-                                                    <span class="font-semibold text-[#0B4D2B]" x-text="saung.itemCount + ' Menu'"></span>
-                                                </div>
-                                            </div>
-                                        </template>
-
-                                        <template x-if="saung.status === 'empty'">
-                                            <div class="rounded-lg p-3 bg-[#F3EEDF]/50 border border-dashed border-[#C8C2B3]/50 text-center">
-                                                <p class="text-[11px] italic text-[#6B6A63]">Saung bersih & siap ditempati</p>
-                                            </div>
-                                        </template>
-                                    </div>
-
-                                    <div class="pt-2 mt-2 border-t border-[#C8C2B3]/30 flex items-center justify-between">
-                                        <span class="text-[11px] text-[#6B6A63] font-medium"
-                                              x-text="saung.status === 'empty' ? 'Status:' : 'Total Tagihan:'">
-                                        </span>
-                                        <span class="font-bold"
-                                              :class="saung.status === 'empty' ? 'text-[#047857] text-xs' : 'text-[#00341A] text-sm'"
-                                              x-text="saung.status === 'empty' ? 'Tersedia (Ready)' : formatRupiah(saung.total)">
-                                        </span>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-
-                    <div class="space-y-2 pt-1">
-                        <div class="flex items-center justify-between px-1">
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-[#059669]"></span>
-                                <h3 class="font-display font-bold text-sm text-[#00341A]">
-                                    Cluster 2: Lesehan Atas (2 Saung Pemandangan Kebun)
-                                </h3>
-                            </div>
-                            <span class="text-xs font-mono font-semibold text-[#6B6A63]" x-text="clusterInfo('LA')"></span>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                            <template x-for="saung in getClusterSaungs('LA')" :key="saung.id">
-                                <div @click="selectSaung(saung)"
-                                     x-show="isSaungVisible(saung)"
-                                     class="rounded-xl p-3 flex flex-col justify-between transition-all duration-200 cursor-pointer select-none"
-                                     :class="{
-                                         'bg-[#FBF3DD]/40 border-2 border-[#0B4D2B] shadow-[0_0_0_2px_#E0B24E,0_6px_16px_-4px_rgba(26,38,20,0.08)] ring-2 ring-[#E0B24E]': selectedSaungId === saung.id,
-                                         'bg-white border border-[#C8C2B3]/60 hover:shadow-md': selectedSaungId !== saung.id && saung.status !== 'empty',
-                                         'bg-[#FAF7F0]/60 border border-dashed border-[#C8C2B3]/70 opacity-80': saung.status === 'empty'
-                                     }">
-
-                                    <div class="space-y-2">
-                                        <div class="flex items-start justify-between gap-1.5">
-                                            <div>
-                                                <div class="flex items-center gap-1.5">
-                                                    <h4 class="font-bold text-sm tracking-tight text-[#00341A]" x-text="saung.name"></h4>
-                                                    <span x-show="selectedSaungId === saung.id"
-                                                          class="px-1.5 py-0.2 rounded bg-[#0B4D2B] text-white text-[9px] font-bold uppercase tracking-wider">
-                                                        TERPILIH
-                                                    </span>
-                                                </div>
-                                                <div class="text-[11px] text-[#6B6A63]" x-text="saung.capacity"></div>
-                                            </div>
-
-                                            <div>
-                                                <template x-if="saung.status === 'waiting_cash'">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E0B24E]/20 border border-[#E0B24E]/50 text-[#C9982F]">
-                                                        <span>Menunggu Bayar Kasir</span>
-                                                    </span>
-                                                </template>
-                                                <template x-if="!['waiting_cash', 'paid', 'empty'].includes(saung.status)">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F0E9] border border-[#A7C4AB] text-[#0B4D2B]">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-[#0B4D2B]"></span>
-                                                        <span>Terisi</span>
-                                                    </span>
-                                                </template>
-                                                <template x-if="saung.status === 'paid'">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ECFDF5] border border-[#6EE7B7] text-[#065F46]">
-                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                                        <span x-text="saung.paymentType === 'qris' ? 'Lunas (QRIS)' : 'Lunas (Tunai)'"></span>
-                                                    </span>
-                                                </template>
-                                                <template x-if="saung.status === 'empty'">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#EAE4D3] text-[#6B6A63]">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-[#7A7E6F]"></span>
-                                                        <span>Kosong</span>
-                                                    </span>
-                                                </template>
-                                            </div>
-                                        </div>
-
-                                        <div class="rounded-lg p-2 bg-[#FAF7F0] border border-[#C8C2B3]/30 text-[10px] space-y-1">
-                                            <div class="flex items-start justify-between gap-2 text-[#6B6A63]">
-                                                <span class="font-mono text-[9px] leading-snug break-all min-w-0 flex-1" x-text="saung.orderId"></span>
-                                                <span class="font-semibold text-[#92400E] flex items-center gap-0.5 shrink-0 whitespace-nowrap">
-                                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                                    <span x-text="saung.elapsedTime"></span>
-                                                </span>
-                                            </div>
-                                            <div class="flex items-center justify-between">
-                                                <span class="font-bold text-[#2B2A26] truncate max-w-[120px]" x-text="saung.customer"></span>
-                                                <span class="font-semibold text-[#0B4D2B]" x-text="saung.itemCount + ' Menu'"></span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="pt-2 mt-2 border-t border-[#C8C2B3]/30 flex items-center justify-between">
-                                        <span class="text-[11px] text-[#6B6A63] font-medium">Total Tagihan:</span>
-                                        <span class="font-bold text-sm text-[#00341A]" x-text="formatRupiah(saung.total)"></span>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-
-                    <div class="space-y-2 pt-1">
-                        <div class="flex items-center justify-between px-1">
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-[#0B4D2B]"></span>
-                                <h3 class="font-display font-bold text-sm text-[#00341A]">
-                                    Cluster 3: Kursi Atas (4 Area Meja Kursi)
-                                </h3>
-                            </div>
-                            <span class="text-xs font-mono font-semibold text-[#6B6A63]" x-text="clusterInfo('KA')"></span>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                            <template x-for="saung in getClusterSaungs('KA')" :key="saung.id">
-                                <div @click="selectSaung(saung)"
-                                     x-show="isSaungVisible(saung)"
-                                     class="rounded-xl p-3 flex flex-col justify-between transition-all duration-200 cursor-pointer select-none"
-                                     :class="{
-                                         'bg-[#FBF3DD]/40 border-2 border-[#0B4D2B] shadow-[0_0_0_2px_#E0B24E,0_6px_16px_-4px_rgba(26,38,20,0.08)] ring-2 ring-[#E0B24E]': selectedSaungId === saung.id,
-                                         'bg-white border border-[#C8C2B3]/60 hover:shadow-md': selectedSaungId !== saung.id && saung.status !== 'empty',
-                                         'bg-[#FAF7F0]/60 border border-dashed border-[#C8C2B3]/70 opacity-80 hover:opacity-100': saung.status === 'empty'
-                                     }">
-
-                                    <div class="space-y-2">
-                                        <div class="flex items-start justify-between gap-1.5">
-                                            <div>
-                                                <div class="flex items-center gap-1.5">
-                                                    <h4 class="font-bold text-sm tracking-tight"
-                                                        :class="saung.status === 'empty' ? 'text-[#6B6A63]' : 'text-[#00341A]'"
-                                                        x-text="saung.name">
-                                                    </h4>
-                                                    <span x-show="selectedSaungId === saung.id"
-                                                          class="px-1.5 py-0.2 rounded bg-[#0B4D2B] text-white text-[9px] font-bold uppercase tracking-wider">
-                                                        TERPILIH
-                                                    </span>
-                                                </div>
-                                                <div class="text-[11px] text-[#6B6A63]" x-text="saung.capacity"></div>
-                                            </div>
-
-                                            <div>
-                                                <template x-if="saung.status === 'waiting_cash'">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E0B24E]/20 border border-[#E0B24E]/50 text-[#C9982F]">
-                                                        <span>Menunggu Bayar Kasir</span>
-                                                    </span>
-                                                </template>
-                                                <template x-if="!['waiting_cash', 'paid', 'empty'].includes(saung.status)">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F0E9] border border-[#A7C4AB] text-[#0B4D2B]">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-[#0B4D2B]"></span>
-                                                        <span>Terisi</span>
-                                                    </span>
-                                                </template>
-                                                <template x-if="saung.status === 'paid'">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ECFDF5] border border-[#6EE7B7] text-[#065F46]">
-                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                                        <span x-text="saung.paymentType === 'qris' ? 'Lunas (QRIS)' : 'Lunas (Tunai)'"></span>
-                                                    </span>
-                                                </template>
-                                                <template x-if="saung.status === 'empty'">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#EAE4D3] text-[#6B6A63]">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-[#7A7E6F]"></span>
-                                                        <span>Kosong</span>
-                                                    </span>
-                                                </template>
-                                            </div>
-                                        </div>
-
-                                        <template x-if="saung.status !== 'empty'">
-                                            <div class="rounded-lg p-2 bg-[#FAF7F0] border border-[#C8C2B3]/30 text-[10px] space-y-1">
-                                                <div class="flex items-start justify-between gap-2 text-[#6B6A63]">
-                                                    <span class="font-mono text-[9px] leading-snug break-all min-w-0 flex-1" x-text="saung.orderId"></span>
-                                                    <span class="font-semibold text-[#92400E] flex items-center gap-0.5 shrink-0 whitespace-nowrap">
-                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                                        <span x-text="saung.elapsedTime"></span>
-                                                    </span>
-                                                </div>
-                                                <div class="flex items-center justify-between">
-                                                    <span class="font-bold text-[#2B2A26] truncate max-w-[120px]" x-text="saung.customer"></span>
-                                                    <span class="font-semibold text-[#0B4D2B]" x-text="saung.itemCount + ' Menu'"></span>
-                                                </div>
-                                            </div>
-                                        </template>
-
-                                        <template x-if="saung.status === 'empty'">
-                                            <div class="rounded-lg p-3 bg-[#F3EEDF]/50 border border-dashed border-[#C8C2B3]/50 text-center">
-                                                <p class="text-[11px] italic text-[#6B6A63]">Saung bersih & siap ditempati</p>
-                                            </div>
-                                        </template>
-                                    </div>
-
-                                    <div class="pt-2 mt-2 border-t border-[#C8C2B3]/30 flex items-center justify-between">
-                                        <span class="text-[11px] text-[#6B6A63] font-medium"
-                                              x-text="saung.status === 'empty' ? 'Status:' : 'Total Tagihan:'">
-                                        </span>
-                                        <span class="font-bold"
-                                              :class="saung.status === 'empty' ? 'text-[#047857] text-xs' : 'text-[#00341A] text-sm'"
-                                              x-text="saung.status === 'empty' ? 'Tersedia (Ready)' : formatRupiah(saung.total)">
-                                        </span>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-
+                    @include('kasir.partials.cluster-saung', [
+                        'prefix' => 'KA',
+                        'judul' => 'Cluster 3: Kursi Atas (4 Area Meja Kursi)',
+                        'warna' => 'bg-[#0B4D2B]',
+                    ])
                 </div>
             </section>
 
@@ -623,10 +331,11 @@
                             <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase"
                                   :class="{
                                       'bg-[#E0B24E]/20 text-[#C9982F] border border-[#E0B24E]/30': currentSaung.status === 'waiting_cash',
+                                      'bg-[#E0B24E]/20 text-[#8A5A00] border border-[#E0B24E]/40': currentSaung.status === 'waiting_qris',
                                       'bg-[#ECFDF5] text-[#065F46] border border-[#6EE7B7]': currentSaung.status === 'paid',
                                       'bg-[#EAE4D3] text-[#6B6A63]': currentSaung.status === 'empty'
                                   }"
-                                  x-text="currentSaung.status === 'empty' ? 'Kosong' : (currentSaung.status === 'paid' ? 'Lunas' : 'Aktif')">
+                                  x-text="currentSaung.status === 'empty' ? 'Kosong' : (currentSaung.status === 'paid' ? 'Lunas' : (currentSaung.status === 'waiting_qris' ? 'QRIS' : 'Aktif'))">
                             </span>
                         </div>
 
@@ -645,13 +354,53 @@
                                     </span>
                                 </div>
 
+                                <template x-if="currentTable && currentTable.orders && currentTable.orders.length > 1">
+                                    <div class="mt-2 rounded-lg border border-[#E0B24E]/50 bg-[#FBF3DD]/50 p-2 space-y-1.5">
+                                        <div class="flex items-center justify-between text-[10px] font-extrabold uppercase tracking-wide text-[#7A5C0F]">
+                                            <span x-text="'Pilih Pesanan • ' + currentTable.orders.length + ' order'"></span>
+                                            <span class="font-mono text-[9px] text-[#991B1B]" x-text="currentTable.unpaidOrderCount + ' belum bayar'"></span>
+                                        </div>
+                                        <div class="grid grid-cols-1 gap-1">
+                                            <template x-for="(order, orderIndex) in currentTable.orders" :key="order.kodePesanan">
+                                                <button type="button"
+                                                        @click="selectOrder(order.kodePesanan)"
+                                                        class="w-full rounded-lg border px-2 py-1.5 text-left transition active:scale-[0.99]"
+                                                        :class="selectedOrderKode === order.kodePesanan
+                                                            ? 'bg-white border-[#0B4D2B] ring-1 ring-[#0B4D2B]/20'
+                                                            : 'bg-white/70 border-[#C8C2B3]/70 hover:bg-white'">
+                                                    <div class="flex items-center justify-between gap-2 text-[10px]">
+                                                        <span class="font-extrabold text-[#00341A]" x-text="'Order ' + (orderIndex + 1)"></span>
+                                                        <span class="font-mono font-bold text-[#00341A]" x-text="formatRupiah(order.total)"></span>
+                                                    </div>
+                                                    <div class="flex items-center justify-between gap-2 mt-0.5">
+                                                        <span class="font-mono text-[9px] text-[#6B6A63] truncate" x-text="order.kodePesanan"></span>
+                                                        <span class="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-extrabold"
+                                                              :class="order.status === 'paid' ? 'bg-[#ECFDF5] text-[#065F46]' : 'bg-[#FEF2F2] text-[#991B1B]'"
+                                                              x-text="order.status === 'paid' ? 'Lunas' : 'Belum bayar'"></span>
+                                                    </div>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+
                                 <div class="mt-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1.5"
                                      :class="currentSaung.status === 'waiting_cash'
                                          ? 'bg-[#FBF3DD] border-[#E0B24E]/40 text-[#C9982F]'
-                                         : 'bg-[#ECFDF5] border-[#6EE7B7] text-[#065F46]'">
+                                         : (currentSaung.status === 'waiting_qris'
+                                             ? 'bg-[#FFF7E0] border-[#E0B24E]/50 text-[#8A5A00]'
+                                             : (currentSaung.status === 'paid'
+                                                 ? 'bg-[#ECFDF5] border-[#6EE7B7] text-[#065F46]'
+                                                 : 'bg-[#E8F0E9] border-[#A7C4AB] text-[#0B4D2B]'))">
                                     <span class="w-2 h-2 rounded-full"
-                                          :class="currentSaung.status === 'waiting_cash' ? 'bg-[#E0B24E] animate-pulse' : 'bg-[#059669]'"></span>
-                                    <span x-text="currentSaung.status === 'waiting_cash' ? 'WAITING_CASH (Opsi Bayar Tunai di Kasir)' : 'SUDAH LUNAS (Transaksi Terverifikasi)'"></span>
+                                          :class="currentSaung.status === 'waiting_cash' || currentSaung.status === 'waiting_qris' ? 'bg-[#E0B24E] animate-pulse' : (currentSaung.status === 'paid' ? 'bg-[#059669]' : 'bg-[#0B4D2B]')"></span>
+                                    <span x-text="currentSaung.status === 'waiting_cash'
+                                        ? 'WAITING_CASH (Opsi Bayar Tunai di Kasir)'
+                                        : (currentSaung.status === 'waiting_qris'
+                                            ? 'MENUNGGU PEMBAYARAN QRIS'
+                                            : (currentSaung.status === 'paid'
+                                                ? 'SUDAH LUNAS (Transaksi Terverifikasi)'
+                                                : 'PESANAN SEDANG DIPROSES'))"></span>
                                 </div>
                             </div>
                         </template>
@@ -888,13 +637,13 @@
                         <div class="grid grid-cols-2 gap-2">
                             <button type="button"
                                     @click="cetakStruk()"
-                                    :disabled="!currentSaung.hasUnprintedPaid"
+                                    :disabled="!currentTable || !currentTable.hasUnprintedPaid"
                                     class="py-2.5 px-3 rounded-lg bg-[#E0B24E]/15 hover:bg-[#E0B24E]/25 border border-[#E0B24E]/40 text-[#C9982F] font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                                 <span>Cetak Struk [F3]</span>
-                                <span x-show="currentSaung.hasUnprintedPaid"
+                                <span x-show="currentTable && currentTable.hasUnprintedPaid"
                                       class="px-1.5 py-0.5 rounded-full bg-[#C9982F] text-white text-[10px] font-extrabold"
-                                      x-text="currentSaung.receiptOrderIds.length"></span>
+                                      x-text="selectedReceiptCount + '/' + ((currentTable && currentTable.receiptOrders) ? currentTable.receiptOrders.length : 0)"></span>
                             </button>
 
                             <button type="button"
@@ -908,7 +657,7 @@
 
                         <button type="button"
                                 @click="akhiriSesiMeja()"
-                                :disabled="currentSaung.status !== 'paid'"
+                                :disabled="!currentTable || !currentTable.allOrdersPaid"
                                 class="w-full py-2.5 px-3 rounded-lg bg-[#F3EEDF] hover:bg-[#EFE8D6] border border-[#C8C2B3]/60 text-[#2B2A26] font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed">
                             <svg class="w-3.5 h-3.5 text-[#7A5900]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -925,83 +674,66 @@
                             <svg class="w-3.5 h-3.5 text-[#0B4D2B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
-                            <span>Pratinjau Struk Berikutnya</span>
+                            <span>Pilih Pesanan &amp; Cetak Struk</span>
                         </div>
                         <span class="font-mono text-[10px] text-[#6B6A63]"
-                              x-text="currentSaung.hasUnprintedPaid ? (currentSaung.receiptOrderIds.length + ' pesanan lunas') : 'Belum ada struk'"></span>
+                              x-text="(currentTable && currentTable.hasUnprintedPaid) ? (selectedReceiptCount + '/' + currentTable.receiptOrders.length + ' dipilih') : 'Belum ada struk'"></span>
                     </div>
 
-                    <div class="p-3 bg-[#FAF7F0] flex justify-center">
-                        <div x-show="currentSaung.hasUnprintedPaid"
-                             x-cloak
-                             class="w-full bg-white p-3 rounded shadow-xs font-mono text-[10px] leading-tight text-[#262626] border border-[#E5E0D5]"
-                             :class="isPrinting ? 'receipt-printed' : ''">
-
-                            <div class="text-center space-y-0.5 pb-2">
-                                @if ($printLogo)
-                                    <div class="flex justify-center pb-1">
-                                        <img src="{{ $logoSrc }}"
-                                             alt="Logo {{ $receiptHeader }}"
-                                             class="h-10 w-auto max-w-[88px] object-contain"
-                                             onerror="this.style.display='none'">
+                    <div class="p-3 bg-[#FAF7F0] space-y-2 max-h-[360px] overflow-y-auto">
+                        <template x-if="currentTable && currentTable.hasUnprintedPaid">
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-[10px] font-bold text-[#6B6A63]">Centang pesanan yang akan dicetak:</span>
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" @click="pilihSemuaStruk()" class="px-2 py-1 rounded-md bg-white border border-[#C8C2B3]/70 text-[9px] font-bold text-[#404941] hover:bg-[#F3EEDF]">Semua</button>
+                                        <button type="button" @click="kosongkanPilihanStruk()" class="px-2 py-1 rounded-md bg-white border border-[#C8C2B3]/70 text-[9px] font-bold text-[#404941] hover:bg-[#F3EEDF]">Kosongkan</button>
                                     </div>
-                                @endif
-                                <div class="font-bold text-xs uppercase text-black tracking-wider">{{ $receiptHeader }}</div>
-                                <div class="text-[9px] text-[#737373]">{{ $restoAddress }}</div>
-                                <div class="text-[9px] text-[#737373]">Telp: {{ $restoPhone }}</div>
-                            </div>
+                                </div>
 
-                            <div class="border-t border-dashed border-[#A3A3A3] my-1.5"></div>
+                                <template x-for="(order, receiptIndex) in currentTable.receiptOrders" :key="order.kode_pesanan">
+                                    <label class="block w-full rounded-lg border bg-white p-2.5 cursor-pointer transition"
+                                           :class="selectedReceiptCodes.includes(order.kode_pesanan)
+                                               ? 'border-[#0B4D2B] ring-1 ring-[#0B4D2B]/15'
+                                               : 'border-[#C8C2B3]/70 opacity-80'">
+                                        <div class="flex items-start gap-2">
+                                            <input type="checkbox"
+                                                   class="mt-0.5 h-3.5 w-3.5 rounded border-[#C8C2B3] text-[#0B4D2B] focus:ring-[#0B4D2B]"
+                                                   :checked="selectedReceiptCodes.includes(order.kode_pesanan)"
+                                                   @change="toggleStruk(order.kode_pesanan)">
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <span class="text-[10px] font-extrabold text-[#00341A]" x-text="'Order ' + (receiptIndex + 1) + ' • ' + (order.waktu_pesan || '-')"></span>
+                                                    <span class="font-mono text-[10px] font-bold text-[#00341A]" x-text="formatRupiah(order.total_bayar)"></span>
+                                                </div>
+                                                <div class="font-mono text-[9px] text-[#6B6A63] break-all mt-0.5" x-text="order.kode_pesanan"></div>
 
-                            <div class="flex justify-between gap-2 text-[9px]">
-                                <span class="break-all" x-text="'No: ' + (currentSaung.receiptOrderId || '-')"></span>
-                                <span class="shrink-0">Kasir: {{ auth()->user()->nama ?? 'Kasir' }}</span>
-                            </div>
-                            <div class="flex justify-between text-[9px]">
-                                <span x-text="'Meja: ' + (currentSaung.name || 'SAUNG LB-01')"></span>
-                                <span x-text="'Waktu: ' + liveTimeString.replace(' WIB', '')"></span>
-                            </div>
+                                                <div class="mt-1.5 border-t border-dashed border-[#C8C2B3]/70 pt-1.5 space-y-0.5">
+                                                    <template x-for="(item, itemIndex) in order.items" :key="order.kode_pesanan + '-' + itemIndex">
+                                                        <div class="flex items-center justify-between gap-2 text-[10px]">
+                                                            <span class="text-[#2B2A26] truncate" x-text="item.qty + 'x ' + item.name"></span>
+                                                            <span class="font-mono text-[#404941] shrink-0" x-text="formatNumber(item.price * item.qty)"></span>
+                                                        </div>
+                                                    </template>
+                                                </div>
 
-                            <div class="border-t border-dashed border-[#A3A3A3] my-1.5"></div>
-
-                            <div class="space-y-1">
-                                <template x-for="(item, index) in currentSaung.receiptItems" :key="index + '-' + item.name">
-                                    <div class="flex justify-between">
-                                        <span class="truncate max-w-[190px]" x-text="item.qty + 'x ' + item.name"></span>
-                                        <span x-text="formatNumber(item.price * item.qty)"></span>
-                                    </div>
+                                                <div class="mt-1.5 flex items-center justify-between text-[9px] text-[#6B6A63]">
+                                                    <span x-text="'Subtotal: ' + formatRupiah(order.subtotal)"></span>
+                                                    <span x-text="order.metode_pembayaran === 'qris' ? 'QRIS Midtrans' : 'Tunai Kasir'"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </label>
                                 </template>
+
+                                <div class="rounded-lg bg-[#F3EEDF] border border-[#C8C2B3]/50 px-2.5 py-2 flex items-center justify-between text-[10px]">
+                                    <span class="font-bold text-[#6B6A63]">Dipilih: <strong class="text-[#00341A]" x-text="selectedReceiptCount + ' order'"></strong></span>
+                                    <span class="font-mono font-extrabold text-[#00341A]" x-text="formatRupiah((currentTable.receiptOrders || []).filter(o => selectedReceiptCodes.includes(o.kode_pesanan)).reduce((t, o) => t + Number(o.total_bayar || 0), 0))"></span>
+                                </div>
                             </div>
+                        </template>
 
-                            <div class="border-t border-dashed border-[#A3A3A3] my-1.5"></div>
-
-                            <div class="flex justify-between text-[9px]">
-                                <span>Subtotal:</span>
-                                <span x-text="formatNumber(currentSaung.receiptSubtotal)"></span>
-                            </div>
-
-                            <div class="border-t border-dashed border-[#A3A3A3] my-1 pt-1 flex justify-between font-bold text-xs text-black">
-                                <span>TOTAL:</span>
-                                <span x-text="formatRupiah(currentSaung.receiptTotal)"></span>
-                            </div>
-
-                            <div class="flex justify-between text-[9px] pt-0.5">
-                                <span>Status:</span>
-                                <span class="font-bold text-[#00341A]">LUNAS</span>
-                            </div>
-                            <div class="flex justify-between text-[9px] pt-0.5">
-                                <span>Pembayaran:</span>
-                                <span x-text="currentSaung.receiptPaymentType || '-'"></span>
-                            </div>
-
-                            <div class="border-t border-dashed border-[#A3A3A3] my-1.5"></div>
-
-                            <div class="text-center text-[9px] text-[#737373] pt-0.5 tracking-wider">
-                                *** {{ strtoupper($receiptFooter) }} ***
-                            </div>
-                        </div>
-
-                        <div x-show="!currentSaung.hasUnprintedPaid"
+                        <div x-show="!currentTable || !currentTable.hasUnprintedPaid"
                              x-cloak
                              class="w-full bg-white p-5 rounded border border-dashed border-[#C8C2B3] text-center space-y-2">
                             <div class="w-10 h-10 rounded-full bg-[#FAF7F0] border border-[#C8C2B3]/60 flex items-center justify-center mx-auto text-[#C9982F]">
@@ -1037,6 +769,9 @@
         @csrf
         @method('PATCH')
         <input type="hidden" name="status_pesanan" value="dibatalkan">
+    </form>
+    <form id="formLock" method="POST" action="{{ route('kasir.lock') }}" class="hidden">
+        @csrf
     </form>
 
     <footer class="bg-[#F3EEDF] border-t border-[#C8C2B3]/60 px-6 py-2 text-xs text-[#6B6A63] font-medium z-30">
@@ -1101,26 +836,44 @@
         </div>
     </div>
 
-    <div x-show="isLocked"
-         x-transition:enter="transition ease-out duration-300"
+    <div x-show="confirmModal.open"
+         x-cloak
+         x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
-         class="fixed inset-0 z-50 bg-[#00341A]/90 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl border border-[#E0B24E]">
-            <div class="w-14 h-14 rounded-full bg-[#FAF7F0] border border-[#C8C2B3] flex items-center justify-center mx-auto text-[#0B4D2B]">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                </svg>
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#1C1C18]/45 backdrop-blur-sm"
+         @keydown.escape.window="confirmModal.open = false">
+        <div class="w-full max-w-md bg-white rounded-2xl border border-[#C8C2B3]/70 shadow-2xl overflow-hidden"
+             @click.outside="confirmModal.open = false">
+            <div class="px-5 py-4 border-b border-[#E5E0D5] flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                     :class="confirmModal.type === 'danger' ? 'bg-[#FEF2F2] text-[#C1442C]' : 'bg-[#FBF3DD] text-[#C9982F]'">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <h3 class="font-display font-bold text-lg text-[#00341A]" x-text="confirmModal.title"></h3>
+                    <p class="text-xs text-[#6B6A63] mt-1 leading-relaxed" x-text="confirmModal.message"></p>
+                </div>
             </div>
-            <div>
-                <h3 class="font-bold text-lg text-[#00341A]">Terminal Terkunci</h3>
-                <p class="text-xs text-[#6B6A63]">Operator: {{ auth()->user()->nama ?? 'Kasir' }}</p>
+            <div class="px-5 py-4 bg-[#FAF7F0] flex items-center justify-end gap-2">
+                <button type="button"
+                        @click="confirmModal.open = false"
+                        class="px-4 py-2.5 rounded-xl border border-[#C8C2B3] bg-white text-[#404941] font-bold text-xs hover:bg-[#F3EEDF] transition">
+                    Batal
+                </button>
+                <button type="button"
+                        @click="jalankanKonfirmasi()"
+                        class="px-4 py-2.5 rounded-xl text-white font-bold text-xs transition active:scale-[0.99]"
+                        :class="confirmModal.type === 'danger' ? 'bg-[#C1442C] hover:bg-[#A93A26]' : 'bg-[#0B4D2B] hover:bg-[#0A4A28]'"
+                        x-text="confirmModal.confirmLabel">
+                    Ya, Lanjutkan
+                </button>
             </div>
-            <button type="button"
-                    @click="isLocked = false"
-                    class="w-full py-3 rounded-xl bg-[#0B4D2B] hover:bg-[#0A4A28] text-white font-bold text-xs uppercase tracking-wide transition active:scale-95">
-                Buka Kunci Terminal
-            </button>
         </div>
     </div>
 
@@ -1131,10 +884,16 @@
                 latencyString: '14ms',
                 activeFilter: 'all',
                 selectedSaungId: @json($selectedSaungId),
+                selectedOrderKode: null,
+                selectedReceiptCodes: [],
+                knownReceiptCodes: [],
                 cashReceived: 0,
                 _lastNumpadTime: 0,
+                _stateLoading: false,
                 isPrinting: false,
                 isLocked: false,
+                stateUrl: @json(route('kasir.state')),
+                lockedUrl: @json(route('kasir.locked')),
                 strukTandaiUrl: @json(route('kasir.struk.tandai')),
                 statusUrlTemplate: @json(route('pesanan.status', ['kode' => '__KODE__'])),
                 sesiTutupTemplate: @json(route('kasir.session.tutup', ['meja' => '__MEJA__'])),
@@ -1145,6 +904,15 @@
                 restoPhone: @json($restoPhone),
                 printLogo: @json($printLogo),
                 logoSrc: @json($logoSrc),
+
+                confirmModal: {
+                    open: false,
+                    type: 'danger',
+                    title: '',
+                    message: '',
+                    confirmLabel: 'Ya, Lanjutkan',
+                    action: null,
+                },
 
                 iotAlert: @json($iotAlertJson),
 
@@ -1166,6 +934,12 @@
                         const ms = Math.floor(12 + Math.random() * 5);
                         this.latencyString = `${ms}ms`;
                     }, 4000);
+
+                    this.pilihOrderAwal();
+                    this.sinkronkanPilihanStruk(true);
+
+                    // Fallback mandiri: tetap sinkron walau WebSocket mati.
+                    setInterval(() => this.refreshKasirState(), 8000);
                 },
 
                 updateClock() {
@@ -1178,8 +952,36 @@
                     }).format(new Date()) + ' WIB';
                 },
 
+                get currentTable() {
+                    return this.saungs.find(s => s.id === this.selectedSaungId) || this.saungs[0] || null;
+                },
+
                 get currentSaung() {
-                    return this.saungs.find(s => s.id === this.selectedSaungId) || this.saungs[0];
+                    const table = this.currentTable;
+
+                    if (!table) {
+                        return {
+                            status: 'empty',
+                            items: [],
+                            orders: [],
+                            receiptOrders: [],
+                            receiptOrderIds: [],
+                            hasUnprintedPaid: false,
+                            total: 0,
+                        };
+                    }
+
+                    const orders = table.orders || [];
+                    const order = orders.find(o => o.kodePesanan === this.selectedOrderKode)
+                        || this.cariOrderDefault(table);
+
+                    return order ? { ...table, ...order } : table;
+                },
+
+                get selectedReceiptCount() {
+                    return (this.currentTable?.receiptOrders || [])
+                        .filter(order => this.selectedReceiptCodes.includes(order.kode_pesanan))
+                        .length;
                 },
 
                 get occupiedCount() {
@@ -1207,12 +1009,53 @@
                     return this.saungs.filter(s => s.cluster === prefix);
                 },
 
+                cariOrderDefault(saung) {
+                    const orders = saung?.orders || [];
+
+                    if (orders.length === 0) return null;
+
+                    return [...orders].reverse().find(order => order.status !== 'paid') || orders[orders.length - 1];
+                },
+
+                defaultOrderKode(saung) {
+                    return this.cariOrderDefault(saung)?.kodePesanan || null;
+                },
+
+                pilihOrderAwal() {
+                    const table = this.currentTable;
+                    if (!table) return;
+
+                    if (!this.selectedSaungId) {
+                        this.selectedSaungId = table.id;
+                    }
+
+                    if (!(table.orders || []).some(order => order.kodePesanan === this.selectedOrderKode)) {
+                        this.selectedOrderKode = this.defaultOrderKode(table);
+                    }
+                },
+
                 isSaungVisible(saung) {
                     if (this.activeFilter === 'all') return true;
                     if (this.activeFilter === 'waiting_cash') return saung.status === 'waiting_cash';
                     if (this.activeFilter === 'paid') return saung.status === 'paid';
                     if (this.activeFilter === 'empty') return saung.status === 'empty';
                     return true;
+                },
+
+                saungCardClass(saung) {
+                    if (saung.hasAlert) {
+                        return 'bg-[#FFFBEB]/40 border-2 border-[#C1442C]/70 shadow-[0_0_16px_2px_rgba(193,68,44,0.25)] animate-alert-pulse';
+                    }
+
+                    if (this.selectedSaungId === saung.id) {
+                        return 'bg-[#FBF3DD]/40 border-2 border-[#0B4D2B] shadow-[0_0_0_2px_#E0B24E,0_6px_16px_-4px_rgba(26,38,20,0.08)] ring-2 ring-[#E0B24E]';
+                    }
+
+                    if (saung.status === 'empty') {
+                        return 'bg-[#FAF7F0]/60 border border-dashed border-[#C8C2B3]/70 opacity-80 hover:opacity-100';
+                    }
+
+                    return 'bg-white border border-[#C8C2B3]/60 hover:shadow-md';
                 },
 
                 clusterInfo(prefix) {
@@ -1223,9 +1066,122 @@
 
                 selectSaung(saung) {
                     this.selectedSaungId = saung.id;
-                    if (saung.status === 'waiting_cash') {
-                        this.cashReceived = 0;
+                    this.selectedOrderKode = this.defaultOrderKode(saung);
+                    this.cashReceived = 0;
+                    this.sinkronkanPilihanStruk(true);
+                },
+
+                selectOrder(kodePesanan) {
+                    if (this.selectedOrderKode === kodePesanan) return;
+
+                    this.selectedOrderKode = kodePesanan;
+                    this.cashReceived = 0;
+                },
+
+                async refreshKasirState() {
+                    if (this._stateLoading || document.hidden) return;
+
+                    this._stateLoading = true;
+                    const kodeTerpilih = this.currentSaung?.kodePesanan || null;
+                    const kodeSebelumnya = this.selectedOrderKode;
+
+                    try {
+                        const response = await fetch(this.stateUrl, {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            cache: 'no-store',
+                            credentials: 'same-origin',
+                        });
+
+                        if (response.status === 423) {
+                            window.location.href = this.lockedUrl;
+                            return;
+                        }
+
+                        if (!response.ok) return;
+
+                        const data = await response.json();
+                        if (!Array.isArray(data.saungs)) return;
+
+                        this.saungs = data.saungs;
+                        this.iotAlert = data.iotAlert || this.iotAlert;
+
+                        if (!this.saungs.some(saung => saung.id === this.selectedSaungId)) {
+                            this.selectedSaungId = this.saungs[0]?.id || null;
+                            this.selectedOrderKode = null;
+                        }
+
+                        const table = this.currentTable;
+                        if (!table) return;
+
+                        const kodeMasihAda = (table.orders || []).some(order => order.kodePesanan === kodeTerpilih);
+
+                        if (kodeMasihAda) {
+                            this.selectedOrderKode = kodeTerpilih;
+                        } else if (!(table.orders || []).some(order => order.kodePesanan === this.selectedOrderKode)) {
+                            this.selectedOrderKode = this.defaultOrderKode(table);
+                        }
+
+                        if (this.selectedOrderKode !== kodeSebelumnya) {
+                            this.cashReceived = 0;
+                        }
+
+                        this.sinkronkanPilihanStruk(false);
+
+                        if (!this.currentSaung || this.currentSaung.status !== 'waiting_cash') {
+                            this.cashReceived = 0;
+                        }
+                    } catch (error) {
+                        // Polling berikutnya akan mencoba lagi.
+                    } finally {
+                        this._stateLoading = false;
                     }
+                },
+
+                sinkronkanPilihanStruk(reset = false) {
+                    const codes = (this.currentTable?.receiptOrders || []).map(order => order.kode_pesanan);
+
+                    if (reset) {
+                        this.selectedReceiptCodes = [...codes];
+                        this.knownReceiptCodes = [...codes];
+                        return;
+                    }
+
+                    const baru = codes.filter(kode => !this.knownReceiptCodes.includes(kode));
+                    const tersisa = this.selectedReceiptCodes.filter(kode => codes.includes(kode));
+
+                    this.selectedReceiptCodes = [...new Set([...tersisa, ...baru])];
+                    this.knownReceiptCodes = [...codes];
+                },
+
+                toggleStruk(kodePesanan) {
+                    if (this.selectedReceiptCodes.includes(kodePesanan)) {
+                        this.selectedReceiptCodes = this.selectedReceiptCodes.filter(kode => kode !== kodePesanan);
+                    } else {
+                        this.selectedReceiptCodes = [...this.selectedReceiptCodes, kodePesanan];
+                    }
+                },
+
+                pilihSemuaStruk() {
+                    this.selectedReceiptCodes = (this.currentTable?.receiptOrders || []).map(order => order.kode_pesanan);
+                },
+
+                kosongkanPilihanStruk() {
+                    this.selectedReceiptCodes = [];
+                },
+
+                hitungUlangStruk(saung) {
+                    const orders = saung.receiptOrders || [];
+
+                    saung.receiptItems = orders.flatMap(order => order.items || []);
+                    saung.receiptOrderIds = orders.map(order => order.kode_pesanan);
+                    saung.receiptOrderId = saung.receiptOrderIds.join(' / ');
+                    saung.receiptSubtotal = orders.reduce((total, order) => total + Number(order.subtotal || 0), 0);
+                    saung.receiptTotal = orders.reduce((total, order) => total + Number(order.total_bayar || 0), 0);
+                    saung.receiptPaymentType = [...new Set(orders.map(order => order.metode_pembayaran).filter(Boolean))].join(' / ');
+                    saung.hasUnprintedPaid = orders.length > 0;
                 },
 
                 setQuickCash(amount) {
@@ -1301,38 +1257,20 @@
                 },
 
                 cetakStruk() {
-                    const saung = this.currentSaung;
+                    const saung = this.currentTable;
 
-                    if (! saung || ! saung.hasUnprintedPaid || ! (saung.receiptItems || []).length) {
+                    if (! saung || ! saung.hasUnprintedPaid) {
                         this.showToast('gold', 'Tidak Ada Struk', 'Belum ada pesanan lunas yang belum dicetak pada sesi ini.');
                         return;
                     }
 
-                    const itemLines = (saung.receiptItems || []).map((item) => {
-                        const nama = `${item.qty}x ${item.name}`;
-                        const harga = this.formatNumber(item.qty * item.price);
-                        return nama.slice(0, 30).padEnd(31, ' ') + harga.padStart(12, ' ');
-                    });
+                    const orders = (saung.receiptOrders || [])
+                        .filter(order => this.selectedReceiptCodes.includes(order.kode_pesanan));
 
-                    const lines = [
-                        (this.receiptHeader || 'SAUNG SITU AWI').toUpperCase(),
-                        this.restoAddress,
-                        'Telp: ' + this.restoPhone,
-                        '--------------------------------',
-                        'No: ' + (saung.receiptOrderId || '-'),
-                        'Meja: ' + (saung.name || saung.id),
-                        'Kasir: ' + this.cashierName,
-                        'Waktu: ' + this.waktuSekarangWib() + ' WIB',
-                        '--------------------------------',
-                        ...itemLines,
-                        '--------------------------------',
-                        'Subtotal: ' + this.formatRupiah(saung.receiptSubtotal),
-                        'TOTAL: ' + this.formatRupiah(saung.receiptTotal),
-                        'Status: LUNAS',
-                        'Pembayaran: ' + (saung.receiptPaymentType || '-'),
-                        '--------------------------------',
-                        this.receiptFooter,
-                    ];
+                    if (orders.length === 0) {
+                        this.showToast('gold', 'Pilih Pesanan', 'Centang minimal satu pesanan yang akan dicetak.');
+                        return;
+                    }
 
                     const jendela = window.open('', '_blank', 'width=420,height=680');
                     if (! jendela) {
@@ -1341,31 +1279,100 @@
                     }
 
                     const dokumen = jendela.document;
-                    dokumen.title = 'Struk ' + (saung.name || saung.receiptOrderId || '');
+                    dokumen.title = 'Struk ' + (saung.name || '') + ' (' + orders.length + ' pesanan)';
 
                     const gaya = dokumen.createElement('style');
-                    gaya.textContent = '@page{size:' + (this.paperSize || '80mm') + ' auto;margin:6mm 5mm}html,body{margin:0;padding:0}body{font-family:monospace;font-size:10.5px;color:#000;padding:0 2mm 4mm}.logo{display:block;margin:0 auto 8px;height:42px;max-width:52mm;width:auto;object-fit:contain}pre{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;margin:0;padding:0;font:inherit;line-height:1.45}@media screen{body{padding:16px}}';
+                    gaya.textContent = '@page{size:80mm auto;margin:6mm 5mm}html,body{margin:0;padding:0}body{font-family:monospace;font-size:10.5px;color:#000;padding:0 2mm 4mm}.logo{display:block;margin:0 auto 8px;height:38px;max-width:48mm;width:auto;object-fit:contain}.receipt{page-break-after:auto;break-after:auto}pre{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;margin:0;padding:0;font:inherit;line-height:1.45}@media screen{body{padding:16px}.receipt{border:0;margin:0;padding:0}}';
                     dokumen.head.appendChild(gaya);
+
+                    // Semua pesanan yang dicentang digabung menjadi SATU struk.
+                    // Logo, header, dan footer hanya muncul sekali.
+                    const itemMap = new Map();
+
+                    orders.forEach((order) => {
+                        (order.items || []).forEach((item) => {
+                            const harga = Number(item.price || 0);
+                            const kunci = String(item.name || 'Menu') + '|' + harga;
+                            const baris = itemMap.get(kunci) || {
+                                name: item.name || 'Menu',
+                                qty: 0,
+                                price: harga,
+                            };
+
+                            baris.qty += Number(item.qty || 0);
+                            itemMap.set(kunci, baris);
+                        });
+                    });
+
+                    const itemLines = Array.from(itemMap.values()).map((item) => {
+                        const nama = item.qty + 'x ' + item.name;
+                        const harga = this.formatNumber(item.qty * item.price);
+                        return nama.slice(0, 30).padEnd(31, ' ') + harga.padStart(12, ' ');
+                    });
+
+                    const subtotal = orders.reduce((total, order) => {
+                        const dariOrder = Number(order.subtotal || 0)
+                            || (order.items || []).reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0);
+
+                        return total + dariOrder;
+                    }, 0);
+
+                    const total = orders.reduce((sum, order) => sum + Number(order.total_bayar || 0), 0);
+                    const kodePesanan = orders.map(order => order.kode_pesanan).filter(Boolean).join(' / ');
+                    const waktuList = orders.map(order => order.waktu_pesan).filter(Boolean);
+                    const waktu = waktuList.length > 1 && waktuList[0] !== waktuList[waktuList.length - 1]
+                        ? waktuList[0] + ' s/d ' + waktuList[waktuList.length - 1]
+                        : (waktuList[0] || this.waktuSekarangWib());
+
+                    const metode = [...new Set(orders.map(order => order.metode_pembayaran).filter(Boolean))]
+                        .map((metode) => metode === 'qris' ? 'QRIS Midtrans' : (metode === 'tunai' ? 'Tunai Kasir' : metode))
+                        .join(' / ');
+
+                    const lines = [
+                        (this.receiptHeader || 'SAUNG SITU AWI').toUpperCase(),
+                        this.restoAddress,
+                        'Telp: ' + this.restoPhone,
+                        '--------------------------------',
+                        'No: ' + (kodePesanan || '-'),
+                        'Meja: ' + (saung.name || saung.id),
+                        'Kasir: ' + this.cashierName,
+                        'Pesanan: ' + orders.length + ' order',
+                        'Waktu: ' + waktu + ' WIB',
+                        '--------------------------------',
+                        ...(itemLines.length ? itemLines : ['(Tidak ada item)']),
+                        '--------------------------------',
+                        'Subtotal: ' + this.formatRupiah(subtotal),
+                        'TOTAL: ' + this.formatRupiah(total),
+                        'Status: LUNAS',
+                        'Pembayaran: ' + (metode || '-'),
+                        '--------------------------------',
+                        this.receiptFooter,
+                    ];
+
+                    const bagian = dokumen.createElement('section');
+                    bagian.className = 'receipt';
 
                     if (this.printLogo) {
                         const logo = dokumen.createElement('img');
                         logo.src = this.logoSrc;
                         logo.alt = 'Logo ' + (this.receiptHeader || 'Resto');
                         logo.className = 'logo';
-                        dokumen.body.appendChild(logo);
+                        bagian.appendChild(logo);
                     }
 
                     const isi = dokumen.createElement('pre');
                     isi.textContent = lines.join('\n');
-                    dokumen.body.appendChild(isi);
+                    bagian.appendChild(isi);
+                    dokumen.body.appendChild(bagian);
 
                     const skrip = dokumen.createElement('script');
-                    skrip.textContent = '(function(){let selesai=false;const cetak=()=>{if(selesai)return;selesai=true;window.focus();window.print();};const logo=document.querySelector("img.logo");if(logo){logo.addEventListener("load",cetak);logo.addEventListener("error",cetak);}window.addEventListener("load",cetak);setTimeout(cetak,900);})();';
+                    skrip.textContent = '(function(){let selesai=false;const cetak=()=>{if(selesai)return;selesai=true;window.focus();window.print();};const logo=document.querySelector("img.logo");if(logo){logo.addEventListener("load",cetak);logo.addEventListener("error",cetak);}window.addEventListener("load",cetak);setTimeout(cetak,1000);})();';
                     dokumen.body.appendChild(skrip);
 
                     this.isPrinting = true;
-                    setTimeout(() => { this.isPrinting = false; }, 900);
-                    this.tandaiStrukTercetak(saung);
+                    setTimeout(() => { this.isPrinting = false; }, 1200);
+
+                    this.tandaiStrukTercetak(saung, orders.map(order => order.kode_pesanan));
                 },
 
                 confirmPayment() {
@@ -1379,10 +1386,10 @@
                     document.getElementById('formBayar').requestSubmit();
                 },
 
-                async tandaiStrukTercetak(saung) {
-                    const kodePesanan = [...(saung.receiptOrderIds || [])];
+                async tandaiStrukTercetak(saung, kodePesanan) {
+                    const kode = [...new Set(kodePesanan || [])];
 
-                    if (kodePesanan.length === 0) return;
+                    if (kode.length === 0) return;
 
                     try {
                         const response = await fetch(this.strukTandaiUrl, {
@@ -1394,7 +1401,7 @@
                             },
                             body: JSON.stringify({
                                 meja_id: saung.dbId,
-                                kode_pesanan: kodePesanan,
+                                kode_pesanan: kode,
                             }),
                         });
 
@@ -1403,39 +1410,72 @@
                         }
 
                         const hasil = await response.json();
+                        const target = this.saungs.find(item => item.dbId === saung.dbId) || saung;
+                        const terpilih = new Set(kode);
 
-                        saung.receiptItems = [];
-                        saung.receiptOrders = [];
-                        saung.receiptOrderIds = [];
-                        saung.receiptOrderId = null;
-                        saung.receiptSubtotal = 0;
-                        saung.receiptTotal = 0;
-                        saung.receiptPaymentType = null;
-                        saung.hasUnprintedPaid = false;
+                        target.receiptOrders = (target.receiptOrders || [])
+                            .filter(order => !terpilih.has(order.kode_pesanan));
 
-                        this.showToast('success', 'Struk Dicetak', `${hasil.jumlah || kodePesanan.length} pesanan ditandai sudah dicetak.`);
+                        this.hitungUlangStruk(target);
+                        this.selectedReceiptCodes = (target.receiptOrders || []).map(order => order.kode_pesanan);
+                        this.knownReceiptCodes = [...this.selectedReceiptCodes];
+
+                        this.showToast('success', 'Struk Dicetak', `${hasil.jumlah || kode.length} pesanan ditandai sudah dicetak.`);
+                        setTimeout(() => this.refreshKasirState(), 1200);
                     } catch (error) {
                         this.showToast('danger', 'Gagal Menandai Struk', error.message || 'Struk tercetak, tetapi status cetak gagal disimpan.');
                     }
                 },
 
                 akhiriSesiMeja() {
-                    if (! this.currentSaung || this.currentSaung.status !== 'paid') {
-                        this.showToast('danger', 'Belum Lunas', 'Selesaikan pembayaran sebelum mengakhiri sesi meja.');
+                    const table = this.currentTable;
+
+                    if (! table || table.orderCount === 0) {
+                        this.showToast('gold', 'Tidak Ada Pesanan', 'Tidak ada pesanan aktif pada meja ini.');
                         return;
                     }
 
-                    if (! confirm(`Akhiri sesi ${this.currentSaung.name}? Semua pesanan aktif akan ditutup dan kode sesi baru dibuat untuk pengunjung berikutnya.`)) {
+                    if (! table.allOrdersPaid) {
+                        this.showToast('danger', 'Belum Lunas', 'Masih ada pesanan yang belum dibayar pada meja ini.');
                         return;
                     }
 
-                    document.getElementById('formSelesaikanSesi').requestSubmit();
+                    this.confirmModal = {
+                        open: true,
+                        type: 'danger',
+                        title: 'Akhiri Sesi Meja',
+                        message: `Akhiri sesi ${table.name}? ${table.orderCount} pesanan aktif akan ditutup dan kode sesi baru dibuat untuk pengunjung berikutnya.`,
+                        confirmLabel: 'Ya, Akhiri Sesi',
+                        action: 'session',
+                    };
                 },
 
                 voidOrder() {
-                    if (!this.currentSaung || !this.currentSaung.kodePesanan) return;
-                    if (confirm(`Yakin ingin membatalkan pesanan ${this.currentSaung.name} (${this.currentSaung.orderId})?`)) {
-                        document.getElementById('formBatal').requestSubmit();
+                    if (! this.currentSaung || ! this.currentSaung.kodePesanan) return;
+
+                    if (this.currentSaung.status === 'paid') {
+                        this.showToast('danger', 'Tidak Dapat Dibatalkan', 'Pesanan yang sudah lunas tidak dapat dibatalkan.');
+                        return;
+                    }
+
+                    this.confirmModal = {
+                        open: true,
+                        type: 'danger',
+                        title: 'Batalkan Pesanan',
+                        message: `Yakin ingin membatalkan pesanan ${this.currentSaung.name} (${this.currentSaung.orderId})? Tindakan ini tidak dapat diurungkan.`,
+                        confirmLabel: 'Ya, Batalkan Order',
+                        action: 'void',
+                    };
+                },
+
+                jalankanKonfirmasi() {
+                    const action = this.confirmModal.action;
+                    this.confirmModal.open = false;
+
+                    if (action === 'session') {
+                        document.getElementById('formSelesaikanSesi')?.requestSubmit();
+                    } else if (action === 'void') {
+                        document.getElementById('formBatal')?.requestSubmit();
                     }
                 },
 
@@ -1452,15 +1492,20 @@
                 },
 
                 lockTerminal() {
-                    this.isLocked = true;
+                    document.getElementById('formLock')?.requestSubmit();
                 },
 
                 handleKeyboardShortcuts(e) {
+                    if (this.confirmModal.open) {
+                        if (e.key === 'Escape') this.confirmModal.open = false;
+                        return;
+                    }
+
                     if (e.repeat) return;
 
                     const isInputActive = e.target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
 
-                    if (e.key === 'Enter' && !this.isLocked && this.currentSaung.status === 'waiting_cash') {
+                    if (e.key === 'Enter' && this.currentSaung.status === 'waiting_cash') {
                         e.preventDefault();
                         this.confirmPayment();
                         return;
@@ -1476,7 +1521,7 @@
                         return;
                     }
 
-                    if (!isInputActive && !this.isLocked && this.currentSaung && this.currentSaung.status === 'waiting_cash') {
+                    if (!isInputActive && this.currentSaung && this.currentSaung.status === 'waiting_cash') {
                         if (e.key >= '0' && e.key <= '9') {
                             this.pressNumpad(e.key);
                         } else if (e.key === 'Backspace') {
@@ -1507,8 +1552,8 @@
     </script>
 
     <script>
-
-        window.addEventListener('realtime', () => window.realtimeReload(800));
+        // Reload halaman tidak lagi dipakai di kasir. Event realtime memanggil
+        // refreshKasirState() agar input uang dan pilihan order tidak hilang.
     </script>
 </body>
 </html>

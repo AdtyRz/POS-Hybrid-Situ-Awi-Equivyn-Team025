@@ -114,10 +114,14 @@ dapat memesan.
   `status` aktif/selesai, `dibuka_pada`, `ditutup_pada`).
 - **Kode selalu aktif per meja**: kode di-generate saat seeder dijalankan dan setiap kali sesi
   berakhir — bukan lewat tombol manual. Kode baru dijamin berbeda dari kode sesi sebelumnya.
-- **Gate verifikasi** berlaku pada halaman e-menu, `checkout`, dan `pelacakan`. Selama sesi
-  aktif, halaman status per-pesanan tetap dapat diakses.
+- **Gate verifikasi** berlaku pada e-menu, `checkout`, `pelacakan`, dan **semua halaman detail
+  pesanan** (`status`, `verifikasi`, `bayar-tunai`, polling QRIS). Halaman detail hanya bisa
+  dibuka bila cookie sesi meja cocok **dan** pesanan dibuat pada sesi aktif tersebut.
 - Verifikasi disimpan di session dengan key `sesi_meja_{id}`, dibandingkan dengan sesi aktif
-  saat ini; begitu sesi ditutup, pelanggan otomatis diminta memasukkan kode baru.
+  saat ini; begitu sesi ditutup, pelanggan otomatis diminta memasukkan kode baru. Riwayat
+  pesanan tamu sebelumnya juga dihapus saat sesi baru diverifikasi.
+- Session ID dirotasi setelah kode saung benar untuk mencegah session fixation. Endpoint
+  `buka` dibatasi 5 percobaan/menit, dan halaman pesanan memakai header `no-store`.
 
 ### Mengakhiri Sesi (sisi Kasir)
 
@@ -128,11 +132,17 @@ dapat memesan.
 
 ### Integrasi IoT
 
-Endpoint API untuk perangkat IoT meja menyertakan kode sesi:
+Endpoint API untuk perangkat IoT meja menyertakan kode sesi dan **wajib** mengirim header
+`X-IoT-Token` yang nilainya sama dengan `IOT_API_TOKEN` di `.env` server:
 
 - `GET /api/iot/status-meja` — status semua meja + `kode_sesi`.
 - `GET /api/iot/meja/{ident}` — detail satu meja (dicari via `id_device` atau `kode_meja`) + `kode_sesi`,
   `pesanan[]` (kode, status pesanan/pembayaran, total) pada sesi berjalan, `total_bayar`, dan `jumlah_pesanan`.
+- `POST /api/iot/panggil-pelayan` — body `{"kode_meja":"LB-01","kode_sesi":"1234"}`. Kode sesi
+  harus kode yang sedang aktif; kode lama ditolak.
+
+Bila `IOT_API_TOKEN` kosong, semua endpoint IoT mengembalikan `503`. Token tidak boleh ditaruh
+di URL. Isi konstanta `IOT_API_TOKEN` pada sketch ESP32 dengan nilai yang sama.
 
 **Sensor sentuh (ESP32, `esp32-iot/esp32_iot_complete.ino`)** — sensor sentuh dipakai untuk
 berpindah tampilan LCD 16x2:
@@ -141,8 +151,34 @@ berpindah tampilan LCD 16x2:
   sehingga pelanggan yang lupa kode verifikasi cukup tap untuk menampilkannya kembali.
 - **Tahan ~1.5 detik** untuk memanggil pelayan (fungsi lama tetap ada).
 
+### Akses API Detail Pesanan
+
+`GET /api/v1/pesanan/{kode}` tidak lagi publik. Akses diberikan bila salah satu terpenuhi:
+
+1. Login staf aktif (admin/kasir/pelayan/koki/barista), atau
+2. Query/header `qr_token` / `X-QR-Token` milik meja, atau
+3. Query/header `kode_saung` / `X-Kode-Saung` yang cocok dengan sesi aktif.
+
+Pesanan juga harus dibuat di dalam sesi meja yang sedang aktif. Respons tidak lagi memuat
+`qr_token`/`id_device`.
+
+### KDS API per Stasiun
+
+`GET /api/v1/kds/antrean` otomatis memfilter berdasarkan role: akun **koki** hanya menerima
+item kategori `target_kds=dapur`, akun **barista** hanya `target_kds=bar`. Parameter
+`?target=dapur|bar` boleh dikirim selama sama dengan stasiun akun; mismatch ditolak `403`.
+
 ### Realtime
 
 Event **`SesiMejaBerubah`** disiarkan di channel `meja.{kode_meja}`, `kasir`, dan `admin`.
 Halaman pelanggan mendengarkan `sesi.berubah` lalu memuat ulang sehingga e-menu kembali
 terkunci saat sesi ditutup.
+
+Halaman staf hanya berlangganan channel yang dibutuhkan: KDS ke `kds.dapur`/`kds.bar`,
+kasir ke `kasir`, pelayan ke `pelayan`, dan admin ke `admin`. Channel default sengaja kosong
+agar halaman publik tidak menerima event staf.
+
+WebSocket memakai Reverb (`php artisan reverb:start`). Bila Reverb tidak berjalan, fallback
+polling `/realtime/version` tetap menyegarkan halaman setiap 4 detik (kasir juga memakai state
+refresh 8 detik dan QRIS polling 3 detik). API create/update/payment dan panggilan IoT sekarang
+juga menyiarkan event realtime.

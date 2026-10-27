@@ -11,27 +11,50 @@ use App\Http\Controllers\PelayanController;
 use App\Http\Controllers\PembayaranController;
 use App\Http\Controllers\PengaturanController;
 use App\Http\Controllers\PesananController;
+use App\Http\Controllers\RealtimeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [EMenuController::class, 'beranda'])->name('emenu.index');
 
-Route::get('/meja/{meja}', [EMenuController::class, 'aplikasi'])->name('emenu.meja');
-Route::get('/meja/{meja}/kunci', [EMenuController::class, 'kunci'])->name('emenu.kunci');
-Route::post('/meja/{meja}/buka', [EMenuController::class, 'buka'])
-    ->middleware('throttle:10,1')
-    ->name('emenu.buka');
-Route::get('/meja/{meja}/pelacakan', [EMenuController::class, 'pelacakan'])->name('emenu.pelacakan');
-Route::post('/meja/{meja}/panggil', [EMenuController::class, 'panggil'])
-    ->middleware('throttle:15,1')
-    ->name('emenu.panggil');
-Route::get('/meja/{meja}/checkout', [EMenuController::class, 'checkoutForm'])->name('emenu.checkout.form');
-Route::post('/meja/{meja}/checkout', [EMenuController::class, 'checkout'])
-    ->middleware('throttle:20,1')
-    ->name('emenu.checkout');
-Route::get('/qris/status/{kode_pesanan}', [EMenuController::class, 'qrisStatus'])->name('emenu.qris.status');
-Route::get('/status/{kode_pesanan}', [EMenuController::class, 'status'])->name('emenu.status');
-Route::get('/verifikasi/{kode_pesanan}', [EMenuController::class, 'verifikasi'])->name('emenu.verifikasi');
-Route::get('/bayar-tunai/{kode_pesanan}', [EMenuController::class, 'bayarTunai'])->name('emenu.bayar-tunai');
+Route::middleware('pesanan.no-store')->group(function () {
+    Route::get('/meja/{meja}', [EMenuController::class, 'aplikasi'])
+        ->middleware('throttle:120,1')
+        ->name('emenu.meja');
+    Route::get('/meja/{meja}/kunci', [EMenuController::class, 'kunci'])
+        ->middleware('throttle:60,1')
+        ->name('emenu.kunci');
+    Route::post('/meja/{meja}/buka', [EMenuController::class, 'buka'])
+        ->middleware('throttle:5,1')
+        ->name('emenu.buka');
+    Route::get('/meja/{meja}/pelacakan', [EMenuController::class, 'pelacakan'])
+        ->middleware('throttle:30,1')
+        ->name('emenu.pelacakan');
+    Route::post('/meja/{meja}/panggil', [EMenuController::class, 'panggil'])
+        ->middleware('throttle:10,1')
+        ->name('emenu.panggil');
+    Route::get('/meja/{meja}/checkout', [EMenuController::class, 'checkoutForm'])
+        ->middleware('throttle:60,1')
+        ->name('emenu.checkout.form');
+    Route::post('/meja/{meja}/checkout', [EMenuController::class, 'checkout'])
+        ->middleware('throttle:20,1')
+        ->name('emenu.checkout');
+    Route::get('/qris/status/{kode_pesanan}', [EMenuController::class, 'qrisStatus'])
+        ->middleware('throttle:60,1')
+        ->name('emenu.qris.status');
+    Route::get('/status/{kode_pesanan}', [EMenuController::class, 'status'])
+        ->middleware('throttle:30,1')
+        ->name('emenu.status');
+    Route::get('/verifikasi/{kode_pesanan}', [EMenuController::class, 'verifikasi'])
+        ->middleware('throttle:60,1')
+        ->name('emenu.verifikasi');
+    Route::get('/bayar-tunai/{kode_pesanan}', [EMenuController::class, 'bayarTunai'])
+        ->middleware('throttle:30,1')
+        ->name('emenu.bayar-tunai');
+});
+
+Route::get('/realtime/version', [RealtimeController::class, 'version'])
+    ->middleware('throttle:120,1')
+    ->name('realtime.version');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -54,6 +77,7 @@ Route::get('/admin/analitik-laporan/ekspor-xlsx', [AdminController::class, 'eksp
     Route::post('/admin/pengaturan-sistem', [PengaturanController::class, 'simpan'])->name('admin.pengaturan-sistem.simpan');
     Route::post('/admin/pengaturan-sistem/logo', [PengaturanController::class, 'unggahLogo'])->name('admin.pengaturan-sistem.logo');
     Route::get('/admin/pengaturan-sistem/diagnostik', [PengaturanController::class, 'diagnostik'])->name('admin.pengaturan-sistem.diagnostik');
+    Route::get('/admin/pengaturan-sistem/iot-status', [PengaturanController::class, 'statusMejaIot'])->name('admin.pengaturan-sistem.iot-status');
     Route::post('/admin/pengaturan-sistem/cache', [PengaturanController::class, 'bersihkanCache'])->name('admin.pengaturan-sistem.cache');
     Route::get('/admin/pengaturan-sistem/cadangan', [PengaturanController::class, 'unduhCadangan'])->name('admin.pengaturan-sistem.cadangan');
 
@@ -87,7 +111,18 @@ Route::get('/admin/analitik-laporan/ekspor-xlsx', [AdminController::class, 'eksp
 });
 
 Route::middleware(['auth', 'role:kasir'])->group(function () {
+    Route::get('/kasir/locked', [KasirController::class, 'locked'])->name('kasir.locked');
+    Route::post('/kasir/lock', [KasirController::class, 'lock'])->name('kasir.lock');
+    Route::post('/kasir/unlock', [KasirController::class, 'unlock'])
+        ->middleware('throttle:5,1')
+        ->name('kasir.unlock');
+    Route::get('/kasir/locked/notifications', [KasirController::class, 'notifikasiTerkunci'])
+        ->name('kasir.locked.notifications');
+});
+
+Route::middleware(['auth', 'role:kasir', 'kasir.unlocked'])->group(function () {
     Route::get('/kasir/dashboard', [PesananController::class, 'index'])->name('kasir.dashboard');
+    Route::get('/kasir/state', [PesananController::class, 'state'])->name('kasir.state');
     Route::get('/kasir/pesanan/tambah', [PesananController::class, 'create'])->name('kasir.pesanan.create');
     Route::post('/kasir/pesanan', [PesananController::class, 'store'])->name('kasir.pesanan.store');
     Route::get('/kasir/pembayaran/cari', [PembayaranController::class, 'cari'])->name('kasir.pembayaran.cari');
@@ -98,7 +133,7 @@ Route::middleware(['auth', 'role:kasir'])->group(function () {
     Route::patch('/kasir/session/{meja}', [KasirController::class, 'akhiriSession'])->name('kasir.session.tutup');
 });
 
-Route::middleware(['auth', 'role:admin,kasir,pelayan'])->group(function () {
+Route::middleware(['auth', 'aktif', 'role:admin,kasir,pelayan', 'kasir.unlocked', 'pesanan.no-store'])->group(function () {
     Route::get('/pesanan/{kode}', [PesananController::class, 'show'])->name('pesanan.show');
     Route::patch('/pesanan/{kode}/status', [PesananController::class, 'ubahStatus'])->name('pesanan.status');
 });
