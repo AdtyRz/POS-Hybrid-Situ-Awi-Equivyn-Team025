@@ -781,7 +781,7 @@ class AdminController extends Controller
         $sesi = SesiMeja::aktifUntuk($meja);
         $sesi->update(['kode_unik' => SesiMeja::kodeUnikBaru($sesi->kode_unik)]);
 
-        return redirect()->route('admin.master-meja')->with('success', 'Token 4 digit saung ' . $meja->kode_meja . ' berhasil diregenerasi.');
+        return redirect()->route('admin.master-meja')->with('success', 'Token saung ' . $meja->kode_meja . ' berhasil diregenerasi.');
     }
 
     public function cetakQrMeja(): \Illuminate\Http\Response

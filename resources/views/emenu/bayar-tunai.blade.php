@@ -105,6 +105,10 @@
                     <p class="font-display font-bold text-3xl text-forest-600">
                         Rp{{ number_format($pesanan->total_bayar, 0, ',', '.') }}</p>
                     <p class="text-stone-500 text-xs mt-1">Total pembayaran</p>
+                    @if ($pesanan->nama_pelanggan)
+                        <p class="text-stone-500 text-xs mt-2">Pemesan: <span
+                                class="font-bold text-stone-700">{{ $pesanan->nama_pelanggan }}</span></p>
+                    @endif
                 </div>
             </div>
 
