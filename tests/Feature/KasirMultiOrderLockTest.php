@@ -228,6 +228,25 @@ class KasirMultiOrderLockTest extends TestCase
             ->assertSee('Standby');
     }
 
+    public function test_login_dan_logout_mengembalikan_status_operasional_aktif(): void
+    {
+        $kasir = $this->kasir();
+        $kasir->update(['status_operasional' => 'standby']);
+
+        $this->post(route('login'), [
+            'email' => $kasir->email,
+            'password' => 'password',
+        ])->assertRedirect(route('dashboard'));
+
+        $this->assertSame('aktif', $kasir->fresh()->status_operasional);
+
+        $kasir->update(['status_operasional' => 'standby']);
+
+        $this->post(route('logout'))->assertRedirect('/');
+
+        $this->assertSame('aktif', $kasir->fresh()->status_operasional);
+    }
+
     public function test_pembayaran_kasir_mengisi_kasir_id(): void
     {
         $kasir = $this->kasir();
