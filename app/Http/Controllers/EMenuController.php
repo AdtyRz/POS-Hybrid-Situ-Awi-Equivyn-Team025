@@ -49,7 +49,7 @@ class EMenuController extends Controller
      * Validasi kode unik sesi. Bila benar, tandai sesi sebagai terverifikasi
      * di session pelanggan lalu arahkan ke halaman e-menu.
      */
-    public function buka(Request $request, string $meja): RedirectResponse
+    public function buka(Request $request, string $meja): RedirectResponse|JsonResponse
     {
         $mejaMakan = $this->cariMeja($meja);
 
@@ -60,8 +60,17 @@ class EMenuController extends Controller
         $sesi = SesiMeja::aktifUntuk($mejaMakan);
 
         if (! hash_equals($sesi->kode_unik, trim($data['kode_unik']))) {
+            $pesan = 'Kode tidak sesuai dengan yang tampil di layar meja.';
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $pesan,
+                    'errors' => ['kode_unik' => [$pesan]],
+                ], 422);
+            }
+
             return back()->withErrors([
-                'kode_unik' => 'Kode tidak sesuai dengan yang tampil di layar meja.',
+                'kode_unik' => $pesan,
             ]);
         }
 
@@ -77,7 +86,16 @@ class EMenuController extends Controller
         $request->session()->regenerate();
         $request->session()->put($kunciSesi, $sesi->id);
 
-        return redirect()->route('emenu.meja', $mejaMakan->kode_meja);
+        $tujuan = route('emenu.meja', $mejaMakan->kode_meja);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'redirect' => $tujuan,
+            ]);
+        }
+
+        return redirect()->to($tujuan);
     }
 
     public function aplikasi(string $meja): View|RedirectResponse
@@ -87,6 +105,8 @@ class EMenuController extends Controller
         if (! $this->sesiTerverifikasi($mejaMakan)) {
             return $this->kunciRedirect($mejaMakan);
         }
+
+        $sesi = SesiMeja::aktifUntuk($mejaMakan);
 
         $menuJson = Menu::where('is_aktif', true)->orderBy('nama_menu')->get()->map(function ($menu) {
             return [
@@ -112,12 +132,13 @@ class EMenuController extends Controller
 
         $riwayat = session('riwayat_meja_' . $mejaMakan->id, []);
 
-        return view('pelanggan.index', [
+        return view('emenu.aplikasi', [
             'meja' => $mejaMakan,
             'menuJson' => $menuJson,
             'kategoriJson' => $kategoriJson,
             'orderRef' => '#' . $inisial . '-' . $mejaMakan->id . '04',
             'punyaRiwayat' => count($riwayat) > 0,
+            'namaPelanggan' => (string) ($sesi->nama_pelanggan ?? ''),
         ]);
     }
 
@@ -129,13 +150,24 @@ class EMenuController extends Controller
             return $this->kunciRedirect($mejaMakan);
         }
 
+        $sesi = SesiMeja::aktifUntuk($mejaMakan);
+        $namaTersimpan = trim((string) $sesi->nama_pelanggan);
+
         $data = $request->validate([
             'jumlah' => ['required', 'array', 'min:1'],
             'jumlah.*' => ['integer', 'min:0', 'max:99'],
             'catatan' => ['nullable', 'array'],
             'catatan.*' => ['nullable', 'string', 'max:255'],
             'metode' => ['required', 'in:tunai,qris'],
+            'nama_pelanggan' => [$namaTersimpan !== '' ? 'nullable' : 'required', 'string', 'max:100'],
+        ], [
+            'nama_pelanggan.required' => 'Nama pemesan wajib diisi sebelum melanjutkan.',
+            'nama_pelanggan.max' => 'Nama pemesan maksimal 100 karakter.',
         ]);
+
+        $namaPelanggan = $namaTersimpan !== ''
+            ? $namaTersimpan
+            : trim((string) ($data['nama_pelanggan'] ?? ''));
 
         $dipilih = collect($data['jumlah'])->filter(fn ($jumlah) => $jumlah > 0);
 
@@ -148,10 +180,14 @@ class EMenuController extends Controller
                 $mejaMakan,
                 $dipilih->all(),
                 $data['catatan'] ?? [],
-                ['asal' => 'emenu', 'metode' => $data['metode']],
+                ['asal' => 'emenu', 'metode' => $data['metode'], 'nama_pelanggan' => $namaPelanggan],
             );
         } catch (\RuntimeException $exception) {
             return back()->withErrors(['jumlah' => $exception->getMessage()])->withInput();
+        }
+
+        if ($namaTersimpan === '') {
+            $sesi->update(['nama_pelanggan' => $namaPelanggan]);
         }
 
         $request->session()->push('riwayat_meja_' . $mejaMakan->id, $pesanan->kode_pesanan);
@@ -175,21 +211,6 @@ class EMenuController extends Controller
             // Cash: Show payment code page for customer to give to kasir
             return redirect()->route('emenu.bayar-tunai', $pesanan->kode_pesanan);
         }
-    }
-
-    /**
-     * Tampilkan form checkout (GET).
-     * Route: GET /meja/{meja}/checkout
-     */
-    public function checkoutForm(string $meja): View|RedirectResponse
-    {
-        $mejaMakan = $this->cariMeja($meja);
-
-        if (! $this->sesiTerverifikasi($mejaMakan)) {
-            return $this->kunciRedirect($mejaMakan);
-        }
-
-        return view('emenu.checkout', ['meja' => $mejaMakan]);
     }
 
     public function status(Request $request, string $kode_pesanan): View|RedirectResponse

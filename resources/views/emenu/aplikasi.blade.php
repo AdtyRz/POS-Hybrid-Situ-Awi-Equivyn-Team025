@@ -83,7 +83,7 @@
 </head>
 
 <body class="bg-[#FBF8F1] antialiased selection:bg-gold-500 selection:text-forest-900 min-h-screen">
-    <div x-data="pelangganApp()" x-init="initApp()" x-cloak class="min-h-screen flex flex-col justify-between">
+    <div x-data="pelangganApp()" x-init="initApp()" @keydown.escape.window="closeMenu()" x-cloak class="min-h-screen flex flex-col justify-between">
         <div x-show="toast.visible" x-transition:enter="transition ease-out duration-300 transform"
             x-transition:enter-start="-translate-y-12 opacity-0" x-transition:enter-end="translate-y-0 opacity-100"
             x-transition:leave="transition ease-in duration-200 transform" x-transition:leave-start="opacity-100"
@@ -176,7 +176,7 @@
                 x-transition:leave="transition ease-in duration-200 transform"
                 x-transition:leave-start="opacity-100 translate-y-0"
                 x-transition:leave-end="opacity-0 -translate-y-4">
-                @include('pelanggan.katalog', ['isSinglePage' => true])
+                @include('emenu.partials.katalog')
             </div>
             <div x-show="step === 2" class="lg:max-w-2xl lg:mx-auto"
                 x-transition:enter="transition ease-out duration-300 transform"
@@ -184,7 +184,7 @@
                 x-transition:leave="transition ease-in duration-200 transform"
                 x-transition:leave-start="opacity-100 translate-y-0"
                 x-transition:leave-end="opacity-0 -translate-y-4">
-                @include('pelanggan.ringkasan', ['isSinglePage' => true])
+                @include('emenu.partials.ringkasan')
             </div>
         </main>
         <div x-show="showFilterModal" x-transition:enter="transition ease-out duration-200"
@@ -226,6 +226,67 @@
                 </div>
             </div>
         </div>
+
+        <div x-show="selectedMenu" x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div class="absolute inset-0 bg-forest-900/70 backdrop-blur-sm" @click="closeMenu()"></div>
+            <div class="relative w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto border border-forest-100">
+                <template x-if="selectedMenu">
+                    <div>
+                        <div class="relative aspect-[16/10] w-full overflow-hidden bg-forest-100/50">
+                            <img :src="selectedMenu.image"
+                                 :alt="selectedMenu.name"
+                                 class="w-full h-full object-cover"
+                                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80';">
+                            <button type="button" @click="closeMenu()"
+                                class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 text-forest-900 shadow-md flex items-center justify-center hover:bg-white transition active:scale-95"
+                                aria-label="Tutup detail menu">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                            <span x-show="selectedMenu.badge"
+                                class="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm"
+                                :class="selectedMenu.isSoldOut ? 'bg-red-600 text-white' : 'bg-gold-500 text-forest-900'"
+                                x-text="selectedMenu.badge"></span>
+                        </div>
+                        <div class="p-5 space-y-3">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="space-y-1 min-w-0">
+                                    <p class="text-[10px] font-bold tracking-wider text-gold-600 uppercase">Detail Menu</p>
+                                    <h3 class="text-xl font-bold text-forest-900 leading-tight" x-text="selectedMenu.name"></h3>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <p class="text-[10px] font-semibold text-charcoal-500">Harga</p>
+                                    <p class="text-base font-extrabold text-forest-800" x-text="formatRupiah(selectedMenu.price)"></p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-charcoal-500 leading-relaxed whitespace-pre-line"
+                                x-text="selectedMenu.desc || 'Deskripsi menu belum tersedia.'"></p>
+                            <div class="pt-2">
+                                <button type="button"
+                                    @click="addToCart(selectedMenu); closeMenu()"
+                                    :disabled="selectedMenu.isSoldOut"
+                                    class="w-full py-3 rounded-xl font-bold text-sm transition active:scale-[0.98] flex items-center justify-center gap-2"
+                                    :class="selectedMenu.isSoldOut
+                                        ? 'bg-charcoal-500/20 text-charcoal-500 cursor-not-allowed'
+                                        : 'bg-forest-700 hover:bg-forest-800 text-white shadow-md'">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                            d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                    <span x-text="selectedMenu.isSoldOut ? 'Stok Habis' : 'Tambah ke Bon'"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
     </div>
     <form id="formPanggil" method="POST" action="{{ route('emenu.panggil', $meja->id) }}" class="hidden">
         @csrf
@@ -246,7 +307,12 @@
                 searchQuery: '',
                 activeCategory: 'semua',
                 showFilterModal: false,
+                selectedMenu: null,
                 paymentMethod: 'qris',
+                namaPelanggan: @json($namaPelanggan ?? ''),
+                namaPelangganInput: @json(old('nama_pelanggan', $namaPelanggan ?? '')),
+                namaPelangganError: @json($errors->first('nama_pelanggan') ?? ''),
+                serverError: @json($errors->first('jumlah') ?? ''),
                 iotChecking: false,
                 liveTimeString: '{{ now('Asia/Jakarta')->format('H:i') }} WIB',
                 toast: {
@@ -262,6 +328,12 @@
                 initApp() {
                     this.updateClock();
                     setInterval(() => this.updateClock(), 1000);
+                    if (this.serverError) {
+                        this.showToast('info', 'Pesanan Belum Diproses', this.serverError);
+                    }
+                    if (this.namaPelangganError) {
+                        this.showToast('info', 'Nama Pemesan Diperlukan', this.namaPelangganError);
+                    }
                 },
                 updateClock() {
                     this.liveTimeString = new Intl.DateTimeFormat('en-GB', {
@@ -292,6 +364,12 @@
                 },
                 formatRupiah(number) {
                     return 'Rp ' + Number(number || 0).toLocaleString('id-ID');
+                },
+                openMenu(item) {
+                    this.selectedMenu = item;
+                },
+                closeMenu() {
+                    this.selectedMenu = null;
                 },
                 addToCart(menuItem) {
                     if (menuItem.isSoldOut) return;
@@ -365,6 +443,16 @@
                         this.showToast('info', 'Pilih Menu Dulu', 'Pilih minimal 1 menu sebelum membayar.');
                         return;
                     }
+                    const nama = (this.namaPelanggan || this.namaPelangganInput || '').trim();
+                    if (!nama) {
+                        this.namaPelangganError = 'Nama pemesan wajib diisi sebelum melanjutkan.';
+                        this.showToast('info', 'Nama Diperlukan',
+                            'Isi nama pemesan agar pesanan mudah dikenali kasir dan dapur.');
+                        this.$nextTick(() => this.$refs.namaPelangganInput?.focus());
+                        return;
+                    }
+                    this.namaPelangganError = '';
+                    this.namaPelangganInput = nama;
                     const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                     const form = document.createElement('form');
                     form.method = 'POST';
@@ -378,6 +466,7 @@
                     };
                     tambah('_token', token);
                     tambah('metode', this.paymentMethod === 'cash' ? 'tunai' : 'qris');
+                    tambah('nama_pelanggan', nama);
                     this.cartItems.forEach(item => {
                         tambah(`jumlah[${item.id}]`, item.qty);
                         tambah(`catatan[${item.id}]`, item.note || '');

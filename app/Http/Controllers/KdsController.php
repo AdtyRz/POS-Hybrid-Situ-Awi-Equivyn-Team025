@@ -81,7 +81,7 @@ class KdsController extends Controller
                 'dbId' => $pesanan->id,
                 'id' => '#' . $pesanan->kode_pesanan,
                 'saung' => 'SAUNG ' . $pesanan->meja->kode_meja,
-                'customer' => 'Tamu ' . $pesanan->meja->kode_meja,
+                'customer' => $pesanan->nama_pelanggan ?: 'Tamu ' . $pesanan->meja->kode_meja,
                 'status' => $status,
                 'seconds' => $detik,
                 'frozen' => $status === 'siap',

@@ -32,9 +32,6 @@ Route::middleware('pesanan.no-store')->group(function () {
     Route::post('/meja/{meja}/panggil', [EMenuController::class, 'panggil'])
         ->middleware('throttle:10,1')
         ->name('emenu.panggil');
-    Route::get('/meja/{meja}/checkout', [EMenuController::class, 'checkoutForm'])
-        ->middleware('throttle:60,1')
-        ->name('emenu.checkout.form');
     Route::post('/meja/{meja}/checkout', [EMenuController::class, 'checkout'])
         ->middleware('throttle:20,1')
         ->name('emenu.checkout');
@@ -154,6 +151,8 @@ Route::middleware(['auth', 'role:pelayan'])->group(function () {
     Route::get('/pelayan/tab-saung', [PelayanController::class, 'tabSaung'])->name('pelayan.tab-saung');
     Route::get('/pelayan/tab-shift', [PelayanController::class, 'tabShift'])->name('pelayan.tab-shift');
     Route::patch('/pelayan/panggilan/{id}', [PelayanController::class, 'ubahStatus'])->name('pelayan.panggilan.ubah');
+    Route::post('/pelayan/pesanan', [PelayanController::class, 'simpanPesanan'])->name('pelayan.pesanan.store');
+    Route::post('/pelayan/meja/{meja}/buka', [PelayanController::class, 'bukaMeja'])->name('pelayan.meja.buka');
 });
 
 require __DIR__.'/auth.php';

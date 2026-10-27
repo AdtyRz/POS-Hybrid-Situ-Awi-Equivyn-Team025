@@ -205,7 +205,7 @@ class PesananController extends Controller
             $dasar['orderStatus'] = $primary['orderStatus'];
             $dasar['orderId'] = $primary['orderId'];
             $dasar['kodePesanan'] = $primary['kodePesanan'];
-            $dasar['customer'] = 'Tamu ' . $m->kode_meja;
+            $dasar['customer'] = $primary['customer'] ?? ('Tamu ' . $m->kode_meja);
             $dasar['qrTime'] = $primary['qrTime'];
             $dasar['elapsedTime'] = $orders->first()['elapsedTime'] ?? $primary['elapsedTime'];
             $dasar['itemCount'] = (int) $orders->sum('itemCount');
@@ -294,7 +294,7 @@ class PesananController extends Controller
             'paymentType' => $pesanan->metode_pembayaran,
             'paymentStatus' => $pesanan->status_pembayaran,
             'orderStatus' => $pesanan->status_pesanan,
-            'customer' => 'Tamu ' . ($pesanan->meja?->kode_meja ?? '-'),
+            'customer' => $pesanan->nama_pelanggan ?: 'Tamu ' . ($pesanan->meja?->kode_meja ?? '-'),
             'qrTime' => $waktu?->timezone('Asia/Jakarta')->format('H:i') ?? '-',
             'elapsedTime' => $elapsed,
             'itemCount' => (int) $detail->sum('jumlah'),
@@ -441,6 +441,20 @@ class PesananController extends Controller
         ]);
 
         $pesanan = Pesanan::where('kode_pesanan', $kode)->firstOrFail();
+
+        if (
+            $request->user()?->role === 'pelayan'
+            && filled($request->user()->area)
+            && $pesanan->meja?->area !== $request->user()->area
+        ) {
+            $pesan = 'Pesanan ini berada di luar area tugas Anda.';
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['message' => $pesan], 403);
+            }
+
+            abort(403, $pesan);
+        }
 
         // Bug 3 FIX: Tambahkan semua status yang didefinisikan di model
         // Status menunggu_pembayaran & menunggu_verifikasi berasal dari e-menu checkout
