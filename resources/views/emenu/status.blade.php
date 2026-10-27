@@ -76,6 +76,10 @@
                 <div>
                     <p class="font-bold text-lg leading-snug">Order #{{ $pesanan->kode_pesanan }}</p>
                     <p class="text-stone-500 text-xs mt-0.5">{{ $pesanan->meja->kode_meja }} • Dine-in</p>
+                    @if ($pesanan->nama_pelanggan)
+                        <p class="text-stone-500 text-xs mt-1">Pemesan: <span
+                                class="font-bold text-stone-700">{{ $pesanan->nama_pelanggan }}</span></p>
+                    @endif
                 </div>
                 <div class="text-right shrink-0">
                     <p class="text-stone-400 text-xs">Total Tagihan</p>

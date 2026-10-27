@@ -84,6 +84,7 @@ class PesananService
                 'kode_pembayaran' => $this->generateKodePembayaran(),
                 'meja_id' => $meja->id,
                 'kasir_id' => $opsi['kasir_id'] ?? null,
+                'nama_pelanggan' => $opsi['nama_pelanggan'] ?? null,
                 'total_bayar' => $totalBayar,
                 'metode_pembayaran' => $metode,
                 'status_pesanan' => $statusPesanan,

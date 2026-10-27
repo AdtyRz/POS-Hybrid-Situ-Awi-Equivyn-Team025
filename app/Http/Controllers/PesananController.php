@@ -205,7 +205,7 @@ class PesananController extends Controller
             $dasar['orderStatus'] = $primary['orderStatus'];
             $dasar['orderId'] = $primary['orderId'];
             $dasar['kodePesanan'] = $primary['kodePesanan'];
-            $dasar['customer'] = 'Tamu ' . $m->kode_meja;
+            $dasar['customer'] = $primary['customer'] ?? ('Tamu ' . $m->kode_meja);
             $dasar['qrTime'] = $primary['qrTime'];
             $dasar['elapsedTime'] = $orders->first()['elapsedTime'] ?? $primary['elapsedTime'];
             $dasar['itemCount'] = (int) $orders->sum('itemCount');
@@ -294,7 +294,7 @@ class PesananController extends Controller
             'paymentType' => $pesanan->metode_pembayaran,
             'paymentStatus' => $pesanan->status_pembayaran,
             'orderStatus' => $pesanan->status_pesanan,
-            'customer' => 'Tamu ' . ($pesanan->meja?->kode_meja ?? '-'),
+            'customer' => $pesanan->nama_pelanggan ?: 'Tamu ' . ($pesanan->meja?->kode_meja ?? '-'),
             'qrTime' => $waktu?->timezone('Asia/Jakarta')->format('H:i') ?? '-',
             'elapsedTime' => $elapsed,
             'itemCount' => (int) $detail->sum('jumlah'),

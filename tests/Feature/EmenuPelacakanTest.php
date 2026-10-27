@@ -60,14 +60,98 @@ class EmenuPelacakanTest extends TestCase
                 'jumlah' => [$menu->id => 2],
                 'catatan' => [$menu->id => 'pedas'],
                 'metode' => 'tunai',
+                'nama_pelanggan' => 'Budi Santoso',
             ]);
 
         $response->assertSessionHas('riwayat_meja_' . $meja->id);
 
         $pesanan = Pesanan::first();
         $this->assertNotNull($pesanan);
+        $this->assertSame('Budi Santoso', $pesanan->nama_pelanggan);
+        $this->assertSame('Budi Santoso', SesiMeja::aktifUntuk($meja)->nama_pelanggan);
         $this->assertSame('terisi', $meja->fresh()->status_meja);
         $this->assertSame(10, $menu->fresh()->stok_menu);
+
+        $this->withSession($this->sesiTerverifikasi($meja))
+            ->get(route('emenu.meja', $meja->id))
+            ->assertOk()
+            ->assertSee('Budi Santoso')
+            ->assertSee('Nama tersimpan untuk sesi meja ini');
+    }
+
+    public function test_checkout_pertama_wajib_mengisi_nama_pelanggan(): void
+    {
+        [$meja, $menu] = $this->siapkanMejaDanMenu();
+
+        $this->withSession($this->sesiTerverifikasi($meja))
+            ->post(route('emenu.checkout', $meja->id), [
+                'jumlah' => [$menu->id => 1],
+                'metode' => 'tunai',
+            ])
+            ->assertSessionHasErrors('nama_pelanggan');
+
+        $this->assertSame(0, Pesanan::count());
+        $this->assertNull(SesiMeja::aktifUntuk($meja)->nama_pelanggan);
+    }
+
+    public function test_nama_pelanggan_dipakai_ulang_untuk_pesanan_berikutnya(): void
+    {
+        [$meja, $menu] = $this->siapkanMejaDanMenu();
+        $sesi = $this->sesiTerverifikasi($meja);
+
+        $this->withSession($sesi)
+            ->post(route('emenu.checkout', $meja->id), [
+                'jumlah' => [$menu->id => 1],
+                'metode' => 'tunai',
+                'nama_pelanggan' => 'Budi Santoso',
+            ])
+            ->assertRedirect();
+
+        $this->withSession($sesi)
+            ->post(route('emenu.checkout', $meja->id), [
+                'jumlah' => [$menu->id => 1],
+                'metode' => 'tunai',
+                'nama_pelanggan' => 'Nama Lain',
+            ])
+            ->assertRedirect();
+
+        $this->assertSame(
+            ['Budi Santoso', 'Budi Santoso'],
+            Pesanan::orderBy('id')->pluck('nama_pelanggan')->all()
+        );
+        $this->assertSame('Budi Santoso', SesiMeja::aktifUntuk($meja)->nama_pelanggan);
+    }
+
+    public function test_nama_pelanggan_hilang_setelah_sesi_baru_dan_wajib_diisi_lagi(): void
+    {
+        [$meja, $menu] = $this->siapkanMejaDanMenu();
+        $sesiLama = SesiMeja::aktifUntuk($meja);
+
+        $this->withSession(['sesi_meja_' . $meja->id => $sesiLama->id])
+            ->post(route('emenu.checkout', $meja->id), [
+                'jumlah' => [$menu->id => 1],
+                'metode' => 'tunai',
+                'nama_pelanggan' => 'Budi Santoso',
+            ])
+            ->assertRedirect();
+
+        $pesanan = Pesanan::first();
+        $pesanan->update([
+            'status_pesanan' => Pesanan::STATUS_DIPROSES,
+            'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+        ]);
+
+        $sesiBaru = SesiMeja::putuskanSesi($meja);
+
+        $this->assertNull($sesiBaru->nama_pelanggan);
+        $this->assertSame('Budi Santoso', $pesanan->fresh()->nama_pelanggan);
+
+        $this->withSession(['sesi_meja_' . $meja->id => $sesiBaru->id])
+            ->post(route('emenu.checkout', $meja->id), [
+                'jumlah' => [$menu->id => 1],
+                'metode' => 'tunai',
+            ])
+            ->assertSessionHasErrors('nama_pelanggan');
     }
 
     public function test_tombol_pelacakan_muncul_saat_ada_riwayat(): void

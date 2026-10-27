@@ -32,9 +32,6 @@ Route::middleware('pesanan.no-store')->group(function () {
     Route::post('/meja/{meja}/panggil', [EMenuController::class, 'panggil'])
         ->middleware('throttle:10,1')
         ->name('emenu.panggil');
-    Route::get('/meja/{meja}/checkout', [EMenuController::class, 'checkoutForm'])
-        ->middleware('throttle:60,1')
-        ->name('emenu.checkout.form');
     Route::post('/meja/{meja}/checkout', [EMenuController::class, 'checkout'])
         ->middleware('throttle:20,1')
         ->name('emenu.checkout');

@@ -1,6 +1,3 @@
-@if(!isset($isSinglePage))
-    @include('pelanggan.index', ['initialStep' => 1])
-@else
 <div class="space-y-4 pb-28">
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-forest-100/60 relative overflow-hidden">
         <div class="flex items-start justify-between">
@@ -120,7 +117,12 @@
 
     <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 pt-1">
         <template x-for="item in filteredMenuItems" :key="item.id">
-            <div class="bg-white rounded-2xl border border-forest-100/70 overflow-hidden shadow-sm flex flex-col justify-between transition-all duration-200 hover:shadow-md"
+            <div class="bg-white rounded-2xl border border-forest-100/70 overflow-hidden shadow-sm flex flex-col justify-between transition-all duration-200 hover:shadow-md cursor-pointer"
+                 @click="openMenu(item)"
+                 @keydown.enter.self.prevent="openMenu(item)"
+                 @keydown.space.self.prevent="openMenu(item)"
+                 role="button"
+                 tabindex="0"
                  :class="item.isSoldOut ? 'opacity-85' : ''">
                 <div>
                     <div class="relative aspect-[4/3] w-full overflow-hidden bg-forest-100/40">
@@ -164,7 +166,7 @@
                     <div>
                         <template x-if="!item.isSoldOut">
                             <button type="button"
-                                    @click="addToCart(item)"
+                                    @click.stop="addToCart(item)"
                                     class="w-8 h-8 rounded-full bg-gold-500 hover:bg-gold-600 text-forest-900 font-bold flex items-center justify-center shadow-sm active:scale-90 transition-all"
                                     title="Tambah ke Pesanan">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -248,4 +250,3 @@
         </div>
     </div>
 </div>
-@endif
