@@ -1362,6 +1362,7 @@
 
                     this._stateLoading = true;
                     const kodeTerpilih = this.currentSaung?.kodePesanan || null;
+                    const kodeSebelumnya = this.selectedOrderKode;
 
                     try {
                         const response = await fetch(this.stateUrl, {
@@ -1400,6 +1401,10 @@
                             this.selectedOrderKode = kodeTerpilih;
                         } else if (!(table.orders || []).some(order => order.kodePesanan === this.selectedOrderKode)) {
                             this.selectedOrderKode = this.defaultOrderKode(table);
+                        }
+
+                        if (this.selectedOrderKode !== kodeSebelumnya) {
+                            this.cashReceived = 0;
                         }
 
                         this.sinkronkanPilihanStruk(false);
