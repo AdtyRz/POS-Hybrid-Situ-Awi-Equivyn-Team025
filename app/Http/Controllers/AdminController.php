@@ -961,8 +961,11 @@ class AdminController extends Controller
             $inisial = strtoupper(substr($kata[0] ?? '?', 0, 1) . (isset($kata[1]) ? substr(end($kata), 0, 1) : ''));
             $sesi = $sesiTerakhir->get($user->id);
             $online = $user->is_aktif && $sesi && (int) $sesi->last_activity >= $batasOnline;
-            $status = ! $user->is_aktif ? 'offline' : ($online ? 'online' : 'siap');
-            $statusText = ! $user->is_aktif ? 'Nonaktif' : ($online ? 'Online' : 'Siap');
+            $standby = $user->is_aktif && $user->status_operasional === 'standby';
+            $status = ! $user->is_aktif ? 'offline' : ($standby ? 'standby' : ($online ? 'online' : 'siap'));
+            $statusText = ! $user->is_aktif
+                ? 'Nonaktif'
+                : ($standby ? 'Standby' : ($online ? 'Online' : 'Siap'));
             $area = $user->area ?: 'Semua Area';
 
             return [

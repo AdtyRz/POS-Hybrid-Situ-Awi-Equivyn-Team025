@@ -9,6 +9,7 @@ use App\Models\SesiMeja;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
@@ -102,6 +103,8 @@ class AdminSettingsAndReportsTest extends TestCase
 
     public function test_cetak_rekap_shift_menampilkan_transaksi_shift_aktif(): void
     {
+        $this->travelTo(Carbon::parse('2026-10-27 10:00:00', 'Asia/Jakarta'));
+
         $meja = $this->meja('LB-89');
 
         $pesanan = Pesanan::create([
@@ -112,6 +115,9 @@ class AdminSettingsAndReportsTest extends TestCase
             'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
             'metode_pembayaran' => 'tunai',
         ]);
+
+        // useCurrent() pada SQLite memakai jam nyata, bukan jam test.
+        $pesanan->update(['waktu_pesan' => now()]);
 
         $this->actingAs($this->admin())
             ->get(route('admin.laporan-penjualan.cetak-shift'))

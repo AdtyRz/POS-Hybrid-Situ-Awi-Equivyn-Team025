@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="realtime-version-url" content="{{ route('realtime.version') }}">
+    <meta name="realtime-version" content="{{ \App\Support\Realtime::version() }}">
     <title>@yield('title', 'Mobile POS Pelayan • Situ Awi Saung Lesehan')</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,6 +13,9 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+        <script>
+            window.__CHANNELS__ = ['pelayan', 'menu'];
+        </script>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @else
         <script src="https://cdn.tailwindcss.com"></script>

@@ -190,7 +190,7 @@ class BackendHardeningTest extends TestCase
         }
     }
 
-    public function test_pembatalan_lewat_kasir_mengembalikan_stok(): void
+    public function test_pembatalan_pesanan_lunas_ditolak_dan_stok_tidak_berubah(): void
     {
         $kasir = $this->pengguna('kasir');
         $meja = $this->meja();
@@ -212,15 +212,14 @@ class BackendHardeningTest extends TestCase
         $this->actingAs($kasir)->patch('/pesanan/'.$pesanan->kode_pesanan.'/status', [
             'status_pesanan' => 'dibatalkan',
             'alasan' => 'Salah input',
-        ])->assertRedirect();
+        ])->assertSessionHasErrors('status_pesanan');
 
-        $this->assertSame(10, $menu->fresh()->stok_menu);
-        $this->assertSame(Pesanan::STATUS_DIBATALKAN, $pesanan->fresh()->status_pesanan);
-        $this->assertSame('Salah input', $pesanan->fresh()->alasan_void);
-        $this->assertDatabaseHas('stok_mutasi', [
+        $this->assertSame(8, $menu->fresh()->stok_menu);
+        $this->assertSame(Pesanan::STATUS_MENUNGGU, $pesanan->fresh()->status_pesanan);
+        $this->assertNull($pesanan->fresh()->alasan_void);
+        $this->assertDatabaseMissing('stok_mutasi', [
             'menu_id' => $menu->id,
             'jenis' => 'pembatalan',
-            'jumlah_delta' => 2,
         ]);
     }
 

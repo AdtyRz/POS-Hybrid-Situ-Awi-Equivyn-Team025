@@ -1294,7 +1294,7 @@
             cacheUrl: @js(route('admin.pengaturan-sistem.cache')),
             cadanganUrl: @js(route('admin.pengaturan-sistem.cadangan')),
             notificationUrl: @js($midtrans['notification_url']),
-            statusEndpoint: @js(url('/api/iot/status-meja')),
+            statusEndpoint: @js(route('admin.pengaturan-sistem.iot-status')),
             csrf: @js(csrf_token()),
             logoSrc: @js($logoSrc ?? asset('asset/Logo.png')),
             logoUploadUrl: @js(route('admin.pengaturan-sistem.logo')),
