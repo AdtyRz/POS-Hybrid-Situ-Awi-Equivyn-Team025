@@ -3,11 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Events\SesiMejaBerubah;
+use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
+use App\Models\Pesanan;
 use App\Models\SesiMeja;
 use App\Support\Realtime;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class KasirController extends Controller
@@ -52,5 +58,90 @@ class KasirController extends Controller
         ));
 
         return back();
+    }
+
+    /**
+     * Kunci terminal kasir. Status akun di admin berubah menjadi standby,
+     * tetapi sesi login tetap hidup.
+     */
+    public function lock(Request $request): RedirectResponse
+    {
+        $request->user()?->update(['status_operasional' => 'standby']);
+
+        $request->session()->put('kasir_locked', true);
+        $request->session()->put('kasir_locked_at', now()->toIso8601String());
+
+        return redirect()->route('kasir.locked');
+    }
+
+    /**
+     * Halaman kunci tidak menampilkan detail transaksi. Hanya jumlah
+     * notifikasi yang boleh terlihat oleh orang lain.
+     */
+    public function locked(Request $request): View|RedirectResponse
+    {
+        if (! $request->session()->get('kasir_locked')) {
+            return redirect()->route('kasir.dashboard');
+        }
+
+        return view('kasir.locked', [
+            'notifikasi' => $this->hitungNotifikasiTerkunci($request),
+            'namaKasir' => $request->user()?->nama ?? 'Kasir',
+        ]);
+    }
+
+    /**
+     * Buka kunci hanya dengan password akun kasir yang sedang login.
+     */
+    public function unlock(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'password' => ['required', 'string'],
+        ]);
+
+        if (! Hash::check($data['password'], (string) $request->user()->password)) {
+            throw ValidationException::withMessages([
+                'password' => 'Password akun kasir salah.',
+            ]);
+        }
+
+        $request->session()->forget(['kasir_locked', 'kasir_locked_at']);
+        $request->user()->update(['status_operasional' => 'aktif']);
+
+        return redirect()
+            ->route('kasir.dashboard')
+            ->with('sukses', 'Terminal berhasil dibuka. Selamat bekerja.');
+    }
+
+    public function notifikasiTerkunci(Request $request): JsonResponse
+    {
+        return response()
+            ->json($this->hitungNotifikasiTerkunci($request))
+            ->header('Cache-Control', 'no-store, max-age=0');
+    }
+
+    /**
+     * @return array{pesanan_baru: int, panggilan: int, belum_bayar: int}
+     */
+    private function hitungNotifikasiTerkunci(Request $request): array
+    {
+        $sejak = $request->session()->get('kasir_locked_at');
+        $sejak = $sejak ? Carbon::parse($sejak) : null;
+
+        $pesananBaru = Pesanan::query()
+            ->whereNotIn('status_pesanan', [Pesanan::STATUS_SELESAI, Pesanan::STATUS_DIBATALKAN])
+            ->when($sejak, fn ($query) => $query->where('created_at', '>=', $sejak))
+            ->count();
+
+        $belumBayar = Pesanan::query()
+            ->whereNotIn('status_pesanan', [Pesanan::STATUS_SELESAI, Pesanan::STATUS_DIBATALKAN])
+            ->where('status_pembayaran', '!=', Pesanan::PAYMENT_SUDAH_BAYAR)
+            ->count();
+
+        return [
+            'pesanan_baru' => $pesananBaru,
+            'panggilan' => LogPanggilPelayan::where('status_panggilan', 'menunggu')->count(),
+            'belum_bayar' => $belumBayar,
+        ];
     }
 }

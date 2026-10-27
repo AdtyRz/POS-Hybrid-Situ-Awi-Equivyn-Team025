@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
+            'kasir.unlocked' => \App\Http\Middleware\EnsureKasirUnlocked::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -58,7 +58,11 @@ class PesananApiController extends Controller
         $data = $request->validated();
 
         if ($data['status_pesanan'] === Pesanan::STATUS_DIBATALKAN) {
-            app(PesananService::class)->batalkan($pesanan, auth()->id(), 'Dibatalkan melalui API.');
+            try {
+                app(PesananService::class)->batalkan($pesanan, auth()->id(), 'Dibatalkan melalui API.');
+            } catch (\RuntimeException $exception) {
+                return ApiResponse::validation(['status_pesanan' => [$exception->getMessage()]], $exception->getMessage());
+            }
         } else {
             $pesanan->update(['status_pesanan' => $data['status_pesanan']]);
         }

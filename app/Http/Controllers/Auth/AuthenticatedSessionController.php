@@ -21,11 +21,16 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
         $request->session()->regenerate();
 
+        // Login baru selalu membuka status operasional staf.
+        $request->user()?->update(['status_operasional' => 'aktif']);
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
     public function destroy(Request $request): RedirectResponse
     {
+        $request->user()?->update(['status_operasional' => 'aktif']);
+
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
