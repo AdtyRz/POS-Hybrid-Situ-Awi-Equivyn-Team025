@@ -28,9 +28,9 @@ try {
 
 const REALTIME_EVENTS = ['pesanan.baru', 'status.berubah', 'panggilan.pelayan', 'menu.diperbarui', 'sesi.berubah'];
 
-const DEFAULT_CHANNELS = ['kds.dapur', 'kds.bar', 'kasir', 'pelayan', 'admin', 'menu'];
+const DEFAULT_CHANNELS = [];
 
-const channels = Array.isArray(window.__CHANNELS__) && window.__CHANNELS__.length
+const channels = Array.isArray(window.__CHANNELS__)
     ? window.__CHANNELS__
     : DEFAULT_CHANNELS;
 

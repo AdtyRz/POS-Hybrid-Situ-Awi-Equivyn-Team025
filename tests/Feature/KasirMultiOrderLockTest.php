@@ -329,9 +329,9 @@ class KasirMultiOrderLockTest extends TestCase
         $this->assertNull($pesanan->fresh()->void_at);
     }
 
-    public function test_endpoint_versi_realtime_butuh_login_dan_berubah_setelah_data_berubah(): void
+    public function test_endpoint_versi_realtime_publik_dan_berubah_setelah_data_berubah(): void
     {
-        $this->get(route('realtime.version'))->assertRedirect(route('login'));
+        $this->get(route('realtime.version'))->assertOk();
 
         $kasir = $this->kasir();
         $meja = $this->meja();

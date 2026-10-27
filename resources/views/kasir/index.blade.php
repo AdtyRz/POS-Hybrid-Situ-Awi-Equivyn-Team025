@@ -13,6 +13,9 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+        <script>
+            window.__CHANNELS__ = ['kasir', 'admin', 'menu'];
+        </script>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @else
         <script src="https://cdn.tailwindcss.com"></script>
@@ -293,321 +296,23 @@
                 </div>
 
                 <div class="space-y-4">
+                    @include('kasir.partials.cluster-saung', [
+                        'prefix' => 'LB',
+                        'judul' => 'Cluster 1: Lesehan Bawah (5 Saung Lesehan)',
+                        'warna' => 'bg-[#E0B24E]',
+                    ])
 
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between px-1">
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-[#E0B24E]"></span>
-                                <h3 class="font-display font-bold text-sm text-[#00341A]">
-                                    Cluster 1: Lesehan Bawah (5 Saung Lesehan)
-                                </h3>
-                            </div>
-                            <span class="text-xs font-mono font-semibold text-[#6B6A63]" x-text="clusterInfo('LB')"></span>
-                        </div>
+                    @include('kasir.partials.cluster-saung', [
+                        'prefix' => 'LA',
+                        'judul' => 'Cluster 2: Lesehan Atas (2 Saung Pemandangan Kebun)',
+                        'warna' => 'bg-[#059669]',
+                    ])
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                            <template x-for="saung in getClusterSaungs('LB')" :key="saung.id">
-                                <div @click="selectSaung(saung)"
-                                     x-show="isSaungVisible(saung)"
-                                     class="rounded-xl p-3 flex flex-col justify-between transition-all duration-200 cursor-pointer select-none relative"
-                                     :class="{
-                                         'bg-[#FBF3DD]/40 border-2 border-[#0B4D2B] shadow-[0_0_0_2px_#E0B24E,0_6px_16px_-4px_rgba(26,38,20,0.08)] ring-2 ring-[#E0B24E]': selectedSaungId === saung.id && !saung.hasAlert,
-                                         'bg-[#FFFBEB]/40 border-2 border-[#C1442C]/70 shadow-[0_0_16px_2px_rgba(193,68,44,0.25)] animate-alert-pulse': saung.hasAlert,
-                                         'bg-white border border-[#C8C2B3]/60 hover:shadow-md': selectedSaungId !== saung.id && saung.status !== 'empty' && !saung.hasAlert,
-                                         'bg-[#FAF7F0]/60 border border-dashed border-[#C8C2B3]/70 opacity-80 hover:opacity-100': saung.status === 'empty'
-                                     }">
-
-                                    <div class="space-y-2">
-                                        <div class="flex items-start justify-between gap-1.5">
-                                            <div>
-                                                <div class="flex items-center gap-1.5">
-                                                    <h4 class="font-bold text-sm tracking-tight"
-                                                        :class="saung.status === 'empty' ? 'text-[#6B6A63]' : 'text-[#00341A]'"
-                                                        x-text="saung.name">
-                                                    </h4>
-                                                    <span x-show="selectedSaungId === saung.id"
-                                                          class="px-1.5 py-0.2 rounded bg-[#0B4D2B] text-white text-[9px] font-bold uppercase tracking-wider">
-                                                        TERPILIH
-                                                    </span>
-                                                </div>
-                                                <div class="text-[11px] text-[#6B6A63]" x-text="saung.capacity"></div>
-                                            </div>
-
-                                            <div>
-
-                                                <template x-if="saung.hasAlert">
-                                                    <div class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#C1442C] text-white text-[9px] font-extrabold uppercase shadow-2xs">
-                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                                                        <span>PANGGILAN</span>
-                                                    </div>
-                                                </template>
-
-                                                <template x-if="!saung.hasAlert && saung.status === 'waiting_cash'">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E0B24E]/20 border border-[#E0B24E]/50 text-[#C9982F]">
-                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                                        <span>Menunggu Bayar Kasir</span>
-                                                    </span>
-                                                </template>
-
-                                                <template x-if="!saung.hasAlert && !['waiting_cash', 'paid', 'empty'].includes(saung.status)">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F0E9] border border-[#A7C4AB] text-[#0B4D2B]">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-[#0B4D2B]"></span>
-                                                        <span>Terisi</span>
-                                                    </span>
-                                                </template>
-
-                                                <template x-if="saung.status === 'paid'">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ECFDF5] border border-[#6EE7B7] text-[#065F46]">
-                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                                        <span x-text="saung.paymentType === 'qris' ? 'Lunas (QRIS)' : (saung.paymentType === 'campuran' ? 'Lunas (Campuran)' : 'Lunas (Tunai)')"></span>
-                                                    </span>
-                                                </template>
-
-                                                <template x-if="saung.status === 'empty'">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#EAE4D3] text-[#6B6A63]">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-[#7A7E6F]"></span>
-                                                        <span>Kosong</span>
-                                                    </span>
-                                                </template>
-                                            </div>
-                                        </div>
-
-                                        <div x-show="saung.hasAlert" class="flex items-center justify-between text-[10px]">
-                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#E0B24E]/20 border border-[#E0B24E]/50 text-[#C9982F] font-bold">
-                                                Menunggu Bayar Kasir
-                                            </span>
-                                            <span class="text-[#C1442C] font-bold flex items-center gap-1">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-[#C1442C] animate-ping"></span>
-                                                <span>Buzzer Aktif</span>
-                                            </span>
-                                        </div>
-
-                                        <template x-if="saung.status !== 'empty'">
-                                            <div class="rounded-lg p-2 border text-[10px] space-y-1"
-                                                 :class="selectedSaungId === saung.id ? 'bg-white/80 border-[#C8C2B3]/40' : 'bg-[#FAF7F0] border-[#C8C2B3]/30'">
-                                                <div class="flex items-start justify-between gap-2 text-[#6B6A63]">
-                                                    <span class="font-mono text-[9px] leading-snug break-all min-w-0 flex-1" x-text="(saung.orderCount > 1 ? saung.orderCount + ' pesanan • ' : '') + saung.orderId"></span>
-                                                    <span class="font-semibold text-[#92400E] flex items-center gap-0.5 shrink-0 whitespace-nowrap">
-                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                                        <span x-text="saung.elapsedTime"></span>
-                                                    </span>
-                                                </div>
-                                                <div class="flex items-center justify-between">
-                                                    <span class="font-bold text-[#2B2A26] truncate max-w-[120px]" x-text="saung.customer"></span>
-                                                    <span class="font-semibold text-[#0B4D2B]" x-text="saung.itemCount + ' Menu'"></span>
-                                                </div>
-                                            </div>
-                                        </template>
-
-                                        <template x-if="saung.status === 'empty'">
-                                            <div class="rounded-lg p-3 bg-[#F3EEDF]/50 border border-dashed border-[#C8C2B3]/50 text-center">
-                                                <p class="text-[11px] italic text-[#6B6A63]">Saung bersih & siap ditempati</p>
-                                            </div>
-                                        </template>
-                                    </div>
-
-                                    <div class="pt-2 mt-2 border-t border-[#C8C2B3]/30 flex items-center justify-between">
-                                        <span class="text-[11px] text-[#6B6A63] font-medium"
-                                              x-text="saung.status === 'empty' ? 'Status:' : 'Total Tagihan:'">
-                                        </span>
-                                        <span class="font-bold"
-                                              :class="saung.status === 'empty' ? 'text-[#047857] text-xs' : 'text-[#00341A] text-sm'"
-                                              x-text="saung.status === 'empty' ? 'Tersedia (Ready)' : formatRupiah(saung.total)">
-                                        </span>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-
-                    <div class="space-y-2 pt-1">
-                        <div class="flex items-center justify-between px-1">
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-[#059669]"></span>
-                                <h3 class="font-display font-bold text-sm text-[#00341A]">
-                                    Cluster 2: Lesehan Atas (2 Saung Pemandangan Kebun)
-                                </h3>
-                            </div>
-                            <span class="text-xs font-mono font-semibold text-[#6B6A63]" x-text="clusterInfo('LA')"></span>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                            <template x-for="saung in getClusterSaungs('LA')" :key="saung.id">
-                                <div @click="selectSaung(saung)"
-                                     x-show="isSaungVisible(saung)"
-                                     class="rounded-xl p-3 flex flex-col justify-between transition-all duration-200 cursor-pointer select-none"
-                                     :class="{
-                                         'bg-[#FBF3DD]/40 border-2 border-[#0B4D2B] shadow-[0_0_0_2px_#E0B24E,0_6px_16px_-4px_rgba(26,38,20,0.08)] ring-2 ring-[#E0B24E]': selectedSaungId === saung.id,
-                                         'bg-white border border-[#C8C2B3]/60 hover:shadow-md': selectedSaungId !== saung.id && saung.status !== 'empty',
-                                         'bg-[#FAF7F0]/60 border border-dashed border-[#C8C2B3]/70 opacity-80': saung.status === 'empty'
-                                     }">
-
-                                    <div class="space-y-2">
-                                        <div class="flex items-start justify-between gap-1.5">
-                                            <div>
-                                                <div class="flex items-center gap-1.5">
-                                                    <h4 class="font-bold text-sm tracking-tight text-[#00341A]" x-text="saung.name"></h4>
-                                                    <span x-show="selectedSaungId === saung.id"
-                                                          class="px-1.5 py-0.2 rounded bg-[#0B4D2B] text-white text-[9px] font-bold uppercase tracking-wider">
-                                                        TERPILIH
-                                                    </span>
-                                                </div>
-                                                <div class="text-[11px] text-[#6B6A63]" x-text="saung.capacity"></div>
-                                            </div>
-
-                                            <div>
-                                                <template x-if="saung.status === 'waiting_cash'">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E0B24E]/20 border border-[#E0B24E]/50 text-[#C9982F]">
-                                                        <span>Menunggu Bayar Kasir</span>
-                                                    </span>
-                                                </template>
-                                                <template x-if="!['waiting_cash', 'paid', 'empty'].includes(saung.status)">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F0E9] border border-[#A7C4AB] text-[#0B4D2B]">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-[#0B4D2B]"></span>
-                                                        <span>Terisi</span>
-                                                    </span>
-                                                </template>
-                                                <template x-if="saung.status === 'paid'">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ECFDF5] border border-[#6EE7B7] text-[#065F46]">
-                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                                        <span x-text="saung.paymentType === 'qris' ? 'Lunas (QRIS)' : (saung.paymentType === 'campuran' ? 'Lunas (Campuran)' : 'Lunas (Tunai)')"></span>
-                                                    </span>
-                                                </template>
-                                                <template x-if="saung.status === 'empty'">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#EAE4D3] text-[#6B6A63]">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-[#7A7E6F]"></span>
-                                                        <span>Kosong</span>
-                                                    </span>
-                                                </template>
-                                            </div>
-                                        </div>
-
-                                        <div class="rounded-lg p-2 bg-[#FAF7F0] border border-[#C8C2B3]/30 text-[10px] space-y-1">
-                                            <div class="flex items-start justify-between gap-2 text-[#6B6A63]">
-                                                <span class="font-mono text-[9px] leading-snug break-all min-w-0 flex-1" x-text="(saung.orderCount > 1 ? saung.orderCount + ' pesanan • ' : '') + saung.orderId"></span>
-                                                <span class="font-semibold text-[#92400E] flex items-center gap-0.5 shrink-0 whitespace-nowrap">
-                                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                                    <span x-text="saung.elapsedTime"></span>
-                                                </span>
-                                            </div>
-                                            <div class="flex items-center justify-between">
-                                                <span class="font-bold text-[#2B2A26] truncate max-w-[120px]" x-text="saung.customer"></span>
-                                                <span class="font-semibold text-[#0B4D2B]" x-text="saung.itemCount + ' Menu'"></span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="pt-2 mt-2 border-t border-[#C8C2B3]/30 flex items-center justify-between">
-                                        <span class="text-[11px] text-[#6B6A63] font-medium">Total Tagihan:</span>
-                                        <span class="font-bold text-sm text-[#00341A]" x-text="formatRupiah(saung.total)"></span>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-
-                    <div class="space-y-2 pt-1">
-                        <div class="flex items-center justify-between px-1">
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-[#0B4D2B]"></span>
-                                <h3 class="font-display font-bold text-sm text-[#00341A]">
-                                    Cluster 3: Kursi Atas (4 Area Meja Kursi)
-                                </h3>
-                            </div>
-                            <span class="text-xs font-mono font-semibold text-[#6B6A63]" x-text="clusterInfo('KA')"></span>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                            <template x-for="saung in getClusterSaungs('KA')" :key="saung.id">
-                                <div @click="selectSaung(saung)"
-                                     x-show="isSaungVisible(saung)"
-                                     class="rounded-xl p-3 flex flex-col justify-between transition-all duration-200 cursor-pointer select-none"
-                                     :class="{
-                                         'bg-[#FBF3DD]/40 border-2 border-[#0B4D2B] shadow-[0_0_0_2px_#E0B24E,0_6px_16px_-4px_rgba(26,38,20,0.08)] ring-2 ring-[#E0B24E]': selectedSaungId === saung.id,
-                                         'bg-white border border-[#C8C2B3]/60 hover:shadow-md': selectedSaungId !== saung.id && saung.status !== 'empty',
-                                         'bg-[#FAF7F0]/60 border border-dashed border-[#C8C2B3]/70 opacity-80 hover:opacity-100': saung.status === 'empty'
-                                     }">
-
-                                    <div class="space-y-2">
-                                        <div class="flex items-start justify-between gap-1.5">
-                                            <div>
-                                                <div class="flex items-center gap-1.5">
-                                                    <h4 class="font-bold text-sm tracking-tight"
-                                                        :class="saung.status === 'empty' ? 'text-[#6B6A63]' : 'text-[#00341A]'"
-                                                        x-text="saung.name">
-                                                    </h4>
-                                                    <span x-show="selectedSaungId === saung.id"
-                                                          class="px-1.5 py-0.2 rounded bg-[#0B4D2B] text-white text-[9px] font-bold uppercase tracking-wider">
-                                                        TERPILIH
-                                                    </span>
-                                                </div>
-                                                <div class="text-[11px] text-[#6B6A63]" x-text="saung.capacity"></div>
-                                            </div>
-
-                                            <div>
-                                                <template x-if="saung.status === 'waiting_cash'">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E0B24E]/20 border border-[#E0B24E]/50 text-[#C9982F]">
-                                                        <span>Menunggu Bayar Kasir</span>
-                                                    </span>
-                                                </template>
-                                                <template x-if="!['waiting_cash', 'paid', 'empty'].includes(saung.status)">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F0E9] border border-[#A7C4AB] text-[#0B4D2B]">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-[#0B4D2B]"></span>
-                                                        <span>Terisi</span>
-                                                    </span>
-                                                </template>
-                                                <template x-if="saung.status === 'paid'">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ECFDF5] border border-[#6EE7B7] text-[#065F46]">
-                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                                        <span x-text="saung.paymentType === 'qris' ? 'Lunas (QRIS)' : (saung.paymentType === 'campuran' ? 'Lunas (Campuran)' : 'Lunas (Tunai)')"></span>
-                                                    </span>
-                                                </template>
-                                                <template x-if="saung.status === 'empty'">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#EAE4D3] text-[#6B6A63]">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-[#7A7E6F]"></span>
-                                                        <span>Kosong</span>
-                                                    </span>
-                                                </template>
-                                            </div>
-                                        </div>
-
-                                        <template x-if="saung.status !== 'empty'">
-                                            <div class="rounded-lg p-2 bg-[#FAF7F0] border border-[#C8C2B3]/30 text-[10px] space-y-1">
-                                                <div class="flex items-start justify-between gap-2 text-[#6B6A63]">
-                                                    <span class="font-mono text-[9px] leading-snug break-all min-w-0 flex-1" x-text="(saung.orderCount > 1 ? saung.orderCount + ' pesanan • ' : '') + saung.orderId"></span>
-                                                    <span class="font-semibold text-[#92400E] flex items-center gap-0.5 shrink-0 whitespace-nowrap">
-                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                                        <span x-text="saung.elapsedTime"></span>
-                                                    </span>
-                                                </div>
-                                                <div class="flex items-center justify-between">
-                                                    <span class="font-bold text-[#2B2A26] truncate max-w-[120px]" x-text="saung.customer"></span>
-                                                    <span class="font-semibold text-[#0B4D2B]" x-text="saung.itemCount + ' Menu'"></span>
-                                                </div>
-                                            </div>
-                                        </template>
-
-                                        <template x-if="saung.status === 'empty'">
-                                            <div class="rounded-lg p-3 bg-[#F3EEDF]/50 border border-dashed border-[#C8C2B3]/50 text-center">
-                                                <p class="text-[11px] italic text-[#6B6A63]">Saung bersih & siap ditempati</p>
-                                            </div>
-                                        </template>
-                                    </div>
-
-                                    <div class="pt-2 mt-2 border-t border-[#C8C2B3]/30 flex items-center justify-between">
-                                        <span class="text-[11px] text-[#6B6A63] font-medium"
-                                              x-text="saung.status === 'empty' ? 'Status:' : 'Total Tagihan:'">
-                                        </span>
-                                        <span class="font-bold"
-                                              :class="saung.status === 'empty' ? 'text-[#047857] text-xs' : 'text-[#00341A] text-sm'"
-                                              x-text="saung.status === 'empty' ? 'Tersedia (Ready)' : formatRupiah(saung.total)">
-                                        </span>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-
+                    @include('kasir.partials.cluster-saung', [
+                        'prefix' => 'KA',
+                        'judul' => 'Cluster 3: Kursi Atas (4 Area Meja Kursi)',
+                        'warna' => 'bg-[#0B4D2B]',
+                    ])
                 </div>
             </section>
 
@@ -1337,6 +1042,22 @@
                     return true;
                 },
 
+                saungCardClass(saung) {
+                    if (saung.hasAlert) {
+                        return 'bg-[#FFFBEB]/40 border-2 border-[#C1442C]/70 shadow-[0_0_16px_2px_rgba(193,68,44,0.25)] animate-alert-pulse';
+                    }
+
+                    if (this.selectedSaungId === saung.id) {
+                        return 'bg-[#FBF3DD]/40 border-2 border-[#0B4D2B] shadow-[0_0_0_2px_#E0B24E,0_6px_16px_-4px_rgba(26,38,20,0.08)] ring-2 ring-[#E0B24E]';
+                    }
+
+                    if (saung.status === 'empty') {
+                        return 'bg-[#FAF7F0]/60 border border-dashed border-[#C8C2B3]/70 opacity-80 hover:opacity-100';
+                    }
+
+                    return 'bg-white border border-[#C8C2B3]/60 hover:shadow-md';
+                },
+
                 clusterInfo(prefix) {
                     const list = this.getClusterSaungs(prefix);
                     const isi = list.filter(s => s.status !== 'empty').length;
@@ -1558,58 +1279,91 @@
                     }
 
                     const dokumen = jendela.document;
-                    dokumen.title = 'Struk ' + (saung.name || '');
+                    dokumen.title = 'Struk ' + (saung.name || '') + ' (' + orders.length + ' pesanan)';
 
                     const gaya = dokumen.createElement('style');
-                    gaya.textContent = '@page{size:80mm auto;margin:6mm 5mm}html,body{margin:0;padding:0}body{font-family:monospace;font-size:10.5px;color:#000;padding:0 2mm 4mm}.logo{display:block;margin:0 auto 8px;height:38px;max-width:48mm;width:auto;object-fit:contain}.receipt{page-break-after:always;break-after:page}.receipt:last-child{page-break-after:auto;break-after:auto}pre{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;margin:0;padding:0;font:inherit;line-height:1.45}@media screen{body{padding:16px}.receipt{border-bottom:1px dashed #999;margin-bottom:18px;padding-bottom:18px}.receipt:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}}';
+                    gaya.textContent = '@page{size:80mm auto;margin:6mm 5mm}html,body{margin:0;padding:0}body{font-family:monospace;font-size:10.5px;color:#000;padding:0 2mm 4mm}.logo{display:block;margin:0 auto 8px;height:38px;max-width:48mm;width:auto;object-fit:contain}.receipt{page-break-after:auto;break-after:auto}pre{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;margin:0;padding:0;font:inherit;line-height:1.45}@media screen{body{padding:16px}.receipt{border:0;margin:0;padding:0}}';
                     dokumen.head.appendChild(gaya);
 
-                    orders.forEach((order, index) => {
-                        const bagian = dokumen.createElement('section');
-                        bagian.className = 'receipt';
+                    // Semua pesanan yang dicentang digabung menjadi SATU struk.
+                    // Logo, header, dan footer hanya muncul sekali.
+                    const itemMap = new Map();
 
-                        if (this.printLogo) {
-                            const logo = dokumen.createElement('img');
-                            logo.src = this.logoSrc;
-                            logo.alt = 'Logo ' + (this.receiptHeader || 'Resto');
-                            logo.className = 'logo';
-                            bagian.appendChild(logo);
-                        }
+                    orders.forEach((order) => {
+                        (order.items || []).forEach((item) => {
+                            const harga = Number(item.price || 0);
+                            const kunci = String(item.name || 'Menu') + '|' + harga;
+                            const baris = itemMap.get(kunci) || {
+                                name: item.name || 'Menu',
+                                qty: 0,
+                                price: harga,
+                            };
 
-                        const itemLines = (order.items || []).map((item) => {
-                            const nama = `${item.qty}x ${item.name}`;
-                            const harga = this.formatNumber(item.qty * item.price);
-                            return nama.slice(0, 30).padEnd(31, ' ') + harga.padStart(12, ' ');
+                            baris.qty += Number(item.qty || 0);
+                            itemMap.set(kunci, baris);
                         });
-
-                        const subtotal = Number(order.subtotal || 0)
-                            || (order.items || []).reduce((total, item) => total + Number(item.price || 0) * Number(item.qty || 0), 0);
-
-                        const lines = [
-                            (this.receiptHeader || 'SAUNG SITU AWI').toUpperCase(),
-                            this.restoAddress,
-                            'Telp: ' + this.restoPhone,
-                            '--------------------------------',
-                            'No: ' + (order.kode_pesanan || '-'),
-                            'Meja: ' + (saung.name || saung.id),
-                            'Kasir: ' + this.cashierName,
-                            'Waktu: ' + (order.waktu_pesan || this.waktuSekarangWib()) + ' WIB',
-                            '--------------------------------',
-                            ...itemLines,
-                            '--------------------------------',
-                            'Subtotal: ' + this.formatRupiah(subtotal),
-                            'TOTAL: ' + this.formatRupiah(order.total_bayar),
-                            'Status: LUNAS',
-                            'Pembayaran: ' + (order.metode_pembayaran === 'qris' ? 'QRIS Midtrans' : 'Tunai Kasir'),
-                            '--------------------------------',
-                            this.receiptFooter,
-                        ];
-
-                        const isi = dokumen.createElement('pre');
-                        isi.textContent = lines.join('\n');
-                        bagian.appendChild(isi);
-                        dokumen.body.appendChild(bagian);
                     });
+
+                    const itemLines = Array.from(itemMap.values()).map((item) => {
+                        const nama = item.qty + 'x ' + item.name;
+                        const harga = this.formatNumber(item.qty * item.price);
+                        return nama.slice(0, 30).padEnd(31, ' ') + harga.padStart(12, ' ');
+                    });
+
+                    const subtotal = orders.reduce((total, order) => {
+                        const dariOrder = Number(order.subtotal || 0)
+                            || (order.items || []).reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0);
+
+                        return total + dariOrder;
+                    }, 0);
+
+                    const total = orders.reduce((sum, order) => sum + Number(order.total_bayar || 0), 0);
+                    const kodePesanan = orders.map(order => order.kode_pesanan).filter(Boolean).join(' / ');
+                    const waktuList = orders.map(order => order.waktu_pesan).filter(Boolean);
+                    const waktu = waktuList.length > 1 && waktuList[0] !== waktuList[waktuList.length - 1]
+                        ? waktuList[0] + ' s/d ' + waktuList[waktuList.length - 1]
+                        : (waktuList[0] || this.waktuSekarangWib());
+
+                    const metode = [...new Set(orders.map(order => order.metode_pembayaran).filter(Boolean))]
+                        .map((metode) => metode === 'qris' ? 'QRIS Midtrans' : (metode === 'tunai' ? 'Tunai Kasir' : metode))
+                        .join(' / ');
+
+                    const lines = [
+                        (this.receiptHeader || 'SAUNG SITU AWI').toUpperCase(),
+                        this.restoAddress,
+                        'Telp: ' + this.restoPhone,
+                        '--------------------------------',
+                        'No: ' + (kodePesanan || '-'),
+                        'Meja: ' + (saung.name || saung.id),
+                        'Kasir: ' + this.cashierName,
+                        'Pesanan: ' + orders.length + ' order',
+                        'Waktu: ' + waktu + ' WIB',
+                        '--------------------------------',
+                        ...(itemLines.length ? itemLines : ['(Tidak ada item)']),
+                        '--------------------------------',
+                        'Subtotal: ' + this.formatRupiah(subtotal),
+                        'TOTAL: ' + this.formatRupiah(total),
+                        'Status: LUNAS',
+                        'Pembayaran: ' + (metode || '-'),
+                        '--------------------------------',
+                        this.receiptFooter,
+                    ];
+
+                    const bagian = dokumen.createElement('section');
+                    bagian.className = 'receipt';
+
+                    if (this.printLogo) {
+                        const logo = dokumen.createElement('img');
+                        logo.src = this.logoSrc;
+                        logo.alt = 'Logo ' + (this.receiptHeader || 'Resto');
+                        logo.className = 'logo';
+                        bagian.appendChild(logo);
+                    }
+
+                    const isi = dokumen.createElement('pre');
+                    isi.textContent = lines.join('\n');
+                    bagian.appendChild(isi);
+                    dokumen.body.appendChild(bagian);
 
                     const skrip = dokumen.createElement('script');
                     skrip.textContent = '(function(){let selesai=false;const cetak=()=>{if(selesai)return;selesai=true;window.focus();window.print();};const logo=document.querySelector("img.logo");if(logo){logo.addEventListener("load",cetak);logo.addEventListener("error",cetak);}window.addEventListener("load",cetak);setTimeout(cetak,1000);})();';

@@ -1,122 +1,26 @@
 <?php
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\IotApiController;
 use Illuminate\Support\Facades\Route;
-use App\Models\LogPanggilPelayan;
-use App\Models\MejaMakan;
-use App\Models\Pesanan;
-use App\Models\Pengaturan;
-use App\Models\SesiMeja;
 
-Route::post('/iot/panggil-pelayan', function (Request $request) {
-    $request->validate([
-        'kode_meja' => 'required|string',
-    ]);
+/*
+|--------------------------------------------------------------------------
+| Endpoint perangkat IoT
+|--------------------------------------------------------------------------
+|
+| Semua endpoint di bawah ini hanya untuk LCD/ESP32. Token dikirim lewat
+| header X-IoT-Token dan tidak pernah ditaruh di URL.
+|
+*/
+Route::middleware('iot.token')->prefix('iot')->group(function () {
+    Route::post('/panggil-pelayan', [IotApiController::class, 'panggilPelayan'])
+        ->middleware('throttle:10,1');
 
-    $meja = MejaMakan::where('kode_meja', $request->kode_meja)->first();
+    Route::get('/status-meja', [IotApiController::class, 'statusMeja'])
+        ->middleware('throttle:120,1');
 
-    if (! $meja) {
-        return response()->json(['status' => 'error', 'message' => 'Meja tidak ditemukan'], 404);
-    }
-
-    $cooldown = max(1, (int) Pengaturan::nilai('anti_spam_cooldown', 5));
-    $panggilanBaru = LogPanggilPelayan::query()
-        ->where('meja_id', $meja->id)
-        ->where('status_panggilan', 'menunggu')
-        ->where('waktu_panggil', '>=', now()->subSeconds($cooldown))
-        ->exists();
-
-    if ($panggilanBaru) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Panggilan meja ini masih dalam jeda anti-spam.',
-        ], 429);
-    }
-
-    $log = LogPanggilPelayan::create([
-        'meja_id' => $meja->id,
-        'status_panggilan' => 'menunggu',
-    ]);
-
-    return response()->json([
-        'status' => 'success',
-        'message' => 'Panggilan dari meja berhasil dikirim ke server.',
-        'data' => $log
-    ], 200);
+    Route::get('/meja/{ident}', [IotApiController::class, 'statusSatuMeja'])
+        ->middleware('throttle:120,1');
 });
 
-require __DIR__ . '/api_v1.php';
-
-// Public endpoint untuk LCD/ESP32 - status meja + kode sesi aktif (tanpa auth)
-Route::get('/iot/status-meja', function () {
-    $meja = MejaMakan::select('id', 'kode_meja', 'area', 'kapasitas', 'status_meja')
-        ->orderBy('kode_meja')
-        ->get();
-
-    $kodeSesi = SesiMeja::where('status', 'aktif')
-        ->orderBy('id')
-        ->get()
-        ->keyBy('meja_id');
-
-    $data = $meja->map(function ($m) use ($kodeSesi) {
-        return [
-            'id' => $m->id,
-            'kode_meja' => $m->kode_meja,
-            'area' => $m->area,
-            'kapasitas' => $m->kapasitas,
-            'status_meja' => $m->status_meja,
-            'kode_sesi' => optional($kodeSesi->get($m->id))->kode_unik,
-        ];
-    });
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Berhasil mengambil status meja',
-        'konfigurasi' => [
-            'buzzer_duration' => max(1, (int) Pengaturan::nilai('buzzer_duration', 3)),
-            'lcd_message' => (string) Pengaturan::nilai('lcd_message', 'Memanggil Pelayan...'),
-            'polling_detik' => 30,
-        ],
-        'data' => $data,
-    ]);
-});
-
-// Public endpoint untuk LCD/ESP32 - kode sesi aktif satu meja (berdasarkan id_device atau kode_meja).
-Route::get('/iot/meja/{ident}', function (string $ident) {
-    $meja = MejaMakan::where('id_device', $ident)
-        ->orWhere('kode_meja', $ident)
-        ->first();
-
-    if (! $meja) {
-        return response()->json(['success' => false, 'message' => 'Meja tidak ditemukan'], 404);
-    }
-
-    $sesi = SesiMeja::aktifUntuk($meja);
-
-    $pesanan = Pesanan::query()
-        ->where('meja_id', $meja->id)
-        ->where('status_pesanan', '!=', Pesanan::STATUS_DIBATALKAN)
-        ->where('waktu_pesan', '>=', $sesi->dibuka_pada)
-        ->orderByDesc('waktu_pesan')
-        ->get();
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Berhasil mengambil sesi meja',
-        'data' => [
-            'id' => $meja->id,
-            'kode_meja' => $meja->kode_meja,
-            'area' => $meja->area,
-            'status_meja' => $meja->status_meja,
-            'kode_sesi' => $sesi->kode_unik,
-            'total_bayar' => (float) $pesanan->sum('total_bayar'),
-            'jumlah_pesanan' => $pesanan->count(),
-            'pesanan' => $pesanan->map(fn ($p) => [
-                'kode_pesanan' => $p->kode_pesanan,
-                'status_pesanan' => $p->status_pesanan,
-                'status_pembayaran' => $p->status_pembayaran,
-                'total_bayar' => (float) $p->total_bayar,
-            ])->values(),
-        ],
-    ]);
-});
+require __DIR__.'/api_v1.php';
