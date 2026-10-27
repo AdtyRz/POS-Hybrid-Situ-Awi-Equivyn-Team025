@@ -16,6 +16,7 @@ use App\Models\SesiMeja;
 use App\Services\MidtransService;
 use App\Services\PesananService;
 use App\Services\StokService;
+use App\Support\AksesPesanan;
 use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -64,7 +65,17 @@ class EMenuController extends Controller
             ]);
         }
 
-        $request->session()->put('sesi_meja_' . $mejaMakan->id, $sesi->id);
+        $kunciSesi = 'sesi_meja_' . $mejaMakan->id;
+        $sesiSebelumnya = $request->session()->get($kunciSesi);
+
+        // Jangan bawa riwayat tamu sebelumnya ke sesi baru.
+        if ($sesiSebelumnya !== null && (int) $sesiSebelumnya !== (int) $sesi->id) {
+            $request->session()->forget('riwayat_meja_' . $mejaMakan->id);
+        }
+
+        // Cegah session fixation setelah pelanggan membuktikan kode saung.
+        $request->session()->regenerate();
+        $request->session()->put($kunciSesi, $sesi->id);
 
         return redirect()->route('emenu.meja', $mejaMakan->kode_meja);
     }
@@ -181,11 +192,15 @@ class EMenuController extends Controller
         return view('emenu.checkout', ['meja' => $mejaMakan]);
     }
 
-    public function status(string $kode_pesanan): View
+    public function status(Request $request, string $kode_pesanan): View|RedirectResponse
     {
         $pesanan = Pesanan::with(['detailPesanan.menu', 'meja'])
             ->where('kode_pesanan', $kode_pesanan)
             ->firstOrFail();
+
+        if (! $this->pesananBolehDiakses($request, $pesanan)) {
+            return $this->kunciRedirect($pesanan->meja, 'Sesi meja sudah berakhir. Masukkan kembali kode saung untuk membuka pesanan.');
+        }
 
         $tahap = [
             'menunggu' => 1,
@@ -217,10 +232,14 @@ class EMenuController extends Controller
             return $this->kunciRedirect($mejaMakan);
         }
 
+        // Hanya tampilkan pesanan yang dibuat pada sesi meja yang sedang aktif.
+        // Riwayat dari tamu sebelumnya tidak boleh ikut terbawa.
+        $sesi = SesiMeja::aktifUntuk($mejaMakan);
         $kodeRiwayat = array_reverse(session('riwayat_meja_' . $mejaMakan->id, []));
 
         $daftarPesanan = Pesanan::with(['detailPesanan.menu'])
             ->where('meja_id', $mejaMakan->id)
+            ->where('waktu_pesan', '>=', $sesi->dibuka_pada)
             ->whereIn('kode_pesanan', $kodeRiwayat)
             ->get()
             ->sortBy(fn ($pesanan) => array_search($pesanan->kode_pesanan, $kodeRiwayat))
@@ -242,9 +261,13 @@ class EMenuController extends Controller
         ]);
     }
 
-    public function verifikasi(string $kode_pesanan): View|RedirectResponse
+    public function verifikasi(Request $request, string $kode_pesanan): View|RedirectResponse
     {
         $pesanan = Pesanan::with('meja')->where('kode_pesanan', $kode_pesanan)->firstOrFail();
+
+        if (! $this->pesananBolehDiakses($request, $pesanan)) {
+            return $this->kunciRedirect($pesanan->meja, 'Sesi meja sudah berakhir. Masukkan kembali kode saung untuk membuka pesanan.');
+        }
 
         // Kalau sudah lunas (mis. halaman di-refresh), langsung ke status pesanan.
         if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
@@ -265,9 +288,16 @@ class EMenuController extends Controller
      * Cek status pembayaran QRIS dari Midtrans (dipanggil polling oleh halaman pelanggan).
      * Bila sukses, pesanan otomatis jadi lunas dan masuk dapur.
      */
-    public function qrisStatus(string $kode_pesanan): JsonResponse
+    public function qrisStatus(Request $request, string $kode_pesanan): JsonResponse
     {
-        $pesanan = Pesanan::where('kode_pesanan', $kode_pesanan)->firstOrFail();
+        $pesanan = Pesanan::with('meja')->where('kode_pesanan', $kode_pesanan)->firstOrFail();
+
+        if (! $this->pesananBolehDiakses($request, $pesanan)) {
+            return response()->json([
+                'lunas' => false,
+                'message' => 'Sesi meja sudah berakhir. Silakan buka kembali pesanan dari meja.',
+            ], 403);
+        }
 
         if ($pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR) {
             $midtrans = app(MidtransService::class);
@@ -334,16 +364,38 @@ class EMenuController extends Controller
         ]);
     }
 
-    public function bayarTunai(string $kode_pesanan): View
+    public function bayarTunai(Request $request, string $kode_pesanan): View|RedirectResponse
     {
-        $pesanan = Pesanan::where('kode_pesanan', $kode_pesanan)->firstOrFail();
+        $pesanan = Pesanan::with('meja')->where('kode_pesanan', $kode_pesanan)->firstOrFail();
+
+        if (! $this->pesananBolehDiakses($request, $pesanan)) {
+            return $this->kunciRedirect($pesanan->meja, 'Sesi meja sudah berakhir. Masukkan kembali kode saung untuk membuka pesanan.');
+        }
 
         return view('emenu.bayar-tunai', compact('pesanan'));
     }
 
-    public function panggil(string $meja): RedirectResponse
+    public function panggil(Request $request, string $meja): RedirectResponse
     {
         $mejaMakan = $this->cariMeja($meja);
+
+        if (! $this->sesiTerverifikasi($mejaMakan)) {
+            return $this->kunciRedirect($mejaMakan, 'Masukkan kode saung terlebih dahulu sebelum memanggil pelayan.');
+        }
+
+        $detikCooldown = max(10, (int) Pengaturan::nilai('anti_spam_cooldown', 5));
+
+        $panggilanAktif = LogPanggilPelayan::query()
+            ->where('meja_id', $mejaMakan->id)
+            ->whereIn('status_panggilan', ['menunggu', 'ditangani'])
+            ->where('waktu_panggil', '>=', now()->subSeconds($detikCooldown))
+            ->exists();
+
+        if ($panggilanAktif) {
+            return back()->withErrors([
+                'panggilan' => 'Panggilan sebelumnya masih diproses. Mohon tunggu sebentar.',
+            ]);
+        }
 
         $panggilan = LogPanggilPelayan::create([
             'meja_id' => $mejaMakan->id,
@@ -388,8 +440,23 @@ class EMenuController extends Controller
         return (int) $sesiId === $aktif->id;
     }
 
-    private function kunciRedirect(MejaMakan $meja): RedirectResponse
+    private function pesananBolehDiakses(Request $request, Pesanan $pesanan): bool
     {
-        return redirect()->route('emenu.kunci', $meja->kode_meja);
+        if (! $pesanan->meja) {
+            return false;
+        }
+
+        return AksesPesanan::sesiCookieValid($request, $pesanan);
+    }
+
+    private function kunciRedirect(MejaMakan $meja, ?string $pesan = null): RedirectResponse
+    {
+        $redirect = redirect()->route('emenu.kunci', $meja->kode_meja);
+
+        if ($pesan !== null) {
+            $redirect->withErrors(['kode_unik' => $pesan]);
+        }
+
+        return $redirect;
     }
 }

@@ -132,4 +132,48 @@ class KasirStrukTest extends TestCase
             ->assertOk()
             ->assertJson(['success' => true, 'jumlah' => 0]);
     }
+
+    public function test_semua_cluster_saung_memakai_kartu_dan_struk_gabungan_yang_sama(): void
+    {
+        $kasir = $this->kasir();
+        $meja = $this->meja('LB-90');
+        $menuSatu = $this->menu(10000);
+        $menuDua = $this->menu(15000);
+
+        $pesananSatu = $this->pesanan($meja, $menuSatu, 2);
+        $this->lunasi($pesananSatu);
+
+        $pesananDua = $this->pesanan($meja, $menuDua, 1);
+        $this->lunasi($pesananDua);
+
+        $response = $this->actingAs($kasir)->get(route('kasir.dashboard'));
+        $response->assertOk();
+
+        $html = $response->getContent();
+        $this->assertSame(3, substr_count($html, 'data-saung-card'));
+        $this->assertStringContainsString('Cluster 1: Lesehan Bawah', $html);
+        $this->assertStringContainsString('Cluster 2: Lesehan Atas', $html);
+        $this->assertStringContainsString('Cluster 3: Kursi Atas', $html);
+        $this->assertSame(1, substr_count($html, "const bagian = dokumen.createElement('section');"));
+        $this->assertStringContainsString('Semua pesanan yang dicentang digabung menjadi SATU struk.', $html);
+
+        $saung = collect($response->viewData('saungsJson'))
+            ->firstWhere('id', $meja->kode_meja);
+
+        $this->assertTrue($saung['hasUnprintedPaid']);
+        $this->assertCount(2, $saung['receiptOrderIds']);
+        $this->assertCount(2, $saung['receiptItems']);
+        $this->assertSame(35000.0, $saung['receiptTotal']);
+
+        $this->actingAs($kasir)
+            ->postJson(route('kasir.struk.tandai'), [
+                'meja_id' => $meja->id,
+                'kode_pesanan' => $saung['receiptOrderIds']->all(),
+            ])
+            ->assertOk()
+            ->assertJson(['success' => true, 'jumlah' => 2]);
+
+        $this->assertNotNull($pesananSatu->fresh()->printed_at);
+        $this->assertNotNull($pesananDua->fresh()->printed_at);
+    }
 }

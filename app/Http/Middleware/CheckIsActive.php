@@ -15,8 +15,10 @@ class CheckIsActive
         if ($user && ! $user->is_aktif) {
             auth()->guard('web')->logout();
 
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
 
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([

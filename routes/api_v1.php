@@ -12,17 +12,24 @@ Route::prefix('v1')->group(function () {
     Route::get('/menu', [MenuController::class, 'index']);
     Route::get('/meja', [MejaController::class, 'index']);
 
-    // Public endpoint for customers - validates qr_token
-    Route::post('/pesanan', [PesananApiController::class, 'store']);
-    Route::get('/pesanan/{kode}', [PesananApiController::class, 'show']);
+    // Endpoint pelanggan. Detail pesanan tetap wajib membawa bukti sah
+    // (staf login, qr_token meja, atau kode saung aktif).
+    Route::middleware('pesanan.no-store')->group(function () {
+        Route::post('/pesanan', [PesananApiController::class, 'store'])
+            ->middleware('throttle:20,1');
+        Route::get('/pesanan/{kode}', [PesananApiController::class, 'show'])
+            ->middleware('throttle:30,1');
+    });
 
-    Route::middleware('auth')->group(function () {
+    Route::middleware(['auth', 'aktif'])->group(function () {
         Route::middleware('role:koki,barista,pelayan,admin,kasir')->group(function () {
-            Route::patch('/pesanan/{kode}/status', [PesananApiController::class, 'updateStatus']);
+            Route::patch('/pesanan/{kode}/status', [PesananApiController::class, 'updateStatus'])
+                ->middleware('throttle:60,1');
         });
 
         Route::middleware('role:kasir,admin')->group(function () {
-            Route::post('/pembayaran', [PembayaranApiController::class, 'store']);
+            Route::post('/pembayaran', [PembayaranApiController::class, 'store'])
+                ->middleware('throttle:30,1');
         });
 
         Route::middleware('role:pelayan,admin')->group(function () {
@@ -30,8 +37,9 @@ Route::prefix('v1')->group(function () {
         });
     });
 
-    Route::middleware(['auth', 'role:koki,barista'])->group(function () {
-        Route::get('/kds/antrean', [KdsApiController::class, 'antrean']);
+    Route::middleware(['auth', 'aktif', 'role:koki,barista'])->group(function () {
+        Route::get('/kds/antrean', [KdsApiController::class, 'antrean'])
+            ->middleware('throttle:120,1');
     });
 
     Route::middleware(['auth', 'role:pelayan'])->group(function () {

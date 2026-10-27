@@ -11,6 +11,11 @@ class MejaMakan extends Model
 
     protected $guarded = ['id'];
 
+    protected $hidden = [
+        'qr_token',
+        'id_device',
+    ];
+
     protected function casts(): array
     {
         return [

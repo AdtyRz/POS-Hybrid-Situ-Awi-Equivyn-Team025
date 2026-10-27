@@ -67,7 +67,8 @@ class CriticalFixesTest extends TestCase
         $this->assertSame('/pesanan/' . $pesanan->kode_pesanan, route('pesanan.show', $pesanan->kode_pesanan, absolute: false));
 
         $this->get('/pesanan/' . $pesanan->kode_pesanan)->assertRedirect('/login');
-        $this->get('/status/' . $pesanan->kode_pesanan)->assertStatus(200);
+        $this->get('/status/' . $pesanan->kode_pesanan)
+            ->assertRedirect(route('emenu.kunci', $meja->kode_meja));
     }
 
     public function test_pelayan_bisa_membuka_detail_pesanan_staf(): void

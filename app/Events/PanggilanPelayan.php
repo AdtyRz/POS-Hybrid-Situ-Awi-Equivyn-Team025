@@ -18,6 +18,7 @@ class PanggilanPelayan implements ShouldBroadcastNow
     {
         return [
             new Channel('pelayan'),
+            new Channel('kasir'),
             new Channel('admin'),
         ];
     }

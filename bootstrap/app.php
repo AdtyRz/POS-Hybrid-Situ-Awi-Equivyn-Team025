@@ -14,9 +14,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
+            'aktif' => \App\Http\Middleware\CheckIsActive::class,
             'kasir.unlocked' => \App\Http\Middleware\EnsureKasirUnlocked::class,
+            'iot.token' => \App\Http\Middleware\VerifyIotToken::class,
+            'pesanan.no-store' => \App\Http\Middleware\NoStorePesanan::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

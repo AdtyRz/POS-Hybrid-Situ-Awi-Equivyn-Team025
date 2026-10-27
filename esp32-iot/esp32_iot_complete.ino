@@ -53,6 +53,9 @@ const char* DEFAULT_PASS = "PASSWORD_WIFI";
 const char* ENDPOINT_PANGGIL = "/api/iot/panggil-pelayan";
 const char* ENDPOINT_MEJA    = "/api/iot/meja/";  // + kode_meja / id_device
 
+// Samakan dengan IOT_API_TOKEN di .env server. Jangan bagikan token ini.
+const char* IOT_API_TOKEN = "GANTI_DENGAN_IOT_API_TOKEN";
+
 // --- HARDWARE PINS (JANGAN GUNAKAN GPIO 0,1,3,6-11) ---
 const int TOUCH_PIN    = 4;   // sensor sentuh (GPIO 4 - aman)
 const int LED_PIN      = 2;   // Built-in LED
@@ -233,6 +236,11 @@ void panggilPelayan() {
     return;
   }
 
+  // Pastikan kode sesi terbaru sudah diambil sebelum memanggil.
+  if (kodeSesi == "----") {
+    fetchMejaStatus();
+  }
+
   WiFiClientSecure client;
   client.setInsecure();  // DEV: skip cert verify. PROD: client.setCACert(rootCA)
   
@@ -251,10 +259,12 @@ void panggilPelayan() {
   http.addHeader("Content-Type", "application/json");
   http.addHeader("User-Agent", "ESP32-IoT/1.0");
   http.addHeader("Accept", "application/json");
+  http.addHeader("X-IoT-Token", IOT_API_TOKEN);
   
-  // Build JSON dengan ArduinoJson (hindah String concat)
+  // Build JSON dengan ArduinoJson (hindari String concat)
   JsonDocument doc;
   doc["kode_meja"] = kodeMeja;
+  doc["kode_sesi"] = kodeSesi;
   
   String payload;
   serializeJson(doc, payload);
@@ -301,6 +311,7 @@ void fetchMejaStatus() {
   if (!http.begin(client, url)) return;
   
   http.addHeader("Accept", "application/json");
+  http.addHeader("X-IoT-Token", IOT_API_TOKEN);
   
   int httpCode = http.GET();
   if (httpCode == 200) {
