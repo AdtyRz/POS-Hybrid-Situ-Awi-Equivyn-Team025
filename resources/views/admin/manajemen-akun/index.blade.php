@@ -289,10 +289,18 @@
                             <td class="py-3.5 px-4 text-center">
                                 <span 
                                     class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold"
-                                    :class="s.status === 'online' ? 'bg-[#B1F1C2]/40 text-[#00341A]' : 'bg-[#E5E2DB] text-[#707971]'">
+                                    :class="{
+                                        'bg-[#B1F1C2]/40 text-[#00341A]': s.status === 'online',
+                                        'bg-[#FFDEA1]/60 text-[#7A4B00]': s.status === 'standby',
+                                        'bg-[#E5E2DB] text-[#707971]': s.status !== 'online' && s.status !== 'standby'
+                                    }">
                                     <span 
                                         class="w-1.5 h-1.5 rounded-full"
-                                        :class="s.status === 'online' ? 'bg-[#0B4D2B]' : 'bg-[#707971]'">
+                                        :class="{
+                                            'bg-[#0B4D2B]': s.status === 'online',
+                                            'bg-[#C9982F]': s.status === 'standby',
+                                            'bg-[#707971]': s.status !== 'online' && s.status !== 'standby'
+                                        }">
                                     </span>
                                     <span x-text="s.statusText"></span>
                                 </span>
@@ -620,7 +628,7 @@
                     <span>ID Akun: <strong class="font-mono text-[#1C1C18]" x-text="selectedStaff?.id || '-'"></strong></span>
                     <span>Terakhir aktif: <strong class="text-[#1C1C18]" x-text="formatWib(selectedStaff?.lastActiveTs)"></strong></span>
                 </div>
-                <form method="POST" :action="'{{ url('/admin/akun') }}/' + (selectedStaff?.id || '') + '/status'" onsubmit="return confirm('Ubah status akun staf ini?')">
+                <form method="POST" :action="'{{ url('/admin/akun') }}/' + (selectedStaff?.id || '') + '/status'" @submit.prevent="mintaKonfirmasiStatus($event)">
                     @csrf
                     @method('PATCH')
                     <button
@@ -681,6 +689,44 @@
 
     <div
         x-cloak
+        x-show="statusConfirmOpen"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+        <div class="w-full max-w-md bg-white rounded-2xl border border-gray-200 shadow-2xl overflow-hidden" @click.outside="statusConfirmOpen = false">
+            <div class="px-5 py-4 border-b border-gray-100 flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl bg-[#FFF1CC] text-[#7A5900] flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="font-display font-bold text-lg text-[#00341A]">Ubah Status Akun</h3>
+                    <p class="text-xs text-[#707971] mt-1 leading-relaxed">
+                        Ubah status akun <strong class="text-[#1C1C18]" x-text="selectedStaff?.name || 'staf ini'"></strong>?
+                        Staf yang dinonaktifkan tidak dapat login sampai akun diaktifkan kembali.
+                    </p>
+                </div>
+            </div>
+            <div class="px-5 py-4 bg-[#FAF7F0] flex items-center justify-end gap-2">
+                <button type="button" @click="statusConfirmOpen = false"
+                        class="px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-700 font-bold text-xs hover:bg-gray-50 transition">
+                    Batal
+                </button>
+                <button type="button" @click="jalankanKonfirmasiStatus()"
+                        class="px-4 py-2.5 rounded-xl bg-[#0B4D2B] hover:bg-[#08381F] text-white font-bold text-xs transition">
+                    Ya, Lanjutkan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div
+        x-cloak
         x-show="toast.show" 
         x-transition:enter="transition ease-out duration-300"
         x-transition:enter-start="opacity-0 translate-y-4"
@@ -713,6 +759,8 @@
                 no_telp: '',
                 area: ''
             },
+            statusConfirmOpen: false,
+            pendingStatusForm: null,
             toast: { show: false, message: '' },
             now: Date.now(),
             staffs: @json($stafJson),
@@ -836,6 +884,20 @@
 
             closeDetail() {
                 this.detailOpen = false;
+            },
+
+            mintaKonfirmasiStatus(event) {
+                this.pendingStatusForm = event.target;
+                this.statusConfirmOpen = true;
+            },
+
+            jalankanKonfirmasiStatus() {
+                this.statusConfirmOpen = false;
+                const form = this.pendingStatusForm;
+                this.pendingStatusForm = null;
+                if (form) {
+                    HTMLFormElement.prototype.submit.call(form);
+                }
             }
         };
     }

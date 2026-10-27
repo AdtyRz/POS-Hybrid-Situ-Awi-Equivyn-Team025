@@ -49,6 +49,7 @@ class PembayaranApiController extends Controller
                 'status_pesanan' => Pesanan::STATUS_DIPROSES,
                 'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
                 'metode_pembayaran' => $data['metode_pembayaran'],
+                'kasir_id' => auth()->id(),
             ]);
         });
 

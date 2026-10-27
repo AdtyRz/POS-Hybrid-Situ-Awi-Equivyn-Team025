@@ -98,6 +98,7 @@ class PembayaranController extends Controller
                     'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
                     'status_pesanan' => Pesanan::STATUS_DIPROSES,
                     'metode_pembayaran' => 'tunai',
+                    'kasir_id' => auth()->id(),
                 ]);
             } else {
                 // QRIS: Already verified via callback, just mark as paid
@@ -105,6 +106,7 @@ class PembayaranController extends Controller
                     'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
                     'status_pesanan' => Pesanan::STATUS_DIPROSES,
                     'metode_pembayaran' => 'qris',
+                    'kasir_id' => auth()->id(),
                 ]);
             }
         });
@@ -154,12 +156,28 @@ class PembayaranController extends Controller
             'kode_pesanan.*' => ['string', 'max:30'],
         ]);
 
-        $jumlah = Pesanan::query()
+        $query = Pesanan::query()
             ->where('meja_id', $data['meja_id'])
             ->whereIn('kode_pesanan', $data['kode_pesanan'])
             ->where('status_pembayaran', Pesanan::PAYMENT_SUDAH_BAYAR)
-            ->whereNull('printed_at')
-            ->update(['printed_at' => now()]);
+            ->whereNull('printed_at');
+
+        $jumlah = (clone $query)->update([
+            'printed_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // QRIS mandiri tidak punya kasir saat pembayaran; kasir yang mencetak
+        // struk menjadi penanggung jawab transaksi pada laporan.
+        Pesanan::query()
+            ->where('meja_id', $data['meja_id'])
+            ->whereIn('kode_pesanan', $data['kode_pesanan'])
+            ->where('status_pembayaran', Pesanan::PAYMENT_SUDAH_BAYAR)
+            ->whereNull('kasir_id')
+            ->update([
+                'kasir_id' => auth()->id(),
+                'updated_at' => now(),
+            ]);
 
         return response()->json([
             'success' => true,

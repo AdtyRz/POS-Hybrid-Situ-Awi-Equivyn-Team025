@@ -11,6 +11,7 @@ use App\Http\Controllers\PelayanController;
 use App\Http\Controllers\PembayaranController;
 use App\Http\Controllers\PengaturanController;
 use App\Http\Controllers\PesananController;
+use App\Http\Controllers\RealtimeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [EMenuController::class, 'beranda'])->name('emenu.index');
@@ -35,6 +36,7 @@ Route::get('/bayar-tunai/{kode_pesanan}', [EMenuController::class, 'bayarTunai']
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/realtime/version', [RealtimeController::class, 'version'])->name('realtime.version');
 });
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
@@ -87,7 +89,18 @@ Route::get('/admin/analitik-laporan/ekspor-xlsx', [AdminController::class, 'eksp
 });
 
 Route::middleware(['auth', 'role:kasir'])->group(function () {
+    Route::get('/kasir/locked', [KasirController::class, 'locked'])->name('kasir.locked');
+    Route::post('/kasir/lock', [KasirController::class, 'lock'])->name('kasir.lock');
+    Route::post('/kasir/unlock', [KasirController::class, 'unlock'])
+        ->middleware('throttle:5,1')
+        ->name('kasir.unlock');
+    Route::get('/kasir/locked/notifications', [KasirController::class, 'notifikasiTerkunci'])
+        ->name('kasir.locked.notifications');
+});
+
+Route::middleware(['auth', 'role:kasir', 'kasir.unlocked'])->group(function () {
     Route::get('/kasir/dashboard', [PesananController::class, 'index'])->name('kasir.dashboard');
+    Route::get('/kasir/state', [PesananController::class, 'state'])->name('kasir.state');
     Route::get('/kasir/pesanan/tambah', [PesananController::class, 'create'])->name('kasir.pesanan.create');
     Route::post('/kasir/pesanan', [PesananController::class, 'store'])->name('kasir.pesanan.store');
     Route::get('/kasir/pembayaran/cari', [PembayaranController::class, 'cari'])->name('kasir.pembayaran.cari');
@@ -98,7 +111,7 @@ Route::middleware(['auth', 'role:kasir'])->group(function () {
     Route::patch('/kasir/session/{meja}', [KasirController::class, 'akhiriSession'])->name('kasir.session.tutup');
 });
 
-Route::middleware(['auth', 'role:admin,kasir,pelayan'])->group(function () {
+Route::middleware(['auth', 'role:admin,kasir,pelayan', 'kasir.unlocked'])->group(function () {
     Route::get('/pesanan/{kode}', [PesananController::class, 'show'])->name('pesanan.show');
     Route::patch('/pesanan/{kode}/status', [PesananController::class, 'ubahStatus'])->name('pesanan.status');
 });
