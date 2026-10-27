@@ -108,6 +108,8 @@ class PesananAccessSecurityTest extends TestCase
         $this->withSession(['sesi_meja_' . $meja->id => $sesi->id])
             ->get(route('emenu.status', $pesanan->kode_pesanan))
             ->assertOk()
+            ->assertHeader('Referrer-Policy', 'no-referrer')
+            ->assertHeader('X-Robots-Tag', 'noindex, nofollow, noarchive')
             ->assertSee($pesanan->kode_pesanan);
     }
 
