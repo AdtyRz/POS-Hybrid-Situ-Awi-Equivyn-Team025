@@ -6,6 +6,7 @@ use App\Models\Kategori;
 use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
+use App\Models\Pengaturan;
 use App\Models\SesiMeja;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -53,6 +54,18 @@ class SesiMejaTest extends TestCase
             ->assertSessionHasErrors('kode_unik');
     }
 
+    public function test_kode_unik_salah_ditolak_untuk_permintaan_json(): void
+    {
+        $meja = $this->siapkanMeja();
+        $sesi = SesiMeja::aktifUntuk($meja);
+
+        $salah = str_pad((string) (((int) $sesi->kode_unik + 1) % 10000), 4, '0', STR_PAD_LEFT);
+
+        $this->postJson(route('emenu.buka', $meja->id), ['kode_unik' => $salah])
+            ->assertStatus(422)
+            ->assertJsonPath('errors.kode_unik.0', 'Kode tidak sesuai dengan yang tampil di layar meja.');
+    }
+
     public function test_kode_unik_benar_membuka_emenu(): void
     {
         $meja = $this->siapkanMeja();
@@ -65,6 +78,36 @@ class SesiMejaTest extends TestCase
         $this->withSession(['sesi_meja_' . $meja->id => $sesi->id])
             ->get(route('emenu.meja', $meja->id))
             ->assertOk();
+    }
+
+    public function test_kode_unik_benar_mengembalikan_redirect_untuk_permintaan_json(): void
+    {
+        $meja = $this->siapkanMeja();
+        $sesi = SesiMeja::aktifUntuk($meja);
+
+        $this->postJson(route('emenu.buka', $meja->id), ['kode_unik' => $sesi->kode_unik])
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('redirect', route('emenu.meja', $meja->kode_meja))
+            ->assertSessionHas('sesi_meja_' . $meja->id, $sesi->id);
+    }
+
+    public function test_kode_enam_digit_ditampilkan_dan_dapat_dibuka(): void
+    {
+        Pengaturan::create(['kunci' => 'encryption_level', 'nilai' => '6 Digit']);
+
+        $meja = $this->siapkanMeja();
+        $sesi = SesiMeja::aktifUntuk($meja);
+
+        $this->assertSame(6, strlen($sesi->kode_unik));
+
+        $this->get(route('emenu.kunci', $meja->kode_meja))
+            ->assertOk()
+            ->assertSee('kunciApp(6,', false);
+
+        $this->postJson(route('emenu.buka', $meja->id), ['kode_unik' => $sesi->kode_unik])
+            ->assertOk()
+            ->assertJsonPath('success', true);
     }
 
     public function test_putuskan_sesi_ditolak_bila_masih_ada_pesanan_belum_dibayar(): void

@@ -1,6 +1,3 @@
-@if(!isset($isSinglePage))
-    @include('pelanggan.index', ['initialStep' => 2])
-@else
 <div class="space-y-4 pb-28">
     <div class="flex items-center justify-between px-1 text-xs">
         <button type="button"
@@ -37,6 +34,45 @@
             <p class="text-xs text-charcoal-500 leading-relaxed">
                 Pesanan terhubung otomatis ke Kitchen Display System Saung Situ Awi.
             </p>
+        </div>
+    </div>
+
+    <div x-show="!namaPelanggan" class="bg-white rounded-2xl p-4 border border-forest-100/70 shadow-sm space-y-3">
+        <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-gold-50 border border-gold-300/60 flex items-center justify-center text-forest-700 shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+            </div>
+            <div class="space-y-0.5">
+                <h3 class="text-sm font-bold text-forest-900">Nama Pemesan</h3>
+                <p class="text-[11px] text-charcoal-500 leading-relaxed">Isi sekali. Pesanan berikutnya pada sesi meja ini tidak akan ditanya lagi.</p>
+            </div>
+        </div>
+        <input type="text"
+               x-ref="namaPelangganInput"
+               x-model="namaPelangganInput"
+               maxlength="100"
+               autocomplete="name"
+               placeholder="Contoh: Budi Santoso"
+               @input="namaPelangganError = ''"
+               :class="namaPelangganError
+                   ? 'border-red-400 bg-red-50/50 focus:border-red-500 focus:ring-red-500'
+                   : 'border-forest-100 bg-cream-50/60 focus:border-gold-500 focus:ring-gold-500'"
+               class="w-full rounded-xl border px-3.5 py-2.5 text-sm text-charcoal-800 placeholder-charcoal-400 outline-none focus:ring-1 transition">
+        <p x-show="namaPelangganError" x-text="namaPelangganError" class="text-[11px] font-semibold text-red-600"></p>
+    </div>
+
+    <div x-show="namaPelanggan" class="bg-white rounded-2xl p-4 border border-forest-100/70 shadow-sm flex items-start gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-forest-100 flex items-center justify-center text-forest-700 shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+            </svg>
+        </div>
+        <div class="space-y-0.5">
+            <p class="text-[10px] font-bold tracking-wider text-charcoal-500 uppercase">Pesanan atas nama</p>
+            <p class="text-sm font-bold text-forest-900" x-text="namaPelanggan"></p>
+            <p class="text-[11px] text-charcoal-500 leading-relaxed">Nama tersimpan untuk sesi meja ini dan dipakai otomatis pada pesanan berikutnya.</p>
         </div>
     </div>
 
@@ -234,5 +270,4 @@
         </div>
     </div>
 </div>
-@endif
 
