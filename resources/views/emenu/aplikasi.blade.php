@@ -152,6 +152,17 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
+                    @if (! empty($punyaRiwayat))
+                    <a href="{{ route('emenu.pelacakan', $meja->id) }}"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-gold-500 hover:bg-gold-400 text-forest-900 text-[10px] sm:text-xs font-bold border border-gold-600/20 shadow-2xs transition active:scale-95"
+                        title="Lihat Status Pesanan"
+                        aria-label="Lihat Status Pesanan">
+                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                        <span class="hidden sm:inline">Status Pesanan</span>
+                    </a>
+                    @endif
                     <div
                         class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-forest-100/90 text-forest-900 text-xs font-bold border border-forest-200/60 shadow-2xs">
                         <svg class="w-3.5 h-3.5 text-forest-700" viewBox="0 0 24 24" fill="none"
@@ -267,9 +278,61 @@
                             </div>
                             <p class="text-sm text-charcoal-500 leading-relaxed whitespace-pre-line"
                                 x-text="selectedMenu.desc || 'Deskripsi menu belum tersedia.'"></p>
-                            <div class="pt-2">
+
+                            <div class="flex items-center justify-between gap-3 rounded-xl border border-forest-100 bg-cream-50/80 px-3.5 py-2.5">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="relative flex h-2.5 w-2.5 shrink-0">
+                                        <span class="relative inline-flex rounded-full h-2.5 w-2.5"
+                                            :class="selectedMenu.isSoldOut ? 'bg-red-500' : 'bg-emerald-500'"></span>
+                                    </span>
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-bold text-forest-900"
+                                            x-text="selectedMenu.isSoldOut ? 'Stok habis' : 'Stok tersedia: ' + selectedMenu.stock + ' porsi'"></p>
+                                        <p class="text-[10px] text-charcoal-500"
+                                            x-text="cartQty(selectedMenu.id) > 0 ? (cartQty(selectedMenu.id) + ' porsi sudah ada di bon') : 'Tambahkan sesuai kebutuhan Anda'"></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div x-show="!selectedMenu.isSoldOut" class="rounded-xl border border-forest-100 bg-white p-3.5 space-y-2.5">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div>
+                                        <p class="text-xs font-bold text-forest-900">Jumlah porsi</p>
+                                        <p class="text-[10px] text-charcoal-500"
+                                            x-text="'Maksimal ' + selectedMenu.stock + ' porsi'"></p>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <button type="button"
+                                            @click="aturJumlahDetail(detailQty - 1)"
+                                            :disabled="detailQty <= 1"
+                                            class="w-8 h-8 rounded-full border border-forest-200 bg-cream-50 hover:bg-cream-100 text-forest-900 font-bold flex items-center justify-center transition active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                                            aria-label="Kurangi jumlah">
+                                            −
+                                        </button>
+                                        <input type="number"
+                                            inputmode="numeric"
+                                            min="1"
+                                            :max="selectedMenu.stock"
+                                            x-model.number="detailQty"
+                                            @change="batasiJumlahDetail()"
+                                            @blur="batasiJumlahDetail()"
+                                            class="w-14 h-8 rounded-lg border border-forest-200 bg-white text-center text-sm font-bold text-forest-900 focus:outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500"
+                                            aria-label="Jumlah porsi">
+                                        <button type="button"
+                                            @click="aturJumlahDetail(detailQty + 1)"
+                                            :disabled="detailQty >= selectedMenu.stock"
+                                            class="w-8 h-8 rounded-full bg-forest-600 hover:bg-forest-700 text-cream-50 font-bold flex items-center justify-center transition active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                                            aria-label="Tambah jumlah">
+                                            +
+                                        </button>
+                                    </div>
+                                </div>
+                                <p class="text-[10px] text-charcoal-500 leading-relaxed">Ketik jumlah langsung atau gunakan tombol − dan +.</p>
+                            </div>
+
+                            <div class="pt-1">
                                 <button type="button"
-                                    @click="addToCart(selectedMenu); closeMenu()"
+                                    @click="simpanDetailKeBon()"
                                     :disabled="selectedMenu.isSoldOut"
                                     class="w-full py-3 rounded-xl font-bold text-sm transition active:scale-[0.98] flex items-center justify-center gap-2"
                                     :class="selectedMenu.isSoldOut
@@ -279,7 +342,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                                             d="M12 4v16m8-8H4"></path>
                                     </svg>
-                                    <span x-text="selectedMenu.isSoldOut ? 'Stok Habis' : 'Tambah ke Bon'"></span>
+                                    <span x-text="selectedMenu.isSoldOut ? 'Stok Habis' : (cartQty(selectedMenu.id) > 0 ? ('Perbarui Bon (' + detailQty + ' porsi)') : ('Tambah ' + detailQty + ' ke Bon'))"></span>
                                 </button>
                             </div>
                         </div>
@@ -308,12 +371,12 @@
                 activeCategory: 'semua',
                 showFilterModal: false,
                 selectedMenu: null,
+                detailQty: 1,
                 paymentMethod: 'qris',
                 namaPelanggan: @json($namaPelanggan ?? ''),
                 namaPelangganInput: @json(old('nama_pelanggan', $namaPelanggan ?? '')),
                 namaPelangganError: @json($errors->first('nama_pelanggan') ?? ''),
                 serverError: @json($errors->first('jumlah') ?? ''),
-                iotChecking: false,
                 liveTimeString: '{{ now('Asia/Jakarta')->format('H:i') }} WIB',
                 toast: {
                     visible: false,
@@ -367,21 +430,91 @@
                 },
                 openMenu(item) {
                     this.selectedMenu = item;
+                    const existing = this.cartItems.find(i => i.id === item.id);
+                    const stok = Math.max(0, Number(item.stock) || 0);
+                    this.detailQty = Math.min(Math.max(1, existing ? existing.qty : 1), Math.max(1, stok));
                 },
                 closeMenu() {
                     this.selectedMenu = null;
                 },
-                addToCart(menuItem) {
-                    if (menuItem.isSoldOut) return;
+                cartQty(id) {
+                    const item = this.cartItems.find(i => i.id === id);
+                    return item ? item.qty : 0;
+                },
+                aturJumlahDetail(nilai) {
+                    if (!this.selectedMenu) return;
+                    const maksimal = Math.max(1, Number(this.selectedMenu.stock) || 0);
+                    this.detailQty = Math.max(1, Math.min(maksimal, Number(nilai) || 1));
+                },
+                batasiJumlahDetail() {
+                    if (!this.selectedMenu) return;
+                    const maksimal = Math.max(1, Number(this.selectedMenu.stock) || 0);
+                    let nilai = parseInt(this.detailQty, 10);
+                    if (Number.isNaN(nilai) || nilai < 1) nilai = 1;
+                    if (nilai > maksimal) nilai = maksimal;
+                    this.detailQty = nilai;
+                },
+                simpanDetailKeBon() {
+                    const menuItem = this.selectedMenu;
+                    if (!menuItem) return;
+
+                    const stok = Math.max(0, Number(menuItem.stock) || 0);
+                    if (menuItem.isSoldOut || stok <= 0) {
+                        this.showToast('info', 'Stok Habis', `${menuItem.name} sedang tidak tersedia.`);
+                        return;
+                    }
+
+                    const qty = Math.min(Math.max(1, parseInt(this.detailQty, 10) || 1), stok);
                     const existing = this.cartItems.find(i => i.id === menuItem.id);
+
+                    if (existing) {
+                        existing.qty = qty;
+                        existing.stock = stok;
+                    } else {
+                        this.cartItems.push({
+                            id: menuItem.id,
+                            name: menuItem.name,
+                            price: menuItem.price,
+                            qty: qty,
+                            stock: stok,
+                            image: menuItem.image,
+                            note: ''
+                        });
+                    }
+
+                    this.closeMenu();
+                    this.showToast(
+                        'success',
+                        existing ? 'Bon Diperbarui' : 'Menu Ditambahkan',
+                        `${menuItem.name} ${qty} porsi ${existing ? 'diperbarui di' : 'masuk ke'} bon pesanan.`
+                    );
+                },
+                addToCart(menuItem) {
+                    const stok = Math.max(0, Number(menuItem.stock) || 0);
+
+                    if (menuItem.isSoldOut || stok <= 0) {
+                        this.showToast('info', 'Stok Habis', `${menuItem.name} sedang tidak tersedia.`);
+                        return;
+                    }
+
+                    const existing = this.cartItems.find(i => i.id === menuItem.id);
+                    const jumlahSekarang = existing ? existing.qty : 0;
+
+                    if (jumlahSekarang >= stok) {
+                        this.showToast('info', 'Stok Terbatas', `Stok ${menuItem.name} hanya ${stok} porsi.`);
+                        return;
+                    }
+
                     if (existing) {
                         existing.qty++;
+                        existing.stock = stok;
                     } else {
                         this.cartItems.push({
                             id: menuItem.id,
                             name: menuItem.name,
                             price: menuItem.price,
                             qty: 1,
+                            stock: stok,
                             image: menuItem.image,
                             note: ''
                         });
@@ -390,7 +523,15 @@
                 },
                 increaseQty(id) {
                     const item = this.cartItems.find(i => i.id === id);
-                    if (item) item.qty++;
+                    if (!item) return;
+
+                    const stok = Math.max(0, Number(item.stock) || 0);
+                    if (item.qty >= stok) {
+                        this.showToast('info', 'Stok Terbatas', `Stok ${item.name} hanya ${stok} porsi.`);
+                        return;
+                    }
+
+                    item.qty++;
                 },
                 decreaseQty(id) {
                     const item = this.cartItems.find(i => i.id === id);
@@ -427,14 +568,6 @@
                         window.location.href = '/';
                     }
                 },
-                checkIotStatus() {
-                    this.iotChecking = true;
-                    setTimeout(() => {
-                        this.iotChecking = false;
-                        this.showToast('success', 'IoT Node Online', 'Meja ' + this.mejaKode +
-                            ' terhubung optimal.');
-                    }, 800);
-                },
                 triggerWaiterCall() {
                     document.getElementById('formPanggil').submit();
                 },
@@ -453,6 +586,22 @@
                     }
                     this.namaPelangganError = '';
                     this.namaPelangganInput = nama;
+                    const itemMelebihiStok = this.cartItems.find(item => {
+                        const menu = this.menuItems.find(menuItem => menuItem.id === item.id);
+                        return !menu || item.qty > Math.max(0, Number(menu.stock) || 0);
+                    });
+                    if (itemMelebihiStok) {
+                        const menu = this.menuItems.find(menuItem => menuItem.id === itemMelebihiStok.id);
+                        const stok = Math.max(0, Number(menu?.stock) || 0);
+                        this.showToast(
+                            'info',
+                            'Stok Tidak Cukup',
+                            stok > 0
+                                ? `Stok ${itemMelebihiStok.name} tersisa ${stok} porsi. Sesuaikan jumlahnya dulu.`
+                                : `${itemMelebihiStok.name} sudah tidak tersedia. Hapus dari bon untuk melanjutkan.`
+                        );
+                        return;
+                    }
                     const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                     const form = document.createElement('form');
                     form.method = 'POST';
