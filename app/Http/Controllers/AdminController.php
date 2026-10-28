@@ -947,6 +947,7 @@ class AdminController extends Controller
             ->where('role', 'admin')
             ->where('is_aktif', true)
             ->count();
+        $jumlahAdmin = $pengguna->where('role', 'admin')->count();
 
         $stasiun = [
             'admin' => 'Konsol Owner / Admin',
@@ -956,7 +957,7 @@ class AdminController extends Controller
             'pelayan' => 'Mobile POS • Floor',
         ];
 
-        $stafJson = $pengguna->map(function (User $user) use ($lencana, $latar, $labelPeran, $sesiTerakhir, $batasOnline, $jumlahAdminAktif, $stasiun) {
+        $stafJson = $pengguna->map(function (User $user) use ($lencana, $latar, $labelPeran, $sesiTerakhir, $batasOnline, $jumlahAdminAktif, $jumlahAdmin, $stasiun) {
             $kata = preg_split('/\s+/', trim($user->nama));
             $inisial = strtoupper(substr($kata[0] ?? '?', 0, 1) . (isset($kata[1]) ? substr(end($kata), 0, 1) : ''));
             $sesi = $sesiTerakhir->get($user->id);
@@ -983,7 +984,8 @@ class AdminController extends Controller
                 'statusText' => $statusText,
                 'isActive' => (bool) $user->is_aktif,
                 'isSelf' => auth()->id() === $user->id,
-                'isLastAdmin' => $user->role === 'admin' && $user->is_aktif && $jumlahAdminAktif <= 1,
+                'isLastAdmin' => $user->role === 'admin'
+                    && ($jumlahAdmin <= 1 || ($user->is_aktif && $jumlahAdminAktif <= 1)),
                 'lastActive' => $sesi ? Carbon::createFromTimestamp((int) $sesi->last_activity)->timezone('Asia/Jakarta')->diffForHumans() : 'Belum ada sesi',
                 'lastActiveTime' => $sesi ? Carbon::createFromTimestamp((int) $sesi->last_activity)->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB' : '-',
                 'lastActiveTs' => $sesi ? (int) $sesi->last_activity : null,
@@ -1116,6 +1118,37 @@ class AdminController extends Controller
         $user->update(['is_aktif' => ! $user->is_aktif]);
 
         return back()->with('sukses', 'Status akun ' . $user->nama . ' berhasil diubah menjadi ' . ($user->is_aktif ? 'aktif' : 'nonaktif') . '.');
+    }
+
+    public function hapusAkun(string $id): RedirectResponse
+    {
+        $user = User::findOrFail($id);
+
+        if ($user->id === auth()->id()) {
+            return back()->withErrors(['akun' => 'Akun yang sedang digunakan tidak dapat dihapus.']);
+        }
+
+        if ($user->role === 'admin'
+            && (User::query()->where('role', 'admin')->count() <= 1
+                || ($user->is_aktif && $this->jumlahAdminAktif() <= 1))) {
+            return back()->withErrors(['akun' => 'Admin terakhir tidak dapat dihapus.']);
+        }
+
+        DB::transaction(function () use ($user) {
+            DB::table('sessions')->where('user_id', $user->id)->delete();
+            DB::table('personal_access_tokens')
+                ->where('tokenable_type', User::class)
+                ->where('tokenable_id', $user->id)
+                ->delete();
+
+            if ($user->email) {
+                DB::table('password_reset_tokens')->where('email', $user->email)->delete();
+            }
+
+            $user->delete();
+        });
+
+        return back()->with('sukses', 'Akun ' . $user->nama . ' berhasil dihapus.');
     }
 
     private function jumlahAdminAktif(): int

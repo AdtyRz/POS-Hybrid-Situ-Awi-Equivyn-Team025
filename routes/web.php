@@ -105,6 +105,7 @@ Route::get('/admin/analitik-laporan/ekspor-xlsx', [AdminController::class, 'eksp
     Route::post('/admin/akun', [AdminController::class, 'simpanAkun'])->name('admin.akun.simpan');
     Route::put('/admin/akun/{id}', [AdminController::class, 'ubahAkun'])->name('admin.akun.ubah');
     Route::patch('/admin/akun/{id}/status', [AdminController::class, 'ubahStatusAkun'])->name('admin.akun.status');
+    Route::delete('/admin/akun/{id}', [AdminController::class, 'hapusAkun'])->name('admin.akun.hapus');
 });
 
 Route::middleware(['auth', 'role:kasir'])->group(function () {

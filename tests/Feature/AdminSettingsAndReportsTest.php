@@ -135,6 +135,41 @@ class AdminSettingsAndReportsTest extends TestCase
             ->assertSee('Menit tanpa transaksi');
     }
 
+    public function test_admin_dapat_menghapus_akun_staf(): void
+    {
+        $admin = $this->admin();
+        $staf = User::factory()->create(['role' => 'kasir']);
+
+        $response = $this->actingAs($admin)->delete(route('admin.akun.hapus', $staf->id));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('sukses');
+        $this->assertDatabaseMissing('users', ['id' => $staf->id]);
+    }
+
+    public function test_admin_tidak_dapat_menghapus_akun_sendiri(): void
+    {
+        $admin = $this->admin();
+
+        $response = $this->actingAs($admin)
+            ->from(route('admin.manajemen-akun'))
+            ->delete(route('admin.akun.hapus', $admin->id));
+
+        $response->assertRedirect(route('admin.manajemen-akun'));
+        $response->assertSessionHasErrors('akun');
+        $this->assertDatabaseHas('users', ['id' => $admin->id]);
+    }
+
+    public function test_laporan_penjualan_tidak_menampilkan_filter_kluster_saung(): void
+    {
+        $this->actingAs($this->admin())
+            ->get(route('admin.laporan-penjualan'))
+            ->assertOk()
+            ->assertDontSee('KLUSTER SAUNG / MEJA')
+            ->assertSee('Filter & Pratinjau Laporan')
+            ->assertSee('Unduh PDF');
+    }
+
     public function test_kasir_menampilkan_meja_terisi_walau_pesanan_dari_hari_sebelumnya(): void
     {
         $meja = $this->meja('LA-77');
