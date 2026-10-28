@@ -15,6 +15,9 @@ use App\Http\Controllers\RealtimeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [EMenuController::class, 'beranda'])->name('emenu.index');
+Route::post('/masuk', [EMenuController::class, 'masuk'])
+    ->middleware('throttle:5,1')
+    ->name('emenu.masuk');
 
 Route::middleware('pesanan.no-store')->group(function () {
     Route::get('/meja/{meja}', [EMenuController::class, 'aplikasi'])
