@@ -55,7 +55,9 @@ class PesananService
                 }
 
                 if ($menu->stok_menu < $jumlah) {
-                    throw new RuntimeException('Stok '.$menu->nama_menu.' tidak cukup.');
+                    throw new RuntimeException(
+                        'Stok '.$menu->nama_menu.' tersisa '.max(0, (int) $menu->stok_menu).' porsi.'
+                    );
                 }
 
                 $subtotal += (float) $menu->harga * $jumlah;
@@ -81,7 +83,7 @@ class PesananService
 
             $pesanan = Pesanan::create([
                 'kode_pesanan' => $kodePesanan,
-                'kode_pembayaran' => $this->generateKodePembayaran(),
+                'kode_pembayaran' => $kodePesanan,
                 'meja_id' => $meja->id,
                 'kasir_id' => $opsi['kasir_id'] ?? null,
                 'nama_pelanggan' => $opsi['nama_pelanggan'] ?? null,
@@ -205,14 +207,4 @@ class PesananService
         return $kode;
     }
 
-    private function generateKodePembayaran(): string
-    {
-        $dasar = 'PAY-'.now()->format('YmdHis').'-';
-
-        do {
-            $kode = $dasar.Str::upper(Str::random(6));
-        } while (Pesanan::where('kode_pembayaran', $kode)->exists());
-
-        return $kode;
-    }
 }

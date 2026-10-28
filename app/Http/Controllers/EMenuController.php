@@ -116,6 +116,7 @@ class EMenuController extends Controller
                 'desc' => $menu->deskripsi ?? '',
                 'category' => $menu->kategori_id,
                 'image' => $menu->foto_menu ? asset('storage/' . $menu->foto_menu) : '',
+                'stock' => max(0, (int) $menu->stok_menu),
                 'isSoldOut' => $menu->stok_menu <= 0,
                 'badge' => $menu->stok_menu <= 0 ? 'Stok Habis' : '',
                 'badgeType' => $menu->stok_menu <= 0 ? 'soldout' : '',
@@ -234,12 +235,13 @@ class EMenuController extends Controller
         // Bila pelanggan membuka halaman status tanpa membayar di halaman verifikasi,
         // tampilkan QRIS di sini agar tetap bisa membayar. QR disembunyikan begitu lunas.
         $qris = null;
-        $qrisTtl = max(5, min(60, (int) Pengaturan::nilai('qris_expiry_minutes'))) * 60;
+        $midtrans = app(MidtransService::class);
+        $qrisTtl = $midtrans->qrisExpiryMinutes() * 60;
 
         if ($pesanan->metode_pembayaran === 'qris'
             && $pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR
             && $pesanan->status_pesanan !== 'dibatalkan') {
-            $qris = app(MidtransService::class)->createQrisCharge($pesanan);
+            $qris = $midtrans->createQrisCharge($pesanan);
         }
 
         return view('emenu.status', compact('pesanan', 'tahap', 'qris', 'qrisTtl'));
@@ -296,11 +298,12 @@ class EMenuController extends Controller
         }
 
         // Generate QRIS QR Code via Midtrans untuk ditampilkan di halaman pelanggan.
-        $qris = app(MidtransService::class)->createQrisCharge($pesanan);
+        $midtrans = app(MidtransService::class);
+        $qris = $midtrans->createQrisCharge($pesanan);
 
         // Perkiraan masa berlaku QR (untuk countdown di UI). Refresh sesungguhnya
         // terjadi saat Midtrans menandai transaksi expire.
-        $qrisTtl = max(5, min(60, (int) Pengaturan::nilai('qris_expiry_minutes'))) * 60;
+        $qrisTtl = $midtrans->qrisExpiryMinutes() * 60;
 
         return view('emenu.verifikasi', compact('pesanan', 'qris', 'qrisTtl'));
     }

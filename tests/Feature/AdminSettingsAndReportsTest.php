@@ -135,6 +135,19 @@ class AdminSettingsAndReportsTest extends TestCase
             ->assertSee('Menit tanpa transaksi');
     }
 
+    public function test_admin_dapat_mengubah_batas_waktu_qris(): void
+    {
+        $response = $this->actingAs($this->admin())->postJson(route('admin.pengaturan-sistem.simpan'), [
+            'nama_resto' => 'Saung Situ Awi',
+            'qris_expiry_minutes' => 17,
+            'session_expiry_minutes' => 120,
+        ]);
+
+        $response->assertRedirect(route('admin.pengaturan-sistem'));
+        $response->assertSessionHas('sukses');
+        $this->assertSame('17', Pengaturan::nilai('qris_expiry_minutes'));
+    }
+
     public function test_admin_dapat_menghapus_akun_staf(): void
     {
         $admin = $this->admin();
