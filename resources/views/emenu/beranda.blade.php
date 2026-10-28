@@ -65,8 +65,8 @@
                             d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M4 12h16" />
                     </svg>
                 </div>
-                <p class="font-extrabold text-forest-900 mt-3">1. Scan QR</p>
-                <p class="text-stone-500 text-xs mt-1">Pindai QR di meja Anda untuk membuka e-menu.</p>
+                <p class="font-extrabold text-forest-900 mt-3">1. Scan QR / Kode Kunci</p>
+                <p class="text-stone-500 text-xs mt-1">Pindai QR meja atau masukkan kode kunci login dari LCD.</p>
             </div>
             <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 text-center">
                 <div class="w-12 h-12 mx-auto rounded-2xl bg-forest-900 flex items-center justify-center">
@@ -102,7 +102,8 @@
                 </div>
                 <div class="flex-1">
                     <p class="font-bold">Sudah di Meja?</p>
-                    <p class="text-white/70 text-xs mt-0.5">Scan QR meja untuk langsung pesan.</p>
+                    <p class="text-white/70 text-xs mt-0.5">Scan QR meja atau masukkan kode kunci login untuk langsung
+                        pesan.</p>
                 </div>
                 <button type="button" id="tombolKamera" onclick="bukaKamera()"
                     class="bg-gold-500 hover:bg-[#d0a23f] text-forest-900 font-bold text-sm rounded-full px-5 py-2.5 shrink-0">Scan</button>
@@ -112,14 +113,21 @@
                 <button type="button" onclick="tutupKamera()"
                     class="w-full mt-2 bg-white/10 text-white text-sm font-bold rounded-full py-2">Tutup Kamera</button>
             </div>
-            <div class="flex gap-2 mt-4">
-                <input id="kodeManual" type="text" placeholder="atau ketik kode meja (cth: LB-01)"
+            <form method="POST" action="{{ route('emenu.masuk') }}" class="flex gap-2 mt-4">
+                @csrf
+                <input id="kodeKunci" name="kode_unik" type="text" inputmode="numeric" pattern="[0-9]{4,6}"
+                    maxlength="6" autocomplete="off" required value="{{ old('kode_unik') }}"
+                    aria-label="Kode kunci login meja"
+                    placeholder="Ketik kode kunci login (cth: 4821)"
                     class="flex-1 bg-white/10 border border-white/20 rounded-full px-4 py-2.5 text-sm placeholder:text-white/40 outline-none focus:border-gold-500">
-                <button type="button" onclick="kirimManual()"
-                    class="bg-white text-forest-900 font-bold text-sm rounded-full px-5 py-2.5 shrink-0">Buka</button>
-            </div>
-            <p id="pesanKode" class="hidden text-gold-500 text-xs font-bold mt-2">Kode tidak dikenal. Periksa QR di
-                meja Anda.</p>
+                <button type="submit"
+                    class="bg-white text-forest-900 font-bold text-sm rounded-full px-5 py-2.5 shrink-0">Buka
+                    Menu</button>
+            </form>
+            <p class="text-white/60 text-[11px] mt-2">Kode kunci 4–6 digit tampil di LCD meja atau QR.</p>
+            @error('kode_unik')
+                <p class="text-gold-500 text-xs font-bold mt-2">{{ $message }}</p>
+            @enderror
         </div>
         <p class="text-center text-stone-400 text-xs mt-8">© 2026 Saung Situ Awi Ciwidey • RPL SMK Budi Bakti & Tim
             Equivyn</p>
@@ -169,15 +177,6 @@
             document.getElementById('tombolKamera').classList.remove('hidden');
         }
 
-        function kirimManual() {
-            var nilai = document.getElementById('kodeManual').value;
-            var tujuan = tujuanDari(nilai);
-            if (tujuan) {
-                window.location.href = tujuan;
-                return;
-            }
-            document.getElementById('pesanKode').classList.remove('hidden');
-        }
     </script>
 </body>
 
