@@ -7,6 +7,7 @@ use App\Models\Pengaturan;
 use App\Models\Pesanan;
 use App\Models\SesiMeja;
 use App\Models\User;
+use App\Services\IotStatusService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
@@ -146,6 +147,37 @@ class AdminSettingsAndReportsTest extends TestCase
         $response->assertRedirect(route('admin.pengaturan-sistem'));
         $response->assertSessionHas('sukses');
         $this->assertSame('17', Pengaturan::nilai('qris_expiry_minutes'));
+    }
+
+    public function test_admin_dapat_menyimpan_panjang_kode_sesi_enam_digit(): void
+    {
+        $response = $this->actingAs($this->admin())->postJson(route('admin.pengaturan-sistem.simpan'), [
+            'nama_resto' => 'Saung Situ Awi',
+            'qris_expiry_minutes' => 5,
+            'session_expiry_minutes' => 120,
+            'lcd_message' => Pengaturan::DEFAULTS['lcd_message'],
+            'encryption_level' => '6 Digit',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('admin.pengaturan-sistem'));
+        $this->assertSame('6 Digit', Pengaturan::nilai('encryption_level'));
+        $this->assertLessThanOrEqual(16, mb_strlen((string) Pengaturan::nilai('lcd_message')));
+    }
+
+    public function test_default_pesan_lcd_tidak_melebihi_batas_lcd(): void
+    {
+        $this->assertLessThanOrEqual(16, mb_strlen(Pengaturan::DEFAULTS['lcd_message']));
+    }
+
+    public function test_konfigurasi_lcd_dipotong_maksimal_16_karakter(): void
+    {
+        $pesan = 'Pesan LCD yang sangat panjang';
+        Pengaturan::simpanBanyak(['lcd_message' => $pesan]);
+
+        $konfigurasi = app(IotStatusService::class)->statusSemuaMeja()['konfigurasi'];
+
+        $this->assertSame(mb_substr($pesan, 0, 16), $konfigurasi['lcd_message']);
     }
 
     public function test_admin_dapat_menghapus_akun_staf(): void
