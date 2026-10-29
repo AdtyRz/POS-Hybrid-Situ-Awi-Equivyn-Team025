@@ -188,7 +188,7 @@ Kontrol:
 
 - **Tap singkat**: berganti layar `Status Pesanan` -> `Total Bayar` -> `Kode Verif Saung`.
 - **Tahan sekitar 1,5 detik**: mengirim panggilan pelayan.
-- **Buzzer**: berbunyi saat tap, saat panggilan berhasil, dan saat gagal.
+- **Buzzer**: berbunyi saat tap, saat panggilan berhasil, dan saat gagal. Durasi saat panggilan berhasil mengikuti pengaturan **Durasi Buzzer Feedback** di admin.
 - **LED**: menyala saat panggilan berhasil.
 
 Data diperbarui otomatis:
