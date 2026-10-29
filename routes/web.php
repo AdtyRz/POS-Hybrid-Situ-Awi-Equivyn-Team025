@@ -15,6 +15,9 @@ use App\Http\Controllers\RealtimeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [EMenuController::class, 'beranda'])->name('emenu.index');
+Route::post('/masuk', [EMenuController::class, 'masuk'])
+    ->middleware('throttle:5,1')
+    ->name('emenu.masuk');
 
 Route::middleware('pesanan.no-store')->group(function () {
     Route::get('/meja/{meja}', [EMenuController::class, 'aplikasi'])
@@ -105,6 +108,7 @@ Route::get('/admin/analitik-laporan/ekspor-xlsx', [AdminController::class, 'eksp
     Route::post('/admin/akun', [AdminController::class, 'simpanAkun'])->name('admin.akun.simpan');
     Route::put('/admin/akun/{id}', [AdminController::class, 'ubahAkun'])->name('admin.akun.ubah');
     Route::patch('/admin/akun/{id}/status', [AdminController::class, 'ubahStatusAkun'])->name('admin.akun.status');
+    Route::delete('/admin/akun/{id}', [AdminController::class, 'hapusAkun'])->name('admin.akun.hapus');
 });
 
 Route::middleware(['auth', 'role:kasir'])->group(function () {

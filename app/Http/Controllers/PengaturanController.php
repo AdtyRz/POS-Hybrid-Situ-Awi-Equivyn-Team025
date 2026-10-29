@@ -25,6 +25,7 @@ class PengaturanController extends Controller
         $profil = collect(Pengaturan::DEFAULTS)
             ->mapWithKeys(fn ($default, $kunci) => [$kunci => Pengaturan::nilai($kunci)])
             ->all();
+        $profil['lcd_message'] = mb_substr((string) ($profil['lcd_message'] ?? ''), 0, 16);
 
         $daftarMeja = MejaMakan::query()
             ->orderBy('kode_meja')
@@ -106,6 +107,8 @@ class PengaturanController extends Controller
             'backup_retention' => ['nullable', 'integer', 'min:1', 'max:90'],
             'backup_cloud' => ['nullable', 'boolean'],
             'midtrans_auto_cancel' => ['nullable', 'boolean'],
+        ], [
+            'lcd_message.max' => 'Pesan tampilan LCD maksimal 16 karakter.',
         ]);
 
         Pengaturan::simpanBanyak($data);

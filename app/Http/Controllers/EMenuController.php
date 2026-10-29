@@ -31,6 +31,37 @@ class EMenuController extends Controller
         return view('emenu.beranda');
     }
 
+    public function masuk(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'kode_unik' => ['required', 'string', 'max:10'],
+        ], [
+            'kode_unik.required' => 'Masukkan kode kunci login meja.',
+            'kode_unik.max' => 'Kode kunci terlalu panjang.',
+        ]);
+
+        $sesi = SesiMeja::query()
+            ->with('meja')
+            ->where('status', 'aktif')
+            ->where('kode_unik', trim($data['kode_unik']))
+            ->latest('id')
+            ->first();
+
+        if (! $sesi || ! $sesi->meja) {
+            return $this->kodeKunciDitolak();
+        }
+
+        $sesiAktif = SesiMeja::aktifUntuk($sesi->meja);
+
+        if ((int) $sesiAktif->id !== (int) $sesi->id) {
+            return $this->kodeKunciDitolak();
+        }
+
+        $this->tandaiSesiTerverifikasi($request, $sesi->meja, $sesiAktif);
+
+        return redirect()->to(route('emenu.meja', $sesi->meja->kode_meja));
+    }
+
     /**
      * Halaman kunci: pengunjung memasukkan kode unik yang tampil di LCD meja.
      */
@@ -74,17 +105,7 @@ class EMenuController extends Controller
             ]);
         }
 
-        $kunciSesi = 'sesi_meja_' . $mejaMakan->id;
-        $sesiSebelumnya = $request->session()->get($kunciSesi);
-
-        // Jangan bawa riwayat tamu sebelumnya ke sesi baru.
-        if ($sesiSebelumnya !== null && (int) $sesiSebelumnya !== (int) $sesi->id) {
-            $request->session()->forget('riwayat_meja_' . $mejaMakan->id);
-        }
-
-        // Cegah session fixation setelah pelanggan membuktikan kode saung.
-        $request->session()->regenerate();
-        $request->session()->put($kunciSesi, $sesi->id);
+        $this->tandaiSesiTerverifikasi($request, $mejaMakan, $sesi);
 
         $tujuan = route('emenu.meja', $mejaMakan->kode_meja);
 
@@ -116,6 +137,7 @@ class EMenuController extends Controller
                 'desc' => $menu->deskripsi ?? '',
                 'category' => $menu->kategori_id,
                 'image' => $menu->foto_menu ? asset('storage/' . $menu->foto_menu) : '',
+                'stock' => max(0, (int) $menu->stok_menu),
                 'isSoldOut' => $menu->stok_menu <= 0,
                 'badge' => $menu->stok_menu <= 0 ? 'Stok Habis' : '',
                 'badgeType' => $menu->stok_menu <= 0 ? 'soldout' : '',
@@ -234,12 +256,13 @@ class EMenuController extends Controller
         // Bila pelanggan membuka halaman status tanpa membayar di halaman verifikasi,
         // tampilkan QRIS di sini agar tetap bisa membayar. QR disembunyikan begitu lunas.
         $qris = null;
-        $qrisTtl = max(5, min(60, (int) Pengaturan::nilai('qris_expiry_minutes'))) * 60;
+        $midtrans = app(MidtransService::class);
+        $qrisTtl = $midtrans->qrisExpiryMinutes() * 60;
 
         if ($pesanan->metode_pembayaran === 'qris'
             && $pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR
             && $pesanan->status_pesanan !== 'dibatalkan') {
-            $qris = app(MidtransService::class)->createQrisCharge($pesanan);
+            $qris = $midtrans->createQrisCharge($pesanan);
         }
 
         return view('emenu.status', compact('pesanan', 'tahap', 'qris', 'qrisTtl'));
@@ -296,11 +319,12 @@ class EMenuController extends Controller
         }
 
         // Generate QRIS QR Code via Midtrans untuk ditampilkan di halaman pelanggan.
-        $qris = app(MidtransService::class)->createQrisCharge($pesanan);
+        $midtrans = app(MidtransService::class);
+        $qris = $midtrans->createQrisCharge($pesanan);
 
         // Perkiraan masa berlaku QR (untuk countdown di UI). Refresh sesungguhnya
         // terjadi saat Midtrans menandai transaksi expire.
-        $qrisTtl = max(5, min(60, (int) Pengaturan::nilai('qris_expiry_minutes'))) * 60;
+        $qrisTtl = $midtrans->qrisExpiryMinutes() * 60;
 
         return view('emenu.verifikasi', compact('pesanan', 'qris', 'qrisTtl'));
     }
@@ -433,6 +457,28 @@ class EMenuController extends Controller
         ]));
 
         return back()->with('panggilan_terkirim', true);
+    }
+
+    private function kodeKunciDitolak(): RedirectResponse
+    {
+        return redirect()->route('emenu.index')
+            ->withErrors(['kode_unik' => 'Kode kunci tidak valid atau sesi meja sudah berakhir.'])
+            ->withInput();
+    }
+
+    private function tandaiSesiTerverifikasi(Request $request, MejaMakan $meja, SesiMeja $sesi): void
+    {
+        $kunciSesi = 'sesi_meja_' . $meja->id;
+        $sesiSebelumnya = $request->session()->get($kunciSesi);
+
+        // Jangan bawa riwayat tamu sebelumnya ke sesi baru.
+        if ($sesiSebelumnya !== null && (int) $sesiSebelumnya !== (int) $sesi->id) {
+            $request->session()->forget('riwayat_meja_' . $meja->id);
+        }
+
+        // Cegah session fixation setelah pelanggan membuktikan kode saung.
+        $request->session()->regenerate();
+        $request->session()->put($kunciSesi, $sesi->id);
     }
 
     private function cariMeja(string $meja): MejaMakan

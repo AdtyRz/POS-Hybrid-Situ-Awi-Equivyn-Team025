@@ -12,7 +12,7 @@
 <label class="block text-sm font-medium text-stone-600 mb-1">Kode Pesanan / Kode Pembayaran</label>
 <input type="text" name="kode_pembayaran" value="{{ request()->input('kode_pembayaran') ?? request()->input('kode_pesanan') }}"
        class="w-full px-4 py-3 rounded-xl border border-stone-200 focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 outline-none text-lg font-mono"
-       placeholder="Contoh: PAY-20261011123456-ABC123 atau SW-20261011123456-1" autofocus>
+       placeholder="Contoh: SW-20261011123456-1 atau PAY-20261011123456-ABC123 (kode lama)" autofocus>
 </div>
 <button type="submit" class="w-full bg-forest-900 hover:bg-[#042616] text-white font-bold py-3 rounded-xl text-lg shadow-sm transition">
 Cari Pesanan
@@ -36,8 +36,7 @@ Cari Pesanan
 </div>
 
 <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
-<div><span class="text-stone-500">Kode Pesanan</span><p class="font-bold font-mono">{{ $pesanan->kode_pesanan }}</p></div>
-<div><span class="text-stone-500">Kode Bayar</span><p class="font-bold font-mono">{{ $pesanan->kode_pembayaran }}</p></div>
+<div><span class="text-stone-500">Kode Pesanan / Bayar</span><p class="font-bold font-mono">{{ $pesanan->kode_pesanan }}</p></div>
 <div><span class="text-stone-500">Meja</span><p class="font-bold">{{ $pesanan->meja->kode_meja }} ({{ $pesanan->meja->area }})</p></div>
 <div><span class="text-stone-500">Metode</span><p class="font-bold">{{ ucfirst($pesanan->metode_pembayaran) }}</p></div>
 <div><span class="text-stone-500">Status Bayar</span><p class="font-bold">{{ $pesanan->status_pembayaran }}</p></div>
