@@ -81,7 +81,7 @@
                             <div class="bg-cream-50 rounded-xl border border-stone-100 p-3">
                                 <div class="flex items-center justify-between">
                                     <div>
-                                        <p class="font-bold text-sm text-forest-900">{{ $p->kode_pesanan }}</p>
+                                        <p class="font-bold text-sm text-forest-900">Pemesan: {{ $p->nama_pelanggan ?: 'Tamu' }}</p>
                                         <p class="text-stone-500 text-xs">{{ $p->detailPesanan->sum('jumlah') }} item •
                                             Rp{{ number_format($p->total_bayar, 0, ',', '.') }}</p>
                                     </div>

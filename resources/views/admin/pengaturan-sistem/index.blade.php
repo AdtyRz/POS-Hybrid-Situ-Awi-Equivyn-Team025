@@ -247,13 +247,23 @@
         </button>
 
         <button
+            @click="activeTab = 'shift'"
+            :class="activeTab === 'shift' ? 'bg-[#00341A] text-white shadow-xs' : 'bg-[#F0EEE7] text-[#404941] hover:bg-[#E5E2DB]'"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>5. Shift &amp; Jam Operasional</span>
+        </button>
+
+        <button
             @click="activeTab = 'backup'"
             :class="activeTab === 'backup' ? 'bg-[#00341A] text-white shadow-xs' : 'bg-[#F0EEE7] text-[#404941] hover:bg-[#E5E2DB]'"
             class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
             </svg>
-            <span>5. Database &amp; Cadangan Data</span>
+            <span>6. Database &amp; Cadangan Data</span>
         </button>
     </div>
 
@@ -870,6 +880,106 @@
                 </div>
             </div>
 
+            <div x-show="activeTab === 'shift'" x-transition class="bg-[#F6F3EC] rounded-2xl p-6 sm:p-8 shadow-xs border border-[#C0C9BF]/30 space-y-6">
+
+                <div class="flex items-center justify-between pb-4 border-b border-[#C0C9BF]/20">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-[#0B4D2B] text-white flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-[#1C1C18]">Jadwal Shift Operasional</h2>
+                            <span class="text-[10px] font-bold text-[#707971] tracking-wider uppercase block">PELAYAN • DAPUR • BAR • KASIR</span>
+                        </div>
+                    </div>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#B1F1C2]/60 text-[#00341A] text-[10px] font-bold">
+                        <span class="w-2 h-2 rounded-full" :class="shiftRestriction ? 'bg-[#00341A] animate-pulse' : 'bg-[#707971]'"></span>
+                        <span x-text="shiftRestriction ? 'PEMBATASAN AKTIF' : 'PEMBATASAN NONAKTIF'">PEMBATASAN NONAKTIF</span>
+                    </span>
+                </div>
+
+                <div class="p-4 rounded-xl bg-white border border-[#C0C9BF]/20 shadow-2xs">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-9 h-9 rounded-lg bg-[#E5E2DB] text-[#0B4D2B] flex items-center justify-center shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 11c0 1.657-1.343 3-3 3S6 12.657 6 11s1.343-3 3-3 3 1.343 3 3zm0 0c0-1.657 1.343-3 3-3s3 1.343 3 3-1.343 3-3 3-3-1.343-3-3zm-3 7h6m-9 3h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v13a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold text-[#1C1C18]">Batasi Akses Staf ke Jam Shift</h3>
+                                <p class="text-xs text-[#404941] leading-relaxed mt-1">
+                                    Saat aktif, pelayan, dapur, bar, dan kasir hanya bisa login dan mengakses aplikasi pada salah satu shift yang diaktifkan di bawah. Admin tetap dapat mengakses pengaturan kapan saja.
+                                </p>
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            @click="shiftRestriction = !shiftRestriction"
+                            :class="shiftRestriction ? 'bg-[#0B4D2B]' : 'bg-[#E5E2DB]'"
+                            class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-hidden">
+                            <span
+                                :class="shiftRestriction ? 'translate-x-5' : 'translate-x-0.5'"
+                                class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out mt-0.5"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <template x-for="shift in shiftSlots" :key="shift.nomor">
+                        <div class="bg-white rounded-xl p-4 sm:p-5 border border-[#C0C9BF]/20 shadow-2xs space-y-4" :class="{ 'opacity-60': !shift.aktif }">
+                            <div class="flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <span class="w-7 h-7 rounded-lg bg-[#E5E2DB] text-[#0B4D2B] text-xs font-bold flex items-center justify-center shrink-0" x-text="shift.nomor"></span>
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-bold text-[#1C1C18]">Shift <span x-text="shift.nomor"></span></p>
+                                        <p class="text-[10px] text-[#707971]" x-text="shift.aktif ? 'Diizinkan untuk akses staf' : 'Dinonaktifkan'">Diizinkan untuk akses staf</p>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    @click="shift.aktif = !shift.aktif"
+                                    :class="shift.aktif ? 'bg-[#0B4D2B]' : 'bg-[#E5E2DB]'"
+                                    class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-hidden">
+                                    <span
+                                        :class="shift.aktif ? 'translate-x-5' : 'translate-x-0.5'"
+                                        class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out mt-0.5"></span>
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div class="space-y-1.5">
+                                    <label class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">Nama Shift</label>
+                                    <input type="text" x-model="shift.nama" maxlength="40"
+                                        class="w-full bg-[#FCF9F2] border border-[#C0C9BF]/40 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#1C1C18] focus:outline-hidden focus:border-[#0B4D2B] shadow-inner">
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">Mulai</label>
+                                    <input type="time" x-model="shift.mulai" required
+                                        class="w-full bg-[#FCF9F2] border border-[#C0C9BF]/40 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#1C1C18] focus:outline-hidden focus:border-[#0B4D2B] shadow-inner">
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">Selesai</label>
+                                    <input type="time" x-model="shift.selesai" required
+                                        class="w-full bg-[#FCF9F2] border border-[#C0C9BF]/40 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#1C1C18] focus:outline-hidden focus:border-[#0B4D2B] shadow-inner">
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2 text-[10px] text-[#707971]">
+                                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span x-text="shift.mulai > shift.selesai ? 'Shift melewati tengah malam (contoh 22:00 - 02:00).' : 'Jam mulai dan selesai dalam hari yang sama.'">Jam mulai dan selesai dalam hari yang sama.</span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
             <div x-show="activeTab === 'backup'" x-transition class="bg-[#F6F3EC] rounded-2xl p-6 sm:p-8 shadow-xs border border-[#C0C9BF]/30 space-y-6">
 
                 <div class="flex items-center justify-between pb-4 border-b border-[#C0C9BF]/20">
@@ -1185,6 +1295,59 @@
                 </div>
             </template>
 
+            <template x-if="activeTab === 'shift'">
+                <div class="space-y-6">
+
+                    <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/30 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-base font-bold text-[#1C1C18]">Cakupan Shift</h3>
+                            <svg class="w-5 h-5 text-[#00341A]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+
+                        <p class="text-xs text-[#404941] leading-relaxed">
+                            Jadwal shift berlaku untuk seluruh aktor operasional. Admin tidak dibatasi jam shift.
+                        </p>
+
+                        <div class="space-y-2">
+                            @foreach (\App\Services\ShiftService::ROLES as $label)
+                                <div class="flex items-center justify-between rounded-lg bg-white border border-[#C0C9BF]/20 px-3 py-2 text-xs">
+                                    <span class="font-bold text-[#1C1C18]">{{ $label }}</span>
+                                    <span class="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#00341A]">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-[#00341A]"></span>
+                                        TERPANTAU
+                                    </span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/30 space-y-3">
+                        <h4 class="text-xs font-bold text-[#707971] uppercase tracking-wider">RIWAYAT LOGIN STAF</h4>
+                        <p class="text-xs text-[#404941] leading-relaxed">
+                            Durasi shift dihitung sejak staf login sampai logout. Pantau riwayat pelayan, dapur, bar, dan kasir pada halaman khusus.
+                        </p>
+                        <a href="{{ route('admin.riwayat-shift') }}"
+                           class="inline-flex items-center justify-center gap-2 w-full rounded-xl bg-[#0B4D2B] hover:bg-[#08381F] text-white text-xs font-bold px-4 py-2.5 transition active:scale-95">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Buka Riwayat Shift
+                        </a>
+                    </div>
+
+                    <div class="bg-[#FDF5E6] rounded-2xl p-5 border border-[#E0B24E]/30">
+                        <div class="flex items-start gap-2.5 text-xs text-[#7A5C0F] leading-relaxed">
+                            <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Pembatasan nonaktif secara default agar setup awal tidak terkunci. Aktifkan setelah jam shift dipastikan benar.</span>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
             <template x-if="activeTab === 'backup'">
                 <div class="space-y-6">
 
@@ -1285,6 +1448,8 @@
             backupFrequency: @js($profil['backup_frequency'] ?? 'harian'),
             backupRetention: Number(@js($profil['backup_retention'] ?? 7)),
             backupCloud: false,
+            shiftRestriction: @js($shiftRestriction),
+            shiftSlots: @js($shiftSlots),
             profil: @js($profil),
             diagnostik: @js($diagnostik),
             midtrans: @js($midtrans),
@@ -1335,7 +1500,7 @@
             },
 
             payload() {
-                return {
+                const data = {
                     nama_resto: this.restoName,
                     alamat_resto: this.restoAddress,
                     telepon_resto: this.restoPhone,
@@ -1362,7 +1527,18 @@
                     backup_retention: Number(this.backupRetention),
                     backup_cloud: this.backupCloud,
                     midtrans_auto_cancel: this.autoCancelExpired,
+                    shift_restriction_enabled: this.shiftRestriction,
                 };
+
+                (this.shiftSlots || []).forEach((shift, index) => {
+                    const nomor = index + 1;
+                    data['shift_' + nomor + '_nama'] = shift.nama;
+                    data['shift_' + nomor + '_mulai'] = shift.mulai;
+                    data['shift_' + nomor + '_selesai'] = shift.selesai;
+                    data['shift_' + nomor + '_aktif'] = shift.aktif;
+                });
+
+                return data;
             },
 
             async simpan() {

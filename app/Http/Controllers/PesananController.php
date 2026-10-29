@@ -155,6 +155,7 @@ class PesananController extends Controller
             $dasar['receiptItems'] = $receiptItems;
             $dasar['receiptOrders'] = $receiptOrders->map(fn ($pesanan) => [
                 'kode_pesanan' => $pesanan->kode_pesanan,
+                'nama_pelanggan' => $pesanan->nama_pelanggan ?: 'Tamu',
                 'waktu_pesan' => $pesanan->waktu_pesan?->timezone('Asia/Jakarta')->format('H:i'),
                 'total_bayar' => (float) $pesanan->total_bayar,
                 'metode_pembayaran' => $pesanan->metode_pembayaran,

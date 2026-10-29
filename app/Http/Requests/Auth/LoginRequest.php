@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Services\ShiftService;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -43,6 +44,13 @@ class LoginRequest extends FormRequest
             Auth::logout();
             throw ValidationException::withMessages([
                 'email' => 'Akun tidak aktif. Silakan hubungi administrator.',
+            ]);
+        }
+
+        if ($user && ! ShiftService::bolehAktif($user)) {
+            Auth::logout();
+            throw ValidationException::withMessages([
+                'email' => 'Akses ditolak: saat ini di luar jam shift operasional yang ditentukan admin.',
             ]);
         }
 

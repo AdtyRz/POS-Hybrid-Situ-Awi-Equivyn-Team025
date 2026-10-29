@@ -4,6 +4,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="realtime-version-url" content="{{ route('realtime.version') }}">
+    <meta name="realtime-version" content="{{ \App\Support\Realtime::version() }}">
     <title>Buka Menu {{ $meja->kode_meja }} - Saung Situ Awi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>

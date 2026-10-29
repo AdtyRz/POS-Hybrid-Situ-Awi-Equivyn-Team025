@@ -417,7 +417,30 @@ class EMenuController extends Controller
             return $this->kunciRedirect($pesanan->meja, 'Sesi meja sudah berakhir. Masukkan kembali kode saung untuk membuka pesanan.');
         }
 
+        if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
+            return redirect()->route('emenu.status', $pesanan->kode_pesanan);
+        }
+
         return view('emenu.bayar-tunai', compact('pesanan'));
+    }
+
+    public function tunaiStatus(Request $request, string $kode_pesanan): JsonResponse
+    {
+        $pesanan = Pesanan::with('meja')->where('kode_pesanan', $kode_pesanan)->firstOrFail();
+
+        if (! $this->pesananBolehDiakses($request, $pesanan)) {
+            return response()->json([
+                'lunas' => false,
+                'message' => 'Sesi meja sudah berakhir. Silakan buka kembali pesanan dari meja.',
+            ], 403);
+        }
+
+        return response()->json([
+            'lunas' => $pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR,
+            'status_pesanan' => $pesanan->status_pesanan,
+            'status_pembayaran' => $pesanan->status_pembayaran,
+            'redirect' => route('emenu.status', $pesanan->kode_pesanan),
+        ]);
     }
 
     public function panggil(Request $request, string $meja): RedirectResponse

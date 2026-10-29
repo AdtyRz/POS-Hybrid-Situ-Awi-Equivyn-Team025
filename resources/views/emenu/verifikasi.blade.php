@@ -4,6 +4,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="realtime-version-url" content="{{ route('realtime.version') }}">
+    <meta name="realtime-version" content="{{ \App\Support\Realtime::version() }}">
     <title>Verifikasi Pembayaran QRIS - Saung Situ Awi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -99,6 +101,8 @@
                 <div class="mt-6 p-4 bg-cream-50 rounded-xl border border-stone-100">
                     <p class="font-bold text-forest-900">Kode Meja: <span
                             class="font-mono">{{ $pesanan->meja->kode_meja }}</span></p>
+                    <p class="text-stone-500 text-sm mt-1">Pemesan: <span
+                            class="font-bold text-stone-700">{{ $pesanan->nama_pelanggan ?: 'Tamu' }}</span></p>
                     <p class="text-stone-500 text-sm mt-1">Total:
                         Rp{{ number_format($pesanan->total_bayar, 0, ',', '.') }}</p>
                 </div>

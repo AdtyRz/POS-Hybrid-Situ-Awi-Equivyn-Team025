@@ -373,7 +373,7 @@
                                                         <span class="font-mono font-bold text-[#00341A]" x-text="formatRupiah(order.total)"></span>
                                                     </div>
                                                     <div class="flex items-center justify-between gap-2 mt-0.5">
-                                                        <span class="font-mono text-[9px] text-[#6B6A63] truncate" x-text="order.kodePesanan"></span>
+                                                        <span class="text-[9px] text-[#6B6A63] truncate" x-text="order.customer"></span>
                                                         <span class="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-extrabold"
                                                               :class="order.status === 'paid' ? 'bg-[#ECFDF5] text-[#065F46]' : 'bg-[#FEF2F2] text-[#991B1B]'"
                                                               x-text="order.status === 'paid' ? 'Lunas' : 'Belum bayar'"></span>
@@ -706,7 +706,7 @@
                                                     <span class="text-[10px] font-extrabold text-[#00341A]" x-text="'Order ' + (receiptIndex + 1) + ' • ' + (order.waktu_pesan || '-')"></span>
                                                     <span class="font-mono text-[10px] font-bold text-[#00341A]" x-text="formatRupiah(order.total_bayar)"></span>
                                                 </div>
-                                                <div class="font-mono text-[9px] text-[#6B6A63] break-all mt-0.5" x-text="order.kode_pesanan"></div>
+                                                <div class="text-[9px] text-[#6B6A63] mt-0.5" x-text="'Pemesan: ' + (order.nama_pelanggan || 'Tamu')"></div>
 
                                                 <div class="mt-1.5 border-t border-dashed border-[#C8C2B3]/70 pt-1.5 space-y-0.5">
                                                     <template x-for="(item, itemIndex) in order.items" :key="order.kode_pesanan + '-' + itemIndex">
@@ -1318,7 +1318,7 @@
                     }, 0);
 
                     const total = orders.reduce((sum, order) => sum + Number(order.total_bayar || 0), 0);
-                    const kodePesanan = orders.map(order => order.kode_pesanan).filter(Boolean).join(' / ');
+                    const namaPemesan = [...new Set(orders.map(order => order.nama_pelanggan || 'Tamu'))].join(', ');
                     const waktuList = orders.map(order => order.waktu_pesan).filter(Boolean);
                     const waktu = waktuList.length > 1 && waktuList[0] !== waktuList[waktuList.length - 1]
                         ? waktuList[0] + ' s/d ' + waktuList[waktuList.length - 1]
@@ -1333,7 +1333,7 @@
                         this.restoAddress,
                         'Telp: ' + this.restoPhone,
                         '--------------------------------',
-                        'No: ' + (kodePesanan || '-'),
+                        'Pemesan: ' + (namaPemesan || 'Tamu'),
                         'Meja: ' + (saung.name || saung.id),
                         'Kasir: ' + this.cashierName,
                         'Pesanan: ' + orders.length + ' order',

@@ -419,7 +419,7 @@
                 <div class="bg-[#F6F3EC] rounded-xl p-3 space-y-2">
                     <div class="flex items-center justify-between">
                         <div class="flex flex-col">
-                            <span class="font-mono font-bold text-[11px] text-[#404941]" x-text="'#' + order.kode_pesanan"></span>
+                            <span class="font-mono font-bold text-[11px] text-[#404941]" x-text="order.waktu_label || 'Pesanan'"></span>
                             <span class="text-[10px] text-[#7A5900] font-semibold" x-text="order.customer + ' • ' + order.status_label"></span>
                         </div>
                         <span class="font-bold text-xs text-[#00341A]" x-text="order.total_format"></span>

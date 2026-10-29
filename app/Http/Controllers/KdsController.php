@@ -7,6 +7,7 @@ use App\Events\StatusPesananBerubah;
 use App\Models\DetailPesanan;
 use App\Models\LogPanggilPelayan;
 use App\Models\Pesanan;
+use App\Services\ShiftService;
 use App\Support\Realtime;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -136,12 +137,13 @@ class KdsController extends Controller
             : 0;
 
         $rataRataMasakTeks = $rataRataMasakMenit > 0 ? $rataRataMasakMenit . ' Mnt' : '— Mnt';
+        $labelShift = ShiftService::ringkasan()['label'];
 
         return view('KDS.index', compact(
             'target', 'judul', 'subJudul', 'lencana', 'tampilan',
             'kataMulai', 'kataSiap', 'kataRunner',
             'stasiunNama', 'stasiunSub', 'stasiunUtama', 'stasiun',
-            'tiketJson', 'selesaiHariIni', 'rataRataMasakTeks'
+            'tiketJson', 'selesaiHariIni', 'rataRataMasakTeks', 'labelShift'
         ));
     }
 

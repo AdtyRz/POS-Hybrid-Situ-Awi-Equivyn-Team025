@@ -128,7 +128,6 @@
                                         <span>{{ $order['time_ago'] }}</span>
                                     </div>
                                 </div>
-                                <span class="text-[11px] font-mono font-bold text-[#404941] truncate">#{{ $order['kode_pesanan'] }}</span>
                             </div>
 
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-[#E5E2DB] text-[#00341A] text-xs font-bold tracking-[0.24px] flex-shrink-0">
@@ -209,7 +208,7 @@
                         </div>
                         <div class="flex flex-col">
                             <div class="flex items-center gap-1.5 leading-4">
-                                <span class="font-bold text-xs text-[#1C1C18] tracking-[0.24px]">#{{ $order['kode_pesanan'] }}</span>
+                                <span class="font-bold text-xs text-[#1C1C18] tracking-[0.24px]">Pemesan: {{ $order['customer'] }}</span>
                                 <span class="w-1.5 h-1.5 rounded-full bg-[#7A5900]"></span>
                             </div>
                             <span class="font-semibold text-xs text-[#00341A] leading-4 mt-0.5">
@@ -282,7 +281,7 @@
                     <span class="w-6 h-6 rounded-full bg-[#0B4D2B] text-white text-xs font-bold flex items-center justify-center">1</span>
                     <div>
                         <p class="font-bold text-xs text-[#1C1C18]" x-text="'Ambil di ' + (denahOrder?.sumber_label ?? '-')">Ambil di Pass</p>
-                        <p class="text-[11px] text-[#404941]" x-text="denahOrder ? (denahOrder.customer + ' • #' + denahOrder.kode_pesanan) : '-'">-</p>
+                        <p class="text-[11px] text-[#404941]" x-text="denahOrder ? (denahOrder.customer + ' • ' + denahOrder.meja.kode_meja) : '-'">-</p>
                     </div>
                 </div>
                 <div class="ml-3 pl-4 border-l-2 border-dashed border-[#7A5900] py-1 text-[11px] text-[#7A5900] font-medium">

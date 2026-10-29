@@ -64,33 +64,32 @@
                     </svg>
                 </div>
                 <h2 class="font-display font-bold text-2xl text-forest-900">Bayar di Kasir</h2>
-                <p class="text-stone-500 text-sm mt-2">Tunjukkan kode ini ke kasir untuk membayar pesanan Anda</p>
+                <p class="text-stone-500 text-sm mt-2">Sebutkan kode meja dan nama pemesan kepada kasir</p>
             </div>
 
             <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 mb-6">
                 <div class="bg-cream-50 rounded-xl p-4 mb-4 border border-gold-200">
-                    <p class="font-bold text-forest-900 text-lg mb-2">Kode Bayar Anda</p>
-                    <div id="kodePembayaran"
-                        class="font-mono text-3xl font-bold text-forest-900 tracking-wider break-all">{{ $pesanan->kode_pesanan }}</div>
-                    <p class="text-stone-500 text-xs mt-2">Kode ini sama dengan kode pesanan yang tampil di kasir</p>
+                    <p class="font-bold text-forest-900 text-lg mb-2">Kode Meja Anda</p>
+                    <div class="font-mono text-4xl font-bold text-forest-900 tracking-[0.18em]">{{ $pesanan->meja->kode_meja }}</div>
+                    <p class="text-stone-600 text-sm mt-2">Pemesan: <span class="font-bold text-forest-900">{{ $pesanan->nama_pelanggan ?: 'Tamu' }}</span></p>
+                    <p class="text-stone-500 text-xs mt-2">Cukup sebutkan kode meja dan nama pemesan, tidak perlu menunjukkan kode pesanan.</p>
                 </div>
 
                 <div class="space-y-3 text-sm text-stone-600">
                     <div class="flex items-center gap-3">
                         <span
                             class="w-8 h-8 rounded-full bg-forest-100 text-forest-600 flex items-center justify-center font-bold">1</span>
-                        <span>Tunjukkan kode bayar <span
-                                class="font-bold font-mono">{{ $pesanan->kode_pesanan }}</span> ke kasir</span>
+                        <span>Sebutkan <span class="font-bold font-mono">{{ $pesanan->meja->kode_meja }}</span> dan nama <span class="font-bold">{{ $pesanan->nama_pelanggan ?: 'pemesan' }}</span> ke kasir</span>
                     </div>
                     <div class="flex items-center gap-3">
                         <span
                             class="w-8 h-8 rounded-full bg-forest-100 text-forest-600 flex items-center justify-center font-bold">2</span>
-                        <span>Kasir akan mencari dan memverifikasi pesanan dengan kode tersebut</span>
+                        <span>Kasir akan mencari pesanan berdasarkan kode meja dan nama pemesan</span>
                     </div>
                     <div class="flex items-center gap-3">
                         <span
                             class="w-8 h-8 rounded-full bg-forest-100 text-forest-600 flex items-center justify-center font-bold">3</span>
-                        <span>Setelah bayar, pesanan akan diproses di dapur/bar</span>
+                        <span>Halaman ini otomatis diperbarui setelah pembayaran dikonfirmasi kasir</span>
                     </div>
                 </div>
 
@@ -99,10 +98,10 @@
                     <p class="font-display font-bold text-3xl text-forest-600">
                         Rp{{ number_format($pesanan->total_bayar, 0, ',', '.') }}</p>
                     <p class="text-stone-500 text-xs mt-1">Total pembayaran</p>
-                    @if ($pesanan->nama_pelanggan)
-                        <p class="text-stone-500 text-xs mt-2">Pemesan: <span
-                                class="font-bold text-stone-700">{{ $pesanan->nama_pelanggan }}</span></p>
-                    @endif
+                    <div id="statusTunai" class="mt-3 inline-flex items-center gap-2 rounded-full bg-gold-50 px-3 py-1.5 text-xs font-bold text-[#7A5900]">
+                        <span class="h-2 w-2 rounded-full bg-gold-500 animate-pulse"></span>
+                        Menunggu konfirmasi kasir
+                    </div>
                 </div>
             </div>
 
@@ -147,20 +146,52 @@
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const statusUrl = @json(route('emenu.bayar-tunai.status', $pesanan->kode_pesanan));
+            const statusElement = document.getElementById('statusTunai');
+            let selesai = false;
 
-        document.addEventListener('DOMContentLoaded', function() {
-                    const codeElement = document.getElementById('kodePembayaran');
-                    if (codeElement) {
-                        codeElement.style.cursor = 'pointer';
-                        codeElement.title = 'Klik untuk menyalin';
-                        codeElement.addEventListener('click', function() {
-                            navigator.clipboard.writeText(this.textContent.trim());
-                            const original = this.textContent;
-                            this.textContent = 'Tersalin!';
-                            setTimeout(() => this.textContent = original, 2000);
-                        });
-                    }
+            async function periksaStatus() {
+                if (selesai || document.hidden) {
+                    return;
                 }
+
+                try {
+                    const response = await fetch(statusUrl, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        cache: 'no-store',
+                    });
+
+                    if (!response.ok) {
+                        return;
+                    }
+
+                    const data = await response.json();
+
+                    if (data.lunas) {
+                        selesai = true;
+                        statusElement.className = 'mt-3 inline-flex items-center gap-2 rounded-full bg-forest-100 px-3 py-1.5 text-xs font-bold text-forest-900';
+                        statusElement.innerHTML = '<span class="h-2 w-2 rounded-full bg-forest-600"></span>Pembayaran lunas, membuka status pesanan...';
+                        window.setTimeout(function () {
+                            window.location.replace(data.redirect);
+                        }, 800);
+                    }
+                } catch (error) {
+                    return;
+                }
+            }
+
+            window.setInterval(periksaStatus, 4000);
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) {
+                    periksaStatus();
+                }
+            });
+            periksaStatus();
+        });
     </script>
 </body>
 

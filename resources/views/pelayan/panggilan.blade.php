@@ -59,7 +59,7 @@
                     @foreach ($siapAntar as $p)
                         <div class="flex items-center justify-between p-3 rounded-xl bg-[#D9EBE0] border border-[#0B4D2B]/20">
                             <div>
-                                <p class="font-bold text-[#0B4D2B]">{{ $p->kode_pesanan }}</p>
+                                <p class="font-bold text-[#0B4D2B]">Pemesan: {{ $p->nama_pelanggan ?: 'Tamu' }}</p>
                                 <p class="text-[#404941] text-xs">Meja {{ $p->meja->kode_meja }} • {{ $p->detailPesanan->sum('jumlah') }} item</p>
                             </div>
                             <form method="POST" action="{{ route('pesanan.status', $p->kode_pesanan) }}" class="shrink-0">

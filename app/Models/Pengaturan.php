@@ -39,6 +39,19 @@ class Pengaturan extends Model
         'backup_retention' => 7,
         'backup_cloud' => '0',
         'midtrans_auto_cancel' => '0',
+        'shift_restriction_enabled' => '0',
+        'shift_1_nama' => 'Shift Pagi',
+        'shift_1_mulai' => '08:00',
+        'shift_1_selesai' => '12:00',
+        'shift_1_aktif' => '1',
+        'shift_2_nama' => 'Shift Siang',
+        'shift_2_mulai' => '12:00',
+        'shift_2_selesai' => '18:00',
+        'shift_2_aktif' => '1',
+        'shift_3_nama' => 'Shift Malam',
+        'shift_3_mulai' => '18:00',
+        'shift_3_selesai' => '23:59',
+        'shift_3_aktif' => '1',
     ];
 
     public static function nilai(string $kunci, mixed $default = null): mixed

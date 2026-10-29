@@ -4,7 +4,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Pelacakan {{ $pesanan->kode_pesanan }} - Saung Situ Awi</title>
+    <meta name="realtime-version-url" content="{{ route('realtime.version') }}">
+    <meta name="realtime-version" content="{{ \App\Support\Realtime::version() }}">
+    <title>Status Meja {{ $pesanan->meja->kode_meja }} - Saung Situ Awi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -74,11 +76,12 @@
             <p class="text-[11px] font-bold tracking-widest text-[#8a6d1f]">LIVE TRACKER & PAYMENT</p>
             <div class="flex items-start justify-between gap-3 mt-1">
                 <div>
-                    <p class="font-bold text-lg leading-snug">Order #{{ $pesanan->kode_pesanan }}</p>
-                    <p class="text-stone-500 text-xs mt-0.5">{{ $pesanan->meja->kode_meja }} • Dine-in</p>
+                    <p class="font-bold text-lg leading-snug">Meja {{ $pesanan->meja->kode_meja }}</p>
                     @if ($pesanan->nama_pelanggan)
-                        <p class="text-stone-500 text-xs mt-1">Pemesan: <span
+                        <p class="text-stone-500 text-xs mt-0.5">Pemesan: <span
                                 class="font-bold text-stone-700">{{ $pesanan->nama_pelanggan }}</span></p>
+                    @else
+                        <p class="text-stone-500 text-xs mt-0.5">Dine-in</p>
                     @endif
                 </div>
                 <div class="text-right shrink-0">
@@ -256,16 +259,19 @@
                             lagi.</p>
                     </div>
                 @endif
-                <p class="text-stone-500 text-xs mt-3">Pembayaran QRIS diproses otomatis melalui Midtrans.</p>
+                @if ($pesanan->status_pembayaran !== 'sudah_bayar')
+                    <p class="text-stone-500 text-xs mt-3">Pembayaran QRIS diproses otomatis melalui Midtrans.</p>
+                @endif
             </div>
-        @else
+        @elseif ($pesanan->status_pembayaran !== 'sudah_bayar' && $pesanan->status_pesanan !== 'dibatalkan')
             <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 mt-3">
                 <h2 class="font-bold">Pembayaran Tunai</h2>
                 <div class="bg-cream-50 rounded-2xl p-4 mt-3 text-center">
                     <p class="font-extrabold text-2xl text-forest-900">
                         Rp{{ number_format($pesanan->total_bayar, 0, ',', '.') }}</p>
-                    <p class="text-stone-500 text-xs mt-1">Sebutkan kode <span
-                            class="font-mono font-bold text-stone-700">{{ $pesanan->kode_pesanan }}</span> di kasir
+                    <p class="text-stone-500 text-xs mt-1">Sebutkan kode meja <span
+                            class="font-mono font-bold text-stone-700">{{ $pesanan->meja->kode_meja }}</span> dan nama
+                        <span class="font-bold text-stone-700">{{ $pesanan->nama_pelanggan ?: 'pemesan' }}</span> di kasir
                         utama.</p>
                 </div>
             </div>

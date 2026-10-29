@@ -25,9 +25,12 @@
         $selesaiShift->addDay();
     }
 
-    $durasiShift = max(1, (int) $mulaiShift->diffInMinutes($selesaiShift, false));
-    $berjalanShift = max(0, min($durasiShift, (int) $mulaiShift->diffInMinutes($sekarang, false)));
-    $persentaseShift = (int) round(($berjalanShift / $durasiShift) * 100);
+    $adaShiftAktif = ($shift['nama'] ?? 'Luar Shift') !== 'Luar Shift';
+    $durasiShift = $adaShiftAktif ? max(1, (int) $mulaiShift->diffInMinutes($selesaiShift, false)) : 1;
+    $berjalanShift = $adaShiftAktif
+        ? max(0, min($durasiShift, (int) $mulaiShift->diffInMinutes($sekarang, false)))
+        : 0;
+    $persentaseShift = $adaShiftAktif ? (int) round(($berjalanShift / $durasiShift) * 100) : 0;
 @endphp
 
 <div x-data="pelayanTabShift()" class="relative flex flex-col min-h-screen bg-[#FCF9F2]" x-init="init()">
@@ -216,20 +219,24 @@
                     </svg>
                     <h3 class="font-bold text-base text-[#1C1C18] leading-6">Progres Shift</h3>
                 </div>
-                <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px]">{{ $persentaseShift }}%</span>
+                <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px]">{{ $adaShiftAktif ? $persentaseShift . '%' : '---' }}</span>
             </div>
 
-            <div class="space-y-1">
-                <div class="w-full bg-[#F0EEE7] h-2 rounded-full overflow-hidden">
-                    <div class="bg-[#0B4D2B] h-full rounded-full" style="width: {{ $persentaseShift }}%"></div>
+            @if ($adaShiftAktif)
+                <div class="space-y-1">
+                    <div class="w-full bg-[#F0EEE7] h-2 rounded-full overflow-hidden">
+                        <div class="bg-[#0B4D2B] h-full rounded-full" style="width: {{ $persentaseShift }}%"></div>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px] font-semibold text-[#404941] tracking-[0.4px]">
+                        <span>{{ $shift['mulai'] }} WIB</span>
+                        <span>{{ $shift['selesai'] }} WIB</span>
+                    </div>
                 </div>
-                <div class="flex items-center justify-between text-[10px] font-semibold text-[#404941] tracking-[0.4px]">
-                    <span>{{ $shift['mulai'] }} WIB</span>
-                    <span>{{ $shift['selesai'] }} WIB</span>
-                </div>
-            </div>
 
-            <p class="text-xs text-[#404941] font-normal leading-4">{{ $shift['sisa_label'] }} untuk {{ $shift['nama'] }}. Data di bawah mengikuti kondisi database saat halaman dimuat.</p>
+                <p class="text-xs text-[#404941] font-normal leading-4">{{ $shift['sisa_label'] }} untuk {{ $shift['nama'] }}. Data di bawah mengikuti kondisi database saat halaman dimuat.</p>
+            @else
+                <p class="text-xs text-[#404941] font-normal leading-4">Tidak ada shift aktif saat ini. Akses staf di luar jadwal hanya dapat dibuka jika pembatasan shift dinonaktifkan admin.</p>
+            @endif
         </section>
 
         <section class="bg-white rounded-xl p-4 shadow-[0_2px_12px_rgba(43,42,38,0.05)] border border-[#F0EEE7] space-y-2.5">
