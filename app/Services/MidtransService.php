@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Pengaturan;
 use App\Models\Pesanan;
 use Midtrans\Config;
 use Midtrans\CoreApi;
@@ -92,6 +93,10 @@ class MidtransService
                 'customer_details' => [
                     'first_name' => $pesanan->meja->kode_meja ?? 'Tamu',
                 ],
+                'expiry' => [
+                    'unit' => 'minutes',
+                    'duration' => $this->qrisExpiryMinutes(),
+                ],
             ];
 
             $response = CoreApi::charge($params);
@@ -110,6 +115,11 @@ class MidtransService
             report($e);
             return null;
         }
+    }
+
+    public function qrisExpiryMinutes(): int
+    {
+        return max(5, min(60, (int) Pengaturan::nilai('qris_expiry_minutes', 5)));
     }
 
     private function buildQrisUrl(?string $transactionId): ?string

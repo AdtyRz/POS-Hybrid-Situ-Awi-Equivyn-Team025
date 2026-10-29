@@ -41,6 +41,61 @@ class SesiMejaTest extends TestCase
             ->assertSee('Akses E-Menu');
     }
 
+    public function test_beranda_memakai_form_kode_kunci_login(): void
+    {
+        $this->get(route('emenu.index'))
+            ->assertOk()
+            ->assertSee('kode kunci login')
+            ->assertSee('action="' . route('emenu.masuk') . '"', false)
+            ->assertSee('name="kode_unik"', false)
+            ->assertDontSee('atau ketik kode meja');
+    }
+
+    public function test_kode_kunci_beranda_langsung_membuka_meja(): void
+    {
+        $meja = $this->siapkanMeja();
+        $sesi = SesiMeja::aktifUntuk($meja);
+
+        $this->post(route('emenu.masuk'), ['kode_unik' => $sesi->kode_unik])
+            ->assertRedirect(route('emenu.meja', $meja->kode_meja))
+            ->assertSessionHas('sesi_meja_' . $meja->id, $sesi->id);
+
+        $this->withSession(['sesi_meja_' . $meja->id => $sesi->id])
+            ->get(route('emenu.meja', $meja->kode_meja))
+            ->assertOk()
+            ->assertSee($meja->kode_meja);
+    }
+
+    public function test_kode_kunci_beranda_salah_ditolak(): void
+    {
+        $meja = $this->siapkanMeja();
+        $sesi = SesiMeja::aktifUntuk($meja);
+        $panjang = strlen($sesi->kode_unik);
+        $salah = str_pad(
+            (string) (((int) $sesi->kode_unik + 1) % (10 ** $panjang)),
+            $panjang,
+            '0',
+            STR_PAD_LEFT
+        );
+
+        $this->post(route('emenu.masuk'), ['kode_unik' => $salah])
+            ->assertRedirect(route('emenu.index'))
+            ->assertSessionHasErrors('kode_unik')
+            ->assertSessionMissing('sesi_meja_' . $meja->id);
+    }
+
+    public function test_kode_kunci_dari_sesi_lama_ditolak(): void
+    {
+        $meja = $this->siapkanMeja();
+        $lama = SesiMeja::aktifUntuk($meja);
+        SesiMeja::putuskanSesi($meja);
+
+        $this->post(route('emenu.masuk'), ['kode_unik' => $lama->kode_unik])
+            ->assertRedirect(route('emenu.index'))
+            ->assertSessionHasErrors('kode_unik')
+            ->assertSessionMissing('sesi_meja_' . $meja->id);
+    }
+
     public function test_kode_unik_salah_ditolak(): void
     {
         $meja = $this->siapkanMeja();
@@ -108,6 +163,9 @@ class SesiMejaTest extends TestCase
         $this->postJson(route('emenu.buka', $meja->id), ['kode_unik' => $sesi->kode_unik])
             ->assertOk()
             ->assertJsonPath('success', true);
+
+        $this->post(route('emenu.masuk'), ['kode_unik' => $sesi->kode_unik])
+            ->assertRedirect(route('emenu.meja', $meja->kode_meja));
     }
 
     public function test_putuskan_sesi_ditolak_bila_masih_ada_pesanan_belum_dibayar(): void

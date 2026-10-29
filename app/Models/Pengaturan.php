@@ -20,7 +20,7 @@ class Pengaturan extends Model
         'qris_expiry_minutes' => 5,
         'buzzer_duration' => 3,
         'anti_spam_cooldown' => 5,
-        'lcd_message' => 'Memanggil Pelayan...',
+        'lcd_message' => 'Panggil Pelayan',
         'encryption_level' => '4 Digit',
         'session_auto_close' => '0',
         'session_expiry_minutes' => 120,

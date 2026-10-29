@@ -69,33 +69,27 @@
 
             <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 mb-6">
                 <div class="bg-cream-50 rounded-xl p-4 mb-4 border border-gold-200">
-                    <p class="font-bold text-forest-900 text-lg mb-2">Kode Pembayaran Anda</p>
-                    <div class="font-mono text-3xl font-bold text-forest-900 tracking-wider break-all"
-                        x-text="kodePembayaran">{{ $pesanan->kode_pembayaran }}</div>
-                    <p class="text-stone-500 text-xs mt-2">Tunjukkan kode ini ke kasir untuk membayar</p>
+                    <p class="font-bold text-forest-900 text-lg mb-2">Kode Bayar Anda</p>
+                    <div id="kodePembayaran"
+                        class="font-mono text-3xl font-bold text-forest-900 tracking-wider break-all">{{ $pesanan->kode_pesanan }}</div>
+                    <p class="text-stone-500 text-xs mt-2">Kode ini sama dengan kode pesanan yang tampil di kasir</p>
                 </div>
 
                 <div class="space-y-3 text-sm text-stone-600">
                     <div class="flex items-center gap-3">
                         <span
                             class="w-8 h-8 rounded-full bg-forest-100 text-forest-600 flex items-center justify-center font-bold">1</span>
-                        <span>Beritahu kasir bahwa Anda ingin bayar pesanan <span
-                                class="font-bold">{{ $pesanan->kode_pesanan }}</span></span>
+                        <span>Tunjukkan kode bayar <span
+                                class="font-bold font-mono">{{ $pesanan->kode_pesanan }}</span> ke kasir</span>
                     </div>
                     <div class="flex items-center gap-3">
                         <span
                             class="w-8 h-8 rounded-full bg-forest-100 text-forest-600 flex items-center justify-center font-bold">2</span>
-                        <span>Tunjukkan kode pembayaran <span
-                                class="font-bold font-mono">{{ $pesanan->kode_pembayaran }}</span> ke kasir</span>
+                        <span>Kasir akan mencari dan memverifikasi pesanan dengan kode tersebut</span>
                     </div>
                     <div class="flex items-center gap-3">
                         <span
                             class="w-8 h-8 rounded-full bg-forest-100 text-forest-600 flex items-center justify-center font-bold">3</span>
-                        <span>Kasir akan memverifikasi dan memproses pembayaran</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span
-                            class="w-8 h-8 rounded-full bg-forest-100 text-forest-600 flex items-center justify-center font-bold">4</span>
                         <span>Setelah bayar, pesanan akan diproses di dapur/bar</span>
                     </div>
                 </div>
@@ -155,7 +149,7 @@
     <script>
 
         document.addEventListener('DOMContentLoaded', function() {
-                    const codeElement = document.querySelector('[x-text="kodePembayaran"]');
+                    const codeElement = document.getElementById('kodePembayaran');
                     if (codeElement) {
                         codeElement.style.cursor = 'pointer';
                         codeElement.title = 'Klik untuk menyalin';

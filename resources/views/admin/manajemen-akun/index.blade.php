@@ -628,16 +628,15 @@
                     <span>ID Akun: <strong class="font-mono text-[#1C1C18]" x-text="selectedStaff?.id || '-'"></strong></span>
                     <span>Terakhir aktif: <strong class="text-[#1C1C18]" x-text="formatWib(selectedStaff?.lastActiveTs)"></strong></span>
                 </div>
-                <form method="POST" :action="'{{ url('/admin/akun') }}/' + (selectedStaff?.id || '') + '/status'" @submit.prevent="mintaKonfirmasiStatus($event)">
+                <form method="POST" :action="'{{ url('/admin/akun') }}/' + (selectedStaff?.id || '')" @submit.prevent="mintaKonfirmasiHapus($event)">
                     @csrf
-                    @method('PATCH')
+                    @method('DELETE')
                     <button
                         type="submit"
                         :disabled="selectedStaff?.isSelf || selectedStaff?.isLastAdmin"
-                        class="px-3 py-2 rounded-lg font-bold text-[10px] transition-all"
-                        :class="selectedStaff?.isActive ? 'bg-[#FFDAD6] text-[#93000A] hover:bg-[#ffc9c4]' : 'bg-[#B1F1C2]/60 text-[#0B4D2B] hover:bg-[#B1F1C2]'"
-                        :class="{ 'opacity-50 cursor-not-allowed': selectedStaff?.isSelf || selectedStaff?.isLastAdmin }"
-                        x-text="selectedStaff?.isActive ? 'Nonaktifkan Akun' : 'Aktifkan Akun'">
+                        class="px-3 py-2 rounded-lg font-bold text-[10px] transition-all bg-[#FFDAD6] text-[#93000A] hover:bg-[#ffc9c4]"
+                        :class="{ 'opacity-50 cursor-not-allowed': selectedStaff?.isSelf || selectedStaff?.isLastAdmin }">
+                        Hapus Akun
                     </button>
                 </form>
             </div>
@@ -689,7 +688,7 @@
 
     <div
         x-cloak
-        x-show="statusConfirmOpen"
+        x-show="deleteConfirmOpen"
         x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100"
@@ -697,29 +696,29 @@
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-        <div class="w-full max-w-md bg-white rounded-2xl border border-gray-200 shadow-2xl overflow-hidden" @click.outside="statusConfirmOpen = false">
+        <div class="w-full max-w-md bg-white rounded-2xl border border-gray-200 shadow-2xl overflow-hidden" @click.outside="deleteConfirmOpen = false">
             <div class="px-5 py-4 border-b border-gray-100 flex items-start gap-3">
-                <div class="w-10 h-10 rounded-xl bg-[#FFF1CC] text-[#7A5900] flex items-center justify-center shrink-0">
+                <div class="w-10 h-10 rounded-xl bg-[#FFDAD6] text-[#93000A] flex items-center justify-center shrink-0">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16" />
                     </svg>
                 </div>
                 <div>
-                    <h3 class="font-display font-bold text-lg text-[#00341A]">Ubah Status Akun</h3>
+                    <h3 class="font-display font-bold text-lg text-[#00341A]">Hapus Akun?</h3>
                     <p class="text-xs text-[#707971] mt-1 leading-relaxed">
-                        Ubah status akun <strong class="text-[#1C1C18]" x-text="selectedStaff?.name || 'staf ini'"></strong>?
-                        Staf yang dinonaktifkan tidak dapat login sampai akun diaktifkan kembali.
+                        Akun <strong class="text-[#1C1C18]" x-text="selectedStaff?.name || 'staf ini'"></strong> akan dihapus permanen beserta sesi login yang aktif.
+                        Tindakan ini tidak dapat dibatalkan.
                     </p>
                 </div>
             </div>
             <div class="px-5 py-4 bg-[#FAF7F0] flex items-center justify-end gap-2">
-                <button type="button" @click="statusConfirmOpen = false"
+                <button type="button" @click="deleteConfirmOpen = false"
                         class="px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-700 font-bold text-xs hover:bg-gray-50 transition">
                     Batal
                 </button>
-                <button type="button" @click="jalankanKonfirmasiStatus()"
-                        class="px-4 py-2.5 rounded-xl bg-[#0B4D2B] hover:bg-[#08381F] text-white font-bold text-xs transition">
-                    Ya, Lanjutkan
+                <button type="button" @click="jalankanKonfirmasiHapus()"
+                        class="px-4 py-2.5 rounded-xl bg-[#BA1A1A] hover:bg-[#93000A] text-white font-bold text-xs transition">
+                    Ya, Hapus Akun
                 </button>
             </div>
         </div>
@@ -759,8 +758,8 @@
                 no_telp: '',
                 area: ''
             },
-            statusConfirmOpen: false,
-            pendingStatusForm: null,
+            deleteConfirmOpen: false,
+            pendingDeleteForm: null,
             toast: { show: false, message: '' },
             now: Date.now(),
             staffs: @json($stafJson),
@@ -886,15 +885,15 @@
                 this.detailOpen = false;
             },
 
-            mintaKonfirmasiStatus(event) {
-                this.pendingStatusForm = event.target;
-                this.statusConfirmOpen = true;
+            mintaKonfirmasiHapus(event) {
+                this.pendingDeleteForm = event.target;
+                this.deleteConfirmOpen = true;
             },
 
-            jalankanKonfirmasiStatus() {
-                this.statusConfirmOpen = false;
-                const form = this.pendingStatusForm;
-                this.pendingStatusForm = null;
+            jalankanKonfirmasiHapus() {
+                this.deleteConfirmOpen = false;
+                const form = this.pendingDeleteForm;
+                this.pendingDeleteForm = null;
                 if (form) {
                     HTMLFormElement.prototype.submit.call(form);
                 }

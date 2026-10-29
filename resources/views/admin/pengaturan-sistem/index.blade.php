@@ -725,13 +725,13 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="bg-white rounded-xl p-4 sm:p-5 border border-[#C0C9BF]/20 space-y-2 shadow-2xs">
                         <label class="text-xs font-bold text-[#1C1C18]">Batas Waktu Pembayaran QRIS (Expiry)</label>
-                        <p class="text-xs text-[#707971]">Waktu kedaluwarsa QRIS dinamis setelah di-generate tamu.</p>
+                        <p class="text-xs text-[#707971]">Waktu kedaluwarsa QRIS Midtrans dan hitung mundur di halaman tamu.</p>
                         <div class="flex items-center gap-3 pt-1">
                             <input
                                 type="number"
                                 min="5"
                                 max="60"
-                                x-model="qrisExpiry"
+                                x-model.number="qrisExpiry"
                                 class="w-20 bg-[#FCF9F2] border border-[#C0C9BF]/40 rounded-xl px-3 py-2 text-center font-bold text-[#1C1C18] text-sm focus:outline-hidden focus:border-[#0B4D2B] shadow-inner">
                             <span class="text-xs font-semibold text-[#707971]">Menit (5-60)</span>
                         </div>
@@ -1264,7 +1264,7 @@
             autoCancelExpired: false,
             buzzerDuration: Number(@js($profil['buzzer_duration'] ?? 3)),
             antiSpamCooldown: Number(@js($profil['anti_spam_cooldown'] ?? 5)),
-            lcdMessage: @js($profil['lcd_message'] ?? 'Memanggil Pelayan...'),
+            lcdMessage: @js($profil['lcd_message'] ?? 'Panggil Pelayan'),
             encryptionLevel: @js($profil['encryption_level'] ?? '4 Digit'),
             sessionAutoClose: @js((bool) ($profil['session_auto_close'] ?? false)),
             sessionExpiry: Number(@js($profil['session_expiry_minutes'] ?? 120)),
@@ -1344,7 +1344,7 @@
                     qris_expiry_minutes: Number(this.qrisExpiry),
                     buzzer_duration: Number(this.buzzerDuration),
                     anti_spam_cooldown: Number(this.antiSpamCooldown),
-                    lcd_message: this.lcdMessage,
+                    lcd_message: (this.lcdMessage || '').slice(0, 16),
                     encryption_level: this.encryptionLevel,
                     session_auto_close: this.sessionAutoClose,
                     session_expiry_minutes: Number(this.sessionExpiry),

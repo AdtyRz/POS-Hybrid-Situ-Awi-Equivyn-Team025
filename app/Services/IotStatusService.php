@@ -40,7 +40,7 @@ class IotStatusService
             'message' => 'Berhasil mengambil status meja',
             'konfigurasi' => [
                 'buzzer_duration' => max(1, (int) Pengaturan::nilai('buzzer_duration', 3)),
-                'lcd_message' => (string) Pengaturan::nilai('lcd_message', 'Memanggil Pelayan...'),
+                'lcd_message' => mb_substr((string) Pengaturan::nilai('lcd_message', 'Panggil Pelayan'), 0, 16),
                 'polling_detik' => 30,
             ],
             'data' => $data,

@@ -9,7 +9,8 @@
                     <span>WILUJENG SUMPING</span>
                 </div>
                 <h1 class="text-xl lg:text-2xl font-bold text-forest-900 tracking-tight flex items-center gap-1.5">
-                    Halo, Tamu {{ $meja->kode_meja }}!
+                    <span>Halo,</span>
+                    <span x-text="(namaPelangganInput || '').trim() || namaPelanggan || 'Tamu {{ $meja->kode_meja }}'">{{ $namaPelanggan !== '' ? $namaPelanggan : 'Tamu '.$meja->kode_meja }}</span><span>!</span>
                 </h1>
                 <p class="text-xs text-charcoal-500 leading-relaxed max-w-xs">
                     Nikmati sajian otentik khas bumi Parahyangan di saung tenang tepi danau.
@@ -50,26 +51,6 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-2 shrink-0">
-            @if (! empty($punyaRiwayat))
-            <a href="{{ route('emenu.pelacakan', $meja->id) }}"
-               class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-gold-500 hover:bg-gold-400 text-forest-900 text-[10px] sm:text-xs font-bold transition active:scale-95 whitespace-nowrap"
-               title="Lihat Status Pesanan">
-                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                </svg>
-                <span>Lihat Status Pesanan</span>
-            </a>
-            @endif
-            <button type="button"
-                    @click="checkIotStatus()"
-                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-forest-900/80 hover:bg-forest-900 text-gold-300 hover:text-gold-200 border border-gold-500/30 text-xs font-medium transition active:scale-95 shrink-0">
-                <svg class="w-3 h-3 transition-transform" :class="iotChecking ? 'animate-spin' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                </svg>
-                <span>Cek</span>
-            </button>
-        </div>
     </div>
 
     <div class="relative flex items-center gap-2">
@@ -152,6 +133,14 @@
                             x-text="item.name"></h3>
                         <p class="text-[11px] text-charcoal-500 line-clamp-2 leading-relaxed"
                            x-text="item.desc"></p>
+                        <div class="flex items-center justify-between gap-2 pt-0.5">
+                            <p class="text-[10px] font-bold"
+                               :class="item.isSoldOut ? 'text-red-600' : (item.stock <= 3 ? 'text-amber-700' : 'text-charcoal-500')"
+                               x-text="item.isSoldOut ? 'Stok habis' : 'Stok ' + item.stock + ' porsi'"></p>
+                            <span x-show="cartQty(item.id) > 0"
+                                  class="shrink-0 rounded-full bg-forest-100 px-1.5 py-0.5 text-[9px] font-bold text-forest-800"
+                                  x-text="cartQty(item.id) + ' di bon'"></span>
+                        </div>
                     </div>
                 </div>
 
@@ -168,7 +157,8 @@
                             <button type="button"
                                     @click.stop="addToCart(item)"
                                     class="w-8 h-8 rounded-full bg-gold-500 hover:bg-gold-600 text-forest-900 font-bold flex items-center justify-center shadow-sm active:scale-90 transition-all"
-                                    title="Tambah ke Pesanan">
+                                    :class="cartQty(item.id) >= item.stock ? 'opacity-40 cursor-not-allowed' : ''"
+                                    :title="cartQty(item.id) >= item.stock ? 'Semua stok sudah masuk bon' : 'Tambah ke Pesanan'">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
                                 </svg>

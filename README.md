@@ -151,6 +151,9 @@ berpindah tampilan LCD 16x2:
   sehingga pelanggan yang lupa kode verifikasi cukup tap untuk menampilkannya kembali.
 - **Tahan ~1.5 detik** untuk memanggil pelayan (fungsi lama tetap ada).
 
+Panduan wiring, library, upload, dan troubleshooting ada di
+[`esp32-iot/README.md`](esp32-iot/README.md).
+
 ### Akses API Detail Pesanan
 
 `GET /api/v1/pesanan/{kode}` tidak lagi publik. Akses diberikan bila salah satu terpenuhi:

@@ -460,16 +460,16 @@
                     </span>
                 </div>
                 <p class="text-xs text-[#707971] mt-1">
-                    Distribusi penyelesaian tagihan tamu
+                    Distribusi penyelesaian tagihan tamu berdasarkan jumlah transaksi
                 </p>
 
                 <div class="relative flex items-center justify-center my-6">
                     @php
-                        $totalKanalOmzet = $omzetQris + $omzetTunai;
-                        $bagianQris = $totalKanalOmzet > 0 ? round($omzetQris / $totalKanalOmzet * 377) : 0;
+                        $totalKanal = $qrisHariIni + $tunaiHariIni;
+                        $bagianQris = $totalKanal > 0 ? round($qrisHariIni / $totalKanal * 377) : 0;
                         $bagianTunai = 377 - $bagianQris;
-                        $persenQris = $totalKanalOmzet > 0 ? round($omzetQris / $totalKanalOmzet * 100) : 0;
-                        $persenTunai = $totalKanalOmzet > 0 ? 100 - $persenQris : 0;
+                        $persenQris = $totalKanal > 0 ? round($qrisHariIni / $totalKanal * 100) : 0;
+                        $persenTunai = $totalKanal > 0 ? 100 - $persenQris : 0;
                     @endphp
                     <svg viewBox="0 0 160 160" class="w-44 h-44 -rotate-90">
                         <circle cx="80" cy="80" r="60" stroke="#EBE8E1" stroke-width="20" fill="none" />

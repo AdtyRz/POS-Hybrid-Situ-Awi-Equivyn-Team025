@@ -68,7 +68,7 @@
                     <p class="text-stone-500 text-sm mt-2">Scan QRIS di bawah ini dengan aplikasi e-wallet / m-banking
                         Anda.</p>
                     <div class="mt-5 inline-block p-3 bg-white rounded-2xl border-2 border-forest-100">
-                        <img src="{{ $qris['qr_url'] }}" alt="QRIS {{ $pesanan->kode_pesanan }}"
+                        <img src="{{ $qris['qr_url'] }}" alt="QRIS Meja {{ $pesanan->meja->kode_meja }}"
                             class="w-64 h-64 mx-auto object-contain" data-qris-image>
                     </div>
                     <div class="mt-5 flex items-center justify-center gap-2 text-forest-600 text-sm font-semibold">
@@ -97,8 +97,8 @@
                         sudah benar, lalu muat ulang halaman ini.</p>
                 @endif
                 <div class="mt-6 p-4 bg-cream-50 rounded-xl border border-stone-100">
-                    <p class="font-bold text-forest-900">Kode Pesanan: <span
-                            class="font-mono">{{ $pesanan->kode_pesanan }}</span></p>
+                    <p class="font-bold text-forest-900">Kode Meja: <span
+                            class="font-mono">{{ $pesanan->meja->kode_meja }}</span></p>
                     <p class="text-stone-500 text-sm mt-1">Total:
                         Rp{{ number_format($pesanan->total_bayar, 0, ',', '.') }}</p>
                 </div>
