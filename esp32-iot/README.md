@@ -8,7 +8,7 @@ Fitur:
 - Tap sensor sentuh untuk berganti layar.
 - Tahan sensor sekitar 1,5 detik untuk memanggil pelayan.
 - Buzzer dan LED sebagai feedback.
-- Mengambil konfigurasi pesan LCD dan kode sesi dari API Laravel.
+- Mengambil konfigurasi pesan LCD, durasi buzzer, dan kode sesi dari API Laravel.
 
 ## 1. Komponen
 
