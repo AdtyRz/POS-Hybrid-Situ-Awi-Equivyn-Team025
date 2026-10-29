@@ -423,6 +423,9 @@ void panggilPelayan() {
   if (sukses) {
     successFeedback();
     showMessage(lcdMessage, "Terkirim", 1500);
+  } else if (httpCode == 403) {
+    errorFeedback();
+    showMessage("Sesi berubah", "Coba lagi", 1500);
   } else if (httpCode == 429) {
     errorFeedback();
     showMessage("Masih jeda", "Coba lagi", 1500);
