@@ -46,6 +46,11 @@ class User extends Authenticatable
         return $this->hasMany(LogPanggilPelayan::class, 'pelayan_id');
     }
 
+    public function riwayatShift(): HasMany
+    {
+        return $this->hasMany(RiwayatShift::class);
+    }
+
     public function punyaPeran(string $peran): bool
     {
         return $this->role === $peran;

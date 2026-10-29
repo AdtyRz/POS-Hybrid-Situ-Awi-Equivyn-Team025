@@ -50,6 +50,9 @@ Route::middleware('pesanan.no-store')->group(function () {
     Route::get('/bayar-tunai/{kode_pesanan}', [EMenuController::class, 'bayarTunai'])
         ->middleware('throttle:30,1')
         ->name('emenu.bayar-tunai');
+    Route::get('/bayar-tunai/{kode_pesanan}/status', [EMenuController::class, 'tunaiStatus'])
+        ->middleware('throttle:600,1')
+        ->name('emenu.bayar-tunai.status');
 });
 
 Route::get('/realtime/version', [RealtimeController::class, 'version'])
@@ -103,6 +106,7 @@ Route::get('/admin/analitik-laporan/ekspor-xlsx', [AdminController::class, 'eksp
     Route::get('/admin/master-meja/cetak-qr', [AdminController::class, 'cetakQrMeja'])->name('admin.master-meja.cetak-qr');
     Route::post('/admin/meja', [AdminController::class, 'simpanMeja'])->name('admin.meja.simpan');
 
+    Route::get('/admin/riwayat-shift', [AdminController::class, 'riwayatShift'])->name('admin.riwayat-shift');
     Route::get('/admin/akun', [AdminController::class, 'daftarAkun'])->name('admin.akun');
     Route::get('/admin/manajemen-akun', [AdminController::class, 'daftarAkun'])->name('admin.manajemen-akun');
     Route::post('/admin/akun', [AdminController::class, 'simpanAkun'])->name('admin.akun.simpan');

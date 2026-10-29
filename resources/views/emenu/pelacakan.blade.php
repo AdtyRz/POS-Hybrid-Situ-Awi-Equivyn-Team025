@@ -4,6 +4,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="realtime-version-url" content="{{ route('realtime.version') }}">
+    <meta name="realtime-version" content="{{ \App\Support\Realtime::version() }}">
     <title>Pelacakan & Status Pesanan - Saung Situ Awi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -113,9 +115,12 @@
                         class="block bg-white rounded-2xl border border-stone-100 shadow-sm p-4 active:scale-[0.99] transition">
                         <div class="flex items-start justify-between gap-3">
                             <div>
-                                <p class="font-mono font-bold text-sm">#{{ $pesanan->kode_pesanan }}</p>
+                                <p class="font-bold text-sm">Meja {{ $pesanan->meja->kode_meja }}</p>
                                 <p class="text-stone-500 text-xs mt-0.5">
                                     {{ $pesanan->waktu_pesan->timezone('Asia/Jakarta')->format('d M Y, H.i') }} WIB • {{ $jumlahItem }} item</p>
+                                @if ($pesanan->nama_pelanggan)
+                                    <p class="text-stone-500 text-xs mt-0.5">Pemesan: <span class="font-bold text-stone-700">{{ $pesanan->nama_pelanggan }}</span></p>
+                                @endif
                             </div>
                             <span
                                 class="{{ $gaya }} text-[11px] font-bold rounded-full px-3 py-1 whitespace-nowrap">{{ ucfirst(str_replace('_', ' ', $pesanan->status_pesanan)) }}</span>

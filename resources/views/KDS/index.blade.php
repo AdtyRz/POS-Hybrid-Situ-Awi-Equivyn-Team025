@@ -516,7 +516,7 @@
                         <span class="font-bold text-[10px] text-[#0B4D2B] uppercase tracking-wider">PORSI SELESAI</span>
                     </div>
                     <span class="text-[10px] font-medium text-[#707971] tracking-wide mt-1 leading-none">
-                        Shift Sore Berjalan (16:00 - 22:00)
+                        {{ $labelShift }}
                     </span>
                 </div>
             </div>

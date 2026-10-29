@@ -34,8 +34,8 @@
             </form>
         </header>
 
-        <h1 class="font-display font-bold text-2xl text-[#052E1B] mb-2">Pembayaran {{ $pesanan->kode_pesanan }}</h1>
-        <p class="text-stone-500 text-sm mb-6">Meja {{ $pesanan->meja->kode_meja }} ({{ $pesanan->meja->area }})</p>
+        <h1 class="font-display font-bold text-2xl text-[#052E1B] mb-2">Pembayaran Meja {{ $pesanan->meja->kode_meja }}</h1>
+        <p class="text-stone-500 text-sm mb-6">Pemesan: <span class="font-bold text-stone-700">{{ $pesanan->nama_pelanggan ?: 'Tamu' }}</span> &middot; {{ $pesanan->meja->area }}</p>
 
         <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 mb-6">
             <h2 class="font-bold text-forest-900 mb-4">Rincian Pesanan</h2>

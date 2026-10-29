@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\MejaMakan;
 use App\Models\Pengaturan;
 use App\Models\Pesanan;
+use App\Services\ShiftService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -95,6 +96,11 @@ class LaporanPenjualanController extends Controller
 
         $mulaiShift = $tanggal->copy()->setTimeFromTimeString($shift['mulai']);
         $selesaiShift = $tanggal->copy()->setTimeFromTimeString($shift['selesai']);
+
+        if ($selesaiShift->lessThanOrEqualTo($mulaiShift)) {
+            $selesaiShift->addDay();
+        }
+
         $filterShift = $filter;
         $filterShift['mulai'] = $mulaiShift;
         $filterShift['selesai'] = $selesaiShift;
@@ -131,30 +137,17 @@ class LaporanPenjualanController extends Controller
 
     private function shiftSaatIni(Carbon $waktu): array
     {
-        $jam = $waktu->format('H:i');
+        $shift = ShiftService::shiftAktif($waktu);
 
-        return match (true) {
-            $jam >= '08:00' && $jam < '12:00' => [
-                'nama' => 'Shift Pagi',
-                'mulai' => '08:00:00',
-                'selesai' => '12:00:00',
-            ],
-            $jam >= '12:00' && $jam < '18:00' => [
-                'nama' => 'Shift Siang',
-                'mulai' => '12:00:00',
-                'selesai' => '18:00:00',
-            ],
-            $jam >= '18:00' => [
-                'nama' => 'Shift Malam',
-                'mulai' => '18:00:00',
-                'selesai' => '23:59:59',
-            ],
-            default => [
+        if (! $shift) {
+            return [
                 'nama' => 'Luar Shift',
-                'mulai' => '00:00:00',
-                'selesai' => '08:00:00',
-            ],
-        };
+                'mulai' => '00:00',
+                'selesai' => '23:59',
+            ];
+        }
+
+        return $shift;
     }
 
     public function ekspor(Request $request, string $format): StreamedResponse

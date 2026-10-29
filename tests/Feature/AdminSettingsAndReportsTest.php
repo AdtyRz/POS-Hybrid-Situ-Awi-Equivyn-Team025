@@ -133,7 +133,10 @@ class AdminSettingsAndReportsTest extends TestCase
             ->get(route('admin.pengaturan-sistem'))
             ->assertOk()
             ->assertSee('Pengelolaan Sesi Tamu')
-            ->assertSee('Menit tanpa transaksi');
+            ->assertSee('Menit tanpa transaksi')
+            ->assertSee('5. Shift &amp; Jam Operasional', false)
+            ->assertSee('Jadwal Shift Operasional')
+            ->assertSee('Batasi Akses Staf ke Jam Shift');
     }
 
     public function test_admin_dapat_mengubah_batas_waktu_qris(): void

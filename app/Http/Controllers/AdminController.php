@@ -9,8 +9,10 @@ use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
+use App\Models\RiwayatShift;
 use App\Models\SesiMeja;
 use App\Models\User;
+use App\Services\ShiftService;
 use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -1049,6 +1051,55 @@ class AdminController extends Controller
             'statistik',
             'sesiJson'
         ));
+    }
+
+    public function riwayatShift(Request $request): View
+    {
+        ShiftService::tutupKedaluwarsa();
+
+        $role = (string) $request->query('role', '');
+        $role = array_key_exists($role, ShiftService::ROLES) ? $role : null;
+        $cari = trim((string) $request->query('cari', ''));
+
+        $tanggal = null;
+
+        if ($request->filled('tanggal')) {
+            try {
+                $tanggal = Carbon::parse((string) $request->query('tanggal'), 'Asia/Jakarta');
+            } catch (\Throwable $exception) {
+                $tanggal = null;
+            }
+        }
+
+        $riwayat = RiwayatShift::with('user')
+            ->whereIn('role', array_keys(ShiftService::ROLES))
+            ->when($role, fn ($query) => $query->where('role', $role))
+            ->when($cari !== '', function ($query) use ($cari) {
+                $pola = '%' . mb_strtolower($cari) . '%';
+
+                $query->whereHas('user', function ($pengguna) use ($pola) {
+                    $pengguna->whereRaw('LOWER(nama) LIKE ?', [$pola]);
+                });
+            })
+            ->when($tanggal, function ($query) use ($tanggal) {
+                $query->whereBetween('mulai_pada', [
+                    $tanggal->copy()->startOfDay()->utc(),
+                    $tanggal->copy()->endOfDay()->utc(),
+                ]);
+            })
+            ->orderByDesc('mulai_pada')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('admin.riwayat-shift.index', [
+            'riwayat' => $riwayat,
+            'ringkasanRole' => ShiftService::ringkasanPerRole(),
+            'role' => $role,
+            'cari' => $cari,
+            'tanggal' => (string) $request->query('tanggal', ''),
+            'shiftSlots' => ShiftService::daftarShift(),
+            'pembatasanAktif' => ShiftService::pembatasanAktif(),
+        ]);
     }
 
     public function simpanAkun(Request $request): RedirectResponse
