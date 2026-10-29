@@ -1,452 +1,439 @@
 /*
- * ESP32 IoT Client untuk Saung Situ Awi
- * Compatible: Local Development & Production
- * 
- * Hardware: ESP32 DevKit V1
- * Libraries: WiFi, HTTPClient, ArduinoJson, Preferences
- * 
- * Pin Mapping:
- * - TOUCH_PIN:  GPIO 4  (sensor sentuh: tap = ganti layar, tahan = panggil pelayan)
- * - LED_PIN:    GPIO 2  (built-in LED)
- * - BUZZER_PIN: GPIO 5  (optional buzzer)
- * - SDA:        GPIO 21 (LCD I2C)
- * - SCL:        GPIO 22 (LCD I2C)
+ * ESP32 IoT Client - Saung Situ Awi
+ * Board  : ESP32 DOIT DevKit V1 (30 pin)
+ * LCD    : 16x2 I2C (PCF8574, alamat 0x27 atau 0x3F)
+ * Touch  : TTP223 (output aktif HIGH)
+ * Buzzer : active buzzer (bisa diganti passive)
  *
- * Fitur sensor sentuh:
- * - Tap singkat -> ganti tampilan LCD bergiliran:
- *                  Status Pesanan -> Total Bayar -> Kode Verif Saung
- * - Tahan ~1.5s -> panggil pelayan
+ * Tap singkat  : ganti layar Status -> Total -> Kode Sesi
+ * Tahan 1.5 s  : panggil pelayan
  */
 
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
-#include <Preferences.h>
 #include <Wire.h>
-
-// Sensor touch dipakai untuk ganti layar & panggil pelayan.
-// Comment baris #define USE_LCD kalau tidak pakai LCD I2C.
-#define USE_LCD
-#ifdef USE_LCD
 #include <LiquidCrystal_I2C.h>
-#endif
 
-// ============================================================
-// KONFIGURASI - GANTI SESUAI ENVIRONMENT
-// ============================================================
+// ======================= KONFIGURASI =======================
+const char* WIFI_SSID = "WIFI_KANTIN";
+const char* WIFI_PASS = "PASSWORD_WIFI";
 
-// --- PILIH MODE ---
-// #define MODE_LOCAL      // Development: http://192.168.x.x:8000
-#define MODE_PRODUCTION   // Production: https://api.situawi.com
+// Local     : http://192.168.1.100:8000  (IP laptop/server, tanpa slash akhir)
+// Production: https://domain-anda.com
+const char* SERVER_URL = "http://192.168.1.100:8000";
 
-// --- WIFI (akan disimpan ke NVS setelah setup pertama) ---
-const char* DEFAULT_SSID = "WIFI_KANTIN";
-const char* DEFAULT_PASS = "PASSWORD_WIFI";
-
-// --- SERVER URL ---
-#ifdef MODE_LOCAL
-  const char* BASE_URL = "http://192.168.1.100:8000";  // Ganti IP laptop/server
-#else
-  const char* BASE_URL = "https://api.situawi.com";    // Domain production
-#endif
-
-const char* ENDPOINT_PANGGIL = "/api/iot/panggil-pelayan";
-const char* ENDPOINT_MEJA    = "/api/iot/meja/";  // + kode_meja / id_device
-
-// Samakan dengan IOT_API_TOKEN di .env server. Jangan bagikan token ini.
+// Samakan dengan IOT_API_TOKEN di .env Laravel.
 const char* IOT_API_TOKEN = "GANTI_DENGAN_IOT_API_TOKEN";
+const char* KODE_MEJA = "LB-01";
 
-// --- HARDWARE PINS (JANGAN GUNAKAN GPIO 0,1,3,6-11) ---
-const int TOUCH_PIN    = 4;   // sensor sentuh (GPIO 4 - aman)
-const int LED_PIN      = 2;   // Built-in LED
-const int BUZZER_PIN   = 5;   // Buzzer aktif LOW
-const int SDA_PIN      = 21;  // LCD I2C SDA
-const int SCL_PIN      = 22;  // LCD I2C SCL
+// ======================= PIN =======================
+const int PIN_SDA = 21;
+const int PIN_SCL = 22;
+const int PIN_TOUCH = 27;
+const int PIN_BUZZER = 25;
+const int PIN_LED = 2;
 
-// Polaritas sensor sentuh.
-// 1 = aktif LOW (butuh INPUT_PULLUP, seperti tombol biasa)
-// 0 = aktif HIGH (umum pada modul TTP223) -> ganti ke 0 kalau sensor tidak terdeteksi
-#define TOUCH_ACTIVE_LOW 1
+// TTP223 umumnya aktif HIGH. Ubah ke 0 bila sensor Anda aktif LOW.
+#define TOUCH_ACTIVE_HIGH 1
 
-// --- DEVICE IDENTIFIER ---
-const char* KODE_MEJA_DEFAULT = "LB-01";  // Ganti per device
+// 1 = active buzzer, 0 = passive buzzer.
+#define BUZZER_ACTIVE 1
+// Ubah ke LOW bila buzzer justru berbunyi saat sinyal LOW.
+#define BUZZER_ON_LEVEL HIGH
+#define BUZZER_FREQ 2000
 
-// ============================================================
-// GLOBAL OBJECTS
-// ============================================================
-Preferences prefs;
-String ssid, password, kodeMeja;
-bool useHttps = false;
+// Alamat I2C LCD: 0x27 atau 0x3F.
+const uint8_t LCD_ADDR = 0x27;
+LiquidCrystal_I2C lcd(LCD_ADDR, 16, 2);
 
-// LCD (16x2 I2C)
-#ifdef USE_LCD
-LiquidCrystal_I2C lcd(0x27, 16, 2);
-#endif
+// ======================= TIMING =======================
+const unsigned long STATUS_INTERVAL_MS = 10000;
+const unsigned long CONFIG_INTERVAL_MS = 60000;
+const unsigned long WIFI_RETRY_MS = 10000;
+const unsigned long LONG_PRESS_MS = 1500;
+const unsigned long TAP_MIN_MS = 50;
 
-// --- Sensor sentuh: bedakan tap singkat vs tahan ---
-unsigned long pressStart = 0;
-bool touchActive = false;
-bool longPressDone = false;
-const unsigned long LONG_PRESS_MS = 1500;  // tahan >= ini -> panggil pelayan
-const unsigned long TAP_MIN_MS = 40;       // abaikan noise kontak
-
-// --- Layar LCD yang bergiliran ---
-const int SCREEN_STATUS = 0;
-const int SCREEN_TOTAL  = 1;
-const int SCREEN_KODE   = 2;
-const int SCREEN_COUNT  = 3;
-int currentScreen = SCREEN_STATUS;
-
-// --- Data meja (diisi dari API) ---
+// ======================= STATE =======================
 String kodeSesi = "----";
 String statusRingkas = "Belum ada pesan";
+String lcdMessage = "Panggil Pelayan";
 float totalBayar = 0;
 int jumlahPesanan = 0;
 
-// Timing
+const int SCREEN_STATUS = 0;
+const int SCREEN_TOTAL = 1;
+const int SCREEN_KODE = 2;
+const int SCREEN_COUNT = 3;
+int currentScreen = SCREEN_STATUS;
+
+bool touchActive = false;
+bool longPressDone = false;
+unsigned long pressStart = 0;
 unsigned long lastStatusCheck = 0;
-const unsigned long STATUS_INTERVAL_MS = 30000;
+unsigned long lastConfigCheck = 0;
+unsigned long lastWifiAttempt = 0;
 
-// WiFi reconnect
-unsigned long lastReconnect = 0;
-const unsigned long RECONNECT_INTERVAL_MS = 10000;
-int wifiFailCount = 0;
-const int MAX_WIFI_FAILS = 5;
+// ======================= PROTOTYPES =======================
+void connectWiFi();
+void fetchKonfigurasi();
+bool fetchMejaStatus();
+void panggilPelayan();
+void handleTouch();
+bool readTouch();
+void renderLayar();
+void showMessage(const String& line1, const String& line2, unsigned long durationMs);
+void beep(uint16_t frequency, uint16_t durationMs);
+void buzzerOff();
+void successFeedback();
+void errorFeedback();
+int httpRequest(const String& method, const String& url, const String& body, String& response);
+String labelStatus(const String& status);
+String formatRupiah(float nominal);
 
-// ============================================================
-// SETUP
-// ============================================================
+// ======================= SETUP =======================
 void setup() {
   Serial.begin(115200);
-  delay(100);
-  Serial.println("\n=== ESP32 IoT Saung Situ Awi ===");
-  Serial.printf("Mode: %s\n", 
-    #ifdef MODE_LOCAL "LOCAL" #else "PRODUCTION" #endif
-  );
+  delay(200);
+  Serial.println();
+  Serial.println("=== ESP32 IoT Saung Situ Awi ===");
 
-  // Pin setup
-#if TOUCH_ACTIVE_LOW
-  pinMode(TOUCH_PIN, INPUT_PULLUP);
-#else
-  pinMode(TOUCH_PIN, INPUT);
-#endif
-  pinMode(LED_PIN, OUTPUT);
-  pinMode(BUZZER_PIN, OUTPUT);
-  digitalWrite(LED_PIN, LOW);
-  digitalWrite(BUZZER_PIN, HIGH);  // Buzzer aktif LOW
+  pinMode(PIN_LED, OUTPUT);
+  digitalWrite(PIN_LED, LOW);
 
-  // LCD init (opsional)
-#ifdef USE_LCD
-  Wire.begin(SDA_PIN, SCL_PIN);
-  lcd.init();
+  pinMode(PIN_BUZZER, OUTPUT);
+  buzzerOff();
+
+  pinMode(PIN_TOUCH, TOUCH_ACTIVE_HIGH ? INPUT : INPUT_PULLUP);
+
+  Wire.begin(PIN_SDA, PIN_SCL);
+  lcd.begin(16, 2);
   lcd.backlight();
+  lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Saung Situ Awi");
   lcd.setCursor(0, 1);
   lcd.print("Menyiapkan...");
-#endif
+  delay(500);
 
-  // Load config dari NVS
-  loadConfig();
-  
-  // Connect WiFi
   connectWiFi();
-  
-  // Start watchdog task
-  xTaskCreatePinnedToCore(watchdogTask, "watchdog", 4096, NULL, 1, NULL, 0);
-  
-  // Tampilkan layar awal + ambil data meja pertama kali
-  renderLayar();
-  fetchMejaStatus();
 
-  Serial.println("Ready!");
-  blinkLED(3, 100);
-}
-
-// ============================================================
-// MAIN LOOP
-// ============================================================
-void loop() {
-  // 1. Sensor sentuh: tap = ganti layar, tahan = panggil pelayan
-  handleTouch();
-  
-  // 2. Periodic status check untuk LCD
-  if (millis() - lastStatusCheck > STATUS_INTERVAL_MS) {
-    lastStatusCheck = millis();
+  if (WiFi.status() == WL_CONNECTED) {
+    fetchKonfigurasi();
     fetchMejaStatus();
+    lastConfigCheck = millis();
+    lastStatusCheck = millis();
   }
-  
-  // 3. WiFi watchdog
-  if (WiFi.status() != WL_CONNECTED) {
-    handleWiFiReconnect();
-  }
-  
-  // Feed watchdog
-  esp_task_wdt_reset();
-  
-  // Small yield untuk stability
-  vTaskDelay(pdMS_TO_TICKS(10));
+
+  Serial.println("Ready. Tap = ganti layar, tahan 1.5s = panggil pelayan.");
+  beep(BUZZER_FREQ, 80);
 }
 
-// ============================================================
-// TOUCH HANDLER (tap = ganti layar, tahan = panggil pelayan)
-// ============================================================
-void handleTouch() {
-#if TOUCH_ACTIVE_LOW
-  bool raw = (digitalRead(TOUCH_PIN) == LOW);   // true = sedang disentuh
+// ======================= LOOP =======================
+void loop() {
+  handleTouch();
+
+  if (WiFi.status() == WL_CONNECTED) {
+    if (lastConfigCheck == 0 || millis() - lastConfigCheck >= CONFIG_INTERVAL_MS) {
+      lastConfigCheck = millis();
+      fetchKonfigurasi();
+    }
+
+    if (lastStatusCheck == 0 || millis() - lastStatusCheck >= STATUS_INTERVAL_MS) {
+      lastStatusCheck = millis();
+      fetchMejaStatus();
+    }
+  } else if (millis() - lastWifiAttempt >= WIFI_RETRY_MS) {
+    connectWiFi();
+  }
+
+  delay(10);
+}
+
+// ======================= TOUCH =======================
+bool readTouch() {
+#if TOUCH_ACTIVE_HIGH
+  return digitalRead(PIN_TOUCH) == HIGH;
 #else
-  bool raw = (digitalRead(TOUCH_PIN) == HIGH);  // true = sedang disentuh
+  return digitalRead(PIN_TOUCH) == LOW;
 #endif
+}
+
+void handleTouch() {
+  bool touched = readTouch();
   unsigned long now = millis();
 
-  if (raw && !touchActive) {
-    // Baru mulai disentuh
+  if (touched && !touchActive) {
     touchActive = true;
     longPressDone = false;
     pressStart = now;
-  } else if (raw && touchActive) {
-    // Sedang ditahan -> cek long press
-    if (!longPressDone && (now - pressStart >= LONG_PRESS_MS)) {
+  } else if (touched && touchActive) {
+    if (!longPressDone && now - pressStart >= LONG_PRESS_MS) {
       longPressDone = true;
-      Serial.println("[TOUCH] Tahan -> panggilPelayan()");
+      Serial.println("[TOUCH] Tahan -> panggil pelayan");
       panggilPelayan();
     }
-  } else if (!raw && touchActive) {
-    // Baru dilepas
-    unsigned long dur = now - pressStart;
+  } else if (!touched && touchActive) {
+    unsigned long duration = now - pressStart;
     touchActive = false;
-    if (!longPressDone && dur >= TAP_MIN_MS) {
-      Serial.printf("[TOUCH] Tap %lums -> ganti layar\n", dur);
-      gantiLayar();
+
+    if (!longPressDone && duration >= TAP_MIN_MS) {
+      currentScreen = (currentScreen + 1) % SCREEN_COUNT;
+      Serial.printf("[TOUCH] Tap %lu ms -> layar %d\n", duration, currentScreen + 1);
+      beep(BUZZER_FREQ, 40);
+      renderLayar();
     }
   }
 }
 
-// Pindah layar: Status Pesanan -> Total Bayar -> Kode Verif Saung -> (ulang)
-void gantiLayar() {
-  currentScreen = (currentScreen + 1) % SCREEN_COUNT;
-  tone(BUZZER_PIN, 1500, 60);  // feedback singkat
+// ======================= WIFI =======================
+void connectWiFi() {
+  if (WiFi.status() == WL_CONNECTED) {
+    return;
+  }
+
+  Serial.printf("[WiFi] Menghubungkan ke %s", WIFI_SSID);
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Menyambung WiFi");
+
+  WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);
+  WiFi.disconnect(true);
+  delay(100);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+
+  unsigned long start = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - start < 20000) {
+    delay(250);
+    Serial.print(".");
+  }
+  Serial.println();
+
+  if (WiFi.status() == WL_CONNECTED) {
+    lastStatusCheck = 0;
+    Serial.printf("[WiFi] OK, IP=%s, RSSI=%d dBm\n",
+                  WiFi.localIP().toString().c_str(), WiFi.RSSI());
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("WiFi OK");
+    lcd.setCursor(0, 1);
+    lcd.print(WiFi.localIP().toString());
+    delay(800);
+  } else {
+    Serial.println("[WiFi] Gagal. Cek SSID/password dan pastikan WiFi 2.4 GHz.");
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("WiFi gagal");
+    lcd.setCursor(0, 1);
+    lcd.print("Cek SSID/Pass");
+  }
+
+  lastWifiAttempt = millis();
+}
+
+// ======================= HTTP =======================
+int httpRequest(const String& method, const String& url, const String& body, String& response) {
+  HTTPClient http;
+  WiFiClient plainClient;
+  WiFiClientSecure secureClient;
+
+  http.setTimeout(8000);
+  http.setReuse(false);
+
+  bool started = false;
+  if (url.startsWith("https://")) {
+    secureClient.setInsecure();
+    started = http.begin(secureClient, url);
+  } else {
+    started = http.begin(plainClient, url);
+  }
+
+  if (!started) {
+    response = "HTTP begin failed";
+    return -1;
+  }
+
+  http.addHeader("Accept", "application/json");
+  http.addHeader("User-Agent", "ESP32-IoT/1.0");
+  http.addHeader("X-IoT-Token", IOT_API_TOKEN);
+
+  int httpCode;
+  if (method == "POST") {
+    http.addHeader("Content-Type", "application/json");
+    httpCode = http.POST(body);
+  } else {
+    httpCode = http.GET();
+  }
+
+  if (httpCode > 0) {
+    response = http.getString();
+  } else {
+    response = http.errorToString(httpCode);
+  }
+
+  http.end();
+  return httpCode;
+}
+
+// ======================= KONFIGURASI & DATA MEJA =======================
+void fetchKonfigurasi() {
+  if (WiFi.status() != WL_CONNECTED) {
+    return;
+  }
+
+  String url = String(SERVER_URL) + "/api/iot/status-meja";
+  String response;
+  int httpCode = httpRequest("GET", url, "", response);
+
+  if (httpCode != 200) {
+    Serial.printf("[HTTP] GET konfigurasi gagal: %d %s\n", httpCode, response.c_str());
+    return;
+  }
+
+  JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, response);
+  if (error) {
+    Serial.printf("[JSON] Gagal parse konfigurasi: %s\n", error.c_str());
+    return;
+  }
+
+  JsonObject konfigurasi = doc["konfigurasi"].as<JsonObject>();
+  const char* pesan = konfigurasi["lcd_message"] | "Panggil Pelayan";
+  lcdMessage = String(pesan);
+  if (lcdMessage.length() == 0) {
+    lcdMessage = "Panggil Pelayan";
+  }
+  if (lcdMessage.length() > 16) {
+    lcdMessage = lcdMessage.substring(0, 16);
+  }
+
+  JsonArray data = doc["data"].as<JsonArray>();
+  for (JsonVariant item : data) {
+    JsonObject meja = item.as<JsonObject>();
+    if (String(meja["kode_meja"] | "") == KODE_MEJA) {
+      const char* sesi = meja["kode_sesi"] | "----";
+      kodeSesi = String(sesi);
+      if (kodeSesi.length() == 0) {
+        kodeSesi = "----";
+      }
+      break;
+    }
+  }
+
+  Serial.printf("[KONFIG] Pesan LCD: %s\n", lcdMessage.c_str());
+}
+
+bool fetchMejaStatus() {
+  if (WiFi.status() != WL_CONNECTED) {
+    return false;
+  }
+
+  String url = String(SERVER_URL) + "/api/iot/meja/" + KODE_MEJA;
+  String response;
+  int httpCode = httpRequest("GET", url, "", response);
+
+  if (httpCode != 200) {
+    Serial.printf("[HTTP] GET meja gagal: %d %s\n", httpCode, response.c_str());
+    return false;
+  }
+
+  JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, response);
+  if (error) {
+    Serial.printf("[JSON] Gagal parse: %s\n", error.c_str());
+    return false;
+  }
+
+  if (!doc["success"].as<bool>()) {
+    Serial.println("[API] success=false");
+    return false;
+  }
+
+  JsonObject data = doc["data"].as<JsonObject>();
+  const char* sesi = data["kode_sesi"] | "----";
+  kodeSesi = String(sesi);
+  if (kodeSesi.length() == 0) {
+    kodeSesi = "----";
+  }
+
+  totalBayar = data["total_bayar"].as<float>();
+  jumlahPesanan = data["jumlah_pesanan"].as<int>();
+
+  JsonArray pesanan = data["pesanan"].as<JsonArray>();
+  if (pesanan.size() == 0) {
+    statusRingkas = "Belum ada pesan";
+  } else {
+    const char* status = pesanan[0]["status_pesanan"] | "-";
+    String label = labelStatus(String(status));
+    if (pesanan.size() > 1) {
+      statusRingkas = label + " (" + String(pesanan.size()) + ")";
+    } else {
+      statusRingkas = label;
+    }
+  }
+
   renderLayar();
+  Serial.printf("[MEJA] %s | sesi=%s | pesanan=%d | total=%.0f\n",
+                KODE_MEJA, kodeSesi.c_str(), jumlahPesanan, totalBayar);
+  return true;
 }
 
 void panggilPelayan() {
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("[ERROR] WiFi disconnected");
-    errorFeedback(1);
+    errorFeedback();
+    showMessage("WiFi terputus", "Cek jaringan", 1500);
     return;
   }
 
-  // Pastikan kode sesi terbaru sudah diambil sebelum memanggil.
-  if (kodeSesi == "----") {
-    fetchMejaStatus();
-  }
-
-  WiFiClientSecure client;
-  client.setInsecure();  // DEV: skip cert verify. PROD: client.setCACert(rootCA)
-  
-  HTTPClient http;
-  http.setTimeout(8000);
-  http.setReuse(true);
-  http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
-  
-  String url = String(BASE_URL) + ENDPOINT_PANGGIL;
-  if (!http.begin(client, url)) {
-    Serial.println("[HTTP] Begin failed");
-    errorFeedback(1);
+  if (!fetchMejaStatus()) {
+    errorFeedback();
+    showMessage("Gagal cek sesi", "Coba lagi", 1500);
     return;
   }
-  
-  http.addHeader("Content-Type", "application/json");
-  http.addHeader("User-Agent", "ESP32-IoT/1.0");
-  http.addHeader("Accept", "application/json");
-  http.addHeader("X-IoT-Token", IOT_API_TOKEN);
-  
-  // Build JSON dengan ArduinoJson (hindari String concat)
+
+  if (kodeSesi == "----" || kodeSesi.length() == 0) {
+    errorFeedback();
+    showMessage("Kode sesi", "Belum tersedia", 1500);
+    return;
+  }
+
+  String url = String(SERVER_URL) + "/api/iot/panggil-pelayan";
   JsonDocument doc;
-  doc["kode_meja"] = kodeMeja;
+  doc["kode_meja"] = KODE_MEJA;
   doc["kode_sesi"] = kodeSesi;
-  
-  String payload;
-  serializeJson(doc, payload);
-  
-  Serial.printf("[HTTP] POST %s\n", url.c_str());
-  Serial.printf("[HTTP] Payload: %s\n", payload.c_str());
-  
-  int httpCode = http.POST(payload);
-  
-  if (httpCode > 0) {
-    String response = http.getString();
-    Serial.printf("[HTTP] %d: %s\n", httpCode, response.c_str());
-    
-    // Parse response
-    JsonDocument respDoc;
-    DeserializationError err = deserializeJson(respDoc, response);
-    
-    if (!err && respDoc["success"].as<bool>()) {
-      Serial.println("[OK] Panggilan terkirim");
-      successFeedback();
-    } else {
-      String msg = respDoc["message"] | "Unknown error";
-      Serial.printf("[ERROR] %s\n", msg.c_str());
-      errorFeedback(httpCode == 404 ? 2 : 1);
-    }
-  } else {
-    Serial.printf("[HTTP] Error: %s\n", http.errorToString(httpCode).c_str());
-    errorFeedback(1);
-  }
-  http.end();
-}
 
-// Ambil data meja ini: kode sesi, status pesanan, total bayar.
-void fetchMejaStatus() {
-  if (WiFi.status() != WL_CONNECTED) return;
-  
-  WiFiClientSecure client;
-  client.setInsecure();
-  
-  HTTPClient http;
-  http.setTimeout(5000);
-  
-  String url = String(BASE_URL) + ENDPOINT_MEJA + kodeMeja;
-  if (!http.begin(client, url)) return;
-  
-  http.addHeader("Accept", "application/json");
-  http.addHeader("X-IoT-Token", IOT_API_TOKEN);
-  
-  int httpCode = http.GET();
+  String body;
+  serializeJson(doc, body);
+
+  String response;
+  int httpCode = httpRequest("POST", url, body, response);
+  Serial.printf("[HTTP] POST panggil: %d %s\n", httpCode, response.c_str());
+
+  bool sukses = false;
   if (httpCode == 200) {
-    String response = http.getString();
-    JsonDocument doc;
-    DeserializationError err = deserializeJson(doc, response);
-    
-    if (!err && doc["success"].as<bool>()) {
-      JsonObject data = doc["data"].as<JsonObject>();
-
-      kodeSesi = String((const char*)(data["kode_sesi"] | "----"));
-      totalBayar = data["total_bayar"] | 0.0f;
-      jumlahPesanan = data["jumlah_pesanan"] | 0;
-
-      // Bangun ringkasan status untuk layar "Status Pesanan"
-      JsonArray pesanan = data["pesanan"].as<JsonArray>();
-      if (pesanan.size() == 0) {
-        statusRingkas = "Belum ada pesan";
-      } else {
-        JsonObject terakhir = pesanan[0].as<JsonObject>();  // API urut terbaru dulu
-        String label = labelStatus(String((const char*)(terakhir["status_pesanan"] | "-")));
-        statusRingkas = (pesanan.size() > 1)
-          ? (label + " (" + String(pesanan.size()) + ")")
-          : label;
-      }
-
-      renderLayar();
-      Serial.printf("[MEJA] %s | kode=%s | pesanan=%d | total=%.0f\n",
-        kodeMeja.c_str(), kodeSesi.c_str(), jumlahPesanan, totalBayar);
+    JsonDocument resp;
+    DeserializationError error = deserializeJson(resp, response);
+    if (!error) {
+      sukses = resp["success"].as<bool>();
     }
-  } else if (httpCode > 0) {
-    Serial.printf("[HTTP] GET meja gagal: %d\n", httpCode);
   }
-  http.end();
-}
 
-// ============================================================
-// WIFI MANAGEMENT
-// ============================================================
-void loadConfig() {
-  prefs.begin("iot-config", false);
-  
-  ssid = prefs.getString("ssid", DEFAULT_SSID);
-  password = prefs.getString("pass", DEFAULT_PASS);
-  kodeMeja = prefs.getString("kode_meja", KODE_MEJA_DEFAULT);
-  useHttps = prefs.getBool("https", false);
-  
-  Serial.printf("Config loaded: SSID=%s, Meja=%s, HTTPS=%s\n", 
-    ssid.c_str(), kodeMeja.c_str(), useHttps ? "true" : "false");
-}
-
-void saveConfig(String newSsid, String newPass, String newMeja, bool https) {
-  prefs.putString("ssid", newSsid);
-  prefs.putString("pass", newPass);
-  prefs.putString("kode_meja", newMeja);
-  prefs.putBool("https", https);
-  ssid = newSsid; password = newPass; kodeMeja = newMeja; useHttps = https;
-  Serial.println("Config saved to NVS");
-}
-
-void connectWiFi() {
-  WiFi.mode(WIFI_STA);
-  WiFi.setSleep(false);
-  WiFi.setTxPower(WIFI_POWER_19_5dBm);  // Max power
-  
-  // Set hostname untuk DHCP
-  String hostname = "esp32-" + kodeMeja;
-  hostname.replace("-", "");
-  WiFi.setHostname(hostname.c_str());
-  
-  WiFi.begin(ssid.c_str(), password.c_str());
-  
-  Serial.printf("Connecting to %s", ssid.c_str());
-  unsigned long start = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - start < 20000) {
-    delay(200);
-    Serial.print(".");
-  }
-  Serial.println();
-  
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.printf("[WiFi] Connected! IP: %s, RSSI: %d dBm\n", 
-      WiFi.localIP().toString().c_str(), WiFi.RSSI());
-    wifiFailCount = 0;
-    blinkLED(3, 100);
+  if (sukses) {
+    successFeedback();
+    showMessage(lcdMessage, "Terkirim", 1500);
+  } else if (httpCode == 429) {
+    errorFeedback();
+    showMessage("Masih jeda", "Coba lagi", 1500);
   } else {
-    Serial.println("[WiFi] Failed!");
-    wifiFailCount++;
-    if (wifiFailCount >= MAX_WIFI_FAILS) {
-      Serial.println("[WiFi] Max fails reached -> restart");
-      ESP.restart();
-    }
+    errorFeedback();
+    showMessage("Panggilan gagal", "Cek token/WiFi", 2000);
   }
 }
 
-void handleWiFiReconnect() {
-  if (millis() - lastReconnect > RECONNECT_INTERVAL_MS) {
-    lastReconnect = millis();
-    Serial.println("[WiFi] Reconnecting...");
-    WiFi.disconnect(true);
-    delay(500);
-    connectWiFi();
-  }
-}
-
-// ============================================================
-// FEEDBACK
-// ============================================================
-void successFeedback() {
-  digitalWrite(LED_PIN, HIGH);
-  tone(BUZZER_PIN, 1000, 200);
-  delay(200);
-  digitalWrite(LED_PIN, LOW);
-}
-
-void errorFeedback(int beeps) {
-  for (int i = 0; i < beeps; i++) {
-    tone(BUZZER_PIN, 500, 150);
-    delay(200);
-  }
-}
-
-void blinkLED(int times, int delayMs) {
-  for (int i = 0; i < times; i++) {
-    digitalWrite(LED_PIN, HIGH);
-    delay(delayMs);
-    digitalWrite(LED_PIN, LOW);
-    delay(delayMs);
-  }
-}
-
-// ============================================================
-// LCD: 3 LAYAR BERGILIRAN
-// ============================================================
-String labelStatus(String status) {
+// ======================= TAMPILAN LCD =======================
+String labelStatus(const String& status) {
   if (status == "menunggu") return "Menunggu";
   if (status == "menunggu_verifikasi") return "Verifikasi";
   if (status == "menunggu_pembayaran") return "B. Bayar";
@@ -458,17 +445,20 @@ String labelStatus(String status) {
   return status;
 }
 
-// Format angka jadi "Rp 55.000"
 String formatRupiah(float nominal) {
-  long v = (long)(nominal + 0.5);
-  String s = String(v);
-  String out = "";
-  int n = s.length();
-  for (int i = 0; i < n; i++) {
-    if (i > 0 && (n - i) % 3 == 0) out += ".";
-    out += s[i];
+  long value = (long)(nominal + 0.5);
+  String number = String(value);
+  String result = "";
+  int length = number.length();
+
+  for (int i = 0; i < length; i++) {
+    if (i > 0 && (length - i) % 3 == 0) {
+      result += '.';
+    }
+    result += number[i];
   }
-  return "Rp " + out;
+
+  return "Rp " + result;
 }
 
 void renderLayar() {
@@ -486,24 +476,61 @@ void renderLayar() {
     baris2 = kodeSesi;
   }
 
-  Serial.printf("[LCD] Layar %d/%d: %s | %s\n",
-    currentScreen + 1, SCREEN_COUNT, baris1.c_str(), baris2.c_str());
+  baris1 = baris1.substring(0, 16);
+  baris2 = baris2.substring(0, 16);
 
-#ifdef USE_LCD
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print(baris1.substring(0, 16));
+  lcd.print(baris1);
   lcd.setCursor(0, 1);
-  lcd.print(baris2.substring(0, 16));
+  lcd.print(baris2);
+
+  Serial.printf("[LCD] %s | %s\n", baris1.c_str(), baris2.c_str());
+}
+
+void showMessage(const String& line1, const String& line2, unsigned long durationMs) {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(line1.substring(0, 16));
+  lcd.setCursor(0, 1);
+  lcd.print(line2.substring(0, 16));
+  delay(durationMs);
+  renderLayar();
+}
+
+// ======================= BUZZER & LED =======================
+void beep(uint16_t frequency, uint16_t durationMs) {
+#if BUZZER_ACTIVE
+  (void)frequency;
+  digitalWrite(PIN_BUZZER, BUZZER_ON_LEVEL);
+  delay(durationMs);
+  digitalWrite(PIN_BUZZER, !BUZZER_ON_LEVEL);
+#else
+  tone(PIN_BUZZER, frequency, durationMs);
+  delay(durationMs);
+  noTone(PIN_BUZZER);
 #endif
 }
 
-// ============================================================
-// WATCHDOG TASK (FreeRTOS)
-// ============================================================
-void watchdogTask(void* pvParameters) {
-  for (;;) {
-    esp_task_wdt_reset();
-    vTaskDelay(pdMS_TO_TICKS(5000));
+void buzzerOff() {
+#if BUZZER_ACTIVE
+  digitalWrite(PIN_BUZZER, !BUZZER_ON_LEVEL);
+#else
+  noTone(PIN_BUZZER);
+#endif
+}
+
+void successFeedback() {
+  digitalWrite(PIN_LED, HIGH);
+  beep(BUZZER_FREQ, 100);
+  delay(80);
+  beep(BUZZER_FREQ + 300, 100);
+  digitalWrite(PIN_LED, LOW);
+}
+
+void errorFeedback() {
+  for (int i = 0; i < 3; i++) {
+    beep(500, 120);
+    delay(80);
   }
 }
