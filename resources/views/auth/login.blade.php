@@ -229,13 +229,12 @@
                             <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
                         @enderror
 
-                        <div class="flex items-center justify-between mt-4 text-[11px]">
+                        <div class="flex items-center mt-4 text-[11px]">
                             <label for="remember" class="flex items-center gap-2 text-stone-600">
                                 <input id="remember" type="checkbox" name="remember" checked
                                     class="w-4 h-4 rounded border-[#0b3b2c] text-[#0b3b2c] accent-[#0b3b2c] focus:ring-[#0b3b2c]">
                                 Ingat sesi di saung ini
                             </label>
-                            <span class="font-bold text-[#0b3b2c]">Lupa PIN?</span>
                         </div>
 
                         <button type="submit"

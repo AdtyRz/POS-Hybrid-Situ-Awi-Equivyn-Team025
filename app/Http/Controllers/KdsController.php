@@ -139,7 +139,7 @@ class KdsController extends Controller
         $rataRataMasakTeks = $rataRataMasakMenit > 0 ? $rataRataMasakMenit . ' Mnt' : '— Mnt';
         $labelShift = ShiftService::ringkasan()['label'];
 
-        return view('KDS.index', compact(
+        return view('kds.index', compact(
             'target', 'judul', 'subJudul', 'lencana', 'tampilan',
             'kataMulai', 'kataSiap', 'kataRunner',
             'stasiunNama', 'stasiunSub', 'stasiunUtama', 'stasiun',

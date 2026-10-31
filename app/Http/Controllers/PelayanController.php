@@ -565,7 +565,7 @@ class PelayanController extends Controller
         ])->values();
         $shift = $this->infoShift();
 
-        return view('pelayan.notifikasi-panggilan-pelayan.index', array_merge(
+        return view('pelayan.notifikasi-panggilan.index', array_merge(
             $this->dataNavigasi(),
             compact(
                 'statistik',
@@ -600,7 +600,7 @@ class PelayanController extends Controller
         $statistik = $this->statistikHariIni();
         $meja = $this->getMejaByArea();
 
-        return view('pelayan.tab-antar.index', array_merge(
+        return view('pelayan.antar.index', array_merge(
             $this->dataNavigasi(),
             compact(
                 'siapAntar',
@@ -628,7 +628,7 @@ class PelayanController extends Controller
         $menu = $this->menuPelayan();
         $shift = $this->infoShift();
 
-        return view('pelayan.tab-saung.index', array_merge(
+        return view('pelayan.saung.index', array_merge(
             $this->dataNavigasi(),
             compact('menu', 'shift'),
             [
@@ -653,7 +653,7 @@ class PelayanController extends Controller
         $logAktivitas = $this->logAktivitasHariIni();
         $shift = $this->infoShift();
 
-        return view('pelayan.tab-shift.index', array_merge(
+        return view('pelayan.shift.index', array_merge(
             $this->dataNavigasi(),
             compact('statistik', 'logAktivitas', 'shift', 'menu'),
             [

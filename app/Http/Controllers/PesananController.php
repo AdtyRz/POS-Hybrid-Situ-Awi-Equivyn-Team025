@@ -31,7 +31,7 @@ class PesananController extends Controller
         $restoAddress = Pengaturan::nilai('alamat_resto', 'Jl. Raya Situ Awi Km. 4, Ciwidey, Kabupaten Bandung');
         $restoPhone = Pengaturan::nilai('telepon_resto', '0812-3456-7890');
 
-        return view('kasir.index', array_merge($data, compact(
+        return view('kasir.dashboard.index', array_merge($data, compact(
             'printLogo',
             'logoSrc',
             'receiptHeader',
@@ -375,7 +375,7 @@ class PesananController extends Controller
         $meja = MejaMakan::where('status_meja', 'kosong')->orderBy('kode_meja')->get();
         $menu = Menu::where('is_aktif', true)->where('stok_menu', '>', 0)->orderBy('nama_menu')->get();
 
-        return view('kasir.tambah', compact('meja', 'menu'));
+        return view('kasir.pesanan.tambah', compact('meja', 'menu'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -431,7 +431,7 @@ class PesananController extends Controller
             ->where('kode_pesanan', $kode)
             ->firstOrFail();
 
-        return view('pesanan.show', compact('pesanan'));
+        return view('shared.pesanan.show', compact('pesanan'));
     }
 
     public function ubahStatus(Request $request, string $kode): RedirectResponse|JsonResponse
