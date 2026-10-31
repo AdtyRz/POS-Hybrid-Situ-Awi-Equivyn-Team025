@@ -42,9 +42,4 @@ class MejaMakan extends Model
             'diantar',
         ]);
     }
-
-    public function bisaDipakai(): bool
-    {
-        return $this->pesananAktif()->count() === 0;
-    }
 }

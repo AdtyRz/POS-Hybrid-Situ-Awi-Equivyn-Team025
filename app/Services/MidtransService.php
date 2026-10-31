@@ -6,7 +6,6 @@ use App\Models\Pengaturan;
 use App\Models\Pesanan;
 use Midtrans\Config;
 use Midtrans\CoreApi;
-use Midtrans\Snap;
 use Midtrans\Transaction;
 
 class MidtransService
@@ -18,36 +17,6 @@ class MidtransService
         Config::$isProduction = config('midtrans.is_production', false);
         Config::$isSanitized = config('midtrans.is_sanitized', true);
         Config::$is3ds = config('midtrans.is_3ds', true);
-    }
-
-    public function createSnapToken(Pesanan $pesanan, $grossAmount = null): ?string
-    {
-        $grossAmount = $grossAmount ?? (float) $pesanan->total_bayar;
-
-        $params = [
-            'transaction_details' => [
-                'order_id' => $pesanan->kode_pesanan,
-                'gross_amount' => (int) round($grossAmount),
-            ],
-            'item_details' => $pesanan->detailPesanan->map(function ($detail) {
-                return [
-                    'id' => $detail->menu_id,
-                    'price' => (int) round($detail->harga_satuan),
-                    'quantity' => (int) $detail->jumlah,
-                    'name' => $detail->menu->nama_menu ?? 'Item',
-                ];
-            })->toArray(),
-            'customer_details' => [
-                'first_name' => optional($pesanan->pelanggan)->nama ?? 'Pelanggan',
-            ],
-        ];
-
-        try {
-            return Snap::getSnapToken($params);
-        } catch (\Exception $e) {
-            report($e);
-            return null;
-        }
     }
 
     /**
