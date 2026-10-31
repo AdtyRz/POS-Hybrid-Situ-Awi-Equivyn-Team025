@@ -165,11 +165,12 @@ class KasirMultiOrderLockTest extends TestCase
         $kasir = $this->kasir();
         $meja = $this->meja();
         $menu = $this->menu();
-        $pesanan = $this->pesanan($meja, $menu);
 
         $this->actingAs($kasir)
             ->post(route('kasir.lock'))
             ->assertRedirect(route('kasir.locked'));
+
+        $pesanan = $this->pesanan($meja, $menu);
 
         $this->assertTrue(session('kasir_locked'));
         $this->assertSame('standby', $kasir->fresh()->status_operasional);

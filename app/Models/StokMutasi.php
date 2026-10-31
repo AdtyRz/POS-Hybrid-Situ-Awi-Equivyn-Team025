@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StokMutasi extends Model
 {
@@ -20,20 +19,5 @@ class StokMutasi extends Model
             'stok_akhir' => 'integer',
             'created_at' => 'datetime',
         ];
-    }
-
-    public function menu(): BelongsTo
-    {
-        return $this->belongsTo(Menu::class, 'menu_id');
-    }
-
-    public function pesanan(): BelongsTo
-    {
-        return $this->belongsTo(Pesanan::class, 'pesanan_id');
-    }
-
-    public function pembuat(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
     }
 }

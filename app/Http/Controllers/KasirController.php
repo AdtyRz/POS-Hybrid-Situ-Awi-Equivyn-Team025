@@ -29,7 +29,7 @@ class KasirController extends Controller
             return [$m->id => SesiMeja::aktifUntuk($m)];
         });
 
-        return view('kasir.session', compact('meja', 'sesiAktif'));
+        return view('kasir.sesi.index', compact('meja', 'sesiAktif'));
     }
 
     /**
@@ -84,7 +84,7 @@ class KasirController extends Controller
             return redirect()->route('kasir.dashboard');
         }
 
-        return view('kasir.locked', [
+        return view('kasir.sesi.kunci', [
             'notifikasi' => $this->hitungNotifikasiTerkunci($request),
             'namaKasir' => $request->user()?->nama ?? 'Kasir',
         ]);

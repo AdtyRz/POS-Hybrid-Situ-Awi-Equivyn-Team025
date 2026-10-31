@@ -28,7 +28,7 @@ class EMenuController extends Controller
 {
     public function beranda(): View
     {
-        return view('emenu.beranda');
+        return view('pelanggan.beranda.index');
     }
 
     public function masuk(Request $request): RedirectResponse
@@ -70,7 +70,7 @@ class EMenuController extends Controller
         $mejaMakan = $this->cariMeja($meja);
         $sesi = SesiMeja::aktifUntuk($mejaMakan);
 
-        return view('emenu.kunci', [
+        return view('pelanggan.beranda.kunci', [
             'meja' => $mejaMakan,
             'panjangKode' => strlen($sesi->kode_unik),
         ]);
@@ -154,7 +154,7 @@ class EMenuController extends Controller
 
         $riwayat = session('riwayat_meja_' . $mejaMakan->id, []);
 
-        return view('emenu.aplikasi', [
+        return view('pelanggan.menu.index', [
             'meja' => $mejaMakan,
             'menuJson' => $menuJson,
             'kategoriJson' => $kategoriJson,
@@ -265,7 +265,7 @@ class EMenuController extends Controller
             $qris = $midtrans->createQrisCharge($pesanan);
         }
 
-        return view('emenu.status', compact('pesanan', 'tahap', 'qris', 'qrisTtl'));
+        return view('pelanggan.pesanan.status', compact('pesanan', 'tahap', 'qris', 'qrisTtl'));
     }
 
     public function pelacakan(string $meja): View|RedirectResponse
@@ -289,7 +289,7 @@ class EMenuController extends Controller
             ->sortBy(fn ($pesanan) => array_search($pesanan->kode_pesanan, $kodeRiwayat))
             ->values();
 
-        return view('emenu.pelacakan', [
+        return view('pelanggan.pesanan.pelacakan', [
             'meja' => $mejaMakan,
             'daftarPesanan' => $daftarPesanan,
             'tahapStatus' => [
@@ -326,7 +326,7 @@ class EMenuController extends Controller
         // terjadi saat Midtrans menandai transaksi expire.
         $qrisTtl = $midtrans->qrisExpiryMinutes() * 60;
 
-        return view('emenu.verifikasi', compact('pesanan', 'qris', 'qrisTtl'));
+        return view('pelanggan.pembayaran.verifikasi', compact('pesanan', 'qris', 'qrisTtl'));
     }
 
     /**
@@ -417,7 +417,30 @@ class EMenuController extends Controller
             return $this->kunciRedirect($pesanan->meja, 'Sesi meja sudah berakhir. Masukkan kembali kode saung untuk membuka pesanan.');
         }
 
-        return view('emenu.bayar-tunai', compact('pesanan'));
+        if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
+            return redirect()->route('emenu.status', $pesanan->kode_pesanan);
+        }
+
+        return view('pelanggan.pembayaran.tunai', compact('pesanan'));
+    }
+
+    public function tunaiStatus(Request $request, string $kode_pesanan): JsonResponse
+    {
+        $pesanan = Pesanan::with('meja')->where('kode_pesanan', $kode_pesanan)->firstOrFail();
+
+        if (! $this->pesananBolehDiakses($request, $pesanan)) {
+            return response()->json([
+                'lunas' => false,
+                'message' => 'Sesi meja sudah berakhir. Silakan buka kembali pesanan dari meja.',
+            ], 403);
+        }
+
+        return response()->json([
+            'lunas' => $pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR,
+            'status_pesanan' => $pesanan->status_pesanan,
+            'status_pembayaran' => $pesanan->status_pembayaran,
+            'redirect' => route('emenu.status', $pesanan->kode_pesanan),
+        ]);
     }
 
     public function panggil(Request $request, string $meja): RedirectResponse

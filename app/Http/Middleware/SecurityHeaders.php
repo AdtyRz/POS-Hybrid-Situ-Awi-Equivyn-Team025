@@ -23,6 +23,11 @@ class SecurityHeaders
 
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
+        // HSTS hanya dikirim lewat HTTPS agar localhost/HTTP tetap bisa dipakai.
+        if ($request->isSecure()) {
+            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        }
+
         return $response;
     }
 }

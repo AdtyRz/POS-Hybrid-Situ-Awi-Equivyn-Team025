@@ -168,6 +168,26 @@ class SesiMejaTest extends TestCase
             ->assertRedirect(route('emenu.meja', $meja->kode_meja));
     }
 
+    public function test_sesi_aktif_menyesuaikan_panjang_kode_setelah_pengaturan_diubah(): void
+    {
+        $meja = $this->siapkanMeja();
+        $sesi = SesiMeja::aktifUntuk($meja);
+
+        $this->assertSame(4, strlen($sesi->kode_unik));
+
+        Pengaturan::simpanBanyak(['encryption_level' => '6 Digit']);
+
+        $sesiAktif = SesiMeja::aktifUntuk($meja);
+
+        $this->assertSame($sesi->id, $sesiAktif->id);
+        $this->assertSame(6, strlen($sesiAktif->kode_unik));
+        $this->assertNotSame($sesi->kode_unik, $sesiAktif->kode_unik);
+
+        $this->get(route('emenu.kunci', $meja->kode_meja))
+            ->assertOk()
+            ->assertSee('kunciApp(6,', false);
+    }
+
     public function test_putuskan_sesi_ditolak_bila_masih_ada_pesanan_belum_dibayar(): void
     {
         $meja = $this->siapkanMeja();

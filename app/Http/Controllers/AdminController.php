@@ -9,8 +9,10 @@ use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
+use App\Models\RiwayatShift;
 use App\Models\SesiMeja;
 use App\Models\User;
+use App\Services\ShiftService;
 use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -318,34 +320,6 @@ class AdminController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    public function index(): View
-    {
-        $transaksi = Pesanan::with(['meja', 'kasir', 'detailPesanan.menu'])
-            ->orderByDesc('waktu_pesan')
-            ->limit(50)
-            ->get()
-            ->map(function ($pesanan) {
-                $batal = $pesanan->status_pesanan === 'dibatalkan';
-                $namaMenu = $pesanan->detailPesanan->take(2)->map(fn ($d) => $d->menu->nama_menu)->join(', ');
-                $jumlahItem = $pesanan->detailPesanan->sum('jumlah');
-
-                return [
-                    'id' => '#' . $pesanan->kode_pesanan,
-                    'time' => $pesanan->waktu_pesan->timezone('Asia/Jakarta')->format('H.i') . ' WIB',
-                    'table' => $pesanan->meja->area . ' (' . $pesanan->meja->kode_meja . ')',
-                    'items' => $jumlahItem . ' Item (' . $namaMenu . ')',
-                    'method' => $batal ? 'VOID Kasir' : ($pesanan->metode_pembayaran === 'qris' ? 'QRIS Midtrans' : 'Tunai Kasir'),
-                    'subtotal' => (float) $pesanan->total_bayar,
-                    'total' => (float) $pesanan->total_bayar,
-                    'cashier' => $pesanan->kasir ? $pesanan->kasir->nama : '-',
-                    'status' => $batal ? 'void' : 'valid',
-                    'statusText' => $batal ? 'VOID Approved' : 'Match/Valid',
-                ];
-            })->values();
-
-        return view('admin.laporan-penjualan.index', ['transaksiJson' => $transaksi]);
-    }
-
     private function menuPayload(): array
     {
         $menuJson = Menu::with('kategori')->orderBy('nama_menu')->get()->map(function ($menu) {
@@ -411,7 +385,7 @@ class AdminController extends Controller
         $kategoriJson = $payload['categories'];
         $kategoriForm = Kategori::untukMenu()->orderBy('nama_kategori')->get();
 
-        return view('admin.master-menu.index', compact('menuJson', 'kategoriJson', 'kategoriForm'));
+        return view('admin.master.menu.index', compact('menuJson', 'kategoriJson', 'kategoriForm'));
     }
 
     public function dataMenu(): JsonResponse
@@ -706,7 +680,9 @@ class AdminController extends Controller
             'qr_aktif' => SesiMeja::where('status', 'aktif')->distinct('meja_id')->count('meja_id'),
         ];
 
-        return view('admin.master-meja.index', compact('daftarMeja', 'detailJson', 'mejaPertama', 'areaOptions', 'kategoriList', 'statistik'));
+        $panjangKode = SesiMeja::panjangKode();
+
+        return view('admin.master.meja.index', compact('daftarMeja', 'detailJson', 'mejaPertama', 'areaOptions', 'kategoriList', 'statistik', 'panjangKode'));
     }
 
     public function panggilPelayan(Request $request): RedirectResponse
@@ -792,7 +768,7 @@ class AdminController extends Controller
             return $m;
         });
 
-        $html = view('admin.master-meja.cetak-qr', compact('meja'))->render();
+        $html = view('admin.master.meja.cetak-qr', compact('meja'))->render();
         return response($html, 200)->header('Content-Type', 'text/html');
     }
 
@@ -1049,6 +1025,55 @@ class AdminController extends Controller
             'statistik',
             'sesiJson'
         ));
+    }
+
+    public function riwayatShift(Request $request): View
+    {
+        ShiftService::tutupKedaluwarsa();
+
+        $role = (string) $request->query('role', '');
+        $role = array_key_exists($role, ShiftService::ROLES) ? $role : null;
+        $cari = trim((string) $request->query('cari', ''));
+
+        $tanggal = null;
+
+        if ($request->filled('tanggal')) {
+            try {
+                $tanggal = Carbon::parse((string) $request->query('tanggal'), 'Asia/Jakarta');
+            } catch (\Throwable $exception) {
+                $tanggal = null;
+            }
+        }
+
+        $riwayat = RiwayatShift::with('user')
+            ->whereIn('role', array_keys(ShiftService::ROLES))
+            ->when($role, fn ($query) => $query->where('role', $role))
+            ->when($cari !== '', function ($query) use ($cari) {
+                $pola = '%' . mb_strtolower($cari) . '%';
+
+                $query->whereHas('user', function ($pengguna) use ($pola) {
+                    $pengguna->whereRaw('LOWER(nama) LIKE ?', [$pola]);
+                });
+            })
+            ->when($tanggal, function ($query) use ($tanggal) {
+                $query->whereBetween('mulai_pada', [
+                    $tanggal->copy()->startOfDay()->utc(),
+                    $tanggal->copy()->endOfDay()->utc(),
+                ]);
+            })
+            ->orderByDesc('mulai_pada')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('admin.riwayat-shift.index', [
+            'riwayat' => $riwayat,
+            'ringkasanRole' => ShiftService::ringkasanPerRole(),
+            'role' => $role,
+            'cari' => $cari,
+            'tanggal' => (string) $request->query('tanggal', ''),
+            'shiftSlots' => ShiftService::daftarShift(),
+            'pembatasanAktif' => ShiftService::pembatasanAktif(),
+        ]);
     }
 
     public function simpanAkun(Request $request): RedirectResponse

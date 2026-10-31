@@ -59,6 +59,7 @@ const unsigned long TAP_MIN_MS = 50;
 String kodeSesi = "----";
 String statusRingkas = "Belum ada pesan";
 String lcdMessage = "Panggil Pelayan";
+int buzzerDuration = 3;
 float totalBayar = 0;
 int jumlahPesanan = 0;
 
@@ -309,6 +310,14 @@ void fetchKonfigurasi() {
     lcdMessage = lcdMessage.substring(0, 16);
   }
 
+  buzzerDuration = konfigurasi["buzzer_duration"] | 3;
+  if (buzzerDuration < 1) {
+    buzzerDuration = 1;
+  }
+  if (buzzerDuration > 10) {
+    buzzerDuration = 10;
+  }
+
   JsonArray data = doc["data"].as<JsonArray>();
   for (JsonVariant item : data) {
     JsonObject meja = item.as<JsonObject>();
@@ -525,9 +534,7 @@ void buzzerOff() {
 
 void successFeedback() {
   digitalWrite(PIN_LED, HIGH);
-  beep(BUZZER_FREQ, 100);
-  delay(80);
-  beep(BUZZER_FREQ + 300, 100);
+  beep(BUZZER_FREQ, (uint16_t)(buzzerDuration * 1000));
   digitalWrite(PIN_LED, LOW);
 }
 

@@ -7,6 +7,7 @@ use App\Models\MejaMakan;
 use App\Models\Pengaturan;
 use App\Models\SesiMeja;
 use App\Services\IotStatusService;
+use App\Services\ShiftService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -60,7 +62,7 @@ class PengaturanController extends Controller
                 && filled(config('midtrans.server_key')),
         ];
 
-        return view('admin.pengaturan-sistem.index', [
+        return view('admin.pengaturan.index', [
             'profil' => $profil,
             'logoSrc' => Pengaturan::logoUrl(),
             'midtrans' => $midtrans,
@@ -71,13 +73,39 @@ class PengaturanController extends Controller
             'sesiAktif' => $sesiAktif,
             'perangkatTerpasang' => $daftarMeja->whereNotNull('id_device')->count(),
             'mejaTerdaftar' => $daftarMeja->count(),
+            'shiftSlots' => ShiftService::daftarShift(),
+            'shiftRestriction' => ShiftService::pembatasanAktif(),
         ]);
     }
 
     public function simpan(Request $request): RedirectResponse
     {
-        foreach (['auto_cutter', 'print_logo', 'print_qr', 'session_auto_close', 'service_charge_enabled', 'backup_cloud', 'midtrans_auto_cancel'] as $kunci) {
+        $shiftTersimpan = ShiftService::daftarShift();
+
+        foreach ([1, 2, 3] as $nomor) {
+            $shift = $shiftTersimpan[$nomor - 1];
+
+            foreach (['nama', 'mulai', 'selesai'] as $kolom) {
+                if (! $request->exists("shift_{$nomor}_{$kolom}")) {
+                    $request->merge(["shift_{$nomor}_{$kolom}" => $shift[$kolom]]);
+                }
+            }
+
+            if (! $request->exists("shift_{$nomor}_aktif")) {
+                $request->merge(["shift_{$nomor}_aktif" => $shift['aktif'] ? 1 : 0]);
+            }
+        }
+
+        if (! $request->exists('shift_restriction_enabled')) {
+            $request->merge(['shift_restriction_enabled' => ShiftService::pembatasanAktif() ? 1 : 0]);
+        }
+
+        foreach (['auto_cutter', 'print_logo', 'print_qr', 'session_auto_close', 'service_charge_enabled', 'backup_cloud', 'midtrans_auto_cancel', 'shift_restriction_enabled'] as $kunci) {
             $request->merge([$kunci => $request->boolean($kunci)]);
+        }
+
+        foreach ([1, 2, 3] as $nomor) {
+            $request->merge(["shift_{$nomor}_aktif" => $request->boolean("shift_{$nomor}_aktif")]);
         }
 
         $data = $request->validate([
@@ -107,9 +135,40 @@ class PengaturanController extends Controller
             'backup_retention' => ['nullable', 'integer', 'min:1', 'max:90'],
             'backup_cloud' => ['nullable', 'boolean'],
             'midtrans_auto_cancel' => ['nullable', 'boolean'],
+            'shift_restriction_enabled' => ['nullable', 'boolean'],
+            'shift_1_nama' => ['required', 'string', 'max:40'],
+            'shift_1_mulai' => ['required', 'date_format:H:i'],
+            'shift_1_selesai' => ['required', 'date_format:H:i'],
+            'shift_1_aktif' => ['nullable', 'boolean'],
+            'shift_2_nama' => ['required', 'string', 'max:40'],
+            'shift_2_mulai' => ['required', 'date_format:H:i'],
+            'shift_2_selesai' => ['required', 'date_format:H:i'],
+            'shift_2_aktif' => ['nullable', 'boolean'],
+            'shift_3_nama' => ['required', 'string', 'max:40'],
+            'shift_3_mulai' => ['required', 'date_format:H:i'],
+            'shift_3_selesai' => ['required', 'date_format:H:i'],
+            'shift_3_aktif' => ['nullable', 'boolean'],
         ], [
             'lcd_message.max' => 'Pesan tampilan LCD maksimal 16 karakter.',
         ]);
+
+        foreach ([1, 2, 3] as $nomor) {
+            if ($data["shift_{$nomor}_mulai"] === $data["shift_{$nomor}_selesai"]) {
+                throw ValidationException::withMessages([
+                    "shift_{$nomor}_selesai" => "Jam selesai shift {$nomor} harus berbeda dari jam mulai.",
+                ]);
+            }
+        }
+
+        $adaShiftAktif = collect([1, 2, 3])->contains(
+            fn ($nomor) => (bool) $data["shift_{$nomor}_aktif"]
+        );
+
+        if (! empty($data['shift_restriction_enabled']) && ! $adaShiftAktif) {
+            throw ValidationException::withMessages([
+                'shift_restriction_enabled' => 'Aktifkan minimal satu shift sebelum membatasi akses staf.',
+            ]);
+        }
 
         Pengaturan::simpanBanyak($data);
 

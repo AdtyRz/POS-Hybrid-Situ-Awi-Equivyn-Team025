@@ -47,16 +47,6 @@ class Pesanan extends Model
         return $this->belongsTo(User::class, 'kasir_id');
     }
 
-    public function pelanggan(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'pelanggan_id');
-    }
-
-    public function pembatal(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'void_by');
-    }
-
     public function detailPesanan(): HasMany
     {
         return $this->hasMany(DetailPesanan::class, 'pesanan_id');
@@ -65,22 +55,5 @@ class Pesanan extends Model
     public function pembayaran(): HasOne
     {
         return $this->hasOne(Pembayaran::class, 'pesanan_id');
-    }
-
-    public function stokMutasi(): HasMany
-    {
-        return $this->hasMany(StokMutasi::class, 'pesanan_id');
-    }
-
-    public function masihAktif(): bool
-    {
-        return in_array($this->status_pesanan, [
-            self::STATUS_MENUNGGU,
-            self::STATUS_MENUNGGU_VERIFIKASI,
-            self::STATUS_MENUNGGU_PEMBAYARAN,
-            self::STATUS_DIPROSES,
-            self::STATUS_SIAP,
-            self::STATUS_DIANTAR,
-        ], true);
     }
 }
