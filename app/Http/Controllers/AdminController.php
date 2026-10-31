@@ -320,34 +320,6 @@ class AdminController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    public function index(): View
-    {
-        $transaksi = Pesanan::with(['meja', 'kasir', 'detailPesanan.menu'])
-            ->orderByDesc('waktu_pesan')
-            ->limit(50)
-            ->get()
-            ->map(function ($pesanan) {
-                $batal = $pesanan->status_pesanan === 'dibatalkan';
-                $namaMenu = $pesanan->detailPesanan->take(2)->map(fn ($d) => $d->menu->nama_menu)->join(', ');
-                $jumlahItem = $pesanan->detailPesanan->sum('jumlah');
-
-                return [
-                    'id' => '#' . $pesanan->kode_pesanan,
-                    'time' => $pesanan->waktu_pesan->timezone('Asia/Jakarta')->format('H.i') . ' WIB',
-                    'table' => $pesanan->meja->area . ' (' . $pesanan->meja->kode_meja . ')',
-                    'items' => $jumlahItem . ' Item (' . $namaMenu . ')',
-                    'method' => $batal ? 'VOID Kasir' : ($pesanan->metode_pembayaran === 'qris' ? 'QRIS Midtrans' : 'Tunai Kasir'),
-                    'subtotal' => (float) $pesanan->total_bayar,
-                    'total' => (float) $pesanan->total_bayar,
-                    'cashier' => $pesanan->kasir ? $pesanan->kasir->nama : '-',
-                    'status' => $batal ? 'void' : 'valid',
-                    'statusText' => $batal ? 'VOID Approved' : 'Match/Valid',
-                ];
-            })->values();
-
-        return view('admin.laporan-penjualan.index', ['transaksiJson' => $transaksi]);
-    }
-
     private function menuPayload(): array
     {
         $menuJson = Menu::with('kategori')->orderBy('nama_menu')->get()->map(function ($menu) {

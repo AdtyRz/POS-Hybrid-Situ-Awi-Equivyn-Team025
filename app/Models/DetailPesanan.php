@@ -29,9 +29,4 @@ class DetailPesanan extends Model
     {
         return $this->belongsTo(Menu::class, 'menu_id');
     }
-
-    public function hitungSubtotal(): float
-    {
-        return round($this->jumlah * (float) $this->harga_satuan, 2);
-    }
 }
