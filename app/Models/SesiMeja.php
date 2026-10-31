@@ -53,7 +53,28 @@ class SesiMeja extends Model
             $sesi = null;
         }
 
-        return $sesi ?? static::bukaBaru($meja);
+        if (! $sesi) {
+            return static::bukaBaru($meja);
+        }
+
+        // Samakan panjang kode sesi yang sedang berjalan dengan pengaturan
+        // terbaru agar LCD, halaman kunci, dan master meja tidak tertinggal
+        // memakai kode 4 digit setelah admin beralih ke 6 digit (atau sebaliknya).
+        if (strlen((string) $sesi->kode_unik) !== static::panjangKode()) {
+            $sesi->update([
+                'kode_unik' => static::kodeUnikBaru($sesi->kode_unik),
+            ]);
+        }
+
+        return $sesi;
+    }
+
+    /**
+     * Panjang kode sesi sesuai pengaturan enkripsi (4 atau 6 digit).
+     */
+    public static function panjangKode(): int
+    {
+        return Pengaturan::nilai('encryption_level') === '6 Digit' ? 6 : 4;
     }
 
     private static function perluDitutupOtomatis(self $sesi): bool
@@ -105,7 +126,8 @@ class SesiMeja extends Model
     }
 
     /**
-     * Buat sesi baru (aktif) untuk meja berikut kode unik 4 digit.
+     * Buat sesi baru (aktif) untuk meja berikut kode unik sesuai pengaturan
+     * panjang digit (4 atau 6 digit).
      */
     public static function bukaBaru(MejaMakan $meja): self
     {
@@ -177,7 +199,7 @@ class SesiMeja extends Model
      */
     public static function kodeUnikBaru(?string $kecuali = null): string
     {
-        $digit = Pengaturan::nilai('encryption_level') === '6 Digit' ? 6 : 4;
+        $digit = static::panjangKode();
         $maks = (10 ** $digit) - 1;
 
         for ($i = 0; $i < 50; $i++) {

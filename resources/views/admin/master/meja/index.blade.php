@@ -337,7 +337,7 @@
                                                     <path stroke-linecap="round" d="M12 7v5l3 2" />
                                                 </svg> LCD: "{{ $m->billKode ? 'Diproses' : 'Siap' }}"
                                             </span>
-                                            <span>Kode 4 Digit</span>
+                                            <span>Kode {{ $panjangKode }} Digit</span>
                                         </div>
                                     </div>
                                 @else
@@ -379,7 +379,7 @@
                                                         d="M5 13l4 4L19 7" />
                                                 </svg> Node Ready
                                             </span>
-                                            <span>Kode 4 Digit</span>
+                                            <span>Kode {{ $panjangKode }} Digit</span>
                                         </div>
                                     </div>
                                 @endif
@@ -541,7 +541,7 @@
                                 class="font-mono text-[11px] font-bold text-[#0B4D2B] hover:underline break-all mt-0.5">
                                 <span x-text="detailMeja[selectedSaung] && detailMeja[selectedSaung].url ? detailMeja[selectedSaung].url : window.location.origin + '/meja/' + selectedSaung"></span>
                             </a>
-                            <span class="text-[10px] text-[#707971] mt-2">Kode Masuk (4 Digit):</span>
+                            <span class="text-[10px] text-[#707971] mt-2">Kode Masuk ({{ $panjangKode }} Digit):</span>
                             <span class="font-mono text-2xl font-bold text-[#00341A] tracking-[0.3em] mt-0.5"
                                 x-text="detailMeja[selectedSaung] && detailMeja[selectedSaung].token ? detailMeja[selectedSaung].token : '-'"></span>
                             <span class="text-[10px] text-[#2E6A45] font-semibold mt-1 flex items-center justify-center gap-1">

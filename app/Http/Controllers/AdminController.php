@@ -680,7 +680,9 @@ class AdminController extends Controller
             'qr_aktif' => SesiMeja::where('status', 'aktif')->distinct('meja_id')->count('meja_id'),
         ];
 
-        return view('admin.master.meja.index', compact('daftarMeja', 'detailJson', 'mejaPertama', 'areaOptions', 'kategoriList', 'statistik'));
+        $panjangKode = SesiMeja::panjangKode();
+
+        return view('admin.master.meja.index', compact('daftarMeja', 'detailJson', 'mejaPertama', 'areaOptions', 'kategoriList', 'statistik', 'panjangKode'));
     }
 
     public function panggilPelayan(Request $request): RedirectResponse
