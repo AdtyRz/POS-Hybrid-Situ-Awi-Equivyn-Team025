@@ -636,7 +636,7 @@
 
                         <div class="grid grid-cols-2 gap-2">
                             <button type="button"
-                                    @click="cetakStruk()"
+                                    @click="bukaModalStruk()"
                                     :disabled="!currentTable || !currentTable.hasReceiptOrders"
                                     class="py-2.5 px-3 rounded-lg bg-[#E0B24E]/15 hover:bg-[#E0B24E]/25 border border-[#E0B24E]/40 text-[#C9982F] font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
@@ -666,95 +666,6 @@
                         </button>
                     </div>
                 </div>
-
-                <div class="bg-white border border-[#C8C2B3]/60 rounded-xl overflow-hidden shadow-xs">
-
-                    <div class="bg-[#F3EEDF] px-3 py-2 flex items-center justify-between text-xs font-bold text-[#2B2A26] border-b border-[#C8C2B3]/30">
-                        <div class="flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5 text-[#0B4D2B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            <span>Pilih Pesanan &amp; Cetak Struk</span>
-                        </div>
-                        <span class="font-mono text-[10px] text-[#6B6A63]"
-                              x-text="(currentTable && currentTable.hasReceiptOrders) ? (selectedReceiptCount + '/' + currentTable.receiptOrders.length + ' dipilih') : 'Belum ada struk lunas'"></span>
-                    </div>
-
-                    <div class="p-3 bg-[#FAF7F0] space-y-2 max-h-[360px] overflow-y-auto">
-                        <template x-if="currentTable && currentTable.hasReceiptOrders">
-                            <div class="space-y-2">
-                                <div class="flex items-center justify-between gap-2">
-                                    <span class="text-[10px] font-bold text-[#6B6A63]">Centang pesanan yang akan dicetak / dicetak ulang:</span>
-                                    <div class="flex items-center gap-1">
-                                        <button type="button" @click="pilihSemuaStruk()" class="px-2 py-1 rounded-md bg-white border border-[#C8C2B3]/70 text-[9px] font-bold text-[#404941] hover:bg-[#F3EEDF]">Semua</button>
-                                        <button type="button" @click="kosongkanPilihanStruk()" class="px-2 py-1 rounded-md bg-white border border-[#C8C2B3]/70 text-[9px] font-bold text-[#404941] hover:bg-[#F3EEDF]">Kosongkan</button>
-                                    </div>
-                                </div>
-
-                                <template x-for="(order, receiptIndex) in currentTable.receiptOrders" :key="order.kode_pesanan">
-                                    <label class="block w-full rounded-lg border bg-white p-2.5 cursor-pointer transition"
-                                           :class="selectedReceiptCodes.includes(order.kode_pesanan)
-                                               ? 'border-[#0B4D2B] ring-1 ring-[#0B4D2B]/15'
-                                               : 'border-[#C8C2B3]/70 opacity-80'">
-                                        <div class="flex items-start gap-2">
-                                            <input type="checkbox"
-                                                   class="mt-0.5 h-3.5 w-3.5 rounded border-[#C8C2B3] text-[#0B4D2B] focus:ring-[#0B4D2B]"
-                                                   :checked="selectedReceiptCodes.includes(order.kode_pesanan)"
-                                                   @change="toggleStruk(order.kode_pesanan)">
-                                            <div class="flex-1 min-w-0">
-                                                <div class="flex items-center justify-between gap-2">
-                                                    <span class="text-[10px] font-extrabold text-[#00341A]" x-text="'Order ' + (receiptIndex + 1) + ' • ' + (order.waktu_pesan || '-')"></span>
-                                                    <span class="font-mono text-[10px] font-bold text-[#00341A]" x-text="formatRupiah(order.total_bayar)"></span>
-                                                </div>
-                                                <div class="flex items-center justify-between gap-2 mt-0.5">
-                                                    <span class="text-[9px] text-[#6B6A63]" x-text="'Pemesan: ' + (order.nama_pelanggan || 'Tamu')"></span>
-                                                    <span class="shrink-0 rounded px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide"
-                                                          :class="order.printed ? 'bg-[#F3EEDF] text-[#7A5900]' : 'bg-[#E8F5EE] text-[#047857]'"
-                                                          x-text="order.printed ? 'Sudah dicetak' : 'Belum dicetak'"></span>
-                                                </div>
-
-                                                <div class="mt-1.5 border-t border-dashed border-[#C8C2B3]/70 pt-1.5 space-y-0.5">
-                                                    <template x-for="(item, itemIndex) in order.items" :key="order.kode_pesanan + '-' + itemIndex">
-                                                        <div class="flex items-center justify-between gap-2 text-[10px]">
-                                                            <span class="text-[#2B2A26] truncate" x-text="item.qty + 'x ' + item.name"></span>
-                                                            <span class="font-mono text-[#404941] shrink-0" x-text="formatNumber(item.price * item.qty)"></span>
-                                                        </div>
-                                                    </template>
-                                                </div>
-
-                                                <div class="mt-1.5 flex items-center justify-between text-[9px] text-[#6B6A63]">
-                                                    <span x-text="'Subtotal: ' + formatRupiah(order.subtotal)"></span>
-                                                    <span x-text="order.metode_pembayaran === 'qris' ? 'QRIS Midtrans' : 'Tunai Kasir'"></span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </label>
-                                </template>
-
-                                <div class="rounded-lg bg-[#F3EEDF] border border-[#C8C2B3]/50 px-2.5 py-2 flex items-center justify-between text-[10px]">
-                                    <span class="font-bold text-[#6B6A63]">Dipilih: <strong class="text-[#00341A]" x-text="selectedReceiptCount + ' order'"></strong></span>
-                                    <span class="font-mono font-extrabold text-[#00341A]" x-text="formatRupiah((currentTable.receiptOrders || []).filter(o => selectedReceiptCodes.includes(o.kode_pesanan)).reduce((t, o) => t + Number(o.total_bayar || 0), 0))"></span>
-                                </div>
-                            </div>
-                        </template>
-
-                        <div x-show="!currentTable || !currentTable.hasReceiptOrders"
-                             x-cloak
-                             class="w-full bg-white p-5 rounded border border-dashed border-[#C8C2B3] text-center space-y-2">
-                            <div class="w-10 h-10 rounded-full bg-[#FAF7F0] border border-[#C8C2B3]/60 flex items-center justify-center mx-auto text-[#C9982F]">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                                </svg>
-                            </div>
-                            <div class="text-[11px] font-bold text-[#2B2A26]">Belum ada pesanan lunas pada sesi ini</div>
-                            <div class="text-[10px] text-[#6B6A63] leading-relaxed">
-                                Setelah pembayaran dikonfirmasi, pesanan lunas akan muncul di sini.
-                                Pesanan yang sudah dicetak tetap tersedia agar dapat dicetak ulang.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
             </aside>
         </div>
 
@@ -882,6 +793,132 @@
         </div>
     </div>
 
+    <div x-show="receiptModal.open"
+         x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#1C1C18]/45 backdrop-blur-sm">
+        <div class="w-full max-w-xl bg-white rounded-2xl border border-[#C8C2B3]/70 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+             @click.outside="receiptModal.open = false">
+            <div class="px-5 py-4 border-b border-[#E5E0D5] flex items-start justify-between gap-4 shrink-0">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-[#FBF3DD] text-[#C9982F] flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                        </svg>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="font-display font-bold text-lg text-[#00341A]">Pilih Pesanan &amp; Cetak Struk</h3>
+                        <p class="text-xs text-[#6B6A63] mt-1 leading-relaxed">
+                            Centang pesanan yang akan dicetak atau dicetak ulang.
+                            Struk memuat semua pesanan yang dipilih.
+                        </p>
+                    </div>
+                </div>
+                <button type="button"
+                        @click="receiptModal.open = false"
+                        class="w-8 h-8 rounded-lg bg-[#FAF7F0] hover:bg-[#F3EEDF] border border-[#C8C2B3]/60 text-[#6B6A63] hover:text-[#2B2A26] flex items-center justify-center transition active:scale-95 shrink-0"
+                        aria-label="Tutup">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="px-5 py-4 bg-[#FAF7F0] overflow-y-auto flex-1">
+                <div class="flex items-center justify-between gap-2 mb-2">
+                    <span class="text-[10px] font-bold text-[#6B6A63]"
+                          x-text="'Pesanan lunas sesi ini: ' + ((currentTable && currentTable.receiptOrders) ? currentTable.receiptOrders.length : 0)"></span>
+                    <div class="flex items-center gap-1">
+                        <button type="button" @click="pilihSemuaStruk()" class="px-2 py-1 rounded-md bg-white border border-[#C8C2B3]/70 text-[9px] font-bold text-[#404941] hover:bg-[#F3EEDF]">Semua</button>
+                        <button type="button" @click="kosongkanPilihanStruk()" class="px-2 py-1 rounded-md bg-white border border-[#C8C2B3]/70 text-[9px] font-bold text-[#404941] hover:bg-[#F3EEDF]">Kosongkan</button>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <template x-for="(order, receiptIndex) in (currentTable ? currentTable.receiptOrders : [])" :key="order.kode_pesanan">
+                        <label class="block w-full rounded-lg border bg-white p-2.5 cursor-pointer transition"
+                               :class="selectedReceiptCodes.includes(order.kode_pesanan)
+                                   ? 'border-[#0B4D2B] ring-1 ring-[#0B4D2B]/15'
+                                   : 'border-[#C8C2B3]/70 opacity-80'">
+                            <div class="flex items-start gap-2">
+                                <input type="checkbox"
+                                       class="mt-0.5 h-3.5 w-3.5 rounded border-[#C8C2B3] text-[#0B4D2B] focus:ring-[#0B4D2B]"
+                                       :checked="selectedReceiptCodes.includes(order.kode_pesanan)"
+                                       @change="toggleStruk(order.kode_pesanan)">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="text-[11px] font-extrabold text-[#00341A]" x-text="'Order ' + (receiptIndex + 1) + ' • ' + (order.waktu_pesan || '-')"></span>
+                                        <span class="font-mono text-[11px] font-bold text-[#00341A]" x-text="formatRupiah(order.total_bayar)"></span>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-2 mt-0.5">
+                                        <span class="text-[10px] text-[#6B6A63]" x-text="'Pemesan: ' + (order.nama_pelanggan || 'Tamu')"></span>
+                                        <span class="shrink-0 whitespace-nowrap rounded px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide"
+                                              :class="order.printed ? 'bg-[#F3EEDF] text-[#7A5900]' : 'bg-[#E8F5EE] text-[#047857]'"
+                                              x-text="order.printed ? 'Sudah dicetak' : 'Belum dicetak'"></span>
+                                    </div>
+
+                                    <div class="mt-1.5 border-t border-dashed border-[#C8C2B3]/70 pt-1.5 space-y-0.5">
+                                        <template x-for="(item, itemIndex) in order.items" :key="order.kode_pesanan + '-' + itemIndex">
+                                            <div class="flex items-center justify-between gap-2 text-[10px]">
+                                                <span class="text-[#2B2A26] truncate" x-text="item.qty + 'x ' + item.name"></span>
+                                                <span class="font-mono text-[#404941] shrink-0" x-text="formatNumber(item.price * item.qty)"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    <div class="mt-1.5 flex items-center justify-between text-[9px] text-[#6B6A63]">
+                                        <span x-text="'Subtotal: ' + formatRupiah(order.subtotal)"></span>
+                                        <span x-text="order.metode_pembayaran === 'qris' ? 'QRIS Midtrans' : 'Tunai Kasir'"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </label>
+                    </template>
+
+                    <div x-show="!currentTable || !currentTable.hasReceiptOrders"
+                         x-cloak
+                         class="w-full bg-white p-5 rounded border border-dashed border-[#C8C2B3] text-center space-y-2">
+                        <div class="text-[11px] font-bold text-[#2B2A26]">Belum ada pesanan lunas pada sesi ini</div>
+                        <div class="text-[10px] text-[#6B6A63] leading-relaxed">
+                            Setelah pembayaran dikonfirmasi, pesanan lunas akan muncul di sini.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-5 py-4 border-t border-[#E5E0D5] bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+                <div>
+                    <div class="text-[10px] font-bold text-[#6B6A63]">
+                        Dipilih: <strong class="text-[#00341A]" x-text="selectedReceiptCount + ' order'"></strong>
+                    </div>
+                    <div class="font-mono font-extrabold text-sm text-[#00341A]"
+                         x-text="formatRupiah((currentTable ? currentTable.receiptOrders : []).filter(o => selectedReceiptCodes.includes(o.kode_pesanan)).reduce((t, o) => t + Number(o.total_bayar || 0), 0))"></div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button"
+                            @click="receiptModal.open = false"
+                            class="px-4 py-2.5 rounded-xl border border-[#C8C2B3] bg-white text-[#404941] font-bold text-xs hover:bg-[#F3EEDF] transition">
+                        Batal
+                    </button>
+                    <button type="button"
+                            @click="cetakStruk()"
+                            :disabled="selectedReceiptCount === 0"
+                            class="px-4 py-2.5 rounded-xl bg-[#0B4D2B] hover:bg-[#0A4A28] disabled:bg-gray-400 disabled:cursor-not-allowed text-[#FBF3DD] font-bold text-xs flex items-center justify-center gap-2 transition active:scale-[0.99]">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                        </svg>
+                        <span>Cetak Struk</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         function kasirPosApp() {
             return {
@@ -910,6 +947,10 @@
                 printLogo: @json($printLogo),
                 logoSrc: @json($logoSrc),
                 paperSize: @json($paperSize),
+
+                receiptModal: {
+                    open: false,
+                },
 
                 confirmModal: {
                     open: false,
@@ -1265,6 +1306,18 @@
                     }).format(new Date());
                 },
 
+                bukaModalStruk() {
+                    const saung = this.currentTable;
+
+                    if (! saung || ! saung.hasReceiptOrders) {
+                        this.showToast('gold', 'Tidak Ada Struk', 'Belum ada pesanan lunas pada sesi ini.');
+                        return;
+                    }
+
+                    this.sinkronkanPilihanStruk(false);
+                    this.receiptModal.open = true;
+                },
+
                 cetakStruk() {
                     const saung = this.currentTable;
 
@@ -1286,6 +1339,8 @@
                         this.showToast('danger', 'Popup Diblokir', 'Izinkan popup browser untuk mencetak struk.');
                         return;
                     }
+
+                    this.receiptModal.open = false;
 
                     const dokumen = jendela.document;
                     dokumen.title = 'Struk ' + (saung.name || '') + ' (' + orders.length + ' pesanan)';
@@ -1688,6 +1743,17 @@
 
                     if (e.repeat) return;
 
+                    if (this.receiptModal.open) {
+                        if (e.key === 'Escape') {
+                            this.receiptModal.open = false;
+                        } else if (e.key === 'F3') {
+                            e.preventDefault();
+                            this.cetakStruk();
+                        }
+
+                        return;
+                    }
+
                     const isInputActive = e.target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
 
                     if (e.key === 'Enter' && this.currentSaung.status === 'waiting_cash') {
@@ -1697,7 +1763,7 @@
                     }
                     if (e.key === 'F3') {
                         e.preventDefault();
-                        this.cetakStruk();
+                        this.bukaModalStruk();
                         return;
                     }
                     if (e.key === 'F9') {
