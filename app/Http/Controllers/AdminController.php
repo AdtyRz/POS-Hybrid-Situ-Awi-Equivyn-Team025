@@ -413,7 +413,7 @@ class AdminController extends Controller
         $kategoriJson = $payload['categories'];
         $kategoriForm = Kategori::untukMenu()->orderBy('nama_kategori')->get();
 
-        return view('admin.master-menu.index', compact('menuJson', 'kategoriJson', 'kategoriForm'));
+        return view('admin.master.menu.index', compact('menuJson', 'kategoriJson', 'kategoriForm'));
     }
 
     public function dataMenu(): JsonResponse
@@ -708,7 +708,7 @@ class AdminController extends Controller
             'qr_aktif' => SesiMeja::where('status', 'aktif')->distinct('meja_id')->count('meja_id'),
         ];
 
-        return view('admin.master-meja.index', compact('daftarMeja', 'detailJson', 'mejaPertama', 'areaOptions', 'kategoriList', 'statistik'));
+        return view('admin.master.meja.index', compact('daftarMeja', 'detailJson', 'mejaPertama', 'areaOptions', 'kategoriList', 'statistik'));
     }
 
     public function panggilPelayan(Request $request): RedirectResponse
@@ -794,7 +794,7 @@ class AdminController extends Controller
             return $m;
         });
 
-        $html = view('admin.master-meja.cetak-qr', compact('meja'))->render();
+        $html = view('admin.master.meja.cetak-qr', compact('meja'))->render();
         return response($html, 200)->header('Content-Type', 'text/html');
     }
 

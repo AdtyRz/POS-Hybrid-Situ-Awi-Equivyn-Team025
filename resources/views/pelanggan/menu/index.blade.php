@@ -189,7 +189,7 @@
                 x-transition:leave="transition ease-in duration-200 transform"
                 x-transition:leave-start="opacity-100 translate-y-0"
                 x-transition:leave-end="opacity-0 -translate-y-4">
-                @include('emenu.partials.katalog')
+                @include('pelanggan.menu.partials.katalog')
             </div>
             <div x-show="step === 2" class="lg:max-w-2xl lg:mx-auto"
                 x-transition:enter="transition ease-out duration-300 transform"
@@ -197,7 +197,7 @@
                 x-transition:leave="transition ease-in duration-200 transform"
                 x-transition:leave-start="opacity-100 translate-y-0"
                 x-transition:leave-end="opacity-0 -translate-y-4">
-                @include('emenu.partials.ringkasan')
+                @include('pelanggan.menu.partials.ringkasan')
             </div>
         </main>
         <div x-show="showFilterModal" x-transition:enter="transition ease-out duration-200"

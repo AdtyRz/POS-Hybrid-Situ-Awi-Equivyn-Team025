@@ -30,7 +30,7 @@ class PembayaranController extends Controller
             $kembalian = max(0, $jumlahBayar - (float) $pesanan->total_bayar);
         }
 
-        return view('kasir.bayar', compact('pesanan', 'kembalian'));
+        return view('kasir.pembayaran.bayar', compact('pesanan', 'kembalian'));
     }
 
     public function cari(Request $request): View
@@ -38,7 +38,7 @@ class PembayaranController extends Controller
         $kode = trim((string) ($request->input('kode_pembayaran') ?? $request->input('kode_pesanan')));
 
         if ($kode === '') {
-            return view('kasir.cari', ['error' => 'Masukkan kode meja, nama pemesan, kode pesanan, atau kode pembayaran.']);
+            return view('kasir.pembayaran.cari', ['error' => 'Masukkan kode meja, nama pemesan, kode pesanan, atau kode pembayaran.']);
         }
 
         $kunci = mb_strtolower($kode);
@@ -52,10 +52,10 @@ class PembayaranController extends Controller
 
         if ($pesanan) {
             if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
-                return view('kasir.cari', ['error' => 'Pesanan ini sudah dibayar', 'pesanan' => $pesanan]);
+                return view('kasir.pembayaran.cari', ['error' => 'Pesanan ini sudah dibayar', 'pesanan' => $pesanan]);
             }
 
-            return view('kasir.cari', compact('pesanan'));
+            return view('kasir.pembayaran.cari', compact('pesanan'));
         }
 
         $pola = '%' . $kunci . '%';
@@ -79,17 +79,17 @@ class PembayaranController extends Controller
             $pesanan = $daftarPesanan->first();
 
             if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
-                return view('kasir.cari', ['error' => 'Pesanan ini sudah dibayar', 'pesanan' => $pesanan]);
+                return view('kasir.pembayaran.cari', ['error' => 'Pesanan ini sudah dibayar', 'pesanan' => $pesanan]);
             }
 
-            return view('kasir.cari', compact('pesanan'));
+            return view('kasir.pembayaran.cari', compact('pesanan'));
         }
 
         if ($daftarPesanan->count() > 1) {
-            return view('kasir.cari', compact('daftarPesanan', 'kode'));
+            return view('kasir.pembayaran.cari', compact('daftarPesanan', 'kode'));
         }
 
-        return view('kasir.cari', ['error' => 'Pesanan tidak ditemukan', 'kode' => $kode]);
+        return view('kasir.pembayaran.cari', ['error' => 'Pesanan tidak ditemukan', 'kode' => $kode]);
     }
 
     public function store(Request $request): RedirectResponse

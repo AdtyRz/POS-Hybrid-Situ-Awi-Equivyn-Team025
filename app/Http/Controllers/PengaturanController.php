@@ -62,7 +62,7 @@ class PengaturanController extends Controller
                 && filled(config('midtrans.server_key')),
         ];
 
-        return view('admin.pengaturan-sistem.index', [
+        return view('admin.pengaturan.index', [
             'profil' => $profil,
             'logoSrc' => Pengaturan::logoUrl(),
             'midtrans' => $midtrans,
