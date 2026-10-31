@@ -92,11 +92,11 @@
                 @submit.prevent="kirim()">
                 @csrf
                 <input type="hidden" name="kode_unik" :value="kode.join('')">
-                <div class="flex justify-center gap-2 sm:gap-3">
+                <div class="flex justify-center gap-2 sm:gap-3" x-ref="wadahKode">
                     <template x-for="(digit, i) in kode" :key="i">
-                        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" x-ref="kotak"
+                        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-kode-digit
                             :value="digit" @input="ketik(i, $event)" @keydown.backspace="hapus(i, $event)"
-                            @paste="tempel($event)" :aria-label="'Digit kode ' + (i + 1)"
+                            @focus="$event.target.select()" @paste="tempel($event)" :aria-label="'Digit kode ' + (i + 1)"
                             class="text-center text-3xl font-extrabold font-mono rounded-xl border-2 outline-none tracking-widest text-forest-900 caret-transparent selection:bg-transparent transition-all duration-200"
                             style="width: clamp(2.5rem, 12vw, 3.5rem); height: clamp(3.5rem, 16vw, 4rem);"
                             :class="salah
@@ -145,16 +145,25 @@
                 memproses: false,
                 pesanError: pesanAwal,
                 init() {
-                    this.focusKotak(0);
+                    this.$nextTick(() => this.focusKotak(0));
                     if (this.salah) {
                         this.getarkan();
                     }
                 },
+                daftarKotak() {
+                    if (! this.$refs.wadahKode) {
+                        return [];
+                    }
+
+                    return Array.from(this.$refs.wadahKode.querySelectorAll('input[data-kode-digit]'));
+                },
                 focusKotak(i) {
-                    this.$nextTick(() => {
-                        const el = this.$refs.kotak && this.$refs.kotak[i];
-                        if (el) el.focus();
-                    });
+                    const el = this.daftarKotak()[i];
+                    if (! el) return;
+
+                    // Fokus harus dipanggil langsung di dalam event input agar
+                    // keyboard ponsel tetap terbuka dan otomatis pindah kotak.
+                    el.focus({ preventScroll: true });
                 },
                 bersihkanPesan() {
                     this.salah = false;
