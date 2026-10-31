@@ -30,14 +30,16 @@ class PesananController extends Controller
         $receiptFooter = Pengaturan::nilai('struk_footer', 'Hatur Nuhun Parantos Sumping');
         $restoAddress = Pengaturan::nilai('alamat_resto', 'Jl. Raya Situ Awi Km. 4, Ciwidey, Kabupaten Bandung');
         $restoPhone = Pengaturan::nilai('telepon_resto', '0812-3456-7890');
+        $paperSize = Pengaturan::nilai('paper_size', '80mm') === '58mm' ? '58mm' : '80mm';
 
-        return view('kasir.index', array_merge($data, compact(
+        return view('kasir.dashboard.index', array_merge($data, compact(
             'printLogo',
             'logoSrc',
             'receiptHeader',
             'receiptFooter',
             'restoAddress',
             'restoPhone',
+            'paperSize',
         )));
     }
 
@@ -73,18 +75,18 @@ class PesananController extends Controller
             ->get()
             ->groupBy('meja_id');
 
-        $paidUnprinted = Pesanan::with(['detailPesanan.menu'])
+        // Semua pesanan lunas pada sesi terakhir tetap dimuat agar struk dapat
+        // dicetak ulang. Pembatasan sesi mencegah struk tamu sebelumnya muncul.
+        $paidOrders = Pesanan::with(['detailPesanan.menu'])
             ->whereIn('meja_id', $mejaSemua->pluck('id'))
             ->where('status_pembayaran', Pesanan::PAYMENT_SUDAH_BAYAR)
-            ->whereNull('printed_at')
             ->orderBy('waktu_pesan')
             ->get()
             ->groupBy('meja_id');
 
-        $sesiAktif = SesiMeja::query()
+        $sesiTerakhir = SesiMeja::query()
             ->whereIn('meja_id', $mejaSemua->pluck('id'))
-            ->where('status', 'aktif')
-            ->latest('id')
+            ->orderBy('id')
             ->get()
             ->keyBy('meja_id');
 
@@ -92,7 +94,7 @@ class PesananController extends Controller
             ->pluck('meja_id')
             ->toArray();
 
-        $saungsJson = $mejaSemua->map(function ($m) use ($aktif, $tunggu, $paidUnprinted, $sesiAktif) {
+        $saungsJson = $mejaSemua->map(function ($m) use ($aktif, $tunggu, $paidOrders, $sesiTerakhir) {
             $dasar = [
                 'id' => $m->kode_meja,
                 'dbId' => $m->id,
@@ -126,13 +128,13 @@ class PesananController extends Controller
                 'receiptSubtotal' => 0,
                 'receiptTotal' => 0,
                 'receiptPaymentType' => null,
-                'hasUnprintedPaid' => false,
+                'hasReceiptOrders' => false,
             ];
 
-            $receiptOrders = $paidUnprinted->get($m->id, collect());
+            $receiptOrders = $paidOrders->get($m->id, collect());
 
-            if ($sesiAktif->has($m->id)) {
-                $mulaiSesi = $sesiAktif->get($m->id)->dibuka_pada;
+            if ($sesiTerakhir->has($m->id)) {
+                $mulaiSesi = $sesiTerakhir->get($m->id)->dibuka_pada;
 
                 $receiptOrders = $receiptOrders->filter(
                     fn ($pesanan) => $pesanan->waktu_pesan === null
@@ -155,10 +157,12 @@ class PesananController extends Controller
             $dasar['receiptItems'] = $receiptItems;
             $dasar['receiptOrders'] = $receiptOrders->map(fn ($pesanan) => [
                 'kode_pesanan' => $pesanan->kode_pesanan,
+                'nama_pelanggan' => $pesanan->nama_pelanggan ?: 'Tamu',
                 'waktu_pesan' => $pesanan->waktu_pesan?->timezone('Asia/Jakarta')->format('H:i'),
                 'total_bayar' => (float) $pesanan->total_bayar,
                 'metode_pembayaran' => $pesanan->metode_pembayaran,
                 'subtotal' => (float) $pesanan->detailPesanan->sum('subtotal'),
+                'printed' => $pesanan->printed_at !== null,
                 'items' => $pesanan->detailPesanan->map(fn ($detail) => [
                     'name' => $detail->menu?->nama_menu ?? 'Menu',
                     'qty' => (int) $detail->jumlah,
@@ -176,7 +180,7 @@ class PesananController extends Controller
                 ->filter()
                 ->unique()
                 ->implode(' / ');
-            $dasar['hasUnprintedPaid'] = $receiptOrders->isNotEmpty();
+            $dasar['hasReceiptOrders'] = $receiptOrders->isNotEmpty();
 
             $orders = $aktif->get($m->id, collect())
                 ->map(fn ($pesanan) => $this->payloadKasir($pesanan))
@@ -374,7 +378,7 @@ class PesananController extends Controller
         $meja = MejaMakan::where('status_meja', 'kosong')->orderBy('kode_meja')->get();
         $menu = Menu::where('is_aktif', true)->where('stok_menu', '>', 0)->orderBy('nama_menu')->get();
 
-        return view('kasir.tambah', compact('meja', 'menu'));
+        return view('kasir.pesanan.tambah', compact('meja', 'menu'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -430,7 +434,7 @@ class PesananController extends Controller
             ->where('kode_pesanan', $kode)
             ->firstOrFail();
 
-        return view('pesanan.show', compact('pesanan'));
+        return view('shared.pesanan.show', compact('pesanan'));
     }
 
     public function ubahStatus(Request $request, string $kode): RedirectResponse|JsonResponse

@@ -30,14 +30,4 @@ class Menu extends Model
     {
         return $this->hasMany(DetailPesanan::class, 'menu_id');
     }
-
-    public function stokMutasi(): HasMany
-    {
-        return $this->hasMany(StokMutasi::class, 'menu_id');
-    }
-
-    public function stokTersedia(): bool
-    {
-        return $this->stok_menu > 0;
-    }
 }

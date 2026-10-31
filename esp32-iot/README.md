@@ -8,7 +8,7 @@ Fitur:
 - Tap sensor sentuh untuk berganti layar.
 - Tahan sensor sekitar 1,5 detik untuk memanggil pelayan.
 - Buzzer dan LED sebagai feedback.
-- Mengambil konfigurasi pesan LCD dan kode sesi dari API Laravel.
+- Mengambil konfigurasi pesan LCD, durasi buzzer, dan kode sesi dari API Laravel.
 
 ## 1. Komponen
 
@@ -188,7 +188,7 @@ Kontrol:
 
 - **Tap singkat**: berganti layar `Status Pesanan` -> `Total Bayar` -> `Kode Verif Saung`.
 - **Tahan sekitar 1,5 detik**: mengirim panggilan pelayan.
-- **Buzzer**: berbunyi saat tap, saat panggilan berhasil, dan saat gagal.
+- **Buzzer**: berbunyi saat tap, saat panggilan berhasil, dan saat gagal. Durasi saat panggilan berhasil mengikuti pengaturan **Durasi Buzzer Feedback** di admin.
 - **LED**: menyala saat panggilan berhasil.
 
 Data diperbarui otomatis:

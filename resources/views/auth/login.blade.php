@@ -178,8 +178,7 @@
                         Otentikasi
                         Staf</h2>
                     <p class="relative z-10 text-stone-600 text-[11px] mt-1.5 leading-relaxed">Masukkan kredensial
-                        terdaftar atau
-                        pilih peran cepat di samping untuk masuk ke lingkungan kerja Saung Situ Awi.</p>
+                        akun staf yang terdaftar untuk masuk ke lingkungan kerja Saung Situ Awi.</p>
 
                     <form method="POST" action="{{ route('login') }}" class="mt-5">
                         @csrf
@@ -195,7 +194,7 @@
                                     d="M5.5 16.5c.6-1.7 1.7-2.5 3-2.5s2.4.8 3 2.5M14 9.5h5M14 13h5" />
                             </svg>
                             <input id="email" type="email" name="email"
-                                value="{{ old('email', 'admin@situawi.com') }}" required autocomplete="username"
+                                value="{{ old('email') }}" required autocomplete="username"
                                 class="w-full bg-transparent border-0 outline-none focus:ring-0 py-3 text-[13px] text-stone-800">
                         </div>
                         @error('email')
@@ -229,13 +228,12 @@
                             <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
                         @enderror
 
-                        <div class="flex items-center justify-between mt-4 text-[11px]">
+                        <div class="flex items-center mt-4 text-[11px]">
                             <label for="remember" class="flex items-center gap-2 text-stone-600">
                                 <input id="remember" type="checkbox" name="remember" checked
                                     class="w-4 h-4 rounded border-[#0b3b2c] text-[#0b3b2c] accent-[#0b3b2c] focus:ring-[#0b3b2c]">
                                 Ingat sesi di saung ini
                             </label>
-                            <span class="font-bold text-[#0b3b2c]">Lupa PIN?</span>
                         </div>
 
                         <button type="submit"

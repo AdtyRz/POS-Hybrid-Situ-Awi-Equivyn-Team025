@@ -11,11 +11,11 @@ use App\Models\MejaMakan;
 use App\Models\Pesanan;
 use App\Models\SesiMeja;
 use App\Services\PesananService;
+use App\Services\ShiftService;
 use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -65,47 +65,14 @@ class PelayanController extends Controller
 
     private function infoShift(): array
     {
-        $sekarang = Carbon::now('Asia/Jakarta');
-        $jam = $sekarang->format('H:i');
-
-        $shift = match (true) {
-            $jam >= '08:00' && $jam < '12:00' => [
-                'nama' => 'Shift Pagi',
-                'mulai' => '08:00:00',
-                'selesai' => '12:00:00',
-            ],
-            $jam >= '12:00' && $jam < '18:00' => [
-                'nama' => 'Shift Siang',
-                'mulai' => '12:00:00',
-                'selesai' => '18:00:00',
-            ],
-            $jam >= '18:00' => [
-                'nama' => 'Shift Malam',
-                'mulai' => '18:00:00',
-                'selesai' => '23:59:59',
-            ],
-            default => [
-                'nama' => 'Luar Shift',
-                'mulai' => '00:00:00',
-                'selesai' => '08:00:00',
-            ],
+        $shift = ShiftService::ringkasan();
+        $shift['sisa_label'] = match (true) {
+            $shift['nama'] === 'Luar Shift' => 'Tidak ada shift aktif',
+            $shift['sisa_menit'] > 0 => 'Sisa ' . $shift['sisa_label'],
+            default => 'Shift Selesai',
         };
 
-        $selesai = $sekarang->copy()->setTimeFromTimeString($shift['selesai']);
-        $sisaMenit = max(0, (int) $sekarang->diffInMinutes($selesai, false));
-        $sisaJam = intdiv($sisaMenit, 60);
-        $sisaSisaMenit = $sisaMenit % 60;
-
-        return [
-            'nama' => $shift['nama'],
-            'mulai' => substr($shift['mulai'], 0, 5),
-            'selesai' => substr($shift['selesai'], 0, 5),
-            'label' => $shift['nama'].' ('.substr($shift['mulai'], 0, 5).' - '.substr($shift['selesai'], 0, 5).' WIB)',
-            'sisa_menit' => $sisaMenit,
-            'sisa_label' => $sisaMenit > 0
-                ? ($sisaJam > 0 ? 'Sisa '.$sisaJam.' Jam '.$sisaSisaMenit.' Mnt' : 'Sisa '.$sisaSisaMenit.' Mnt')
-                : 'Shift Selesai',
-        ];
+        return $shift;
     }
 
     private function infoPerangkat(Collection $meja): array
@@ -387,9 +354,8 @@ class PelayanController extends Controller
 
         $billInfo = $pesananMeja->isEmpty()
             ? 'Kapasitas '.$meja->kapasitas.' Orang'
-            : 'Bill #'.$pesananMeja->pluck('kode_pesanan')->take(2)->implode(', ')
-                .($pesananMeja->count() > 2 ? ' +'.($pesananMeja->count() - 2) : '')
-                .' • '.($customer ?: ($meja->kapasitas.' Tamu'))
+            : 'Bill '.($customer ?: ($meja->kapasitas.' Tamu'))
+                .' • '.$pesananMeja->count().' pesanan'
                 .' • Rp '.number_format($total, 0, ',', '.');
         $itemsSummary = $orders
             ->flatMap(fn ($item) => $item['items'])
@@ -565,8 +531,8 @@ class PelayanController extends Controller
         )->get()->map(function ($order) {
             return [
                 'jenis' => 'Pesanan',
-                'judul' => 'Pesanan '.$order->kode_pesanan,
-                'keterangan' => 'Saung '.($order->meja?->kode_meja ?? '-').' • '.$order->status_pesanan,
+                'judul' => 'Pesanan '.($order->meja?->kode_meja ?? '-'),
+                'keterangan' => ($order->nama_pelanggan ?: 'Tamu').' • '.$order->status_pesanan,
                 'status' => $order->status_pesanan,
                 'waktu' => $order->updated_at?->timezone('Asia/Jakarta')->format('H:i').' WIB',
                 'timestamp' => $order->updated_at?->getTimestamp() ?? 0,
@@ -599,7 +565,7 @@ class PelayanController extends Controller
         ])->values();
         $shift = $this->infoShift();
 
-        return view('pelayan.notifikasi-panggilan-pelayan.index', array_merge(
+        return view('pelayan.notifikasi-panggilan.index', array_merge(
             $this->dataNavigasi(),
             compact(
                 'statistik',
@@ -634,7 +600,7 @@ class PelayanController extends Controller
         $statistik = $this->statistikHariIni();
         $meja = $this->getMejaByArea();
 
-        return view('pelayan.tab-antar.index', array_merge(
+        return view('pelayan.antar.index', array_merge(
             $this->dataNavigasi(),
             compact(
                 'siapAntar',
@@ -662,7 +628,7 @@ class PelayanController extends Controller
         $menu = $this->menuPelayan();
         $shift = $this->infoShift();
 
-        return view('pelayan.tab-saung.index', array_merge(
+        return view('pelayan.saung.index', array_merge(
             $this->dataNavigasi(),
             compact('menu', 'shift'),
             [
@@ -687,7 +653,7 @@ class PelayanController extends Controller
         $logAktivitas = $this->logAktivitasHariIni();
         $shift = $this->infoShift();
 
-        return view('pelayan.tab-shift.index', array_merge(
+        return view('pelayan.shift.index', array_merge(
             $this->dataNavigasi(),
             compact('statistik', 'logAktivitas', 'shift', 'menu'),
             [

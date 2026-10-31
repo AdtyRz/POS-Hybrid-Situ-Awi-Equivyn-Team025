@@ -30,29 +30,66 @@ class PembayaranController extends Controller
             $kembalian = max(0, $jumlahBayar - (float) $pesanan->total_bayar);
         }
 
-        return view('kasir.bayar', compact('pesanan', 'kembalian'));
+        return view('kasir.pembayaran.bayar', compact('pesanan', 'kembalian'));
     }
 
     public function cari(Request $request): View
     {
-        $kode = $request->input('kode_pembayaran') ?? $request->input('kode_pesanan');
+        $kode = trim((string) ($request->input('kode_pembayaran') ?? $request->input('kode_pesanan')));
+
+        if ($kode === '') {
+            return view('kasir.pembayaran.cari', ['error' => 'Masukkan kode meja, nama pemesan, kode pesanan, atau kode pembayaran.']);
+        }
+
+        $kunci = mb_strtolower($kode);
 
         $pesanan = Pesanan::with(['detailPesanan.menu', 'meja'])
-            ->where(function ($q) use ($kode) {
-                $q->where('kode_pembayaran', $kode)
-                    ->orWhere('kode_pesanan', $kode);
+            ->where(function ($q) use ($kunci) {
+                $q->whereRaw('LOWER(kode_pembayaran) = ?', [$kunci])
+                    ->orWhereRaw('LOWER(kode_pesanan) = ?', [$kunci]);
             })
             ->first();
 
-        if (! $pesanan) {
-            return view('kasir.cari', ['error' => 'Pesanan tidak ditemukan', 'kode' => $kode]);
+        if ($pesanan) {
+            if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
+                return view('kasir.pembayaran.cari', ['error' => 'Pesanan ini sudah dibayar', 'pesanan' => $pesanan]);
+            }
+
+            return view('kasir.pembayaran.cari', compact('pesanan'));
         }
 
-        if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
-            return view('kasir.cari', ['error' => 'Pesanan ini sudah dibayar', 'pesanan' => $pesanan]);
+        $pola = '%' . $kunci . '%';
+
+        $daftarPesanan = Pesanan::with(['detailPesanan.menu', 'meja'])
+            ->where(function ($q) use ($pola) {
+                $q->whereRaw('LOWER(nama_pelanggan) LIKE ?', [$pola])
+                    ->orWhereHas('meja', fn ($meja) => $meja->whereRaw('LOWER(kode_meja) LIKE ?', [$pola]));
+            })
+            ->whereIn('status_pembayaran', [
+                Pesanan::PAYMENT_BELUM_BAYAR,
+                Pesanan::PAYMENT_PENDING_PEMBAYARAN,
+                Pesanan::PAYMENT_PENDING_VERIFIKASI,
+            ])
+            ->where('status_pesanan', '!=', Pesanan::STATUS_DIBATALKAN)
+            ->orderByDesc('waktu_pesan')
+            ->limit(30)
+            ->get();
+
+        if ($daftarPesanan->count() === 1) {
+            $pesanan = $daftarPesanan->first();
+
+            if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
+                return view('kasir.pembayaran.cari', ['error' => 'Pesanan ini sudah dibayar', 'pesanan' => $pesanan]);
+            }
+
+            return view('kasir.pembayaran.cari', compact('pesanan'));
         }
 
-        return view('kasir.cari', compact('pesanan'));
+        if ($daftarPesanan->count() > 1) {
+            return view('kasir.pembayaran.cari', compact('daftarPesanan', 'kode'));
+        }
+
+        return view('kasir.pembayaran.cari', ['error' => 'Pesanan tidak ditemukan', 'kode' => $kode]);
     }
 
     public function store(Request $request): RedirectResponse

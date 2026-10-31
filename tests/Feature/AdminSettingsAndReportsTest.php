@@ -133,7 +133,10 @@ class AdminSettingsAndReportsTest extends TestCase
             ->get(route('admin.pengaturan-sistem'))
             ->assertOk()
             ->assertSee('Pengelolaan Sesi Tamu')
-            ->assertSee('Menit tanpa transaksi');
+            ->assertSee('Menit tanpa transaksi')
+            ->assertSee('5. Shift &amp; Jam Operasional', false)
+            ->assertSee('Jadwal Shift Operasional')
+            ->assertSee('Batasi Akses Staf ke Jam Shift');
     }
 
     public function test_admin_dapat_mengubah_batas_waktu_qris(): void
@@ -163,6 +166,23 @@ class AdminSettingsAndReportsTest extends TestCase
         $response->assertRedirect(route('admin.pengaturan-sistem'));
         $this->assertSame('6 Digit', Pengaturan::nilai('encryption_level'));
         $this->assertLessThanOrEqual(16, mb_strlen((string) Pengaturan::nilai('lcd_message')));
+    }
+
+    public function test_master_meja_menampilkan_kode_sesuai_pengaturan_enam_digit(): void
+    {
+        Pengaturan::simpanBanyak(['encryption_level' => '6 Digit']);
+
+        $meja = $this->meja('LB-99');
+        $sesi = SesiMeja::aktifUntuk($meja);
+
+        $this->assertSame(6, strlen($sesi->kode_unik));
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.master-meja'))
+            ->assertOk()
+            ->assertSee('Kode 6 Digit')
+            ->assertSee('Kode Masuk (6 Digit):')
+            ->assertSee($sesi->kode_unik);
     }
 
     public function test_default_pesan_lcd_tidak_melebihi_batas_lcd(): void

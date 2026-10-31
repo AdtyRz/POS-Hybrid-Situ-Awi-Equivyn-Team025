@@ -168,6 +168,16 @@
                         </a>
 
                         <a
+                            href="{{ url('/admin/riwayat-shift') }}"
+                            class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->is('admin/riwayat-shift*') ? 'bg-[#0B4D2B] text-white shadow-xs font-semibold' : 'text-[#404941] hover:bg-[#EAE4D7] hover:text-[#1C1C18]' }}">
+
+                            <svg class="w-4 h-4 flex-shrink-0 {{ request()->is('admin/riwayat-shift*') ? 'text-white' : 'text-[#404941]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Riwayat Shift</span>
+                        </a>
+
+                        <a
                             href="{{ url('/admin/pengaturan-sistem') }}"
                             class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->is('admin/pengaturan-sistem*') || request()->is('admin/pengaturan*') ? 'bg-[#0B4D2B] text-white shadow-xs font-semibold' : 'text-[#404941] hover:bg-[#EAE4D7] hover:text-[#1C1C18]' }}">
 

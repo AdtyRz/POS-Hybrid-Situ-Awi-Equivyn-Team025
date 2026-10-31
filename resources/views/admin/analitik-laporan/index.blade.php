@@ -463,7 +463,7 @@
                     Distribusi penyelesaian tagihan tamu berdasarkan jumlah transaksi
                 </p>
 
-                <div class="relative flex items-center justify-center my-6">
+                <div class="relative flex min-h-44 min-w-44 shrink-0 items-center justify-center my-6">
                     @php
                         $totalKanal = $qrisHariIni + $tunaiHariIni;
                         $bagianQris = $totalKanal > 0 ? round($qrisHariIni / $totalKanal * 377) : 0;
@@ -471,7 +471,7 @@
                         $persenQris = $totalKanal > 0 ? round($qrisHariIni / $totalKanal * 100) : 0;
                         $persenTunai = $totalKanal > 0 ? 100 - $persenQris : 0;
                     @endphp
-                    <svg viewBox="0 0 160 160" class="w-44 h-44 -rotate-90">
+                    <svg viewBox="0 0 160 160" class="block h-44 w-44 shrink-0 -rotate-90">
                         <circle cx="80" cy="80" r="60" stroke="#EBE8E1" stroke-width="20" fill="none" />
                         <circle cx="80" cy="80" r="60" stroke="#0B4D2B" stroke-width="20" fill="none"
                                 stroke-dasharray="{{ $bagianQris }} 377" stroke-dashoffset="0" />

@@ -273,7 +273,7 @@ class EmenuPelacakanTest extends TestCase
         $this->assertSame(1, $menu->fresh()->stok_menu);
     }
 
-    public function test_halaman_bayar_tunai_memakai_kode_pesanan_yang_sama_dengan_kasir(): void
+    public function test_halaman_bayar_tunai_menampilkan_kode_meja_dan_nama_pemesan(): void
     {
         [$meja, $menu] = $this->siapkanMejaDanMenu();
         $sesi = $this->sesiTerverifikasi($meja);
@@ -290,9 +290,81 @@ class EmenuPelacakanTest extends TestCase
         $this->withSession($sesi)
             ->get(route('emenu.bayar-tunai', $pesanan->kode_pesanan))
             ->assertOk()
-            ->assertSee('Kode Bayar Anda')
-            ->assertSee($pesanan->kode_pesanan)
+            ->assertSee('Kode Meja Anda')
+            ->assertSee($meja->kode_meja)
+            ->assertSee('Budi Santoso')
+            ->assertDontSee('Kode Bayar Anda')
             ->assertDontSee('PAY-');
+    }
+
+    public function test_halaman_bayar_tunai_langsung_mengarah_ke_status_setelah_lunas(): void
+    {
+        [$meja, $menu] = $this->siapkanMejaDanMenu();
+        $sesi = $this->sesiTerverifikasi($meja);
+
+        $pesanan = app(PesananService::class)->buat(
+            $meja,
+            [$menu->id => 1],
+            [],
+            ['asal' => 'emenu', 'metode' => 'tunai', 'nama_pelanggan' => 'Budi Santoso']
+        );
+
+        $pesanan->update([
+            'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+            'status_pesanan' => Pesanan::STATUS_DIPROSES,
+        ]);
+
+        $this->withSession($sesi)
+            ->get(route('emenu.bayar-tunai', $pesanan->kode_pesanan))
+            ->assertRedirect(route('emenu.status', $pesanan->kode_pesanan));
+    }
+
+    public function test_endpoint_status_tunai_memberi_sinyal_lunas_dan_url_status(): void
+    {
+        [$meja, $menu] = $this->siapkanMejaDanMenu();
+        $sesi = $this->sesiTerverifikasi($meja);
+
+        $pesanan = app(PesananService::class)->buat(
+            $meja,
+            [$menu->id => 1],
+            [],
+            ['asal' => 'emenu', 'metode' => 'tunai', 'nama_pelanggan' => 'Budi Santoso']
+        );
+
+        $pesanan->update(['status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR]);
+
+        $this->withSession($sesi)
+            ->getJson(route('emenu.bayar-tunai.status', $pesanan->kode_pesanan))
+            ->assertOk()
+            ->assertJsonPath('lunas', true)
+            ->assertJsonPath('status_pembayaran', Pesanan::PAYMENT_SUDAH_BAYAR)
+            ->assertJsonPath('redirect', route('emenu.status', $pesanan->kode_pesanan));
+    }
+
+    public function test_status_pesanan_lunas_tidak_menampilkan_instruksi_pembayaran_tunai(): void
+    {
+        [$meja, $menu] = $this->siapkanMejaDanMenu();
+        $sesi = $this->sesiTerverifikasi($meja);
+
+        $pesanan = app(PesananService::class)->buat(
+            $meja,
+            [$menu->id => 1],
+            [],
+            ['asal' => 'emenu', 'metode' => 'tunai', 'nama_pelanggan' => 'Budi Santoso']
+        );
+
+        $pesanan->update([
+            'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+            'status_pesanan' => Pesanan::STATUS_DIPROSES,
+        ]);
+
+        $this->withSession($sesi)
+            ->get(route('emenu.status', $pesanan->kode_pesanan))
+            ->assertOk()
+            ->assertSee('Meja ' . $meja->kode_meja)
+            ->assertSee('Budi Santoso')
+            ->assertDontSee('Pembayaran Tunai')
+            ->assertDontSee('Sebutkan kode meja');
     }
 
     public function test_halaman_verifikasi_qris_menampilkan_kode_meja_dan_expiry_dari_pengaturan(): void

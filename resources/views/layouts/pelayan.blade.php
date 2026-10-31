@@ -65,15 +65,15 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex justify-center bg-[#ECE7DC] sm:py-6">
+<body class="min-h-screen bg-[#ECE7DC]">
 
-    <div class="w-full max-w-[390px] sm:max-w-[420px] min-h-screen bg-[#FCF9F2] shadow-2xl relative flex flex-col justify-between sm:rounded-3xl sm:border sm:border-[#E5E2DB] overflow-x-hidden">
+    <div class="w-full min-h-screen bg-[#FCF9F2] relative flex flex-col overflow-x-hidden">
 
-        <main class="flex-1 pb-16">
+        <main class="flex-1 pb-20">
             @yield('content')
         </main>
 
-        <nav class="sticky bottom-0 left-0 right-0 z-50 h-16 {{ request()->routeIs('pelayan.tab-antar') || request()->routeIs('pelayan.tab-saung') || request()->routeIs('pelayan.tab-shift') ? 'bg-white/90 shadow-[0_-4px_20px_rgba(43,42,38,0.05)]' : 'bg-[#FCF9F2]/90 shadow-[0_-2px_16px_rgba(43,42,38,0.05)]' }} backdrop-blur-md border-t border-[#E5E2DB]/70 flex items-center justify-around px-2">
+        <nav class="fixed bottom-0 left-0 right-0 z-50 h-16 {{ request()->routeIs('pelayan.tab-antar') || request()->routeIs('pelayan.tab-saung') || request()->routeIs('pelayan.tab-shift') ? 'bg-white/90 shadow-[0_-4px_20px_rgba(43,42,38,0.05)]' : 'bg-[#FCF9F2]/90 shadow-[0_-2px_16px_rgba(43,42,38,0.05)]' }} backdrop-blur-md border-t border-[#E5E2DB]/70 flex items-center justify-around px-2">
 
             <a href="{{ route('pelayan.notifikasi-panggilan') }}"
                class="flex flex-col items-center justify-center w-16 h-12 relative transition-all active:scale-95 group">
