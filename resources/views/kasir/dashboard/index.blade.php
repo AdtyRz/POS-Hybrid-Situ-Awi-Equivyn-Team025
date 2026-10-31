@@ -637,11 +637,11 @@
                         <div class="grid grid-cols-2 gap-2">
                             <button type="button"
                                     @click="cetakStruk()"
-                                    :disabled="!currentTable || !currentTable.hasUnprintedPaid"
+                                    :disabled="!currentTable || !currentTable.hasReceiptOrders"
                                     class="py-2.5 px-3 rounded-lg bg-[#E0B24E]/15 hover:bg-[#E0B24E]/25 border border-[#E0B24E]/40 text-[#C9982F] font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                                 <span>Cetak Struk [F3]</span>
-                                <span x-show="currentTable && currentTable.hasUnprintedPaid"
+                                <span x-show="currentTable && currentTable.hasReceiptOrders"
                                       class="px-1.5 py-0.5 rounded-full bg-[#C9982F] text-white text-[10px] font-extrabold"
                                       x-text="selectedReceiptCount + '/' + ((currentTable && currentTable.receiptOrders) ? currentTable.receiptOrders.length : 0)"></span>
                             </button>
@@ -677,14 +677,14 @@
                             <span>Pilih Pesanan &amp; Cetak Struk</span>
                         </div>
                         <span class="font-mono text-[10px] text-[#6B6A63]"
-                              x-text="(currentTable && currentTable.hasUnprintedPaid) ? (selectedReceiptCount + '/' + currentTable.receiptOrders.length + ' dipilih') : 'Belum ada struk'"></span>
+                              x-text="(currentTable && currentTable.hasReceiptOrders) ? (selectedReceiptCount + '/' + currentTable.receiptOrders.length + ' dipilih') : 'Belum ada struk lunas'"></span>
                     </div>
 
                     <div class="p-3 bg-[#FAF7F0] space-y-2 max-h-[360px] overflow-y-auto">
-                        <template x-if="currentTable && currentTable.hasUnprintedPaid">
+                        <template x-if="currentTable && currentTable.hasReceiptOrders">
                             <div class="space-y-2">
                                 <div class="flex items-center justify-between gap-2">
-                                    <span class="text-[10px] font-bold text-[#6B6A63]">Centang pesanan yang akan dicetak:</span>
+                                    <span class="text-[10px] font-bold text-[#6B6A63]">Centang pesanan yang akan dicetak / dicetak ulang:</span>
                                     <div class="flex items-center gap-1">
                                         <button type="button" @click="pilihSemuaStruk()" class="px-2 py-1 rounded-md bg-white border border-[#C8C2B3]/70 text-[9px] font-bold text-[#404941] hover:bg-[#F3EEDF]">Semua</button>
                                         <button type="button" @click="kosongkanPilihanStruk()" class="px-2 py-1 rounded-md bg-white border border-[#C8C2B3]/70 text-[9px] font-bold text-[#404941] hover:bg-[#F3EEDF]">Kosongkan</button>
@@ -706,7 +706,12 @@
                                                     <span class="text-[10px] font-extrabold text-[#00341A]" x-text="'Order ' + (receiptIndex + 1) + ' • ' + (order.waktu_pesan || '-')"></span>
                                                     <span class="font-mono text-[10px] font-bold text-[#00341A]" x-text="formatRupiah(order.total_bayar)"></span>
                                                 </div>
-                                                <div class="text-[9px] text-[#6B6A63] mt-0.5" x-text="'Pemesan: ' + (order.nama_pelanggan || 'Tamu')"></div>
+                                                <div class="flex items-center justify-between gap-2 mt-0.5">
+                                                    <span class="text-[9px] text-[#6B6A63]" x-text="'Pemesan: ' + (order.nama_pelanggan || 'Tamu')"></span>
+                                                    <span class="shrink-0 rounded px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide"
+                                                          :class="order.printed ? 'bg-[#F3EEDF] text-[#7A5900]' : 'bg-[#E8F5EE] text-[#047857]'"
+                                                          x-text="order.printed ? 'Sudah dicetak' : 'Belum dicetak'"></span>
+                                                </div>
 
                                                 <div class="mt-1.5 border-t border-dashed border-[#C8C2B3]/70 pt-1.5 space-y-0.5">
                                                     <template x-for="(item, itemIndex) in order.items" :key="order.kode_pesanan + '-' + itemIndex">
@@ -733,7 +738,7 @@
                             </div>
                         </template>
 
-                        <div x-show="!currentTable || !currentTable.hasUnprintedPaid"
+                        <div x-show="!currentTable || !currentTable.hasReceiptOrders"
                              x-cloak
                              class="w-full bg-white p-5 rounded border border-dashed border-[#C8C2B3] text-center space-y-2">
                             <div class="w-10 h-10 rounded-full bg-[#FAF7F0] border border-[#C8C2B3]/60 flex items-center justify-center mx-auto text-[#C9982F]">
@@ -741,10 +746,10 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                                 </svg>
                             </div>
-                            <div class="text-[11px] font-bold text-[#2B2A26]">Belum ada pesanan lunas yang belum dicetak</div>
+                            <div class="text-[11px] font-bold text-[#2B2A26]">Belum ada pesanan lunas pada sesi ini</div>
                             <div class="text-[10px] text-[#6B6A63] leading-relaxed">
                                 Setelah pembayaran dikonfirmasi, pesanan lunas akan muncul di sini.
-                                Struk hanya memuat pesanan baru yang belum pernah dicetak.
+                                Pesanan yang sudah dicetak tetap tersedia agar dapat dicetak ulang.
                             </div>
                         </div>
                     </div>
@@ -904,6 +909,7 @@
                 restoPhone: @json($restoPhone),
                 printLogo: @json($printLogo),
                 logoSrc: @json($logoSrc),
+                paperSize: @json($paperSize),
 
                 confirmModal: {
                     open: false,
@@ -966,7 +972,7 @@
                             orders: [],
                             receiptOrders: [],
                             receiptOrderIds: [],
-                            hasUnprintedPaid: false,
+                            hasReceiptOrders: false,
                             total: 0,
                         };
                     }
@@ -1141,15 +1147,18 @@
                 },
 
                 sinkronkanPilihanStruk(reset = false) {
-                    const codes = (this.currentTable?.receiptOrders || []).map(order => order.kode_pesanan);
+                    const orders = this.currentTable?.receiptOrders || [];
+                    const codes = orders.map(order => order.kode_pesanan);
 
+                    // Semua pesanan lunas dipilih agar satu struk memuat seluruh
+                    // pesanan sesi ini dan bisa langsung dicetak ulang.
                     if (reset) {
                         this.selectedReceiptCodes = [...codes];
                         this.knownReceiptCodes = [...codes];
                         return;
                     }
 
-                    const baru = codes.filter(kode => !this.knownReceiptCodes.includes(kode));
+                    const baru = codes.filter(kode => ! this.knownReceiptCodes.includes(kode));
                     const tersisa = this.selectedReceiptCodes.filter(kode => codes.includes(kode));
 
                     this.selectedReceiptCodes = [...new Set([...tersisa, ...baru])];
@@ -1181,7 +1190,7 @@
                     saung.receiptSubtotal = orders.reduce((total, order) => total + Number(order.subtotal || 0), 0);
                     saung.receiptTotal = orders.reduce((total, order) => total + Number(order.total_bayar || 0), 0);
                     saung.receiptPaymentType = [...new Set(orders.map(order => order.metode_pembayaran).filter(Boolean))].join(' / ');
-                    saung.hasUnprintedPaid = orders.length > 0;
+                    saung.hasReceiptOrders = orders.length > 0;
                 },
 
                 setQuickCash(amount) {
@@ -1259,8 +1268,8 @@
                 cetakStruk() {
                     const saung = this.currentTable;
 
-                    if (! saung || ! saung.hasUnprintedPaid) {
-                        this.showToast('gold', 'Tidak Ada Struk', 'Belum ada pesanan lunas yang belum dicetak pada sesi ini.');
+                    if (! saung || ! saung.hasReceiptOrders) {
+                        this.showToast('gold', 'Tidak Ada Struk', 'Belum ada pesanan lunas pada sesi ini.');
                         return;
                     }
 
@@ -1268,7 +1277,7 @@
                         .filter(order => this.selectedReceiptCodes.includes(order.kode_pesanan));
 
                     if (orders.length === 0) {
-                        this.showToast('gold', 'Pilih Pesanan', 'Centang minimal satu pesanan yang akan dicetak.');
+                        this.showToast('gold', 'Pilih Pesanan', 'Centang minimal satu pesanan untuk dicetak atau dicetak ulang.');
                         return;
                     }
 
@@ -1281,9 +1290,106 @@
                     const dokumen = jendela.document;
                     dokumen.title = 'Struk ' + (saung.name || '') + ' (' + orders.length + ' pesanan)';
 
+                    const paperSize = this.paperSize === '58mm' ? '58mm' : '80mm';
+                    const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (karakter) => ({
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        '"': '&quot;',
+                        "'": '&#039;',
+                    }[karakter]));
+
+                    const gayaHalaman = dokumen.createElement('style');
+                    gayaHalaman.id = 'page-size';
+                    gayaHalaman.textContent = `@page { size: ${paperSize} auto; margin: 0; }`;
+                    dokumen.head.appendChild(gayaHalaman);
+
                     const gaya = dokumen.createElement('style');
-                    gaya.textContent = '@page{size:80mm auto;margin:6mm 5mm}html,body{margin:0;padding:0}body{font-family:monospace;font-size:10.5px;color:#000;padding:0 2mm 4mm}.logo{display:block;margin:0 auto 8px;height:38px;max-width:48mm;width:auto;object-fit:contain}.receipt{page-break-after:auto;break-after:auto}pre{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;margin:0;padding:0;font:inherit;line-height:1.45}@media screen{body{padding:16px}.receipt{border:0;margin:0;padding:0}}';
+                    gaya.textContent = `
+                        * { box-sizing: border-box; }
+                        html, body { margin: 0; padding: 0; background: #fff; }
+                        body {
+                            width: ${paperSize};
+                            /* 58mm: area cetak ±48mm, 80mm: area cetak ±72mm. */
+                            padding: ${paperSize === '58mm' ? '3mm 5mm 5mm' : '4mm 4mm 6mm'};
+                            color: #000;
+                            font-family: 'Courier New', Courier, monospace;
+                            font-size: ${paperSize === '58mm' ? '9px' : '10px'};
+                            line-height: 1.35;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
+                        }
+                        .receipt { width: 100%; }
+                        .logo {
+                            display: block;
+                            margin: 0 auto 2mm;
+                            max-width: 28mm;
+                            max-height: 14mm;
+                            object-fit: contain;
+                        }
+                        .brand {
+                            text-align: center;
+                            font-size: 13px;
+                            font-weight: 700;
+                            letter-spacing: 0.3px;
+                            text-transform: uppercase;
+                        }
+                        .address, .phone {
+                            text-align: center;
+                            font-size: 9px;
+                            line-height: 1.3;
+                        }
+                        .divider { border-top: 1px dashed #000; margin: 2mm 0; }
+                        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+                        .meta td { padding: 0.4mm 0; font-size: 9px; vertical-align: top; }
+                        .meta .label { width: 22mm; }
+                        .meta .sep { width: 3mm; }
+                        .meta .value { overflow-wrap: anywhere; word-break: break-word; }
+                        .items th {
+                            padding: 0 0 1mm;
+                            border-bottom: 1px dashed #000;
+                            font-size: 8.5px;
+                            font-weight: 700;
+                            text-align: left;
+                            text-transform: uppercase;
+                        }
+                        .items td { padding: 1mm 0 0; font-size: 9.5px; vertical-align: top; }
+                        .items .qty { width: 9mm; }
+                        .items .nama { padding-right: 2mm; overflow-wrap: anywhere; word-break: break-word; }
+                        .items .harga { width: 22mm; text-align: right; white-space: nowrap; }
+                        .items .unit { margin-top: 0.4mm; font-size: 8px; color: #333; }
+                        .items .empty { text-align: center; }
+                        .summary td { padding: 0.6mm 0; font-size: 9.5px; }
+                        .summary .nominal { text-align: right; white-space: nowrap; }
+                        .summary .total td {
+                            padding-top: 1.5mm;
+                            border-top: 1px solid #000;
+                            font-size: 11px;
+                            font-weight: 700;
+                        }
+                        .status {
+                            margin: 1mm 0;
+                            text-align: center;
+                            font-size: 11px;
+                            font-weight: 700;
+                            letter-spacing: 1px;
+                        }
+                        .payment { text-align: center; font-size: 9px; }
+                        .footer {
+                            text-align: center;
+                            font-size: 9px;
+                            line-height: 1.4;
+                            white-space: pre-line;
+                            overflow-wrap: anywhere;
+                        }
+                        .paper-58 .brand { font-size: 11px; }
+                        .paper-58 .meta .label { width: 17mm; }
+                        .paper-58 .items .qty { width: 7mm; }
+                        .paper-58 .items .harga { width: 18mm; }
+                        @media screen { body { margin: 0 auto; } }
+                    `;
                     dokumen.head.appendChild(gaya);
+                    dokumen.body.className = paperSize === '58mm' ? 'paper-58' : 'paper-80';
 
                     // Semua pesanan yang dicentang digabung menjadi SATU struk.
                     // Logo, header, dan footer hanya muncul sekali.
@@ -1304,11 +1410,19 @@
                         });
                     });
 
-                    const itemLines = Array.from(itemMap.values()).map((item) => {
-                        const nama = item.qty + 'x ' + item.name;
-                        const harga = this.formatNumber(item.qty * item.price);
-                        return nama.slice(0, 30).padEnd(31, ' ') + harga.padStart(12, ' ');
-                    });
+                    const itemRows = Array.from(itemMap.values()).map((item) => {
+                        const unit = item.qty > 1
+                            ? `<div class="unit">${esc(this.formatRupiah(item.price))} / item</div>`
+                            : '';
+
+                        return `
+                            <tr>
+                                <td class="qty">${esc(item.qty)}x</td>
+                                <td class="nama">${esc(item.name)}${unit}</td>
+                                <td class="harga">${esc(this.formatNumber(item.qty * item.price))}</td>
+                            </tr>
+                        `;
+                    }).join('');
 
                     const subtotal = orders.reduce((total, order) => {
                         const dariOrder = Number(order.subtotal || 0)
@@ -1328,45 +1442,112 @@
                         .map((metode) => metode === 'qris' ? 'QRIS Midtrans' : (metode === 'tunai' ? 'Tunai Kasir' : metode))
                         .join(' / ');
 
-                    const lines = [
-                        (this.receiptHeader || 'SAUNG SITU AWI').toUpperCase(),
-                        this.restoAddress,
-                        'Telp: ' + this.restoPhone,
-                        '--------------------------------',
-                        'Pemesan: ' + (namaPemesan || 'Tamu'),
-                        'Meja: ' + (saung.name || saung.id),
-                        'Kasir: ' + this.cashierName,
-                        'Pesanan: ' + orders.length + ' order',
-                        'Waktu: ' + waktu + ' WIB',
-                        '--------------------------------',
-                        ...(itemLines.length ? itemLines : ['(Tidak ada item)']),
-                        '--------------------------------',
-                        'Subtotal: ' + this.formatRupiah(subtotal),
-                        'TOTAL: ' + this.formatRupiah(total),
-                        'Status: LUNAS',
-                        'Pembayaran: ' + (metode || '-'),
-                        '--------------------------------',
-                        this.receiptFooter,
-                    ];
+                    const kodeOrder = orders.map(order => '#' + order.kode_pesanan).join(' / ');
+                    const metaRows = [
+                        ['No. Order', kodeOrder],
+                        ['Pemesan', namaPemesan || 'Tamu'],
+                        ['Meja', saung.name || saung.id],
+                        ['Kasir', this.cashierName],
+                        ['Waktu', waktu + ' WIB'],
+                        ['Pembayaran', metode || '-'],
+                    ].map(([label, value]) => `
+                        <tr>
+                            <td class="label">${esc(label)}</td>
+                            <td class="sep">:</td>
+                            <td class="value">${esc(value)}</td>
+                        </tr>
+                    `).join('');
 
                     const bagian = dokumen.createElement('section');
                     bagian.className = 'receipt';
-
-                    if (this.printLogo) {
-                        const logo = dokumen.createElement('img');
-                        logo.src = this.logoSrc;
-                        logo.alt = 'Logo ' + (this.receiptHeader || 'Resto');
-                        logo.className = 'logo';
-                        bagian.appendChild(logo);
-                    }
-
-                    const isi = dokumen.createElement('pre');
-                    isi.textContent = lines.join('\n');
-                    bagian.appendChild(isi);
+                    bagian.innerHTML = `
+                        ${this.printLogo ? `<img class="logo" src="${esc(this.logoSrc)}" alt="Logo">` : ''}
+                        <div class="brand">${esc((this.receiptHeader || 'SAUNG SITU AWI').toUpperCase())}</div>
+                        ${this.restoAddress ? `<div class="address">${esc(this.restoAddress)}</div>` : ''}
+                        ${this.restoPhone ? `<div class="phone">Telp: ${esc(this.restoPhone)}</div>` : ''}
+                        <div class="divider"></div>
+                        <table class="meta"><tbody>${metaRows}</tbody></table>
+                        <div class="divider"></div>
+                        <table class="items">
+                            <thead>
+                                <tr>
+                                    <th class="qty">Qty</th>
+                                    <th class="nama">Item</th>
+                                    <th class="harga">Jumlah</th>
+                                </tr>
+                            </thead>
+                            <tbody>${itemRows || '<tr><td class="empty" colspan="3">Tidak ada item</td></tr>'}</tbody>
+                        </table>
+                        <div class="divider"></div>
+                        <table class="summary">
+                            <tbody>
+                                <tr>
+                                    <td>Subtotal</td>
+                                    <td class="nominal">${esc(this.formatRupiah(subtotal))}</td>
+                                </tr>
+                                <tr class="total">
+                                    <td>TOTAL</td>
+                                    <td class="nominal">${esc(this.formatRupiah(total))}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="divider"></div>
+                        <div class="status">LUNAS</div>
+                        ${metode ? `<div class="payment">Pembayaran: ${esc(metode)}</div>` : ''}
+                        <div class="divider"></div>
+                        ${this.receiptFooter ? `<div class="footer">${esc(this.receiptFooter)}</div>` : ''}
+                    `;
                     dokumen.body.appendChild(bagian);
 
                     const skrip = dokumen.createElement('script');
-                    skrip.textContent = '(function(){let selesai=false;const cetak=()=>{if(selesai)return;selesai=true;window.focus();window.print();};const logo=document.querySelector("img.logo");if(logo){logo.addEventListener("load",cetak);logo.addEventListener("error",cetak);}window.addEventListener("load",cetak);setTimeout(cetak,1000);})();';
+                    skrip.textContent = `
+                        (function () {
+                            let selesai = false;
+                            const paperSize = ${JSON.stringify(paperSize)};
+
+                            const aturUkuranKertas = () => {
+                                const receipt = document.querySelector('.receipt');
+                                const gayaBody = getComputedStyle(document.body);
+                                const tinggiPx = (receipt ? receipt.getBoundingClientRect().height : 0)
+                                    + parseFloat(gayaBody.paddingTop || 0)
+                                    + parseFloat(gayaBody.paddingBottom || 0);
+                                const tinggiMm = Math.max(
+                                    80,
+                                    Math.ceil((tinggiPx * 25.4) / 96) + 2
+                                );
+                                const gayaHalaman = document.getElementById('page-size');
+
+                                if (gayaHalaman) {
+                                    gayaHalaman.textContent =
+                                        '@page { size: ' + paperSize + ' ' + tinggiMm + 'mm; margin: 0; }';
+                                }
+                            };
+
+                            const cetak = () => {
+                                if (selesai) return;
+                                selesai = true;
+                                aturUkuranKertas();
+                                window.focus();
+                                window.print();
+                            };
+
+                            const logo = document.querySelector('img.logo');
+
+                            if (logo) {
+                                if (logo.complete) {
+                                    setTimeout(cetak, 50);
+                                } else {
+                                    logo.addEventListener('load', cetak);
+                                    logo.addEventListener('error', cetak);
+                                }
+                            } else {
+                                setTimeout(cetak, 100);
+                            }
+
+                            window.addEventListener('load', cetak);
+                            setTimeout(cetak, 1500);
+                        })();
+                    `;
                     dokumen.body.appendChild(skrip);
 
                     this.isPrinting = true;
@@ -1409,18 +1590,22 @@
                             throw new Error('Status cetak gagal disimpan.');
                         }
 
-                        const hasil = await response.json();
                         const target = this.saungs.find(item => item.dbId === saung.dbId) || saung;
                         const terpilih = new Set(kode);
 
-                        target.receiptOrders = (target.receiptOrders || [])
-                            .filter(order => !terpilih.has(order.kode_pesanan));
+                        // Jangan hapus struk dari daftar: tandai saja sebagai
+                        // sudah dicetak agar kasir tetap bisa mencetak ulang.
+                        target.receiptOrders = (target.receiptOrders || []).map(order => (
+                            terpilih.has(order.kode_pesanan)
+                                ? { ...order, printed: true }
+                                : order
+                        ));
 
                         this.hitungUlangStruk(target);
-                        this.selectedReceiptCodes = (target.receiptOrders || []).map(order => order.kode_pesanan);
-                        this.knownReceiptCodes = [...this.selectedReceiptCodes];
+                        this.knownReceiptCodes = (target.receiptOrders || [])
+                            .map(order => order.kode_pesanan);
 
-                        this.showToast('success', 'Struk Dicetak', `${hasil.jumlah || kode.length} pesanan ditandai sudah dicetak.`);
+                        this.showToast('success', 'Struk Dicetak', `${kode.length} pesanan dicetak. Struk tetap tersedia untuk dicetak ulang.`);
                         setTimeout(() => this.refreshKasirState(), 1200);
                     } catch (error) {
                         this.showToast('danger', 'Gagal Menandai Struk', error.message || 'Struk tercetak, tetapi status cetak gagal disimpan.');

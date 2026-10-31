@@ -6,6 +6,7 @@ use App\Models\Kategori;
 use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
+use App\Models\SesiMeja;
 use App\Models\User;
 use App\Services\PesananService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -72,7 +73,7 @@ class KasirStrukTest extends TestCase
         ]);
     }
 
-    public function test_struk_hanya_memuat_pesanan_lunas_yang_belum_dicetak(): void
+    public function test_struk_memuat_semua_pesanan_lunas_agar_bisa_dicetak_ulang(): void
     {
         $kasir = $this->kasir();
         $meja = $this->meja();
@@ -94,13 +95,57 @@ class KasirStrukTest extends TestCase
         $saung = collect($response->viewData('saungsJson'))
             ->firstWhere('id', $meja->kode_meja);
 
-        $this->assertTrue($saung['hasUnprintedPaid']);
-        $this->assertSame([$belumDicetak->kode_pesanan], $saung['receiptOrderIds']->all());
-        $this->assertCount(1, $saung['receiptItems']);
-        $this->assertSame(2, $saung['receiptItems']->first()['qty']);
-        $this->assertSame(25000.0, $saung['receiptTotal']);
-        $this->assertNotContains($sudahDicetak->kode_pesanan, $saung['receiptOrderIds']->all());
+        $this->assertTrue($saung['hasReceiptOrders']);
+        $this->assertEqualsCanonicalizing(
+            [$sudahDicetak->kode_pesanan, $belumDicetak->kode_pesanan],
+            $saung['receiptOrderIds']->all(),
+        );
+        $this->assertCount(2, $saung['receiptItems']);
+        $this->assertSame(37500.0, $saung['receiptTotal']);
         $this->assertNotContains($belumBayar->kode_pesanan, $saung['receiptOrderIds']->all());
+
+        $statusCetak = collect($saung['receiptOrders'])
+            ->mapWithKeys(fn ($order) => [$order['kode_pesanan'] => $order['printed']]);
+
+        $this->assertTrue($statusCetak[$sudahDicetak->kode_pesanan]);
+        $this->assertFalse($statusCetak[$belumDicetak->kode_pesanan]);
+    }
+
+    public function test_struk_hanya_memuat_pesanan_lunas_pada_sesi_terakhir(): void
+    {
+        $kasir = $this->kasir();
+        $meja = $this->meja('LB-91');
+        $menu = $this->menu(10000);
+
+        $sesiLama = $this->pesanan($meja, $menu);
+        $this->lunasi($sesiLama);
+        $sesiLama->update(['waktu_pesan' => now()->subHour()]);
+
+        SesiMeja::create([
+            'meja_id' => $meja->id,
+            'kode_unik' => '4321',
+            'status' => 'aktif',
+            'dibuka_pada' => now()->subMinutes(30),
+        ]);
+
+        $baruSatu = $this->pesanan($meja, $menu);
+        $this->lunasi($baruSatu);
+        $baruSatu->update(['waktu_pesan' => now()->subMinutes(10)]);
+
+        $baruDua = $this->pesanan($meja, $menu, 2);
+        $this->lunasi($baruDua);
+        $baruDua->update(['waktu_pesan' => now()->subMinutes(5)]);
+
+        $response = $this->actingAs($kasir)->get(route('kasir.dashboard'));
+        $saung = collect($response->viewData('saungsJson'))
+            ->firstWhere('id', $meja->kode_meja);
+
+        $this->assertEqualsCanonicalizing(
+            [$baruSatu->kode_pesanan, $baruDua->kode_pesanan],
+            $saung['receiptOrderIds']->all(),
+        );
+        $this->assertNotContains($sesiLama->kode_pesanan, $saung['receiptOrderIds']->all());
+        $this->assertSame(30000.0, $saung['receiptTotal']);
     }
 
     public function test_menandai_struk_hanya_mengubah_pesanan_lunas_dan_idempoten(): void
@@ -160,7 +205,7 @@ class KasirStrukTest extends TestCase
         $saung = collect($response->viewData('saungsJson'))
             ->firstWhere('id', $meja->kode_meja);
 
-        $this->assertTrue($saung['hasUnprintedPaid']);
+        $this->assertTrue($saung['hasReceiptOrders']);
         $this->assertCount(2, $saung['receiptOrderIds']);
         $this->assertCount(2, $saung['receiptItems']);
         $this->assertSame(35000.0, $saung['receiptTotal']);
@@ -175,5 +220,17 @@ class KasirStrukTest extends TestCase
 
         $this->assertNotNull($pesananSatu->fresh()->printed_at);
         $this->assertNotNull($pesananDua->fresh()->printed_at);
+
+        // Setelah dicetak, pesanan lunas harus tetap tampil agar bisa dicetak ulang.
+        $responseUlang = $this->actingAs($kasir)->get(route('kasir.dashboard'));
+        $saungUlang = collect($responseUlang->viewData('saungsJson'))
+            ->firstWhere('id', $meja->kode_meja);
+
+        $this->assertTrue($saungUlang['hasReceiptOrders']);
+        $this->assertEqualsCanonicalizing(
+            [$pesananSatu->kode_pesanan, $pesananDua->kode_pesanan],
+            $saungUlang['receiptOrderIds']->all(),
+        );
+        $this->assertSame(35000.0, $saungUlang['receiptTotal']);
     }
 }
