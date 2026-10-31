@@ -178,8 +178,7 @@
                         Otentikasi
                         Staf</h2>
                     <p class="relative z-10 text-stone-600 text-[11px] mt-1.5 leading-relaxed">Masukkan kredensial
-                        terdaftar atau
-                        pilih peran cepat di samping untuk masuk ke lingkungan kerja Saung Situ Awi.</p>
+                        akun staf yang terdaftar untuk masuk ke lingkungan kerja Saung Situ Awi.</p>
 
                     <form method="POST" action="{{ route('login') }}" class="mt-5">
                         @csrf
@@ -195,7 +194,7 @@
                                     d="M5.5 16.5c.6-1.7 1.7-2.5 3-2.5s2.4.8 3 2.5M14 9.5h5M14 13h5" />
                             </svg>
                             <input id="email" type="email" name="email"
-                                value="{{ old('email', 'admin@situawi.com') }}" required autocomplete="username"
+                                value="{{ old('email') }}" required autocomplete="username"
                                 class="w-full bg-transparent border-0 outline-none focus:ring-0 py-3 text-[13px] text-stone-800">
                         </div>
                         @error('email')

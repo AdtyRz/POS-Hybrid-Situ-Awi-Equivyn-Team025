@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\Api\MidtransNotificationController;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -12,9 +14,22 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
+        then: function () {
+            // Webhook Midtrans bersifat stateless. Didaftarkan di luar group
+            // "web" agar tidak diblokir CSRF (Midtrans tidak mengirim token).
+            Route::post('/midtrans/notification', [MidtransNotificationController::class, 'handle'])
+                ->name('midtrans.notification');
+        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->trustProxies(at: ['127.0.0.1', '::1']);
+        // env() dipakai karena binding config belum tersedia saat callback ini
+        // berjalan. Di produksi, set TRUSTED_PROXIES sebagai environment server.
+        $trustedProxies = array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('TRUSTED_PROXIES', '127.0.0.1,::1'))
+        )));
+
+        $middleware->trustProxies(at: $trustedProxies);
 
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         $middleware->appendToGroup('web', \App\Http\Middleware\BatasiShift::class);

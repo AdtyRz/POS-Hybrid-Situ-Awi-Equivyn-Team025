@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\Api\MidtransNotificationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EMenuController;
 use App\Http\Controllers\KasirController;
@@ -164,5 +163,3 @@ Route::middleware(['auth', 'role:pelayan'])->group(function () {
 });
 
 require __DIR__.'/auth.php';
-
-Route::post('/midtrans/notification', [MidtransNotificationController::class, 'handle'])->name('midtrans.notification');
