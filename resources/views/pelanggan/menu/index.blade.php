@@ -8,59 +8,59 @@
     <meta name="realtime-version-url" content="{{ route('realtime.version') }}">
     <meta name="realtime-version" content="{{ \App\Support\Realtime::version() }}">
     <title>Situ Awi - Resto & Saung Lesehan Parahyangan</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap"
-        rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        forest: {
-                            900: '#052E1B',
-                            800: '#06381F',
-                            700: '#0A4A28',
-                            600: '#0B4D2B',
-                            400: '#12703F',
-                            100: '#D9EBE0'
+    <link href="{{ asset('fonts/fonts.css') }}" rel="stylesheet">
+    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+        @vite('resources/css/app.css')
+    @else
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            forest: {
+                                900: '#052E1B',
+                                800: '#06381F',
+                                700: '#0A4A28',
+                                600: '#0B4D2B',
+                                400: '#12703F',
+                                100: '#D9EBE0'
+                            },
+                            gold: {
+                                600: '#C9982F',
+                                500: '#E0B24E',
+                                300: '#F3E27A',
+                                50: '#FBF3DD'
+                            },
+                            leaf: {
+                                600: '#5C7A22',
+                                400: '#8BAA3F',
+                                100: '#EEF3DE'
+                            },
+                            cream: {
+                                50: '#FBF8F1',
+                                100: '#F3EEDF'
+                            },
+                            charcoal: {
+                                800: '#2B2A26',
+                                500: '#6B6A63'
+                            }
                         },
-                        gold: {
-                            600: '#C9982F',
-                            500: '#E0B24E',
-                            300: '#F3E27A',
-                            50: '#FBF3DD'
-                        },
-                        leaf: {
-                            600: '#5C7A22',
-                            400: '#8BAA3F',
-                            100: '#EEF3DE'
-                        },
-                        cream: {
-                            50: '#FBF8F1',
-                            100: '#F3EEDF'
-                        },
-                        charcoal: {
-                            800: '#2B2A26',
-                            500: '#6B6A63'
+                        fontFamily: {
+                            sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                            display: ['"Playfair Display"', 'Georgia', 'serif']
                         }
-                    },
-                    fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-                        display: ['"Playfair Display"', 'Georgia', 'serif']
                     }
                 }
-            }
-        };
-    </script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+            };
+        </script>
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+    @endif
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         <script>
             window.__CHANNELS__ = ['meja.{{ $meja->kode_meja }}'];
         </script>
-        @vite('resources/js/reverb.js')
+        @vite('resources/js/app.js')
     @endif
     <style>
         [x-cloak] {

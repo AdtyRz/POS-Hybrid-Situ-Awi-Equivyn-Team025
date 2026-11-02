@@ -24,13 +24,26 @@ class PesananController extends Controller
     {
         $data = $this->bangunDataKasir($request->query('meja'));
 
-        $printLogo = filter_var(Pengaturan::nilai('print_logo'), FILTER_VALIDATE_BOOLEAN);
-        $logoSrc = Pengaturan::logoUrl();
-        $receiptHeader = Pengaturan::nilai('receipt_header', 'Saung Situ Awi - Ciwidey');
-        $receiptFooter = Pengaturan::nilai('struk_footer', 'Hatur Nuhun Parantos Sumping');
-        $restoAddress = Pengaturan::nilai('alamat_resto', 'Jl. Raya Situ Awi Km. 4, Ciwidey, Kabupaten Bandung');
-        $restoPhone = Pengaturan::nilai('telepon_resto', '0812-3456-7890');
-        $paperSize = Pengaturan::nilai('paper_size', '80mm') === '58mm' ? '58mm' : '80mm';
+        // Satu query untuk semua pengaturan halaman ini, bukan tujuh query
+        // terpisah. Nilai selalu dibaca ulang tiap request agar perubahan
+        // admin langsung terlihat tanpa cache basi.
+        $pengaturan = Pengaturan::query()->pluck('nilai', 'kunci');
+        $nilai = function (string $kunci, mixed $default = null) use ($pengaturan): mixed {
+            $hasil = $pengaturan[$kunci] ?? null;
+
+            return $hasil !== null
+                ? $hasil
+                : ($default ?? Pengaturan::DEFAULTS[$kunci] ?? null);
+        };
+
+        $printLogo = filter_var($nilai('print_logo', '1'), FILTER_VALIDATE_BOOLEAN);
+        $logoPath = trim((string) $nilai('logo_path', ''));
+        $logoSrc = $logoPath !== '' ? asset($logoPath) : asset('asset/Logo.png');
+        $receiptHeader = $nilai('receipt_header', 'Saung Situ Awi - Ciwidey');
+        $receiptFooter = $nilai('struk_footer', 'Hatur Nuhun Parantos Sumping');
+        $restoAddress = $nilai('alamat_resto', 'Jl. Raya Situ Awi Km. 4, Ciwidey, Kabupaten Bandung');
+        $restoPhone = $nilai('telepon_resto', '0812-3456-7890');
+        $paperSize = $nilai('paper_size', '80mm') === '58mm' ? '58mm' : '80mm';
 
         return view('kasir.dashboard.index', array_merge($data, compact(
             'printLogo',
