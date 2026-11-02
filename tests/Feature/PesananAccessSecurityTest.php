@@ -176,7 +176,9 @@ class PesananAccessSecurityTest extends TestCase
         $this->getJson('/api/v1/pesanan/' . $pesanan->kode_pesanan . '?kode_saung=' . $sesi->kode_unik)
             ->assertOk();
 
-        $this->getJson('/api/v1/pesanan/' . $pesanan->kode_pesanan . '?kode_saung=0000')
+        $kodeSalah = $sesi->kode_unik === '0000' ? '0001' : '0000';
+
+        $this->getJson('/api/v1/pesanan/' . $pesanan->kode_pesanan . '?kode_saung=' . $kodeSalah)
             ->assertForbidden();
     }
 

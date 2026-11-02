@@ -7,38 +7,39 @@
     <meta name="realtime-version-url" content="{{ route('realtime.version') }}">
     <meta name="realtime-version" content="{{ \App\Support\Realtime::version() }}">
     <title>Status Meja {{ $pesanan->meja->kode_meja }} - Saung Situ Awi</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        forest: {
-                            900: '#052E1B',
-                            600: '#0B4D2B',
-                            100: '#D9EBE0'
+    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+        @vite('resources/css/app.css')
+    @else
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            forest: {
+                                900: '#052E1B',
+                                600: '#0B4D2B',
+                                100: '#D9EBE0'
+                            },
+                            gold: {
+                                500: '#E0B24E',
+                                50: '#FBF3DD'
+                            },
+                            cream: {
+                                50: '#FBF8F1'
+                            }
                         },
-                        gold: {
-                            500: '#E0B24E',
-                            50: '#FBF3DD'
-                        },
-                        cream: {
-                            50: '#FBF8F1'
+                        fontFamily: {
+                            sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                            display: ['"Playfair Display"', 'Georgia', 'serif']
                         }
-                    },
-                    fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-                        display: ['"Playfair Display"', 'Georgia', 'serif']
                     }
                 }
-            }
-        };
-    </script>
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link
-        href="https://fonts.bunny.net/css?family=playfair-display:600,700|plus-jakarta-sans:400,500,600,700,800&display=swap"
-        rel="stylesheet">
-    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+            };
+        </script>
+    @endif
+    <link href="{{ asset('fonts/fonts.css') }}" rel="stylesheet">
+@if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         <script>
             window.__CHANNELS__ = ['pesanan.{{ $pesanan->kode_pesanan }}'];
         </script>

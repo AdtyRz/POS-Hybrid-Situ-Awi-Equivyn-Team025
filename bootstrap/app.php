@@ -31,6 +31,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->trustProxies(at: $trustedProxies);
 
+        // Izinkan klien first-party (cookie sesi) memakai API tanpa token.
+        // Klien pihak ketiga tetap memakai bearer token Sanctum.
+        $middleware->statefulApi();
+
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         $middleware->appendToGroup('web', \App\Http\Middleware\BatasiShift::class);
 

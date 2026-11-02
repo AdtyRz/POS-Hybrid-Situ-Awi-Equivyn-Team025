@@ -8,11 +8,8 @@
     <meta name="realtime-version" content="{{ \App\Support\Realtime::version() }}">
     <title>KDS {{ $judul }} ({{ $subJudul }}) • Saung Situ Awi</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+    <link href="{{ asset('fonts/fonts.css') }}" rel="stylesheet">
+@if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         <script>
             window.__CHANNELS__ = ['kds.{{ $target }}', 'menu'];
         </script>
@@ -174,7 +171,7 @@
                 </div>
             </div>
 
-            <div class="bg-[#EAE4D7] border border-[#0B4D2B]/10 rounded-full p-1 flex items-center gap-1 shadow-2xs">
+            <div class="bg-[#EAE4D7] border border-[#0B4D2B]/10 rounded-full p-1 flex flex-wrap items-center gap-1 shadow-2xs max-w-full">
                 <button
                     type="button"
                     @click="filter = 'all'"
@@ -225,7 +222,7 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-3 sm:gap-4">
+        <div class="flex flex-wrap items-center gap-3 sm:gap-4">
             <div class="flex items-center gap-2.5 px-3.5 py-2 bg-white rounded-xl border border-[#0B4D2B]/10 shadow-xs">
                 <div class="w-6 h-6 rounded-full bg-[#EBF5EE] flex items-center justify-center text-[#0B4D2B]">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

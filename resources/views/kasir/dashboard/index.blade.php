@@ -8,11 +8,8 @@
     <meta name="realtime-version" content="{{ \App\Support\Realtime::version() }}">
     <title>Terminal Kasir POS • Saung Situ Awi Ciwidey</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+    <link href="{{ asset('fonts/fonts.css') }}" rel="stylesheet">
+@if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         <script>
             window.__CHANNELS__ = ['kasir', 'admin', 'menu'];
         </script>
@@ -71,31 +68,31 @@
       x-cloak>
 
     <header class="sticky top-0 z-40 bg-[#FBF8F1]/95 backdrop-blur-md border-b border-[#C8C2B3]/60 shadow-[0_2px_8px_-2px_rgba(26,38,20,0.06)]">
-        <div class="max-w-[1366px] w-full mx-auto px-6 py-3.5 flex items-center justify-between gap-6 min-h-[68px]">
+        <div class="max-w-[1366px] w-full mx-auto px-4 sm:px-6 py-3 sm:py-3.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 min-h-[68px]">
 
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 min-w-0">
                 <div class="w-10 h-10 rounded-full bg-[#0B4D2B] border-2 border-[#E0B24E] overflow-hidden flex items-center justify-center shadow-sm shrink-0">
                     <img src="{{ asset('asset/Logo.png') }}"
                          alt="Logo Saung Situ Awi"
                          class="w-full h-full object-cover"
                          onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\'text-[#E0B24E] font-bold text-xs\'>SA</span>';">
                 </div>
-                <div>
+                <div class="min-w-0">
                     <div class="flex items-center gap-2">
-                        <span class="font-display font-bold text-lg text-[#00341A] tracking-tight">Saung Situ Awi</span>
+                        <span class="font-display font-bold text-base sm:text-lg text-[#00341A] tracking-tight whitespace-nowrap">Saung Situ Awi</span>
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-[#E0B24E]/20 border border-[#E0B24E]/30 text-[#C9982F] text-[10px] font-extrabold uppercase tracking-widest">
                             POS
                         </span>
                     </div>
-                    <div class="text-xs text-[#6B6A63] font-medium leading-none mt-0.5">
+                    <div class="hidden sm:block text-xs text-[#6B6A63] font-medium leading-none mt-0.5">
                         Terminal Kasir POS • Ciwidey
                     </div>
                 </div>
             </div>
 
-            <div class="flex items-center gap-2.5">
+            <div class="flex flex-wrap items-center justify-end gap-2 sm:gap-2.5 w-full sm:w-auto">
 
-                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F3EEDF] border border-[#C8C2B3]/50 text-xs text-[#00341A] font-semibold">
+                <div class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F3EEDF] border border-[#C8C2B3]/50 text-xs text-[#00341A] font-semibold">
                     <span class="relative flex h-2 w-2">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
@@ -109,13 +106,13 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                         </svg>
                     </div>
-                    <div class="text-left leading-tight">
+                    <div class="hidden sm:block text-left leading-tight">
                         <div class="font-bold text-[#2B2A26]">{{ auth()->user()->nama ?? 'Kasir' }}</div>
                         <div class="text-[10px] text-[#6B6A63]">Shift 1 Kasir Siang</div>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F3EEDF] border border-[#C8C2B3]/50 text-xs font-extrabold text-[#0B4D2B]">
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F3EEDF] border border-[#C8C2B3]/50 text-xs font-extrabold text-[#0B4D2B] whitespace-nowrap">
                     <svg class="w-3.5 h-3.5 text-[#C9982F]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                         <polyline points="9 22 9 12 15 12 15 22"/>
@@ -123,7 +120,7 @@
                     <span x-text="occupiedCount + '/' + saungs.length + ' Saung Aktif'">Memuat data saung</span>
                 </div>
 
-                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EAE4D3]/80 border border-[#C8C2B3]/50 text-xs font-mono font-bold text-[#00341A]">
+                <div class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EAE4D3]/80 border border-[#C8C2B3]/50 text-xs font-mono font-bold text-[#00341A]">
                     <svg class="w-3.5 h-3.5 text-[#C9982F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
