@@ -188,17 +188,26 @@ Saat boot:
    Kode : 8754
    ```
 
-Kontrol:
+Kontrol dan fase layar:
 
-- **Tap singkat**: berganti layar `Kode` -> `Status Pesanan` -> `Total Bayar`.
+- **Standby** (belum ada pesanan pada sesi): layar hanya menampilkan `Meja` / `Kode`.
+  Touch sengaja diabaikan agar tamu tidak mengubah layar sebelum memesan.
+- **Pembayaran** (ada pesanan belum lunas): QRIS/Midtrans menampilkan `Pembayaran TF`
+  dan total; tunai menampilkan `Pembayaran` / `di Kasir`.
+- **Lunas** (semua pesanan sudah dibayar): layar bergilir otomatis setiap 5 detik:
+  `Status Pesanan` → `Total Bayar` → `Meja/Kode`.
+- **Tap singkat**: mempercepat perpindahan layar saat fase lunas. Di fase standby/pembayaran
+  tap diabaikan.
 - **Tap saat layar error**: langsung mencoba menghubungi server lagi.
-- **Tahan sekitar 1,5 detik**: mengirim panggilan pelayan.
+- **Tahan sekitar 1,5 detik**: mengirim panggilan pelayan (hanya saat fase lunas).
 - **Buzzer**: berbunyi saat tap, saat panggilan berhasil, dan saat gagal. Durasi saat panggilan berhasil mengikuti pengaturan **Durasi Buzzer Feedback** di admin.
 - **LED**: menyala saat panggilan berhasil.
 
 Data diperbarui otomatis setiap 10 detik. Konfigurasi pesan LCD dan durasi buzzer ikut diambil pada request yang sama, jadi tidak ada request konfigurasi terpisah.
 
-Kode sesi yang tampil adalah kode aktif yang juga dipakai pelanggan untuk membuka e-menu. Jika sesi meja diganti oleh kasir, kode di LCD akan berubah otomatis pada pembaruan berikutnya. Sesi dibuat otomatis saat meja pertama kali diakses, sehingga setiap meja selalu punya kode.
+Kode sesi yang tampil adalah kode aktif yang juga dipakai pelanggan untuk membuka e-menu. Jika sesi meja diganti oleh kasir, kode di LCD akan berubah otomatis pada pembaruan berikutnya dan layar kembali ke fase standby. Sesi dibuat otomatis saat meja pertama kali diakses, sehingga setiap meja selalu punya kode.
+
+Panggilan pelayan yang dikirim dari LCD akan muncul di dashboard kasir dan halaman pelayan. Keduanya punya tombol **Konfirmasi Panggilan**; setelah salah satu dikonfirmasi, indikator panggilan hilang di kedua halaman.
 
 ## 8. Troubleshooting
 
@@ -227,7 +236,8 @@ X-IoT-Token: <IOT_API_TOKEN>
 ```
 
 - `GET /api/iot/status-meja` — konfigurasi LCD dan daftar meja.
-- `GET /api/iot/meja/{kode_meja}` — status sesi, pesanan, total bayar.
+- `GET /api/iot/meja/{kode_meja}` — status sesi, `fase` (`standby`/`pembayaran`/`lunas`),
+  `metode_pembayaran`, `semua_lunas`, pesanan, dan total bayar.
 - `POST /api/iot/panggil-pelayan` — body:
 
 ```json

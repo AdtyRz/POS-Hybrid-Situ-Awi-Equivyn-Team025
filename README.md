@@ -143,27 +143,38 @@ Endpoint API untuk perangkat IoT meja menyertakan kode sesi dan **wajib** mengir
 
 - `GET /api/iot/status-meja` — status semua meja + `kode_sesi`.
 - `GET /api/iot/meja/{ident}` — detail satu meja (dicari via `id_device` atau `kode_meja`) + `kode_sesi`,
-  `pesanan[]` (kode, status pesanan/pembayaran, total) pada sesi berjalan, `total_bayar`, dan `jumlah_pesanan`.
+  `fase` (`standby`/`pembayaran`/`lunas`), `metode_pembayaran` (`tunai`/`qris`/`campuran`),
+  `semua_lunas`, `pesanan[]` (kode, status pesanan/pembayaran, metode, total) pada sesi berjalan,
+  `total_bayar`, dan `jumlah_pesanan`.
 - `POST /api/iot/panggil-pelayan` — body `{"kode_meja":"LB-01","kode_sesi":"1234"}`. Kode sesi
   harus kode yang sedang aktif; kode lama ditolak.
+
+Panggilan pelayan yang masuk dapat dikonfirmasi dari dua tempat: tombol **Konfirmasi Panggilan**
+di kartu panggilan halaman pelayan, atau tombol yang sama pada banner panggilan di dashboard
+kasir. Begitu salah satu dikonfirmasi, status panggilan menjadi `selesai` dan indikator di
+kasir maupun pelayan sama-sama hilang.
 
 Bila `IOT_API_TOKEN` kosong, semua endpoint IoT mengembalikan `503`. Token tidak boleh ditaruh
 di URL. Isi konstanta `IOT_API_TOKEN` pada sketch ESP32 dengan nilai yang sama.
 
-**Sensor sentuh (ESP32, `esp32-iot/esp32_iot_complete.ino`)** — sensor sentuh dipakai untuk
-berpindah tampilan LCD 16x2:
+**Layar LCD (ESP32, `esp32-iot/esp32_iot_complete.ino`)** — tampilan mengikuti fase sesi meja:
 
-- **Tap singkat** bergiliran: `Kode` → `Status Pesanan` → `Total Bayar`. Layar kode menampilkan
-  kode meja sekaligus kode verifikasi sesi, misalnya:
+- **Standby** (sesi aktif tetapi belum ada pesanan): layar hanya menampilkan kode meja dan kode
+  verifikasi, misalnya:
 
   ```text
   Meja : LB-01
   Kode : 8754
   ```
 
-  Kode verifikasi tampil pertama karena itu yang dibutuhkan pelanggan untuk membuka e-menu.
+  Touch diabaikan pada fase ini agar tamu tidak mengubah layar sebelum memesan.
+- **Pembayaran** (ada pesanan belum lunas): QRIS/Midtrans menampilkan `Pembayaran TF` beserta
+  total; tunai menampilkan `Pembayaran` / `di Kasir`. Touch tetap diabaikan.
+- **Lunas** (semua pesanan sudah dibayar): layar bergilir otomatis setiap 5 detik:
+  `Status Pesanan` → `Total Bayar` → `Meja/Kode`. Tap singkat mempercepat giliran layar;
+  tahan ~1,5 detik untuk memanggil pelayan.
 - **Tap saat layar error** langsung memicu percobaan koneksi ulang ke server.
-- **Tahan ~1.5 detik** untuk memanggil pelayan (fungsi lama tetap ada).
+- Setelah sesi ditutup kasir, LCD kembali ke layar kode standby dengan kode sesi baru.
 
 Panduan wiring, library, upload, dan troubleshooting ada di
 [`esp32-iot/README.md`](esp32-iot/README.md).
