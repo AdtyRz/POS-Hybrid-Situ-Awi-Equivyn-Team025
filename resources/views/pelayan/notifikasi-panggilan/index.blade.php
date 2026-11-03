@@ -86,7 +86,7 @@
 
         <div data-live="pelayan-notifikasi-urgent">
         @if ($urgentCall)
-        <section x-show="hasUrgentAlert && !alertResponded"
+        <section x-show="hasUrgentAlert && !alertResponded" x-cloak
                  x-transition:leave="transition ease-in duration-300 transform opacity-0 -translate-y-4"
                  class="bg-[#FFDAD6] rounded-xl p-4 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] relative overflow-hidden flex flex-col gap-2 isolation-auto">
 
@@ -181,6 +181,7 @@
             <div class="space-y-3 pt-1">
             @forelse ($siapAntarFormatted as $order)
                 <div class="bg-[#F6F3EC] rounded-xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-col gap-2"
+                     x-cloak
                      x-data="{ orderState: { delivered: false, busy: false } }"
                      x-show="!orderState.delivered">
                     <div class="flex items-start justify-between">
@@ -296,7 +297,7 @@
 
     </div>
 
-    <div x-show="showToast"
+    <div x-show="showToast" x-cloak
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0 translate-y-4"
          x-transition:enter-end="opacity-100 translate-y-0"
