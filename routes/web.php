@@ -135,6 +135,7 @@ Route::middleware(['auth', 'role:kasir', 'kasir.unlocked'])->group(function () {
     Route::post('/kasir/struk/tandai', [PembayaranController::class, 'tandaiStruk'])->name('kasir.struk.tandai');
     Route::get('/kasir/session', [KasirController::class, 'daftarMejaSession'])->name('kasir.session.index');
     Route::patch('/kasir/session/{meja}', [KasirController::class, 'akhiriSession'])->name('kasir.session.tutup');
+    Route::patch('/kasir/panggilan/{id}', [KasirController::class, 'selesaikanPanggilan'])->name('kasir.panggilan.selesai');
 });
 
 Route::middleware(['auth', 'aktif', 'role:admin,kasir,pelayan', 'kasir.unlocked', 'pesanan.no-store'])->group(function () {

@@ -8,15 +8,28 @@
     <meta name="realtime-version" content="{{ \App\Support\Realtime::version() }}">
     <title>@yield('title', 'Admin Console') • Saung Situ Awi</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+    <link rel="preload" href="{{ asset('fonts/plus-jakarta-sans-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ asset('fonts/playfair-display-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ asset('fonts/jetbrains-mono-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link href="{{ asset('fonts/fonts.css') }}" rel="stylesheet">
+@if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         <script>
             window.__CHANNELS__ = ['admin', 'kasir', 'menu'];
         </script>
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @vite(['resources/css/app.css', 'resources/js/alpine.js'])
+        @if (request()->routeIs('admin.dashboard', 'admin.analitik-laporan.*', 'admin.master-meja*', 'admin.master-menu*'))
+            <script>
+                window.addEventListener('load', function () {
+                    var realtime = document.createElement('script');
+                    realtime.type = 'module';
+                    realtime.src = @json(Vite::asset('resources/js/reverb.js'));
+                    document.head.appendChild(realtime);
+                }, { once: true });
+            </script>
+        @endif
+        @if (request()->routeIs('admin.master-meja*'))
+            @vite('resources/js/qr.js')
+        @endif
     @else
         <script src="https://cdn.tailwindcss.com"></script>
         <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
@@ -237,7 +250,7 @@
 
                 <div class="flex items-center gap-2.5 sm:gap-4">
 
-                    <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#B1F1C2]/40 border border-[#B1F1C2] text-[10px] font-bold text-[#00341A]">
+                    <div class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#B1F1C2]/40 border border-[#B1F1C2] text-[10px] font-bold text-[#00341A]">
                         <span class="w-2 h-2 rounded-full bg-[#0B4D2B] animate-pulse"></span>
                         <span class="tracking-wide">HTTP API Online</span>
                     </div>

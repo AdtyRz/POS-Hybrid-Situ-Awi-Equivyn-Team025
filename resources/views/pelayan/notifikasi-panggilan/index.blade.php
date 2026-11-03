@@ -152,18 +152,9 @@
                 <button @click="respondToAlert()" type="button" :disabled="processing"
                         class="w-full h-12 rounded-full bg-[#00341A] hover:bg-[#0B4D2B] active:scale-98 text-white font-semibold text-sm tracking-[0.14px] flex items-center justify-center gap-2 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] transition-all cursor-pointer disabled:opacity-60">
                     <svg class="w-3.5 h-4.5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span x-text="processing ? 'Menyimpan...' : 'Respon & Menuju {{ $urgentCall['nama_saung'] }}'">Respon & Menuju {{ $urgentCall['nama_saung'] }}</span>
-                </button>
-
-                <button @click="soundVibrationActive = !soundVibrationActive; simpanPreferensi(); triggerToast(soundVibrationActive ? 'Alarm lokal diaktifkan.' : 'Alarm lokal disenyapkan.')" type="button"
-                        class="w-full h-12 rounded-full bg-[#EBE8E1] hover:bg-[#E5E2DB] active:scale-98 text-[#1C1C18] font-semibold text-sm tracking-[0.14px] flex items-center justify-center gap-2 transition-all cursor-pointer">
-                    <svg class="w-4 h-4 text-[#BA1A1A]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
-                    </svg>
-                    <span x-text="soundVibrationActive ? 'Senyapkan Alarm Lokal' : 'Alarm Lokal Senyap'">Senyapkan Alarm Lokal</span>
+                    <span x-text="processing ? 'Menyimpan...' : 'Konfirmasi Panggilan'">Konfirmasi Panggilan</span>
                 </button>
             </div>
         </section>
