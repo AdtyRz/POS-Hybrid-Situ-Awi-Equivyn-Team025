@@ -124,6 +124,8 @@ class PelayanController extends Controller
 
     private function sesiAktif(Collection $meja): Collection
     {
+        SesiMeja::tutupSesiLintasHari();
+
         return SesiMeja::query()
             ->whereIn('meja_id', $meja->pluck('id'))
             ->where('status', 'aktif')
