@@ -258,9 +258,6 @@
             };
         }
     </script>
-    <script>
-        window.addEventListener('realtime', () => window.realtimeReload(600));
-    </script>
 </body>
 
 </html>

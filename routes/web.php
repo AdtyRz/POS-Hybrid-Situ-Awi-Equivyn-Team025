@@ -144,11 +144,13 @@ Route::middleware(['auth', 'aktif', 'role:admin,kasir,pelayan', 'kasir.unlocked'
 
 Route::middleware(['auth', 'role:koki'])->group(function () {
     Route::get('/kds/dapur', [KdsController::class, 'index'])->defaults('target', 'dapur')->name('kds.dapur');
+    Route::get('/kds/dapur/state', [KdsController::class, 'state'])->defaults('target', 'dapur')->name('kds.dapur.state');
     Route::patch('/kds/dapur/{id}', [KdsController::class, 'update'])->defaults('target', 'dapur')->name('kds.dapur.ubah');
 });
 
 Route::middleware(['auth', 'role:barista'])->group(function () {
     Route::get('/kds/bar', [KdsController::class, 'index'])->defaults('target', 'bar')->name('kds.bar');
+    Route::get('/kds/bar/state', [KdsController::class, 'state'])->defaults('target', 'bar')->name('kds.bar.state');
     Route::patch('/kds/bar/{id}', [KdsController::class, 'update'])->defaults('target', 'bar')->name('kds.bar.ubah');
 });
 
