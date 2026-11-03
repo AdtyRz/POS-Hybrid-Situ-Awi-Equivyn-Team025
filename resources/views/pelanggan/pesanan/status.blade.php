@@ -48,7 +48,7 @@
 </head>
 
 <body class="min-h-screen bg-cream-50 text-stone-800 antialiased font-sans">
-    <div class="max-w-md mx-auto px-4 pt-4 pb-8">
+    <div class="max-w-md mx-auto px-4 pt-4 pb-8" data-live="pesanan-status">
         <div class="flex items-center justify-between">
             <a href="{{ route('emenu.meja', $pesanan->meja->id) }}" class="w-9 h-9 flex items-center justify-center"
                 aria-label="Kembali">
@@ -339,7 +339,11 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.lunas) {
-                            window.location.reload();
+                            if (typeof window.refreshLiveRegions === 'function') {
+                                window.refreshLiveRegions({ immediate: true });
+                            } else {
+                                window.location.reload();
+                            }
                             return;
                         }
                         if (data.expired && data.qr_url) {
@@ -364,11 +368,6 @@
             checkPaymentStatus();
         </script>
     @endif
-
-    <script>
-
-        window.addEventListener('realtime', () => window.realtimeReload(600));
-    </script>
 </body>
 
 </html>

@@ -40,21 +40,24 @@ class Realtime
                 'sesi_meja',
                 'menu',
                 'meja_makan',
+                'pengaturan',
                 'users',
             ];
 
+            $gabungan = collect($tabel)
+                ->map(fn (string $nama) => "SELECT '{$nama}' AS nama, COUNT(*) AS jumlah, MAX(updated_at) AS terakhir FROM {$nama}")
+                ->implode(' UNION ALL ');
+
             $sidik = [];
 
-            foreach ($tabel as $nama) {
-                $baris = DB::table($nama)
-                    ->selectRaw('COUNT(*) as jumlah, MAX(updated_at) as terakhir')
-                    ->first();
-
-                $sidik[$nama] = [
+            foreach (DB::select($gabungan) as $baris) {
+                $sidik[$baris->nama] = [
                     'jumlah' => (int) ($baris->jumlah ?? 0),
-                    'terakhir' => $baris->terakhir ?? null,
+                    'terakhir' => (string) ($baris->terakhir ?? ''),
                 ];
             }
+
+            ksort($sidik);
 
             return hash('sha256', json_encode($sidik));
         });

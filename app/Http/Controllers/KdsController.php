@@ -9,6 +9,7 @@ use App\Models\LogPanggilPelayan;
 use App\Models\Pesanan;
 use App\Services\ShiftService;
 use App\Support\Realtime;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -47,6 +48,38 @@ class KdsController extends Controller
             $stasiun = 'Dapur';
         }
 
+        $state = $this->stateData($target);
+        $labelShift = ShiftService::ringkasan()['label'];
+
+        return view('kds.index', compact(
+            'target', 'judul', 'subJudul', 'lencana', 'tampilan',
+            'kataMulai', 'kataSiap', 'kataRunner',
+            'stasiunNama', 'stasiunSub', 'stasiunUtama', 'stasiun',
+            'labelShift'
+        ) + [
+            'tiketJson' => $state['tiketJson'],
+            'selesaiHariIni' => $state['selesaiHariIni'],
+            'rataRataMasakTeks' => $state['rataRataMasakTeks'],
+        ]);
+    }
+
+    public function state(Request $request): JsonResponse
+    {
+        $target = $request->route('target', 'dapur') === 'bar' ? 'bar' : 'dapur';
+        $state = $this->stateData($target);
+
+        return response()->json([
+            'target' => $target,
+            'tickets' => $state['tiketJson'],
+            'completedPortions' => $state['selesaiHariIni'],
+            'averageCookText' => $state['rataRataMasakTeks'],
+            'labelShift' => ShiftService::ringkasan()['label'],
+            'updatedAt' => now()->toIso8601String(),
+        ])->header('Cache-Control', 'no-store, max-age=0');
+    }
+
+    private function stateData(string $target): array
+    {
         $tiket = DetailPesanan::with(['menu', 'pesanan.meja'])
             ->whereHas('menu.kategori', function ($query) use ($target) {
                 $query->where('target_kds', $target);
@@ -136,18 +169,14 @@ class KdsController extends Controller
             ? max(1, (int) round($durasiMasakList->avg() / 60))
             : 0;
 
-        $rataRataMasakTeks = $rataRataMasakMenit > 0 ? $rataRataMasakMenit . ' Mnt' : '— Mnt';
-        $labelShift = ShiftService::ringkasan()['label'];
-
-        return view('kds.index', compact(
-            'target', 'judul', 'subJudul', 'lencana', 'tampilan',
-            'kataMulai', 'kataSiap', 'kataRunner',
-            'stasiunNama', 'stasiunSub', 'stasiunUtama', 'stasiun',
-            'tiketJson', 'selesaiHariIni', 'rataRataMasakTeks', 'labelShift'
-        ));
+        return [
+            'tiketJson' => $tiketJson,
+            'selesaiHariIni' => (int) $selesaiHariIni,
+            'rataRataMasakTeks' => $rataRataMasakMenit > 0 ? $rataRataMasakMenit . ' Mnt' : '— Mnt',
+        ];
     }
 
-    public function update(Request $request, string $id): RedirectResponse
+    public function update(Request $request, string $id): JsonResponse|RedirectResponse
     {
         $target = $request->route('target', 'dapur');
 
@@ -215,6 +244,20 @@ class KdsController extends Controller
                 'area' => $panggilanRunner->meja->area ?? null,
                 'status_panggilan' => 'menunggu',
             ]));
+        }
+
+        if ($request->expectsJson() || $request->ajax()) {
+            $target = $target === 'bar' ? 'bar' : 'dapur';
+            $state = $this->stateData($target);
+
+            return response()->json([
+                'target' => $target,
+                'tickets' => $state['tiketJson'],
+                'completedPortions' => $state['selesaiHariIni'],
+                'averageCookText' => $state['rataRataMasakTeks'],
+                'labelShift' => ShiftService::ringkasan()['label'],
+                'updatedAt' => now()->toIso8601String(),
+            ])->header('Cache-Control', 'no-store, max-age=0');
         }
 
         return back();

@@ -2,17 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\PengaturanDiperbarui;
 use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
 use App\Models\Pengaturan;
 use App\Models\SesiMeja;
 use App\Services\IotStatusService;
 use App\Services\ShiftService;
+use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -171,6 +174,8 @@ class PengaturanController extends Controller
         }
 
         Pengaturan::simpanBanyak($data);
+        Cache::forget('realtime-version');
+        Realtime::emit(new PengaturanDiperbarui(array_keys($data)));
 
         return redirect()
             ->route('admin.pengaturan-sistem')
@@ -209,6 +214,8 @@ class PengaturanController extends Controller
         $lama = Pengaturan::nilai('logo_path', '');
 
         Pengaturan::simpanBanyak(['logo_path' => 'asset/resto/' . $nama]);
+        Cache::forget('realtime-version');
+        Realtime::emit(new PengaturanDiperbarui(['logo_path']));
 
         if (is_string($lama) && str_starts_with($lama, 'asset/resto/')) {
             $berkasLama = public_path($lama);

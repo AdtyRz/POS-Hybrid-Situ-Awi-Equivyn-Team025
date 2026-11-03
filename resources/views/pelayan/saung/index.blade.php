@@ -15,7 +15,7 @@
 
 <div x-data="pelayanTabSaung()" @keydown.escape.window="showEndSessionModal = false" class="relative flex flex-col min-h-screen bg-[#FCF9F2]" x-init="init()">
 
-    <header class="sticky top-0 z-40 bg-[rgba(252,249,242,0.85)] backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] px-4 py-2.5 h-16 flex items-center justify-between border-b border-[#E5E2DB]/50">
+    <header data-live="pelayan-saung-header" class="sticky top-0 z-40 bg-[rgba(252,249,242,0.85)] backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] px-4 py-2.5 h-16 flex items-center justify-between border-b border-[#E5E2DB]/50">
         <div class="flex items-center gap-2">
             <img src="{{ asset('asset/Logo.png') }}" alt="Logo Situ Awi" class="h-8 max-w-[45.25px] w-auto object-contain flex-shrink-0">
             <div class="flex flex-col">
@@ -36,7 +36,7 @@
         </div>
     </header>
 
-    <div class="px-4 py-3 space-y-4 flex-1">
+    <div class="px-4 py-3 space-y-4 flex-1" data-live="pelayan-saung-content">
 
         <section class="bg-[#F6F3EC] rounded-2xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-col gap-2">
             <div class="flex items-center justify-between">
@@ -515,15 +515,32 @@
 
 </div>
 
+<script type="application/json" id="pelayan-saung-state">{!! json_encode([
+    'tables' => $tables,
+    'menu' => $menu,
+    'mejaOptions' => $mejaOptions,
+    'firstTableId' => $tables->first()['id'] ?? null,
+], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
+
 <script>
+    const pelayanSaungInitialState = (() => {
+        try {
+            const el = document.getElementById('pelayan-saung-state');
+
+            return el ? JSON.parse(el.textContent) : {};
+        } catch (error) {
+            return {};
+        }
+    })();
+
     function pelayanTabSaung() {
         return {
             selectedCluster: 'all',
-            tables: @json($tables),
-            menuCategories: @json($menu),
-            mejaOptions: @json($mejaOptions),
-            selectedMenuCategory: {{ $menu->first()['id'] ?? 'null' }},
-            menuMejaId: {{ $tables->first()['id'] ?? 'null' }},
+            tables: pelayanSaungInitialState.tables || @json($tables),
+            menuCategories: pelayanSaungInitialState.menu || @json($menu),
+            mejaOptions: pelayanSaungInitialState.mejaOptions || @json($mejaOptions),
+            selectedMenuCategory: pelayanSaungInitialState.menu?.[0]?.id ?? {{ $menu->first()['id'] ?? 'null' }},
+            menuMejaId: pelayanSaungInitialState.firstTableId ?? {{ $tables->first()['id'] ?? 'null' }},
             menuCatatan: '',
             cart: {},
             menuSubmitting: false,
@@ -550,6 +567,73 @@
                 this.$watch('showQrModal', (open) => {
                     if (open) this.$nextTick(() => this.renderQr());
                 });
+
+                window.addEventListener('live:updated', (event) => this.applyLiveState(event));
+            },
+
+            applyLiveState(event) {
+                const doc = event.detail?.document;
+                const raw = doc?.getElementById('pelayan-saung-state')?.textContent;
+
+                if (!raw) return;
+
+                try {
+                    const state = JSON.parse(raw);
+
+                    if (Array.isArray(state.tables)) {
+                        this.tables = state.tables;
+                    }
+
+                    if (Array.isArray(state.menu)) {
+                        this.menuCategories = state.menu;
+                    }
+
+                    if (Array.isArray(state.mejaOptions)) {
+                        this.mejaOptions = state.mejaOptions;
+                    }
+
+                    if (state.firstTableId && !this.tables.some(item => item.id === this.menuMejaId)) {
+                        this.menuMejaId = state.firstTableId;
+                    }
+
+                    if (!this.menuCategories.some(item => item.id === this.selectedMenuCategory)) {
+                        this.selectedMenuCategory = this.menuCategories[0]?.id ?? null;
+                    }
+
+                    const nextCart = {};
+                    Object.entries(this.cart).forEach(([id, qty]) => {
+                        const menu = this.menuList.find(item => item.id === Number(id));
+                        const stok = menu ? Math.max(0, Number(menu.stok) || 0) : 0;
+
+                        if (menu && qty > 0 && stok > 0) {
+                            nextCart[menu.id] = Math.min(qty, stok);
+                        }
+                    });
+                    this.cart = nextCart;
+
+                    if (this.showDetailModal && this.detailTable) {
+                        this.detailTable = this.tables.find(item => item.id === this.detailTable.id) ?? null;
+
+                        if (!this.detailTable) this.showDetailModal = false;
+                    }
+
+                    if (this.showEndSessionModal && this.endSessionTable) {
+                        this.endSessionTable = this.tables.find(item => item.id === this.endSessionTable.id) ?? null;
+
+                        if (!this.endSessionTable) this.showEndSessionModal = false;
+                    }
+
+                    if (this.showQrModal && this.qrTable) {
+                        const fresh = this.tables.find(item => item.id === this.qrTable.id);
+
+                        if (fresh) {
+                            this.qrTable = { ...fresh };
+                            this.$nextTick(() => this.renderQr());
+                        }
+                    }
+                } catch (error) {
+                    // Payload tidak valid; biarkan data lama tetap tampil.
+                }
             },
 
             get menuTampil() {
@@ -578,6 +662,16 @@
                 setTimeout(() => {
                     this.showToast = false;
                 }, 3500);
+            },
+
+            refreshLive() {
+                if (typeof window.refreshLiveRegions === 'function') {
+                    return window.refreshLiveRegions({ immediate: true });
+                }
+
+                window.location.reload();
+
+                return Promise.resolve(false);
             },
 
             formatRupiah(value) {
@@ -635,7 +729,7 @@
                     this.showEndSessionModal = false;
                     this.endSessionTable = null;
                     this.triggerToast(payload.message || 'Sesi meja berhasil diakhiri.');
-                    setTimeout(() => window.location.reload(), 500);
+                    await this.refreshLive();
                 } catch (error) {
                     this.triggerToast(error.message || 'Sesi gagal diakhiri.');
                 } finally {
@@ -705,7 +799,7 @@
                     this.menuCatatan = '';
                     this.showMenuModal = false;
                     this.triggerToast(payload.message || 'Pesanan berhasil dikirim.');
-                    setTimeout(() => window.location.reload(), 500);
+                    await this.refreshLive();
                 } catch (error) {
                     this.triggerToast(error.message || 'Pesanan gagal dikirim.');
                 } finally {
@@ -735,7 +829,7 @@
 
                     state.done = true;
                     this.triggerToast('Panggilan berhasil ditandai selesai.');
-                    setTimeout(() => window.location.reload(), 500);
+                    await this.refreshLive();
                 } catch (error) {
                     this.triggerToast(error.message || 'Panggilan gagal diperbarui.');
                 } finally {
@@ -768,7 +862,7 @@
 
                     state.done = true;
                     this.triggerToast('Pesanan ditandai sedang diantar.');
-                    setTimeout(() => window.location.reload(), 500);
+                    await this.refreshLive();
                 } catch (error) {
                     this.triggerToast(error.message || 'Status pesanan gagal diperbarui.');
                 } finally {
