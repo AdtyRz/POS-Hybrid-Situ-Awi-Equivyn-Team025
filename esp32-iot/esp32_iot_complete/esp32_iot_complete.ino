@@ -5,8 +5,8 @@
  * Touch  : TTP223 (output aktif HIGH)
  * Buzzer : active buzzer (bisa diganti passive)
  *
- * Tap singkat  : ganti layar Kode -> Status -> Total
- * Tahan 1.5 s  : panggil pelayan
+ * Tap singkat  : ganti layar Status -> Total -> Kode (saat sudah lunas)
+ * Tahan 1.5 s  : panggil pelayan (saat sudah lunas)
  *
  * Catatan versi ringan:
  * - Hanya memanggil /api/iot/meja/{KODE_MEJA}. Respons endpoint itu sudah
@@ -90,13 +90,21 @@ int buzzerDuration = 3;
 float totalBayar = 0;
 int jumlahPesanan = 0;
 
-// Kode verifikasi saung ditampilkan pertama karena itu yang dibutuhkan
-// pelanggan untuk membuka e-menu. Status dan total bisa dilihat lewat tap.
-const int SCREEN_KODE = 0;
-const int SCREEN_STATUS = 1;
-const int SCREEN_TOTAL = 2;
+// Fase LCD mengikuti data pesanan pada sesi aktif:
+// - standby  : belum ada pesanan, hanya kode meja + kode verifikasi.
+// - pembayaran: menunggu pembayaran, tampil metode yang dipilih tamu.
+// - lunas    : semua lunas, layar bergilir status/total/kode setiap 5 detik.
+String faseLcd = "standby";
+String metodePembayaran = "";
+
+// Urutan layar saat fase lunas: Status -> Total -> Kode.
+const int SCREEN_STATUS = 0;
+const int SCREEN_TOTAL = 1;
+const int SCREEN_KODE = 2;
 const int SCREEN_COUNT = 3;
-int currentScreen = SCREEN_KODE;
+int currentScreen = SCREEN_STATUS;
+const unsigned long ROTASI_LAYAR_MS = 5000;
+unsigned long lastRotasiLayar = 0;
 
 // Level pin touch saat tidak disentuh (diisi otomatis di setup).
 int touchIdleLevel = HIGH;
@@ -236,6 +244,15 @@ void loop() {
   handleTouch();
   jagaWiFi();
 
+  // Saat lunas, layar bergilir otomatis setiap 5 detik. Tap tetap bisa
+  // mempercepat perpindahan layar.
+  if (!pesanSementara && !errorAktif && faseLcd == "lunas"
+      && millis() - lastRotasiLayar >= ROTASI_LAYAR_MS) {
+    lastRotasiLayar = millis();
+    currentScreen = (currentScreen + 1) % SCREEN_COUNT;
+    renderLayar();
+  }
+
   if (WiFi.status() == WL_CONNECTED && (segeraPolling || millis() - lastStatusCheck >= intervalPolling)) {
     segeraPolling = false;
     lastStatusCheck = millis();
@@ -258,6 +275,13 @@ bool readTouch() {
 }
 
 void handleTouch() {
+  // Touch hanya aktif saat layar error (untuk retry) atau setelah semua
+  // pembayaran lunas. Di fase standby/pembayaran LCD tidak bereaksi.
+  if (!errorAktif && faseLcd != "lunas") {
+    touchActive = false;
+    return;
+  }
+
   bool touched = readTouch();
   unsigned long now = millis();
 
@@ -269,8 +293,12 @@ void handleTouch() {
   } else if (touched && touchActive) {
     if (!longPressDone && now - pressStart >= LONG_PRESS_MS) {
       longPressDone = true;
-      Serial.println("[TOUCH] Tahan -> panggil pelayan");
-      panggilPelayan();
+      if (faseLcd == "lunas") {
+        Serial.println("[TOUCH] Tahan -> panggil pelayan");
+        panggilPelayan();
+      } else {
+        Serial.println("[TOUCH] Tahan diabaikan (belum lunas)");
+      }
     }
   } else if (!touched && touchActive) {
     unsigned long duration = now - pressStart;
@@ -292,6 +320,7 @@ void handleTouch() {
       }
 
       currentScreen = (currentScreen + 1) % SCREEN_COUNT;
+      lastRotasiLayar = millis();
       Serial.printf("[TOUCH] Tap %lu ms -> layar %d\n", duration, currentScreen + 1);
       renderLayar();
     }
@@ -533,6 +562,28 @@ bool fetchMejaStatus() {
   totalBayar = data["total_bayar"].as<float>();
   jumlahPesanan = data["jumlah_pesanan"].as<int>();
 
+  const char* faseApi = data["fase"] | "standby";
+  const char* metodeApi = data["metode_pembayaran"] | "";
+  String faseBaru = String(faseApi);
+  String metodeBaru = String(metodeApi);
+
+  if (faseBaru != "standby" && faseBaru != "pembayaran" && faseBaru != "lunas") {
+    faseBaru = "standby";
+  }
+
+  bool faseBerubah = faseBaru != faseLcd;
+  faseLcd = faseBaru;
+  metodePembayaran = metodeBaru;
+
+  if (faseBerubah) {
+    currentScreen = SCREEN_STATUS;
+    lastRotasiLayar = millis();
+    touchActive = false;
+    Serial.printf("[FASE] %s (metode=%s)\n",
+                  faseLcd.c_str(),
+                  metodePembayaran.length() > 0 ? metodePembayaran.c_str() : "-");
+  }
+
   if (jumlahPesanan <= 0) {
     statusRingkas = "Belum ada pesan";
   } else {
@@ -574,7 +625,7 @@ void panggilPelayan() {
   char body[96];
   snprintf(body, sizeof(body),
            "{\"kode_meja\":\"%s\",\"kode_sesi\":\"%s\"}",
-           KODE_MEJA, kodeSesi.c_str());
+           kodeMejaTampil.c_str(), kodeSesi.c_str());
 
   HTTPClient http;
   String url = urlApi("/api/iot/panggil-pelayan");
@@ -673,7 +724,23 @@ void renderLayar() {
   String baris1;
   String baris2;
 
-  if (currentScreen == SCREEN_STATUS) {
+  if (faseLcd == "standby") {
+    // Di luar sesi/pesanan, touch tidak aktif. Kode tetap tampil agar tamu
+    // bisa membuka e-menu.
+    baris1 = String("Meja : ") + kodeMejaTampil;
+    baris2 = String("Kode : ") + kodeSesi;
+  } else if (faseLcd == "pembayaran") {
+    if (metodePembayaran == "qris") {
+      baris1 = "Pembayaran TF";
+      baris2 = formatRupiah(totalBayar);
+    } else if (metodePembayaran == "tunai") {
+      baris1 = "Pembayaran";
+      baris2 = "di Kasir";
+    } else {
+      baris1 = "Pembayaran";
+      baris2 = "TF / Kasir";
+    }
+  } else if (currentScreen == SCREEN_STATUS) {
     baris1 = "Status Pesanan";
     baris2 = statusRingkas;
   } else if (currentScreen == SCREEN_TOTAL) {

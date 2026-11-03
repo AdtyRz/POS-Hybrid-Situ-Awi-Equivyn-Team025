@@ -149,11 +149,12 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const statusUrl = @json(route('emenu.bayar-tunai.status', $pesanan->kode_pesanan));
+            const statusPageUrl = @json(route('emenu.status', $pesanan->kode_pesanan));
             const statusElement = document.getElementById('statusTunai');
             let selesai = false;
 
             async function periksaStatus() {
-                if (selesai || document.hidden) {
+                if (selesai) {
                     return;
                 }
 
@@ -172,25 +173,27 @@
 
                     const data = await response.json();
 
-                    if (data.lunas) {
+                    if (data.lunas || data.status_pembayaran === 'sudah_bayar') {
                         selesai = true;
                         statusElement.className = 'mt-3 inline-flex items-center gap-2 rounded-full bg-forest-100 px-3 py-1.5 text-xs font-bold text-forest-900';
                         statusElement.innerHTML = '<span class="h-2 w-2 rounded-full bg-forest-600"></span>Pembayaran lunas, membuka status pesanan...';
                         window.setTimeout(function () {
-                            window.location.replace(data.redirect);
-                        }, 800);
+                            window.location.replace(data.redirect || statusPageUrl);
+                        }, 500);
                     }
                 } catch (error) {
                     return;
                 }
             }
 
-            window.setInterval(periksaStatus, 4000);
+            window.setInterval(periksaStatus, 3000);
             document.addEventListener('visibilitychange', function () {
                 if (!document.hidden) {
                     periksaStatus();
                 }
             });
+            window.addEventListener('pageshow', periksaStatus);
+            window.addEventListener('focus', periksaStatus);
             periksaStatus();
         });
     </script>

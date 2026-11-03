@@ -202,20 +202,12 @@
             <div class="flex items-center gap-2 shrink-0">
                 <button type="button"
                         @click="dismissAlert()"
-                        class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-[#C8C2B3]/60 hover:bg-[#FAF7F0] text-xs font-semibold text-[#2B2A26] shadow-xs transition active:scale-95 min-h-[44px]">
-                    <svg class="w-3.5 h-3.5 text-[#7A7E6F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 0A9 9 0 013 12m11.828-2.828l3.536-3.536M3 3l18 18"></path>
-                    </svg>
-                    <span>Matikan Buzzer / Tandai Selesai</span>
-                </button>
-
-                <button type="button"
-                        @click="assignWaiter()"
-                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0B4D2B] hover:bg-[#0A4A28] text-white text-xs font-bold shadow-xs transition active:scale-95 min-h-[44px]">
+                        :disabled="iotAlertProcessing"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0B4D2B] hover:bg-[#0A4A28] text-white text-xs font-bold shadow-xs transition active:scale-95 min-h-[44px] disabled:opacity-60">
                     <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
-                    <span>Tugaskan Pelayan</span>
+                    <span x-text="iotAlertProcessing ? 'Menyimpan...' : 'Konfirmasi Panggilan'">Konfirmasi Panggilan</span>
                 </button>
             </div>
         </div>
@@ -936,6 +928,7 @@
                 strukTandaiUrl: @json(route('kasir.struk.tandai')),
                 statusUrlTemplate: @json(route('pesanan.status', ['kode' => '__KODE__'])),
                 sesiTutupTemplate: @json(route('kasir.session.tutup', ['meja' => '__MEJA__'])),
+                panggilanSelesaiTemplate: @json(route('kasir.panggilan.selesai', ['id' => '__ID__'])),
                 cashierName: @json(auth()->user()->nama ?? 'Kasir'),
                 receiptHeader: @json($receiptHeader),
                 receiptFooter: @json($receiptFooter),
@@ -959,6 +952,7 @@
                 },
 
                 iotAlert: @json($iotAlertJson),
+                iotAlertProcessing: false,
 
                 toast: {
                     visible: false,
@@ -1716,16 +1710,46 @@
                     }
                 },
 
-                dismissAlert() {
-                    this.iotAlert.active = false;
-                    const target = this.saungs.find(s => s.id === this.iotAlert.saungId);
-                    if (target) target.hasAlert = false;
-                    this.showToast('success', 'Panggilan Selesai', 'Panggilan meja telah ditandai selesai.');
-                },
+                async dismissAlert() {
+                    if (this.iotAlertProcessing) return;
 
-                assignWaiter() {
-                    this.showToast('success', 'Pelayan Ditugaskan', 'Pelayan telah dikirim menuju saung pemanggil.');
-                    this.dismissAlert();
+                    if (! this.iotAlert.id) {
+                        this.iotAlert.active = false;
+                        return;
+                    }
+
+                    this.iotAlertProcessing = true;
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+                    try {
+                        const response = await fetch(
+                            this.panggilanSelesaiTemplate.replace('__ID__', this.iotAlert.id),
+                            {
+                                method: 'PATCH',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': csrfToken,
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                },
+                                body: JSON.stringify({ status_panggilan: 'selesai' }),
+                            }
+                        );
+
+                        if (! response.ok) {
+                            throw new Error('Panggilan gagal diperbarui.');
+                        }
+
+                        this.iotAlert.active = false;
+                        const target = this.saungs.find(s => s.id === this.iotAlert.saungId);
+                        if (target) target.hasAlert = false;
+                        this.showToast('success', 'Panggilan Dikonfirmasi', 'Panggilan meja telah ditandai selesai.');
+                        setTimeout(() => this.refreshKasirState(), 600);
+                    } catch (error) {
+                        this.showToast('danger', 'Gagal Mengonfirmasi', error.message || 'Coba lagi.');
+                    } finally {
+                        this.iotAlertProcessing = false;
+                    }
                 },
 
                 lockTerminal() {

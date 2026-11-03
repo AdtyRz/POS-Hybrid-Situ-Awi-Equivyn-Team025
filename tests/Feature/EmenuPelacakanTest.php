@@ -316,7 +316,10 @@ class EmenuPelacakanTest extends TestCase
 
         $this->withSession($sesi)
             ->get(route('emenu.bayar-tunai', $pesanan->kode_pesanan))
-            ->assertRedirect(route('emenu.status', $pesanan->kode_pesanan));
+            ->assertRedirect(route('emenu.status', [
+                'kode_pesanan' => $pesanan->kode_pesanan,
+                'kode_saung' => SesiMeja::aktifUntuk($meja)->kode_unik,
+            ]));
     }
 
     public function test_endpoint_status_tunai_memberi_sinyal_lunas_dan_url_status(): void
@@ -338,7 +341,90 @@ class EmenuPelacakanTest extends TestCase
             ->assertOk()
             ->assertJsonPath('lunas', true)
             ->assertJsonPath('status_pembayaran', Pesanan::PAYMENT_SUDAH_BAYAR)
-            ->assertJsonPath('redirect', route('emenu.status', $pesanan->kode_pesanan));
+            ->assertJsonPath('redirect', route('emenu.status', [
+                'kode_pesanan' => $pesanan->kode_pesanan,
+                'kode_saung' => SesiMeja::aktifUntuk($meja)->kode_unik,
+            ]));
+    }
+
+    public function test_halaman_bayar_tunai_lunas_tetap_mengarah_ke_status_tanpa_cookie_sesi(): void
+    {
+        [$meja, $menu] = $this->siapkanMejaDanMenu();
+        $sesi = SesiMeja::aktifUntuk($meja);
+
+        $pesanan = app(PesananService::class)->buat(
+            $meja,
+            [$menu->id => 1],
+            [],
+            ['asal' => 'emenu', 'metode' => 'tunai', 'nama_pelanggan' => 'Budi Santoso']
+        );
+
+        $pesanan->update([
+            'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+            'status_pesanan' => Pesanan::STATUS_DIPROSES,
+        ]);
+
+        // Cookie sesi hilang (mis. browser pindah host/port atau sesi meja
+        // sudah ditutup). Halaman bayar tetap harus melempar ke status.
+        $this->flushSession();
+
+        $this->get(route('emenu.bayar-tunai', $pesanan->kode_pesanan))
+            ->assertRedirect(route('emenu.status', [
+                'kode_pesanan' => $pesanan->kode_pesanan,
+                'kode_saung' => $sesi->kode_unik,
+            ]));
+    }
+
+    public function test_endpoint_status_tunai_tetap_menyatakan_lunas_tanpa_cookie_sesi(): void
+    {
+        [$meja, $menu] = $this->siapkanMejaDanMenu();
+        SesiMeja::aktifUntuk($meja);
+
+        $pesanan = app(PesananService::class)->buat(
+            $meja,
+            [$menu->id => 1],
+            [],
+            ['asal' => 'emenu', 'metode' => 'tunai', 'nama_pelanggan' => 'Budi Santoso']
+        );
+
+        $pesanan->update(['status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR]);
+
+        $this->flushSession();
+
+        $this->getJson(route('emenu.bayar-tunai.status', $pesanan->kode_pesanan))
+            ->assertOk()
+            ->assertJsonPath('lunas', true)
+            ->assertJsonPath('status_pembayaran', Pesanan::PAYMENT_SUDAH_BAYAR);
+    }
+
+    public function test_status_pesanan_bisa_dibuka_dengan_kode_saung_tanpa_cookie_sesi(): void
+    {
+        [$meja, $menu] = $this->siapkanMejaDanMenu();
+        $sesi = SesiMeja::aktifUntuk($meja);
+
+        $pesanan = app(PesananService::class)->buat(
+            $meja,
+            [$menu->id => 1],
+            [],
+            ['asal' => 'emenu', 'metode' => 'tunai', 'nama_pelanggan' => 'Budi Santoso']
+        );
+
+        $this->flushSession();
+
+        $this->get(route('emenu.status', [
+            'kode_pesanan' => $pesanan->kode_pesanan,
+            'kode_saung' => $sesi->kode_unik,
+        ]))
+            ->assertOk()
+            ->assertSee($pesanan->kode_pesanan);
+
+        $this->flushSession();
+
+        $this->get(route('emenu.status', [
+            'kode_pesanan' => $pesanan->kode_pesanan,
+            'kode_saung' => '0000',
+        ]))
+            ->assertRedirect(route('emenu.kunci', $meja->kode_meja));
     }
 
     public function test_status_pesanan_lunas_tidak_menampilkan_instruksi_pembayaran_tunai(): void
