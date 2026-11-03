@@ -5,7 +5,7 @@
  * Touch  : TTP223 (output aktif HIGH)
  * Buzzer : active buzzer (bisa diganti passive)
  *
- * Tap singkat  : ganti layar Status -> Total -> Kode Sesi
+ * Tap singkat  : ganti layar Kode Verif Saung -> Status -> Total
  * Tahan 1.5 s  : panggil pelayan
  *
  * Catatan versi ringan:
@@ -53,7 +53,10 @@ const int PIN_TOUCH = 27;
 const int PIN_BUZZER = 25;
 const int PIN_LED = 2;
 
-// TTP223 umumnya aktif HIGH. Ubah ke 0 bila sensor Anda aktif LOW.
+// Level idle TTP223 dideteksi otomatis saat boot, sehingga modul active HIGH
+// maupun active LOW sama-sama bekerja. Set TOUCH_AUTO_LEVEL 0 hanya bila
+// ingin memaksa level tertentu lewat TOUCH_ACTIVE_HIGH.
+#define TOUCH_AUTO_LEVEL 1
 #define TOUCH_ACTIVE_HIGH 1
 
 // 1 = active buzzer, 0 = passive buzzer.
@@ -71,8 +74,8 @@ const unsigned long STATUS_INTERVAL_MS = 10000;
 const unsigned long RETRY_INTERVAL_MS = 15000;
 const unsigned long WIFI_RETRY_MS = 15000;
 // Request pertama Laravel bisa lambat (cold start). Jangan terlalu pendek.
-const unsigned long HTTP_TIMEOUT_MS = 8000;
-const unsigned long HTTP_CONNECT_TIMEOUT_MS = 3000;
+const unsigned long HTTP_TIMEOUT_MS = 5000;
+const unsigned long HTTP_CONNECT_TIMEOUT_MS = 2500;
 const unsigned long LONG_PRESS_MS = 1500;
 const unsigned long TAP_MIN_MS = 50;
 
@@ -84,11 +87,16 @@ int buzzerDuration = 3;
 float totalBayar = 0;
 int jumlahPesanan = 0;
 
-const int SCREEN_STATUS = 0;
-const int SCREEN_TOTAL = 1;
-const int SCREEN_KODE = 2;
+// Kode verifikasi saung ditampilkan pertama karena itu yang dibutuhkan
+// pelanggan untuk membuka e-menu. Status dan total bisa dilihat lewat tap.
+const int SCREEN_KODE = 0;
+const int SCREEN_STATUS = 1;
+const int SCREEN_TOTAL = 2;
 const int SCREEN_COUNT = 3;
-int currentScreen = SCREEN_STATUS;
+int currentScreen = SCREEN_KODE;
+
+// Level pin touch saat tidak disentuh (diisi otomatis di setup).
+int touchIdleLevel = HIGH;
 
 bool touchActive = false;
 bool longPressDone = false;
@@ -96,6 +104,9 @@ unsigned long pressStart = 0;
 unsigned long lastStatusCheck = 0;
 unsigned long lastWifiAttempt = 0;
 unsigned long intervalPolling = STATUS_INTERVAL_MS;
+// true = langsung polling di iterasi loop berikutnya (dipakai saat tap
+// layar error), tanpa menunggu sisa interval.
+bool segeraPolling = true;
 
 // Umpan balik non-blocking.
 bool buzzerAktif = false;
@@ -177,7 +188,17 @@ void setup() {
   pinMode(PIN_BUZZER, OUTPUT);
   buzzerOff();
 
-  pinMode(PIN_TOUCH, TOUCH_ACTIVE_HIGH ? INPUT : INPUT_PULLUP);
+#if TOUCH_AUTO_LEVEL
+  // Jangan sentuh sensor saat boot: level awal dianggap kondisi idle.
+  pinMode(PIN_TOUCH, INPUT);
+  delay(200);
+  touchIdleLevel = digitalRead(PIN_TOUCH);
+  Serial.printf("[TOUCH] Level idle=%s (auto)\n", touchIdleLevel == HIGH ? "HIGH" : "LOW");
+#elif TOUCH_ACTIVE_HIGH
+  pinMode(PIN_TOUCH, INPUT);
+#else
+  pinMode(PIN_TOUCH, INPUT_PULLUP);
+#endif
 
   Wire.begin(PIN_SDA, PIN_SCL);
   lcd.begin(16, 2);
@@ -193,6 +214,7 @@ void setup() {
     fetchMejaStatus();
     lastStatusCheck = millis();
     intervalPolling = STATUS_INTERVAL_MS;
+    segeraPolling = false;
   }
 
   Serial.println("Ready. Tap = ganti layar, tahan 1.5s = panggil pelayan.");
@@ -211,7 +233,8 @@ void loop() {
   handleTouch();
   jagaWiFi();
 
-  if (WiFi.status() == WL_CONNECTED && millis() - lastStatusCheck >= intervalPolling) {
+  if (WiFi.status() == WL_CONNECTED && (segeraPolling || millis() - lastStatusCheck >= intervalPolling)) {
+    segeraPolling = false;
     lastStatusCheck = millis();
     intervalPolling = fetchMejaStatus() ? STATUS_INTERVAL_MS : RETRY_INTERVAL_MS;
   }
@@ -221,7 +244,10 @@ void loop() {
 
 // ======================= TOUCH =======================
 bool readTouch() {
-#if TOUCH_ACTIVE_HIGH
+#if TOUCH_AUTO_LEVEL
+  // Aktif saat level pin berbeda dari level idle hasil kalibrasi boot.
+  return digitalRead(PIN_TOUCH) != touchIdleLevel;
+#elif TOUCH_ACTIVE_HIGH
   return digitalRead(PIN_TOUCH) == HIGH;
 #else
   return digitalRead(PIN_TOUCH) == LOW;
@@ -236,6 +262,7 @@ void handleTouch() {
     touchActive = true;
     longPressDone = false;
     pressStart = now;
+    Serial.printf("[TOUCH] Tekan (pin=%d)\n", digitalRead(PIN_TOUCH));
   } else if (touched && touchActive) {
     if (!longPressDone && now - pressStart >= LONG_PRESS_MS) {
       longPressDone = true;
@@ -245,16 +272,18 @@ void handleTouch() {
   } else if (!touched && touchActive) {
     unsigned long duration = now - pressStart;
     touchActive = false;
+    Serial.printf("[TOUCH] Lepas %lu ms%s\n", duration,
+                  duration < TAP_MIN_MS ? " (terlalu cepat)" : "");
 
     if (!longPressDone && duration >= TAP_MIN_MS) {
       beep(BUZZER_FREQ, 40);
 
       // Saat layar error, tap = coba hubungi server lagi (tanpa menunggu
-      // interval polling berikutnya).
+      // sisa interval polling).
       if (errorAktif) {
         Serial.println("[TOUCH] Tap -> coba server lagi");
         tulisLcd("Mencoba server", "Mohon tunggu", true);
-        lastStatusCheck = 0;
+        segeraPolling = true;
         intervalPolling = STATUS_INTERVAL_MS;
         return;
       }
@@ -319,6 +348,7 @@ void jagaWiFi() {
   lastWifiAttempt = now;
   Serial.println("[WiFi] Menyambung ulang...");
   tampilkanKesalahan("WiFi terputus", "Menyambung...");
+  segeraPolling = true;
   WiFi.begin(WIFI_SSID, WIFI_PASS);
 }
 
@@ -574,7 +604,7 @@ void panggilPelayan() {
     errorFeedback();
     tampilkanPesan("Sesi berubah", "Coba lagi", 1500);
     // Paksa polling berikutnya mengambil kode sesi terbaru.
-    lastStatusCheck = 0;
+    segeraPolling = true;
   } else if (httpCode == 404) {
     errorFeedback();
     tampilkanKesalahan("Meja tak ada", "Cek KODE_MEJA");

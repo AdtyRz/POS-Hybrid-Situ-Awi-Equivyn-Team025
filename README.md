@@ -147,8 +147,9 @@ di URL. Isi konstanta `IOT_API_TOKEN` pada sketch ESP32 dengan nilai yang sama.
 **Sensor sentuh (ESP32, `esp32-iot/esp32_iot_complete.ino`)** — sensor sentuh dipakai untuk
 berpindah tampilan LCD 16x2:
 
-- **Tap singkat** bergiliran: `Status Pesanan` → `Total Bayar` → `Kode Verif Saung` (kode unik sesi),
-  sehingga pelanggan yang lupa kode verifikasi cukup tap untuk menampilkannya kembali.
+- **Tap singkat** bergiliran: `Kode Verif Saung` (kode unik sesi) → `Status Pesanan` → `Total Bayar`.
+  Kode verifikasi tampil pertama karena itu yang dibutuhkan pelanggan untuk membuka e-menu.
+- **Tap saat layar error** langsung memicu percobaan koneksi ulang ke server.
 - **Tahan ~1.5 detik** untuk memanggil pelayan (fungsi lama tetap ada).
 
 Panduan wiring, library, upload, dan troubleshooting ada di
