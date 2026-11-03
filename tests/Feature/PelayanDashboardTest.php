@@ -256,4 +256,50 @@ class PelayanDashboardTest extends TestCase
             ->postJson(route('pelayan.meja.buka', $mejaLain->kode_meja))
             ->assertForbidden();
     }
+
+    public function test_pelayan_bisa_mengakhiri_sesi_aktif_dan_menolak_tagihan_belum_lunas(): void
+    {
+        $pelayan = $this->pelayan();
+        $meja = $this->meja('LB-04', 'Lesehan Bawah');
+        $mejaBelumLunas = $this->meja('LB-05', 'Lesehan Bawah');
+        $mejaLain = $this->meja('LA-04', 'Lesehan Atas');
+        $menu = $this->menu('Sate Ayam', 'dapur');
+
+        $sesiLama = SesiMeja::aktifUntuk($meja);
+        $pesananLunas = $this->pesanan($meja, $menu, Pesanan::STATUS_DIPROSES);
+        $pesananLunas->update(['status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR]);
+
+        $this->actingAs($pelayan)
+            ->patchJson(route('pelayan.session.tutup', $meja->kode_meja))
+            ->assertOk()
+            ->assertJsonPath('status', 'ok')
+            ->assertJsonPath('meja', $meja->kode_meja);
+
+        $this->assertSame('selesai', $sesiLama->fresh()->status);
+        $this->assertSame(Pesanan::STATUS_SELESAI, $pesananLunas->fresh()->status_pesanan);
+        $this->assertSame('kosong', $meja->fresh()->status_meja);
+
+        $sesiBaru = SesiMeja::where('meja_id', $meja->id)
+            ->where('status', 'aktif')
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($sesiBaru);
+        $this->assertNotSame($sesiLama->kode_unik, $sesiBaru->kode_unik);
+
+        SesiMeja::aktifUntuk($mejaBelumLunas);
+        $pesananBelumLunas = $this->pesanan($mejaBelumLunas, $menu, Pesanan::STATUS_DIPROSES);
+
+        $this->actingAs($pelayan)
+            ->patchJson(route('pelayan.session.tutup', $mejaBelumLunas->kode_meja))
+            ->assertStatus(422)
+            ->assertJsonPath('status', 'error');
+
+        $this->assertSame(Pesanan::STATUS_DIPROSES, $pesananBelumLunas->fresh()->status_pesanan);
+        $this->assertSame('aktif', SesiMeja::aktifUntuk($mejaBelumLunas)->status);
+
+        $this->actingAs($pelayan)
+            ->patchJson(route('pelayan.session.tutup', $mejaLain->kode_meja))
+            ->assertForbidden();
+    }
 }

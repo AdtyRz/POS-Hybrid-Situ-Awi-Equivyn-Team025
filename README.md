@@ -132,12 +132,16 @@ dapat memesan.
 - Session ID dirotasi setelah kode saung benar untuk mencegah session fixation. Endpoint
   `buka` dibatasi 5 percobaan/menit, dan halaman pesanan memakai header `no-store`.
 
-### Mengakhiri Sesi (sisi Kasir)
+### Mengakhiri Sesi (Kasir & Pelayan)
 
 - Saat kasir menekan **Cetak Struk**, muncul modal: **Selesaikan Sesi** atau **Tidak**.
   Memilih "selesaikan" akan menutup sesi, menandai semua pesanan aktif menjadi selesai, dan
   membuat kode baru.
 - Kasir juga dapat menyelesaikan sesi secara manual dari halaman **Sesi Meja**.
+- Pelayan dapat mengakhiri sesi aktif dari kartu meja di menu **Saung** (`PATCH /pelayan/session/{meja}`).
+  Tombol **Akhiri Sesi** selalu memunculkan popup konfirmasi **Tidak** / **Ya, Akhiri Sesi**
+  sebelum sesi ditutup. Sesi dengan tagihan belum lunas ditolak dan popup menampilkan pesan
+  kesalahan.
 
 ### Integrasi IoT
 
@@ -152,10 +156,12 @@ Endpoint API untuk perangkat IoT meja menyertakan kode sesi dan **wajib** mengir
 - `POST /api/iot/panggil-pelayan` — body `{"kode_meja":"LB-01","kode_sesi":"1234"}`. Kode sesi
   harus kode yang sedang aktif; kode lama ditolak.
 
-Panggilan pelayan yang masuk dapat dikonfirmasi dari dua tempat: tombol **Konfirmasi Panggilan**
-di kartu panggilan halaman pelayan, atau tombol yang sama pada banner panggilan di dashboard
-kasir. Begitu salah satu dikonfirmasi, status panggilan menjadi `selesai` dan indikator di
-kasir maupun pelayan sama-sama hilang.
+Panggilan pelayan yang masuk hanya dapat dikonfirmasi oleh **pelayan**, lewat tombol
+**Konfirmasi Panggilan** di kartu panggilan/notifikasi halaman pelayan. Dashboard kasir
+bersifat **notifikasi saja**: banner panggilan dan indikator merah **PANGGILAN** / **Buzzer
+Aktif** tampil di kartu saung, tetapi tidak ada tombol konfirmasi di sana. Setelah pelayan
+mengonfirmasi, status panggilan menjadi `selesai` dan indikator di kasir maupun pelayan
+sama-sama hilang.
 
 Bila `IOT_API_TOKEN` kosong, semua endpoint IoT mengembalikan `503`. Token tidak boleh ditaruh
 di URL. Isi konstanta `IOT_API_TOKEN` pada sketch ESP32 dengan nilai yang sama.
@@ -173,11 +179,19 @@ di URL. Isi konstanta `IOT_API_TOKEN` pada sketch ESP32 dengan nilai yang sama.
   Touch diabaikan pada fase ini agar tamu tidak mengubah layar sebelum memesan.
 - **Pembayaran** (ada pesanan belum lunas): QRIS/Midtrans menampilkan `Pembayaran TF` beserta
   total; tunai menampilkan `Pembayaran` / `di Kasir`. Touch tetap diabaikan.
-- **Lunas** (semua pesanan sudah dibayar): layar bergilir otomatis setiap 5 detik:
+- **Lunas** (semua pesanan sudah dibayar): layar bergilir otomatis setiap 20 detik:
   `Status Pesanan` → `Total Bayar` → `Meja/Kode`. Tap singkat mempercepat giliran layar;
-  tahan ~1,5 detik untuk memanggil pelayan.
+  tahan ~3 detik untuk memanggil pelayan.
 - **Tap saat layar error** langsung memicu percobaan koneksi ulang ke server.
-- Setelah sesi ditutup kasir, LCD kembali ke layar kode standby dengan kode sesi baru.
+- **WiFi terputus** → perangkat menyambung ulang otomatis setiap 15 detik tanpa perlu
+  disentuh. Radio WiFi di-reset ringan setiap 4 percobaan. LCD **tetap menampilkan teks
+  terakhir** selama proses reconnect, bukan layar kosong/error.
+- **Server tidak terjangkau terlalu lama** → setelah 180 detik tanpa polling sukses,
+  ESP32 restart otomatis. Watchdog hanya aktif setelah setidaknya satu polling sukses pada
+  boot tersebut, sehingga perangkat yang menyala saat server mati tidak mengalami reboot
+  berulang.
+- Setelah sesi ditutup kasir atau pelayan, LCD kembali ke layar kode standby dengan kode
+  sesi baru.
 
 Panduan wiring, library, upload, dan troubleshooting ada di
 [`esp32-iot/README.md`](esp32-iot/README.md).

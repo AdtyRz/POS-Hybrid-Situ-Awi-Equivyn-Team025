@@ -195,7 +195,7 @@ class IotLcdFaseTest extends TestCase
         $this->assertCount(2, $data['pesanan']);
     }
 
-    public function test_kasir_bisa_konfirmasi_panggilan_dan_alert_dashboard_hilang(): void
+    public function test_kasir_hanya_melihat_notifikasi_panggilan_dan_pelayan_yang_menyelesaikan(): void
     {
         $meja = $this->meja();
         $kasir = User::create([
@@ -203,6 +203,14 @@ class IotLcdFaseTest extends TestCase
             'email' => 'kasir-' . uniqid() . '@example.test',
             'password' => 'password',
             'role' => 'kasir',
+            'is_aktif' => true,
+        ]);
+        $pelayan = User::create([
+            'nama' => 'Pelayan Uji',
+            'email' => 'pelayan-' . uniqid() . '@example.test',
+            'password' => 'password',
+            'role' => 'pelayan',
+            'area' => $meja->area,
             'is_aktif' => true,
         ]);
 
@@ -213,13 +221,29 @@ class IotLcdFaseTest extends TestCase
         ]);
 
         $this->actingAs($kasir)
+            ->get(route('kasir.dashboard'))
+            ->assertOk()
+            ->assertSee('PANGGILAN IOT')
+            ->assertSee('PANGGILAN PELAYAN AKTIF')
+            ->assertDontSee('Konfirmasi Panggilan');
+
+        $this->actingAs($kasir)
             ->getJson(route('kasir.state'))
             ->assertOk()
             ->assertJsonPath('iotAlert.active', true)
             ->assertJsonPath('iotAlert.id', $panggilan->id);
 
+        // Kasir tidak memiliki endpoint konfirmasi; hanya pelayan yang boleh.
         $this->actingAs($kasir)
-            ->patchJson(route('kasir.panggilan.selesai', $panggilan->id), [
+            ->patchJson('/kasir/panggilan/' . $panggilan->id, [
+                'status_panggilan' => 'selesai',
+            ])
+            ->assertNotFound();
+
+        $this->assertSame('menunggu', $panggilan->fresh()->status_panggilan);
+
+        $this->actingAs($pelayan)
+            ->patchJson(route('pelayan.panggilan.ubah', $panggilan->id), [
                 'status_panggilan' => 'selesai',
             ])
             ->assertOk()
