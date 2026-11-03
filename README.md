@@ -122,7 +122,10 @@ dapat memesan.
   berakhir — bukan lewat tombol manual. Kode baru dijamin berbeda dari kode sesi sebelumnya.
 - **Gate verifikasi** berlaku pada e-menu, `checkout`, `pelacakan`, dan **semua halaman detail
   pesanan** (`status`, `verifikasi`, `bayar-tunai`, polling QRIS). Halaman detail hanya bisa
-  dibuka bila cookie sesi meja cocok **dan** pesanan dibuat pada sesi aktif tersebut.
+  dibuka bila ada bukti akses yang cocok: cookie sesi meja, parameter `kode_saung` sesi aktif,
+  atau kode pesanan yang tersimpan di riwayat browser. Pesanan juga harus dibuat pada sesi
+  aktif tersebut. Fallback `kode_saung` dan riwayat browser dipakai agar status pembayaran tetap
+  bisa dibuka setelah kasir menutup sesi atau cookie browser hilang.
 - Verifikasi disimpan di session dengan key `sesi_meja_{id}`, dibandingkan dengan sesi aktif
   saat ini; begitu sesi ditutup, pelanggan otomatis diminta memasukkan kode baru. Riwayat
   pesanan tamu sebelumnya juga dihapus saat sesi baru diverifikasi.
