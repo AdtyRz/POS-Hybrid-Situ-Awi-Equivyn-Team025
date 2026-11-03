@@ -38,11 +38,7 @@ class IotStatusService
         return [
             'success' => true,
             'message' => 'Berhasil mengambil status meja',
-            'konfigurasi' => [
-                'buzzer_duration' => max(1, (int) Pengaturan::nilai('buzzer_duration', 3)),
-                'lcd_message' => mb_substr((string) Pengaturan::nilai('lcd_message', 'Panggil Pelayan'), 0, 16),
-                'polling_detik' => 30,
-            ],
+            'konfigurasi' => $this->konfigurasi(),
             'data' => $data,
         ];
     }
@@ -72,6 +68,7 @@ class IotStatusService
         return [
             'success' => true,
             'message' => 'Berhasil mengambil sesi meja',
+            'konfigurasi' => $this->konfigurasi(),
             'data' => [
                 'id' => $meja->id,
                 'kode_meja' => $meja->kode_meja,
@@ -87,6 +84,19 @@ class IotStatusService
                     'total_bayar' => (float) $p->total_bayar,
                 ])->values(),
             ],
+        ];
+    }
+
+    /**
+     * Konfigurasi ringan yang dibutuhkan LCD/ESP32. Dikirim bersama detail
+     * satu meja agar perangkat tidak perlu mengunduh status semua meja.
+     */
+    private function konfigurasi(): array
+    {
+        return [
+            'buzzer_duration' => max(1, (int) Pengaturan::nilai('buzzer_duration', 3)),
+            'lcd_message' => mb_substr((string) Pengaturan::nilai('lcd_message', 'Panggil Pelayan'), 0, 16),
+            'polling_detik' => 30,
         ];
     }
 }

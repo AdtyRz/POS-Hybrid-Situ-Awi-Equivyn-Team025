@@ -199,7 +199,8 @@ class PesananAccessSecurityTest extends TestCase
         $this->withHeader('X-IoT-Token', 'token-iot-uji')
             ->getJson('/api/iot/meja/' . $meja->kode_meja)
             ->assertOk()
-            ->assertJsonPath('data.kode_sesi', $sesi->kode_unik);
+            ->assertJsonPath('data.kode_sesi', $sesi->kode_unik)
+            ->assertJsonPath('konfigurasi.lcd_message', 'Panggil Pelayan');
 
         $this->withHeader('X-IoT-Token', 'token-iot-uji')
             ->postJson('/api/iot/panggil-pelayan', ['kode_meja' => $meja->kode_meja])

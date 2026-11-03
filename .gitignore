@@ -52,3 +52,4 @@ Thumbs.db
 !/storage/app/public/.gitkeep
 /public/asset/resto
 /postgres
+/esp32-iot/**/secrets.h
