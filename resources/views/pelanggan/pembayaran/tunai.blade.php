@@ -5,37 +5,38 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Bayar Tunai - Saung Situ Awi</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        forest: {
-                            900: '#052E1B',
-                            600: '#0B4D2B',
-                            100: '#D9EBE0'
+    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+        @vite('resources/css/app.css')
+    @else
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            forest: {
+                                900: '#052E1B',
+                                600: '#0B4D2B',
+                                100: '#D9EBE0'
+                            },
+                            gold: {
+                                500: '#E0B24E',
+                                50: '#FBF3DD'
+                            },
+                            cream: {
+                                50: '#FBF8F1'
+                            }
                         },
-                        gold: {
-                            500: '#E0B24E',
-                            50: '#FBF3DD'
-                        },
-                        cream: {
-                            50: '#FBF8F1'
+                        fontFamily: {
+                            sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                            display: ['"Playfair Display"', 'Georgia', 'serif']
                         }
-                    },
-                    fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-                        display: ['"Playfair Display"', 'Georgia', 'serif']
                     }
                 }
-            }
-        };
-    </script>
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link
-        href="https://fonts.bunny.net/css?family=playfair-display:600,700|plus-jakarta-sans:400,500,600,700,800&display=swap"
-        rel="stylesheet">
+            };
+        </script>
+    @endif
+    <link href="{{ asset('fonts/fonts.css') }}" rel="stylesheet">
 </head>
 
 <body class="min-h-screen bg-cream-50 text-stone-800 antialiased font-sans flex flex-col">
@@ -148,11 +149,12 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const statusUrl = @json(route('emenu.bayar-tunai.status', $pesanan->kode_pesanan));
+            const statusPageUrl = @json(route('emenu.status', $pesanan->kode_pesanan));
             const statusElement = document.getElementById('statusTunai');
             let selesai = false;
 
             async function periksaStatus() {
-                if (selesai || document.hidden) {
+                if (selesai) {
                     return;
                 }
 
@@ -171,25 +173,27 @@
 
                     const data = await response.json();
 
-                    if (data.lunas) {
+                    if (data.lunas || data.status_pembayaran === 'sudah_bayar') {
                         selesai = true;
                         statusElement.className = 'mt-3 inline-flex items-center gap-2 rounded-full bg-forest-100 px-3 py-1.5 text-xs font-bold text-forest-900';
                         statusElement.innerHTML = '<span class="h-2 w-2 rounded-full bg-forest-600"></span>Pembayaran lunas, membuka status pesanan...';
                         window.setTimeout(function () {
-                            window.location.replace(data.redirect);
-                        }, 800);
+                            window.location.replace(data.redirect || statusPageUrl);
+                        }, 500);
                     }
                 } catch (error) {
                     return;
                 }
             }
 
-            window.setInterval(periksaStatus, 4000);
+            window.setInterval(periksaStatus, 3000);
             document.addEventListener('visibilitychange', function () {
                 if (!document.hidden) {
                     periksaStatus();
                 }
             });
+            window.addEventListener('pageshow', periksaStatus);
+            window.addEventListener('focus', periksaStatus);
             periksaStatus();
         });
     </script>

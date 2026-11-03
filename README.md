@@ -63,6 +63,12 @@ php artisan reverb:start
 npm run dev          # atau: npm run build (untuk produksi)
 ```
 
+> **Akses dari HP/LAN:** jalankan `npm run build`, bukan `npm run dev`. Vite dev
+> server default hanya mendengarkan loopback, sehingga `public/hot` menunjuk ke
+> `http://[::1]:5173` dan aset gagal dimuat di HP. Untuk server Laravel, pakai
+> `php artisan serve --host=0.0.0.0 --port=8000` lalu buka
+> `http://IP-LAPTOP:8000`, jangan `http://0.0.0.0:8000`.
+
 Pastikan kredensial Reverb ada di `.env` (juga yang ber-prefix `VITE_` untuk sisi browser):
 
 ```env
@@ -116,7 +122,10 @@ dapat memesan.
   berakhir — bukan lewat tombol manual. Kode baru dijamin berbeda dari kode sesi sebelumnya.
 - **Gate verifikasi** berlaku pada e-menu, `checkout`, `pelacakan`, dan **semua halaman detail
   pesanan** (`status`, `verifikasi`, `bayar-tunai`, polling QRIS). Halaman detail hanya bisa
-  dibuka bila cookie sesi meja cocok **dan** pesanan dibuat pada sesi aktif tersebut.
+  dibuka bila ada bukti akses yang cocok: cookie sesi meja, parameter `kode_saung` sesi aktif,
+  atau kode pesanan yang tersimpan di riwayat browser. Pesanan juga harus dibuat pada sesi
+  aktif tersebut. Fallback `kode_saung` dan riwayat browser dipakai agar status pembayaran tetap
+  bisa dibuka setelah kasir menutup sesi atau cookie browser hilang.
 - Verifikasi disimpan di session dengan key `sesi_meja_{id}`, dibandingkan dengan sesi aktif
   saat ini; begitu sesi ditutup, pelanggan otomatis diminta memasukkan kode baru. Riwayat
   pesanan tamu sebelumnya juga dihapus saat sesi baru diverifikasi.
@@ -137,19 +146,38 @@ Endpoint API untuk perangkat IoT meja menyertakan kode sesi dan **wajib** mengir
 
 - `GET /api/iot/status-meja` — status semua meja + `kode_sesi`.
 - `GET /api/iot/meja/{ident}` — detail satu meja (dicari via `id_device` atau `kode_meja`) + `kode_sesi`,
-  `pesanan[]` (kode, status pesanan/pembayaran, total) pada sesi berjalan, `total_bayar`, dan `jumlah_pesanan`.
+  `fase` (`standby`/`pembayaran`/`lunas`), `metode_pembayaran` (`tunai`/`qris`/`campuran`),
+  `semua_lunas`, `pesanan[]` (kode, status pesanan/pembayaran, metode, total) pada sesi berjalan,
+  `total_bayar`, dan `jumlah_pesanan`.
 - `POST /api/iot/panggil-pelayan` — body `{"kode_meja":"LB-01","kode_sesi":"1234"}`. Kode sesi
   harus kode yang sedang aktif; kode lama ditolak.
+
+Panggilan pelayan yang masuk dapat dikonfirmasi dari dua tempat: tombol **Konfirmasi Panggilan**
+di kartu panggilan halaman pelayan, atau tombol yang sama pada banner panggilan di dashboard
+kasir. Begitu salah satu dikonfirmasi, status panggilan menjadi `selesai` dan indikator di
+kasir maupun pelayan sama-sama hilang.
 
 Bila `IOT_API_TOKEN` kosong, semua endpoint IoT mengembalikan `503`. Token tidak boleh ditaruh
 di URL. Isi konstanta `IOT_API_TOKEN` pada sketch ESP32 dengan nilai yang sama.
 
-**Sensor sentuh (ESP32, `esp32-iot/esp32_iot_complete.ino`)** — sensor sentuh dipakai untuk
-berpindah tampilan LCD 16x2:
+**Layar LCD (ESP32, `esp32-iot/esp32_iot_complete.ino`)** — tampilan mengikuti fase sesi meja:
 
-- **Tap singkat** bergiliran: `Status Pesanan` → `Total Bayar` → `Kode Verif Saung` (kode unik sesi),
-  sehingga pelanggan yang lupa kode verifikasi cukup tap untuk menampilkannya kembali.
-- **Tahan ~1.5 detik** untuk memanggil pelayan (fungsi lama tetap ada).
+- **Standby** (sesi aktif tetapi belum ada pesanan): layar hanya menampilkan kode meja dan kode
+  verifikasi, misalnya:
+
+  ```text
+  Meja : LB-01
+  Kode : 8754
+  ```
+
+  Touch diabaikan pada fase ini agar tamu tidak mengubah layar sebelum memesan.
+- **Pembayaran** (ada pesanan belum lunas): QRIS/Midtrans menampilkan `Pembayaran TF` beserta
+  total; tunai menampilkan `Pembayaran` / `di Kasir`. Touch tetap diabaikan.
+- **Lunas** (semua pesanan sudah dibayar): layar bergilir otomatis setiap 5 detik:
+  `Status Pesanan` → `Total Bayar` → `Meja/Kode`. Tap singkat mempercepat giliran layar;
+  tahan ~1,5 detik untuk memanggil pelayan.
+- **Tap saat layar error** langsung memicu percobaan koneksi ulang ke server.
+- Setelah sesi ditutup kasir, LCD kembali ke layar kode standby dengan kode sesi baru.
 
 Panduan wiring, library, upload, dan troubleshooting ada di
 [`esp32-iot/README.md`](esp32-iot/README.md).

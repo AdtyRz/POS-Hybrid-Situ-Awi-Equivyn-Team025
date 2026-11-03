@@ -176,7 +176,9 @@ class PesananAccessSecurityTest extends TestCase
         $this->getJson('/api/v1/pesanan/' . $pesanan->kode_pesanan . '?kode_saung=' . $sesi->kode_unik)
             ->assertOk();
 
-        $this->getJson('/api/v1/pesanan/' . $pesanan->kode_pesanan . '?kode_saung=0000')
+        $kodeSalah = $sesi->kode_unik === '0000' ? '0001' : '0000';
+
+        $this->getJson('/api/v1/pesanan/' . $pesanan->kode_pesanan . '?kode_saung=' . $kodeSalah)
             ->assertForbidden();
     }
 
@@ -197,7 +199,8 @@ class PesananAccessSecurityTest extends TestCase
         $this->withHeader('X-IoT-Token', 'token-iot-uji')
             ->getJson('/api/iot/meja/' . $meja->kode_meja)
             ->assertOk()
-            ->assertJsonPath('data.kode_sesi', $sesi->kode_unik);
+            ->assertJsonPath('data.kode_sesi', $sesi->kode_unik)
+            ->assertJsonPath('konfigurasi.lcd_message', 'Panggil Pelayan');
 
         $this->withHeader('X-IoT-Token', 'token-iot-uji')
             ->postJson('/api/iot/panggil-pelayan', ['kode_meja' => $meja->kode_meja])

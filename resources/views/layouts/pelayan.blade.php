@@ -8,11 +8,8 @@
     <meta name="realtime-version" content="{{ \App\Support\Realtime::version() }}">
     <title>@yield('title', 'Mobile POS Pelayan • Situ Awi Saung Lesehan')</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+    <link href="{{ asset('fonts/fonts.css') }}" rel="stylesheet">
+@if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         <script>
             window.__CHANNELS__ = ['pelayan', 'menu'];
         </script>
