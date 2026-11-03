@@ -13,7 +13,7 @@
     ])->values();
 @endphp
 
-<div x-data="pelayanTabSaung()" class="relative flex flex-col min-h-screen bg-[#FCF9F2]" x-init="init()">
+<div x-data="pelayanTabSaung()" @keydown.escape.window="showEndSessionModal = false" class="relative flex flex-col min-h-screen bg-[#FCF9F2]" x-init="init()">
 
     <header class="sticky top-0 z-40 bg-[rgba(252,249,242,0.85)] backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] px-4 py-2.5 h-16 flex items-center justify-between border-b border-[#E5E2DB]/50">
         <div class="flex items-center gap-2">
@@ -276,6 +276,18 @@
                                     </button>
                                 </div>
                             @endif
+
+                            @if ($table['session_active'])
+                                <div class="flex justify-end pt-1">
+                                    <button @click="konfirmasiAkhiriSesi({{ $table['id'] }})" type="button"
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[#BA1A1A]/30 bg-[#FFDAD6]/40 text-[#93000A] font-bold text-[10px] tracking-[0.24px] transition-all active:scale-95 cursor-pointer hover:bg-[#FFDAD6]">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                        </svg>
+                                        <span>Akhiri Sesi</span>
+                                    </button>
+                                </div>
+                            @endif
                         </div>
                     @endforeach
                 </div>
@@ -446,6 +458,45 @@
         </div>
     </div>
 
+    <div x-show="showEndSessionModal" x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+        <div class="absolute inset-0" @click="showEndSessionModal = false"></div>
+        <div class="relative bg-white rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-[#E5E2DB]">
+            <div class="flex items-start gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-[#FFDAD6] text-[#93000A] flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <h3 class="font-bold text-base text-[#1C1C18]">Akhiri Sesi Meja?</h3>
+                    <p class="text-xs text-[#404941] leading-5 mt-1">
+                        Sesi <span class="font-bold text-[#1C1C18]" x-text="endSessionTable?.kode_meja ?? '-'">-</span>
+                        akan ditutup dan kode sesi baru langsung dibuat untuk tamu berikutnya.
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-[#F6F3EC] rounded-xl p-3 text-[11px] leading-5 text-[#404941]">
+                Semua pesanan aktif yang sudah lunas akan ditandai selesai. Jika masih ada pesanan yang belum dibayar, sesi tidak dapat diakhiri sampai pembayaran diselesaikan di kasir.
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button @click="showEndSessionModal = false" :disabled="endSessionBusy" type="button"
+                        class="flex-1 h-11 rounded-xl bg-[#F0EEE7] hover:bg-[#E5E2DB] text-[#404941] font-bold text-xs transition-all active:scale-98 cursor-pointer disabled:opacity-60">
+                    Tidak
+                </button>
+                <button @click="akhiriSesi()" :disabled="endSessionBusy" type="button"
+                        class="flex-1 h-11 rounded-xl bg-[#BA1A1A] hover:bg-[#93000A] text-white font-bold text-xs shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all active:scale-98 cursor-pointer disabled:opacity-60">
+                    <span x-text="endSessionBusy ? 'Mengakhiri...' : 'Ya, Akhiri Sesi'">Ya, Akhiri Sesi</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div x-show="showToast"
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0 translate-y-4"
@@ -484,6 +535,10 @@
             showMenuModal: false,
             showDetailModal: false,
             detailTable: null,
+            showEndSessionModal: false,
+            endSessionTable: null,
+            endSessionBusy: false,
+            sessionTutupTemplate: @json(route('pelayan.session.tutup', ['meja' => '__MEJA__'])),
 
             soundVibrationActive: true,
             toastMessage: 'Notifikasi berhasil diproses.',
@@ -539,6 +594,53 @@
 
                 this.detailTable = table;
                 this.showDetailModal = true;
+            },
+
+            konfirmasiAkhiriSesi(tableId) {
+                const table = this.tables.find(item => item.id === tableId);
+
+                if (!table) {
+                    this.triggerToast('Data saung tidak ditemukan.');
+                    return;
+                }
+
+                this.endSessionTable = table;
+                this.showEndSessionModal = true;
+            },
+
+            async akhiriSesi() {
+                if (!this.endSessionTable || this.endSessionBusy) return;
+
+                this.endSessionBusy = true;
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+
+                try {
+                    const response = await fetch(
+                        this.sessionTutupTemplate.replace('__MEJA__', encodeURIComponent(this.endSessionTable.kode_meja)),
+                        {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            body: JSON.stringify({}),
+                        }
+                    );
+                    const payload = await response.json().catch(() => ({}));
+
+                    if (!response.ok) throw new Error(payload.message || 'Sesi gagal diakhiri.');
+
+                    this.showEndSessionModal = false;
+                    this.endSessionTable = null;
+                    this.triggerToast(payload.message || 'Sesi meja berhasil diakhiri.');
+                    setTimeout(() => window.location.reload(), 500);
+                } catch (error) {
+                    this.triggerToast(error.message || 'Sesi gagal diakhiri.');
+                } finally {
+                    this.endSessionBusy = false;
+                }
             },
 
             openMenu(mejaId) {

@@ -135,7 +135,6 @@ Route::middleware(['auth', 'role:kasir', 'kasir.unlocked'])->group(function () {
     Route::post('/kasir/struk/tandai', [PembayaranController::class, 'tandaiStruk'])->name('kasir.struk.tandai');
     Route::get('/kasir/session', [KasirController::class, 'daftarMejaSession'])->name('kasir.session.index');
     Route::patch('/kasir/session/{meja}', [KasirController::class, 'akhiriSession'])->name('kasir.session.tutup');
-    Route::patch('/kasir/panggilan/{id}', [KasirController::class, 'selesaikanPanggilan'])->name('kasir.panggilan.selesai');
 });
 
 Route::middleware(['auth', 'aktif', 'role:admin,kasir,pelayan', 'kasir.unlocked', 'pesanan.no-store'])->group(function () {
@@ -159,6 +158,7 @@ Route::middleware(['auth', 'role:pelayan'])->group(function () {
     Route::get('/pelayan/tab-saung', [PelayanController::class, 'tabSaung'])->name('pelayan.tab-saung');
     Route::get('/pelayan/tab-shift', [PelayanController::class, 'tabShift'])->name('pelayan.tab-shift');
     Route::patch('/pelayan/panggilan/{id}', [PelayanController::class, 'ubahStatus'])->name('pelayan.panggilan.ubah');
+    Route::patch('/pelayan/session/{meja}', [PelayanController::class, 'akhiriSession'])->name('pelayan.session.tutup');
     Route::post('/pelayan/pesanan', [PelayanController::class, 'simpanPesanan'])->name('pelayan.pesanan.store');
     Route::post('/pelayan/meja/{meja}/buka', [PelayanController::class, 'bukaMeja'])->name('pelayan.meja.buka');
 });

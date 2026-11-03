@@ -81,6 +81,15 @@
         .font-mono-lcd {
             font-family: 'JetBrains Mono', monospace;
         }
+
+        .scrollbar-none {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .scrollbar-none::-webkit-scrollbar {
+            display: none;
+        }
     </style>
 </head>
 
@@ -130,33 +139,73 @@
                 </button>
             </div>
         </div>
+        <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+            <div class="absolute -right-32 -top-40 h-96 w-96 rounded-full bg-gold-300/20 blur-3xl"></div>
+            <div class="absolute left-1/2 top-1/3 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-forest-100/40 blur-3xl"></div>
+            <div class="absolute -bottom-40 -left-32 h-96 w-96 rounded-full bg-leaf-100/60 blur-3xl"></div>
+        </div>
         <header
-            class="sticky top-0 z-30 bg-[#FBF8F1]/95 backdrop-blur-md border-b border-forest-100/60 transition-all duration-300">
-            <div class="max-w-md lg:max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-                <div class="flex items-center gap-2.5">
+            class="sticky top-0 z-30 border-b border-forest-100/70 bg-[#FBF8F1]/90 backdrop-blur-xl transition-all duration-300">
+            <div class="h-0.5 w-full bg-gradient-to-r from-forest-900 via-gold-500 to-forest-900"></div>
+            <div class="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3 lg:px-8 lg:py-4">
+                <div class="flex min-w-0 items-center gap-3">
                     <button type="button" @click="handleBackNavigation()"
-                        class="w-8 h-8 rounded-full bg-white border border-forest-100 flex items-center justify-center text-forest-900 shadow-2xs hover:bg-forest-50 transition active:scale-95"
+                        class="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-white border border-forest-100 flex items-center justify-center text-forest-900 shadow-2xs hover:bg-forest-50 transition active:scale-95 shrink-0"
                         title="Kembali">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                                 d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                         </svg>
                     </button>
-                    <div>
+                    <div
+                        class="hidden lg:flex w-11 h-11 rounded-2xl bg-forest-900 border border-gold-400/60 overflow-hidden items-center justify-center shadow-sm shrink-0"
+                        title="Saung Situ Awi">
+                        <img src="{{ asset('asset/Logo.png') }}" alt="Saung Situ Awi Logo"
+                            class="w-full h-full object-cover"
+                            onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\'text-gold-300 font-bold text-sm\'>SA</span>';">
+                    </div>
+                    <div class="min-w-0">
                         <div
-                            class="flex items-center gap-1.5 text-[10px] font-extrabold tracking-wider text-forest-800 uppercase">
+                            class="flex items-center gap-1.5 text-[10px] font-extrabold tracking-[0.16em] text-forest-800 uppercase">
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
                             <span>SAUNG SITU AWI</span>
+                            <span class="hidden xl:inline text-charcoal-400 font-semibold tracking-normal normal-case">&middot; Resto &amp; Saung Lesehan Parahyangan</span>
                         </div>
-                        <div class="text-xs font-bold text-forest-900 leading-tight" x-text="pageTitles[step]">
+                        <div class="truncate text-sm lg:text-base font-bold text-forest-900 leading-tight" x-text="pageTitles[step]">
                             Katalog Menu
                         </div>
+                    </div>
+                </div>
+                <div class="hidden lg:flex items-center gap-2">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-white/90 border border-forest-100 text-[11px] font-bold text-forest-900 shadow-2xs">
+                        <svg class="w-3.5 h-3.5 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="9" stroke-width="2"></circle>
+                            <path stroke-linecap="round" stroke-width="2" d="M12 7v5l3 2"></path>
+                        </svg>
+                        <span x-text="liveTimeString">{{ now('Asia/Jakarta')->format('H:i') }} WIB</span>
+                    </div>
+                    <div class="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-gold-50 border border-gold-300/70 text-[11px] font-bold text-forest-900 shadow-2xs">
+                        <svg class="w-3.5 h-3.5 text-forest-700" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                            <polyline points="9 22 9 12 15 12 15 22" />
+                        </svg>
+                        <span>Meja {{ $meja->kode_meja }}</span>
+                        <span class="text-forest-700/40">|</span>
+                        <span class="font-semibold text-charcoal-500">{{ $meja->area }}</span>
+                    </div>
+                    <div class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-700 shadow-2xs">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <span>Terhubung</span>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
                     @if (! empty($punyaRiwayat))
                     <a href="{{ route('emenu.pelacakan', $meja->id) }}"
-                        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-gold-500 hover:bg-gold-400 text-forest-900 text-[10px] sm:text-xs font-bold border border-gold-600/20 shadow-2xs transition active:scale-95"
+                        class="inline-flex items-center gap-1.5 px-2.5 lg:px-4 py-1.5 rounded-full bg-gold-500 hover:bg-gold-400 text-forest-900 text-[10px] sm:text-xs font-bold border border-gold-600/20 shadow-2xs transition active:scale-95"
                         title="Lihat Status Pesanan"
                         aria-label="Lihat Status Pesanan">
                         <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -166,7 +215,7 @@
                     </a>
                     @endif
                     <div
-                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-forest-100/90 text-forest-900 text-xs font-bold border border-forest-200/60 shadow-2xs">
+                        class="lg:hidden inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-forest-100/90 text-forest-900 text-xs font-bold border border-forest-200/60 shadow-2xs">
                         <svg class="w-3.5 h-3.5 text-forest-700" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -175,7 +224,7 @@
                         <span>{{ $meja->kode_meja }}</span>
                     </div>
                     <div
-                        class="w-9 h-9 rounded-full bg-forest-900 border-2 border-gold-400 overflow-hidden flex items-center justify-center shadow-sm shrink-0">
+                        class="lg:hidden w-9 h-9 rounded-full bg-forest-900 border-2 border-gold-400 overflow-hidden flex items-center justify-center shadow-sm shrink-0">
                         <img src="{{ asset('asset/Logo.png') }}" alt="Saung Situ Awi Logo"
                             class="w-full h-full object-cover"
                             onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\'text-gold-300 font-bold text-xs\'>SA</span>';">
@@ -183,7 +232,7 @@
                 </div>
             </div>
         </header>
-        <main class="flex-1 max-w-md lg:max-w-5xl mx-auto w-full px-4 pt-4">
+        <main class="flex-1 mx-auto w-full max-w-7xl px-4 pt-4 lg:px-8 lg:pt-6">
             <div x-show="step === 1" x-transition:enter="transition ease-out duration-300 transform"
                 x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0"
                 x-transition:leave="transition ease-in duration-200 transform"
@@ -191,7 +240,7 @@
                 x-transition:leave-end="opacity-0 -translate-y-4">
                 @include('pelanggan.menu.partials.katalog')
             </div>
-            <div x-show="step === 2" class="lg:max-w-2xl lg:mx-auto"
+            <div x-show="step === 2"
                 x-transition:enter="transition ease-out duration-300 transform"
                 x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0"
                 x-transition:leave="transition ease-in duration-200 transform"
