@@ -77,9 +77,35 @@ class SesiMeja extends Model
         return Pengaturan::nilai('encryption_level') === '6 Digit' ? 6 : 4;
     }
 
+    /**
+     * Tutup sesi aktif yang dibuka sebelum hari ini dan tidak memiliki
+     * pesanan aktif. Sesi lintas hari tidak relevan untuk operasional saung,
+     * tetapi sesi yang masih memiliki tagihan berjalan tetap dipertahankan.
+     */
+    public static function tutupSesiLintasHari(): int
+    {
+        $awalHari = now('Asia/Jakarta')->startOfDay();
+
+        $sesiBasi = static::query()
+            ->where('status', 'aktif')
+            ->where('dibuka_pada', '<', $awalHari)
+            ->get()
+            ->reject(fn (self $sesi) => Pesanan::query()
+                ->where('meja_id', $sesi->meja_id)
+                ->whereNotIn('status_pesanan', [Pesanan::STATUS_SELESAI, Pesanan::STATUS_DIBATALKAN])
+                ->exists());
+
+        $sesiBasi->each(fn (self $sesi) => static::tutupKarenaKedaluwarsa($sesi));
+
+        return $sesiBasi->count();
+    }
+
     private static function perluDitutupOtomatis(self $sesi): bool
     {
-        if (! filter_var(Pengaturan::nilai('session_auto_close'), FILTER_VALIDATE_BOOLEAN)) {
+        $lintasHari = $sesi->dibuka_pada !== null
+            && $sesi->dibuka_pada->lt(now('Asia/Jakarta')->startOfDay());
+
+        if (! $lintasHari && ! filter_var(Pengaturan::nilai('session_auto_close'), FILTER_VALIDATE_BOOLEAN)) {
             return false;
         }
 
@@ -92,6 +118,10 @@ class SesiMeja extends Model
 
         if ($adaPesananAktif) {
             return false;
+        }
+
+        if ($lintasHari) {
+            return true;
         }
 
         $aktivitasTerakhir = Pesanan::query()

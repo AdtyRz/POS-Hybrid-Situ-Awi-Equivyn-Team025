@@ -67,7 +67,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" data-live="master-meja-stats">
 
             <div
                 class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[175px]">
@@ -183,7 +183,7 @@
 
         <div
             class="p-2.5 bg-[#F6F3EC] rounded-2xl shadow-xs border border-[#C0C9BF]/20 flex flex-wrap items-center justify-between gap-4">
-            <div class="flex items-center flex-wrap gap-2" id="meja-area-filters">
+            <div class="flex items-center flex-wrap gap-2" id="meja-area-filters" data-live="master-meja-areas">
                 <button type="button" data-area-filter="all"
                     class="meja-filter-btn px-4 py-2 rounded-xl text-xs transition-all cursor-pointer">
                     Semua Area ({{ $daftarMeja->count() }})
@@ -223,7 +223,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-            <div class="lg:col-span-8 flex flex-col gap-8">
+            <div class="lg:col-span-8 flex flex-col gap-8" data-live="master-meja-board">
 
                 @foreach ($areas as $idx => $areaName)
                     <div data-area-section="{{ $areaName }}" class="flex flex-col gap-4">
@@ -954,15 +954,30 @@
 
     </div>
 
+    <script type="application/json" id="master-meja-state">{!! json_encode([
+        'detailMeja' => $detailJson,
+        'mejaPertama' => $mejaPertama,
+    ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
+
     <script>
+        const masterMejaInitialState = (() => {
+            try {
+                const el = document.getElementById('master-meja-state');
+
+                return el ? JSON.parse(el.textContent) : {};
+            } catch (error) {
+                return {};
+            }
+        })();
+
         function masterMejaApp() {
             return {
-                selectedSaung: sessionStorage.getItem('masterMejaSelected') || @json($mejaPertama),
+                selectedSaung: sessionStorage.getItem('masterMejaSelected') || masterMejaInitialState.mejaPertama || @json($mejaPertama),
                 addModalOpen: false,
                 editModalOpen: false,
                 kategoriModalOpen: false,
                 billModalOpen: false,
-                detailMeja: @json($detailJson),
+                detailMeja: masterMejaInitialState.detailMeja || @json($detailJson),
                 toast: {
                     show: false,
                     message: ''
@@ -978,16 +993,39 @@
                 },
                 init() {
                     if (!this.detailMeja[this.selectedSaung]) {
-                        this.selectedSaung = @json($mejaPertama);
+                        this.selectedSaung = masterMejaInitialState.mejaPertama || @json($mejaPertama);
                     }
 
                     this.$nextTick(() => this.renderQr());
                     this.$watch('selectedSaung', () => this.$nextTick(() => this.renderQr()));
 
-                    window.addEventListener('realtime', () => window.realtimeReload(800));
-                    window.addEventListener('realtime:panggilan.pelayan', () => window.realtimeReload(400));
-                    window.addEventListener('realtime:status.berubah', () => window.realtimeReload(400));
-                    window.addEventListener('realtime:sesi.berubah', () => window.realtimeReload(400));
+                    window.addEventListener('live:updated', (event) => this.applyLiveState(event));
+                },
+                applyLiveState(event) {
+                    const doc = event.detail?.document;
+                    const raw = doc?.getElementById('master-meja-state')?.textContent;
+
+                    if (!raw) return;
+
+                    try {
+                        const state = JSON.parse(raw);
+
+                        this.detailMeja = state.detailMeja || {};
+
+                        if (!this.detailMeja[this.selectedSaung] && state.mejaPertama) {
+                            this.selectedSaung = state.mejaPertama;
+                        }
+
+                        this.$nextTick(() => {
+                            this.renderQr();
+
+                            if (typeof window.masterMejaApplyFilter === 'function') {
+                                window.masterMejaApplyFilter();
+                            }
+                        });
+                    } catch (error) {
+                        // Abaikan payload yang tidak valid; data lama tetap tampil.
+                    }
                 },
                 qrUrl() {
                     const detail = this.detailMeja[this.selectedSaung];
@@ -1049,8 +1087,6 @@
 
     <script>
         (function () {
-            const buttons = document.querySelectorAll('.meja-filter-btn');
-            const sections = document.querySelectorAll('[data-area-section]');
             const search = document.getElementById('meja-search');
             let activeArea = 'all';
 
@@ -1068,7 +1104,11 @@
             const applyFilter = () => {
                 const query = (search ? search.value : '').trim().toLowerCase();
 
-                sections.forEach((section) => {
+                document.querySelectorAll('.meja-filter-btn').forEach((btn) => {
+                    setButtonState(btn, btn.dataset.areaFilter === activeArea);
+                });
+
+                document.querySelectorAll('[data-area-section]').forEach((section) => {
                     const areaName = section.dataset.areaSection || '';
                     const areaMatch = activeArea === 'all' || activeArea === areaName;
                     let visible = 0;
@@ -1083,18 +1123,20 @@
                 });
             };
 
-            buttons.forEach((btn) => {
-                setButtonState(btn, btn.dataset.areaFilter === 'all');
-                btn.addEventListener('click', () => {
-                    activeArea = btn.dataset.areaFilter;
-                    buttons.forEach((b) => setButtonState(b, b === btn));
-                    applyFilter();
-                });
+            document.addEventListener('click', (event) => {
+                const btn = event.target.closest('.meja-filter-btn');
+
+                if (!btn) return;
+
+                activeArea = btn.dataset.areaFilter || 'all';
+                applyFilter();
             });
 
             if (search) {
                 search.addEventListener('input', applyFilter);
             }
+
+            window.masterMejaApplyFilter = applyFilter;
 
             applyFilter();
         })();

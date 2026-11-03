@@ -302,4 +302,31 @@ class PelayanDashboardTest extends TestCase
             ->patchJson(route('pelayan.session.tutup', $mejaLain->kode_meja))
             ->assertForbidden();
     }
+
+    public function test_tab_saung_tidak_menghitung_sesi_lintas_hari_sebagai_meja_terisi(): void
+    {
+        $this->withoutVite();
+
+        $pelayan = $this->pelayan();
+        $mejaAktif = $this->meja('LB-01', 'Lesehan Bawah');
+        $mejaBasi = $this->meja('LB-02', 'Lesehan Bawah');
+        $menu = $this->menu('Nasi Liwet');
+
+        $this->pesanan($mejaAktif, $menu, Pesanan::STATUS_DIPROSES);
+
+        $basi = SesiMeja::create([
+            'meja_id' => $mejaBasi->id,
+            'kode_unik' => '9191',
+            'status' => 'aktif',
+            'dibuka_pada' => now()->subDay(),
+        ]);
+
+        $response = $this->actingAs($pelayan)
+            ->get(route('pelayan.tab-saung'))
+            ->assertOk();
+
+        $this->assertSame('selesai', $basi->fresh()->status);
+        $response->assertViewHas('terisiCount', 1);
+        $response->assertViewHas('tersediaCount', 1);
+    }
 }

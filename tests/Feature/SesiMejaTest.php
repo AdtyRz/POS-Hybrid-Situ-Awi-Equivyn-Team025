@@ -273,4 +273,88 @@ class SesiMejaTest extends TestCase
         $this->assertSame('kosong', $meja->fresh()->status_meja);
         $this->assertSame('aktif', SesiMeja::aktifUntuk($meja)->status);
     }
+
+    public function test_sesi_lintas_hari_tanpa_pesanan_aktif_ditutup_dan_tidak_menghitung_meja_terisi(): void
+    {
+        $mejaAktif = $this->siapkanMeja();
+        $mejaBasi = MejaMakan::create([
+            'kode_meja' => 'LB-78',
+            'area' => 'Lesehan Bawah',
+            'kapasitas' => 4,
+            'qr_token' => 'token-lb-78-abcdefghijklmnop',
+            'status_meja' => 'kosong',
+        ]);
+        $mejaPesanan = MejaMakan::create([
+            'kode_meja' => 'LB-79',
+            'area' => 'Lesehan Bawah',
+            'kapasitas' => 4,
+            'qr_token' => 'token-lb-79-abcdefghijklmnop',
+            'status_meja' => 'kosong',
+        ]);
+
+        $aktif = SesiMeja::aktifUntuk($mejaAktif);
+
+        $basi = SesiMeja::create([
+            'meja_id' => $mejaBasi->id,
+            'kode_unik' => '1111',
+            'status' => 'aktif',
+            'dibuka_pada' => now()->subDay(),
+        ]);
+
+        $denganPesanan = SesiMeja::create([
+            'meja_id' => $mejaPesanan->id,
+            'kode_unik' => '2222',
+            'status' => 'aktif',
+            'dibuka_pada' => now()->subDays(2),
+        ]);
+
+        $kategori = Kategori::create(['nama_kategori' => 'Makanan', 'target_kds' => 'dapur']);
+        $menu = Menu::create([
+            'kategori_id' => $kategori->id,
+            'nama_menu' => 'Nasi Aktif',
+            'slug' => 'nasi-aktif',
+            'harga' => 10000,
+            'stok_menu' => 10,
+        ]);
+
+        $pesanan = Pesanan::create([
+            'kode_pesanan' => 'SW-SESI-LINTAS',
+            'meja_id' => $mejaPesanan->id,
+            'total_bayar' => 10000,
+            'metode_pembayaran' => 'tunai',
+            'status_pesanan' => Pesanan::STATUS_DIPROSES,
+            'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+        ]);
+        $pesanan->detailPesanan()->create([
+            'menu_id' => $menu->id,
+            'jumlah' => 1,
+            'harga_satuan' => 10000,
+            'subtotal' => 10000,
+        ]);
+
+        $this->assertSame(1, SesiMeja::tutupSesiLintasHari());
+        $this->assertSame('selesai', $basi->fresh()->status);
+        $this->assertSame('aktif', $denganPesanan->fresh()->status);
+
+        $this->assertSame(2, SesiMeja::where('status', 'aktif')->count());
+        $this->assertSame($aktif->id, SesiMeja::where('meja_id', $mejaAktif->id)->where('status', 'aktif')->value('id'));
+    }
+
+    public function test_aktif_untuk_mengganti_sesi_lintas_hari_yang_tidak_punya_pesanan_aktif(): void
+    {
+        $meja = $this->siapkanMeja();
+
+        $lama = SesiMeja::create([
+            'meja_id' => $meja->id,
+            'kode_unik' => '3333',
+            'status' => 'aktif',
+            'dibuka_pada' => now()->subDays(2),
+        ]);
+
+        $baru = SesiMeja::aktifUntuk($meja);
+
+        $this->assertSame('selesai', $lama->fresh()->status);
+        $this->assertSame('aktif', $baru->status);
+        $this->assertNotSame($lama->id, $baru->id);
+    }
 }

@@ -17,8 +17,9 @@ class StatusPesananBerubah implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         $kode = $this->pesanan['kode_pesanan'] ?? '';
+        $kodeMeja = $this->pesanan['meja'] ?? '';
 
-        return [
+        $channels = [
             new Channel('pesanan.' . $kode),
             new Channel('kds.dapur'),
             new Channel('kds.bar'),
@@ -26,6 +27,12 @@ class StatusPesananBerubah implements ShouldBroadcastNow
             new Channel('pelayan'),
             new Channel('admin'),
         ];
+
+        if ($kodeMeja !== '') {
+            $channels[] = new Channel('meja.' . $kodeMeja);
+        }
+
+        return $channels;
     }
 
     public function broadcastAs(): string

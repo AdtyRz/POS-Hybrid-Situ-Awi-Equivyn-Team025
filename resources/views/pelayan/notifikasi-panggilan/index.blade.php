@@ -21,7 +21,7 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <button @click="triggerToast('Halaman ini mengikuti perubahan panggilan, pesanan, dan menu secara realtime.')" type="button" class="w-11 h-11 rounded-full bg-[#F6F3EC] flex items-center justify-center relative active:scale-95 transition-transform cursor-pointer">
+            <button @click="triggerToast('Halaman ini mengikuti perubahan panggilan, pesanan, dan menu secara realtime.')" data-live="pelayan-notifikasi-bell" type="button" class="w-11 h-11 rounded-full bg-[#F6F3EC] flex items-center justify-center relative active:scale-95 transition-transform cursor-pointer">
                 <svg class="w-[14.67px] h-[18.33px] text-[#404941]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
@@ -38,7 +38,7 @@
 
     <div class="px-4 py-3 space-y-4 flex-1">
 
-        <section class="bg-[#F6F3EC] rounded-xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-col gap-2">
+        <section class="bg-[#F6F3EC] rounded-xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-col gap-2" data-live="pelayan-notifikasi-stats">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-1 min-w-0">
                     <svg class="w-[13.33px] h-[16.67px] text-[#00341A] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -84,8 +84,9 @@
             </div>
         </section>
 
+        <div data-live="pelayan-notifikasi-urgent">
         @if ($urgentCall)
-        <section x-show="hasUrgentAlert && !alertResponded"
+        <section x-show="hasUrgentAlert && !alertResponded" x-cloak
                  x-transition:leave="transition ease-in duration-300 transform opacity-0 -translate-y-4"
                  class="bg-[#FFDAD6] rounded-xl p-4 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] relative overflow-hidden flex flex-col gap-2 isolation-auto">
 
@@ -159,8 +160,9 @@
             </div>
         </section>
         @endif
+        </div>
 
-        <section class="flex flex-col gap-2 pt-1">
+        <section class="flex flex-col gap-2 pt-1" data-live="pelayan-notifikasi-orders">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-1">
                     <svg class="w-[13.75px] h-[18.33px] text-[#00341A]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -179,6 +181,7 @@
             <div class="space-y-3 pt-1">
             @forelse ($siapAntarFormatted as $order)
                 <div class="bg-[#F6F3EC] rounded-xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-col gap-2"
+                     x-cloak
                      x-data="{ orderState: { delivered: false, busy: false } }"
                      x-show="!orderState.delivered">
                     <div class="flex items-start justify-between">
@@ -242,7 +245,7 @@
             </div>
         </section>
 
-        <section class="bg-[#F6F3EC] rounded-xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-col gap-2">
+        <section class="bg-[#F6F3EC] rounded-xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-col gap-2" data-live="pelayan-notifikasi-saung">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-1.5">
                     <svg class="w-[15px] h-[15px] text-[#00341A]" fill="currentColor" viewBox="0 0 20 20">
@@ -294,7 +297,7 @@
 
     </div>
 
-    <div x-show="showToast"
+    <div x-show="showToast" x-cloak
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0 translate-y-4"
          x-transition:enter-end="opacity-100 translate-y-0"
@@ -312,13 +315,29 @@
 
 </div>
 
+<script type="application/json" id="pelayan-notifikasi-state">{!! json_encode([
+    'hasUrgentAlert' => $urgentCall ? true : false,
+    'alertSeconds' => (int) ($urgentCall['elapsed_seconds'] ?? 0),
+    'urgentPanggilanId' => $urgentCall['id'] ?? null,
+], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
+
 <script>
+    const pelayanNotifikasiInitialState = (() => {
+        try {
+            const el = document.getElementById('pelayan-notifikasi-state');
+
+            return el ? JSON.parse(el.textContent) : {};
+        } catch (error) {
+            return {};
+        }
+    })();
+
     function pelayanNotifikasiPanggilan() {
         return {
-            hasUrgentAlert: {{ $urgentCall ? 'true' : 'false' }},
+            hasUrgentAlert: pelayanNotifikasiInitialState.hasUrgentAlert ?? false,
             alertResponded: false,
-            alertSeconds: {{ $urgentCall['elapsed_seconds'] ?? 0 }},
-            urgentPanggilanId: {{ $urgentCall['id'] ?? 'null' }},
+            alertSeconds: pelayanNotifikasiInitialState.alertSeconds ?? 0,
+            urgentPanggilanId: pelayanNotifikasiInitialState.urgentPanggilanId ?? null,
             processing: false,
             soundVibrationActive: true,
             toastMessage: 'Notifikasi berhasil diproses.',
@@ -326,12 +345,49 @@
 
             init() {
                 this.soundVibrationActive = localStorage.getItem('pelayan_sound_alert') !== '0';
+                window.addEventListener('live:updated', (event) => this.applyLiveState(event));
 
                 setInterval(() => {
                     if (this.hasUrgentAlert && !this.alertResponded) {
                         this.alertSeconds++;
                     }
                 }, 1000);
+            },
+
+            applyLiveState(event) {
+                const doc = event.detail?.document;
+                const raw = doc?.getElementById('pelayan-notifikasi-state')?.textContent;
+
+                if (!raw) return;
+
+                try {
+                    const state = JSON.parse(raw);
+                    const nextId = state.urgentPanggilanId ?? null;
+
+                    if (nextId !== this.urgentPanggilanId) {
+                        this.alertResponded = false;
+                        this.alertSeconds = state.alertSeconds ?? 0;
+                        this.urgentPanggilanId = nextId;
+                    }
+
+                    this.hasUrgentAlert = !!state.hasUrgentAlert;
+
+                    if (!this.hasUrgentAlert) {
+                        this.alertSeconds = 0;
+                    }
+                } catch (error) {
+                    // Payload tidak valid; data lama tetap tampil.
+                }
+            },
+
+            refreshLive() {
+                if (typeof window.refreshLiveRegions === 'function') {
+                    return window.refreshLiveRegions({ immediate: true });
+                }
+
+                window.location.reload();
+
+                return Promise.resolve(false);
             },
 
             formatElapsed(seconds) {
@@ -378,7 +434,7 @@
                     this.alertResponded = true;
                     this.hasUrgentAlert = false;
                     this.triggerToast('Panggilan berhasil ditandai selesai.');
-                    setTimeout(() => window.location.reload(), 500);
+                    await this.refreshLive();
                 } catch (error) {
                     this.triggerToast(error.message || 'Panggilan gagal diperbarui.');
                 } finally {
@@ -411,7 +467,7 @@
 
                     state.delivered = true;
                     this.triggerToast('Pesanan ditandai sedang diantar.');
-                    setTimeout(() => window.location.reload(), 500);
+                    await this.refreshLive();
                 } catch (error) {
                     this.triggerToast(error.message || 'Status pesanan gagal diperbarui.');
                 } finally {

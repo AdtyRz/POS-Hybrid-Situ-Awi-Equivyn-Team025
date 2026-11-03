@@ -16,7 +16,7 @@ class PesananBaru implements ShouldBroadcastNow
 
     public function broadcastOn(): array
     {
-        return [
+        $channels = [
             new Channel('kds.dapur'),
             new Channel('kds.bar'),
             new Channel('kasir'),
@@ -24,6 +24,14 @@ class PesananBaru implements ShouldBroadcastNow
             new Channel('admin'),
             new Channel('pesanan.' . ($this->pesanan['kode_pesanan'] ?? '')),
         ];
+
+        $kodeMeja = $this->pesanan['meja'] ?? '';
+
+        if ($kodeMeja !== '') {
+            $channels[] = new Channel('meja.' . $kodeMeja);
+        }
+
+        return $channels;
     }
 
     public function broadcastAs(): string

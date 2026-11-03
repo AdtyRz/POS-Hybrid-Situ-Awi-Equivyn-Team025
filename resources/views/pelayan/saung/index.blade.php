@@ -15,7 +15,7 @@
 
 <div x-data="pelayanTabSaung()" @keydown.escape.window="showEndSessionModal = false" class="relative flex flex-col min-h-screen bg-[#FCF9F2]" x-init="init()">
 
-    <header class="sticky top-0 z-40 bg-[rgba(252,249,242,0.85)] backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] px-4 py-2.5 h-16 flex items-center justify-between border-b border-[#E5E2DB]/50">
+    <header data-live="pelayan-saung-header" class="sticky top-0 z-40 bg-[rgba(252,249,242,0.85)] backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] px-4 py-2.5 h-16 flex items-center justify-between border-b border-[#E5E2DB]/50">
         <div class="flex items-center gap-2">
             <img src="{{ asset('asset/Logo.png') }}" alt="Logo Situ Awi" class="h-8 max-w-[45.25px] w-auto object-contain flex-shrink-0">
             <div class="flex flex-col">
@@ -36,7 +36,7 @@
         </div>
     </header>
 
-    <div class="px-4 py-3 space-y-4 flex-1">
+    <div class="px-4 py-3 space-y-4 flex-1" data-live="pelayan-saung-content">
 
         <section class="bg-[#F6F3EC] rounded-2xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-col gap-2">
             <div class="flex items-center justify-between">
@@ -134,7 +134,7 @@
         </section>
 
         @forelse ($clusters as $cluster)
-            <section x-show="selectedCluster === 'all' || selectedCluster === @js($cluster['key'])" class="space-y-3 pt-1">
+            <section x-show="selectedCluster === 'all' || selectedCluster === @js($cluster['key'])" x-cloak class="space-y-3 pt-1">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-full bg-[#00341A]"></span>
@@ -147,6 +147,7 @@
                     @foreach ($cluster['tables'] as $table)
                         <div x-data="{ tableState: { busy: false, done: false } }"
                              x-show="!tableState.done"
+                             x-cloak
                              class="rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.05)] border p-4 flex flex-col gap-2 {{ $table['is_calling'] ? 'bg-white border-[#BA1A1A]/30 ring-1 ring-[#BA1A1A]' : ($table['status'] === 'siap_antar' ? 'bg-white border-[#FECE66]/70' : ($table['status'] === 'tersedia' ? 'bg-[#F6F3EC] border-[#E5E2DB]/70' : 'bg-white border-[#F0EEE7]')) }}">
 
                             <div class="flex items-start justify-between gap-2">
@@ -311,7 +312,7 @@
 
     </div>
 
-    <div x-show="showQrModal" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+    <div x-show="showQrModal" x-cloak x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
         <div @click.away="showQrModal = false" class="bg-white rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-[#E5E2DB]">
             <div class="flex items-center justify-between pb-2 border-b border-[#F0EEE7]">
                 <div class="flex items-center gap-2">
@@ -344,7 +345,7 @@
         </div>
     </div>
 
-    <div x-show="showMenuModal" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+    <div x-show="showMenuModal" x-cloak x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
         <div @click.away="showMenuModal = false" class="bg-white rounded-2xl p-5 max-w-sm w-full max-h-[88vh] overflow-y-auto space-y-4 shadow-2xl border border-[#E5E2DB]">
             <div class="flex items-center justify-between pb-2 border-b border-[#F0EEE7]">
                 <div class="flex items-center gap-2">
@@ -413,7 +414,7 @@
         </div>
     </div>
 
-    <div x-show="showDetailModal" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+    <div x-show="showDetailModal" x-cloak x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
         <div @click.away="showDetailModal = false" class="bg-white rounded-2xl p-5 max-w-sm w-full max-h-[88vh] overflow-y-auto space-y-4 shadow-2xl border border-[#E5E2DB]">
             <div class="flex items-center justify-between pb-2 border-b border-[#F0EEE7]">
                 <div class="flex items-center gap-2">
@@ -458,7 +459,7 @@
         </div>
     </div>
 
-    <div x-show="showEndSessionModal" x-transition:enter="transition ease-out duration-200"
+    <div x-show="showEndSessionModal" x-cloak x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
          x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
@@ -497,7 +498,7 @@
         </div>
     </div>
 
-    <div x-show="showToast"
+    <div x-show="showToast" x-cloak
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0 translate-y-4"
          x-transition:enter-end="opacity-100 translate-y-0"
@@ -515,15 +516,32 @@
 
 </div>
 
+<script type="application/json" id="pelayan-saung-state">{!! json_encode([
+    'tables' => $tables,
+    'menu' => $menu,
+    'mejaOptions' => $mejaOptions,
+    'firstTableId' => $tables->first()['id'] ?? null,
+], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
+
 <script>
+    const pelayanSaungInitialState = (() => {
+        try {
+            const el = document.getElementById('pelayan-saung-state');
+
+            return el ? JSON.parse(el.textContent) : {};
+        } catch (error) {
+            return {};
+        }
+    })();
+
     function pelayanTabSaung() {
         return {
             selectedCluster: 'all',
-            tables: @json($tables),
-            menuCategories: @json($menu),
-            mejaOptions: @json($mejaOptions),
-            selectedMenuCategory: {{ $menu->first()['id'] ?? 'null' }},
-            menuMejaId: {{ $tables->first()['id'] ?? 'null' }},
+            tables: pelayanSaungInitialState.tables || @json($tables),
+            menuCategories: pelayanSaungInitialState.menu || @json($menu),
+            mejaOptions: pelayanSaungInitialState.mejaOptions || @json($mejaOptions),
+            selectedMenuCategory: pelayanSaungInitialState.menu?.[0]?.id ?? {{ $menu->first()['id'] ?? 'null' }},
+            menuMejaId: pelayanSaungInitialState.firstTableId ?? {{ $tables->first()['id'] ?? 'null' }},
             menuCatatan: '',
             cart: {},
             menuSubmitting: false,
@@ -550,6 +568,73 @@
                 this.$watch('showQrModal', (open) => {
                     if (open) this.$nextTick(() => this.renderQr());
                 });
+
+                window.addEventListener('live:updated', (event) => this.applyLiveState(event));
+            },
+
+            applyLiveState(event) {
+                const doc = event.detail?.document;
+                const raw = doc?.getElementById('pelayan-saung-state')?.textContent;
+
+                if (!raw) return;
+
+                try {
+                    const state = JSON.parse(raw);
+
+                    if (Array.isArray(state.tables)) {
+                        this.tables = state.tables;
+                    }
+
+                    if (Array.isArray(state.menu)) {
+                        this.menuCategories = state.menu;
+                    }
+
+                    if (Array.isArray(state.mejaOptions)) {
+                        this.mejaOptions = state.mejaOptions;
+                    }
+
+                    if (state.firstTableId && !this.tables.some(item => item.id === this.menuMejaId)) {
+                        this.menuMejaId = state.firstTableId;
+                    }
+
+                    if (!this.menuCategories.some(item => item.id === this.selectedMenuCategory)) {
+                        this.selectedMenuCategory = this.menuCategories[0]?.id ?? null;
+                    }
+
+                    const nextCart = {};
+                    Object.entries(this.cart).forEach(([id, qty]) => {
+                        const menu = this.menuList.find(item => item.id === Number(id));
+                        const stok = menu ? Math.max(0, Number(menu.stok) || 0) : 0;
+
+                        if (menu && qty > 0 && stok > 0) {
+                            nextCart[menu.id] = Math.min(qty, stok);
+                        }
+                    });
+                    this.cart = nextCart;
+
+                    if (this.showDetailModal && this.detailTable) {
+                        this.detailTable = this.tables.find(item => item.id === this.detailTable.id) ?? null;
+
+                        if (!this.detailTable) this.showDetailModal = false;
+                    }
+
+                    if (this.showEndSessionModal && this.endSessionTable) {
+                        this.endSessionTable = this.tables.find(item => item.id === this.endSessionTable.id) ?? null;
+
+                        if (!this.endSessionTable) this.showEndSessionModal = false;
+                    }
+
+                    if (this.showQrModal && this.qrTable) {
+                        const fresh = this.tables.find(item => item.id === this.qrTable.id);
+
+                        if (fresh) {
+                            this.qrTable = { ...fresh };
+                            this.$nextTick(() => this.renderQr());
+                        }
+                    }
+                } catch (error) {
+                    // Payload tidak valid; biarkan data lama tetap tampil.
+                }
             },
 
             get menuTampil() {
@@ -578,6 +663,16 @@
                 setTimeout(() => {
                     this.showToast = false;
                 }, 3500);
+            },
+
+            refreshLive() {
+                if (typeof window.refreshLiveRegions === 'function') {
+                    return window.refreshLiveRegions({ immediate: true });
+                }
+
+                window.location.reload();
+
+                return Promise.resolve(false);
             },
 
             formatRupiah(value) {
@@ -635,7 +730,7 @@
                     this.showEndSessionModal = false;
                     this.endSessionTable = null;
                     this.triggerToast(payload.message || 'Sesi meja berhasil diakhiri.');
-                    setTimeout(() => window.location.reload(), 500);
+                    await this.refreshLive();
                 } catch (error) {
                     this.triggerToast(error.message || 'Sesi gagal diakhiri.');
                 } finally {
@@ -705,7 +800,7 @@
                     this.menuCatatan = '';
                     this.showMenuModal = false;
                     this.triggerToast(payload.message || 'Pesanan berhasil dikirim.');
-                    setTimeout(() => window.location.reload(), 500);
+                    await this.refreshLive();
                 } catch (error) {
                     this.triggerToast(error.message || 'Pesanan gagal dikirim.');
                 } finally {
@@ -735,7 +830,7 @@
 
                     state.done = true;
                     this.triggerToast('Panggilan berhasil ditandai selesai.');
-                    setTimeout(() => window.location.reload(), 500);
+                    await this.refreshLive();
                 } catch (error) {
                     this.triggerToast(error.message || 'Panggilan gagal diperbarui.');
                 } finally {
@@ -768,7 +863,7 @@
 
                     state.done = true;
                     this.triggerToast('Pesanan ditandai sedang diantar.');
-                    setTimeout(() => window.location.reload(), 500);
+                    await this.refreshLive();
                 } catch (error) {
                     this.triggerToast(error.message || 'Status pesanan gagal diperbarui.');
                 } finally {
