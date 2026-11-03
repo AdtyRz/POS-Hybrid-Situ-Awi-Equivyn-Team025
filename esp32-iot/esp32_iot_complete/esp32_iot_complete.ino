@@ -402,8 +402,8 @@ bool fetchMejaStatus() {
         Serial.println("[HTTP] Koneksi ditolak. Pastikan server listen 0.0.0.0 dan port tidak diblokir firewall.");
         tampilkanKesalahan("Server offline", "Cek IP/firewall");
       } else if (httpCode == HTTPC_ERROR_READ_TIMEOUT) {
-        Serial.println("[HTTP] Server terlalu lama menjawab. Bisa juga diblokir firewall.");
-        tampilkanKesalahan("Server lambat", "Cek IP/firewall");
+        Serial.println("[HTTP] Server tidak menjawab. Bisa juga diblokir firewall.");
+        tampilkanKesalahan("Server tak jawab", "Cek IP/firewall");
       } else if (httpCode == HTTPC_ERROR_NOT_CONNECTED || httpCode == HTTPC_ERROR_CONNECTION_LOST) {
         Serial.println("[HTTP] Koneksi terputus.");
         tampilkanKesalahan("Koneksi putus", "Cek WiFi");
