@@ -180,35 +180,32 @@ Saat boot:
 
 1. LCD menampilkan `Saung Situ Awi`.
 2. ESP32 menyambung ke WiFi.
-3. ESP32 mengambil konfigurasi dari `/api/iot/status-meja`.
-4. ESP32 mengambil status meja dari `/api/iot/meja/LB-01`.
-5. LCD menampilkan status pesanan, total bayar, atau kode sesi.
+3. ESP32 mengambil status meja **dan konfigurasi LCD** dari `/api/iot/meja/LB-01`.
+4. LCD langsung menampilkan `Kode Verif Saung` beserta kode sesi aktif.
 
 Kontrol:
 
-- **Tap singkat**: berganti layar `Status Pesanan` -> `Total Bayar` -> `Kode Verif Saung`.
+- **Tap singkat**: berganti layar `Kode Verif Saung` -> `Status Pesanan` -> `Total Bayar`.
+- **Tap saat layar error**: langsung mencoba menghubungi server lagi.
 - **Tahan sekitar 1,5 detik**: mengirim panggilan pelayan.
 - **Buzzer**: berbunyi saat tap, saat panggilan berhasil, dan saat gagal. Durasi saat panggilan berhasil mengikuti pengaturan **Durasi Buzzer Feedback** di admin.
 - **LED**: menyala saat panggilan berhasil.
 
-Data diperbarui otomatis:
+Data diperbarui otomatis setiap 10 detik. Konfigurasi pesan LCD dan durasi buzzer ikut diambil pada request yang sama, jadi tidak ada request konfigurasi terpisah.
 
-- Status meja dan kode sesi: setiap 10 detik.
-- Konfigurasi pesan LCD: setiap 60 detik.
-
-Kode sesi yang tampil adalah kode aktif yang juga dipakai pelanggan untuk membuka e-menu. Jika sesi meja diganti oleh kasir, kode di LCD akan berubah otomatis pada pembaruan berikutnya.
+Kode sesi yang tampil adalah kode aktif yang juga dipakai pelanggan untuk membuka e-menu. Jika sesi meja diganti oleh kasir, kode di LCD akan berubah otomatis pada pembaruan berikutnya. Sesi dibuat otomatis saat meja pertama kali diakses, sehingga setiap meja selalu punya kode.
 
 ## 8. Troubleshooting
 
 | Gejala | Pemeriksaan |
 |---|---|
 | LCD blank | Cek VCC/GND, alamat I2C `0x27`/`0x3F`, potensiometer kontras, dan level shifter jika memakai 5 V |
-| Sensor tidak merespons | Cek VCC 3,3 V, OUT ke GPIO 27, dan coba ubah `TOUCH_ACTIVE_HIGH` |
-| Sensor kebalik | Ubah `TOUCH_ACTIVE_HIGH` antara `1` dan `0` |
+| Sensor tidak merespons | Cek VCC 3,3 V dan OUT ke GPIO 27. Level idle dideteksi otomatis saat boot, jadi **jangan sentuh sensor saat menyalakan/reset ESP32** |
+| Sensor kebalik | Set `TOUCH_AUTO_LEVEL 0`, lalu sesuaikan `TOUCH_ACTIVE_HIGH` (`1` = aktif HIGH, `0` = aktif LOW) |
 | Buzzer tidak bunyi | Cek polaritas, `BUZZER_ACTIVE`, dan `BUZZER_ON_LEVEL` |
 | Buzzer bunyi terus | Balik `BUZZER_ON_LEVEL` |
 | WiFi gagal | Pastikan SSID benar, password benar, dan WiFi 2,4 GHz |
-| ESP32 tidak bisa connect ke server | Jangan pakai `localhost`; gunakan IP LAN dan jalankan server dengan `--host=0.0.0.0` |
+| ESP32 tidak bisa connect ke server | Jangan pakai `localhost`; gunakan IP LAN dan jalankan server dengan `--host=0.0.0.0`. Jika UFW aktif: `sudo ufw allow from 192.168.160.0/24 to any port 8000 proto tcp` |
 | HTTP 401 | `IOT_API_TOKEN` di sketch berbeda dengan `.env` |
 | HTTP 503 | `IOT_API_TOKEN` di server masih kosong |
 | HTTP 404 | `KODE_MEJA` tidak ada di Master Meja |
