@@ -291,7 +291,7 @@
                                                         d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                                                 </svg> Suara Buzzer Menyala
                                             </span>
-                                            <span>IP: {{ $m->id_device ?? '-' }}</span>
+                                            <span>Device: {{ $m->id_device ?? '-' }}</span>
                                         </div>
                                     </div>
                                 @elseif ($m->status_meja === 'terisi')
@@ -667,8 +667,9 @@
                         </div>
                         <div class="flex flex-col gap-1.5">
                             <label class="font-bold text-[#1C1C18]">ID Device ESP32</label>
-                            <input type="text" name="id_device" placeholder="Contoh: ESP32-12" maxlength="20"
+                            <input type="text" name="id_device" placeholder="Contoh: ESP32-LB01" maxlength="20"
                                 class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]">
+                            <p class="text-[10px] text-gray-500">ID unik perangkat, bukan alamat IP.</p>
                         </div>
                     </div>
 
@@ -733,6 +734,7 @@
                             <label class="font-bold text-[#1C1C18]">ID Device ESP32</label>
                             <input type="text" name="id_device" :value="detailMeja[selectedSaung] && detailMeja[selectedSaung].ip !== '-' ? detailMeja[selectedSaung].ip : ''"
                                 maxlength="20" class="h-10 px-3 rounded-xl border border-gray-300 focus:outline-hidden focus:border-[#0B4D2B]">
+                            <p class="text-[10px] text-gray-500">ID unik perangkat, bukan alamat IP.</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-3 pt-4 border-t border-gray-100">

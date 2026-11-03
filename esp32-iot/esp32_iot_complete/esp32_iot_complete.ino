@@ -19,6 +19,8 @@
  * Agar bisa diakses ESP32, jalankan Laravel dengan host 0.0.0.0:
  *   php artisan serve --host=0.0.0.0 --port=8000
  * Jangan memakai 127.0.0.1 pada SERVER_URL karena itu loopback laptop.
+ * Jika firewall UFW aktif, izinkan port server dari LAN, mis.:
+ *   sudo ufw allow from 192.168.160.0/24 to any port 8000 proto tcp
  * Jika SERVER_URL memakai https://, ubah PAKAI_HTTPS menjadi 1.
  */
 
@@ -66,10 +68,11 @@ LiquidCrystal_I2C lcd(LCD_ADDR, 16, 2);
 
 // ======================= TIMING =======================
 const unsigned long STATUS_INTERVAL_MS = 10000;
-const unsigned long RETRY_INTERVAL_MS = 30000;
+const unsigned long RETRY_INTERVAL_MS = 15000;
 const unsigned long WIFI_RETRY_MS = 15000;
-const unsigned long HTTP_TIMEOUT_MS = 3000;
-const unsigned long HTTP_CONNECT_TIMEOUT_MS = 1500;
+// Request pertama Laravel bisa lambat (cold start). Jangan terlalu pendek.
+const unsigned long HTTP_TIMEOUT_MS = 8000;
+const unsigned long HTTP_CONNECT_TIMEOUT_MS = 3000;
 const unsigned long LONG_PRESS_MS = 1500;
 const unsigned long TAP_MIN_MS = 50;
 
@@ -110,6 +113,12 @@ unsigned long pesanSampai = 0;
 String lcdBaris1 = "";
 String lcdBaris2 = "";
 
+// Kesalahan terakhir. Selama errorAktif = true, layar ini yang ditampilkan
+// supaya masalah tidak terlihat seperti "stuck" di layar WiFi.
+bool errorAktif = false;
+String errorBaris1 = "";
+String errorBaris2 = "";
+
 // ======================= HTTP CLIENT =======================
 WiFiClient plainClient;
 #if PAKAI_HTTPS
@@ -125,6 +134,8 @@ void handleTouch();
 bool readTouch();
 void renderLayar();
 void tampilkanPesan(const String& line1, const String& line2, unsigned long durationMs);
+void tampilkanKesalahan(const String& line1, const String& line2);
+String urlApi(const String& path);
 void beep(uint16_t frequency, uint16_t durationMs);
 void beepMulai(uint16_t frequency, unsigned long durationMs);
 void updateBuzzer();
@@ -143,6 +154,22 @@ void setup() {
   delay(200);
   Serial.println();
   Serial.println("=== ESP32 IoT Saung Situ Awi ===");
+  Serial.printf("[CFG] Build  : %s %s\n", __DATE__, __TIME__);
+  Serial.printf("[CFG] Chip   : %s rev%d, heap %u byte\n",
+                ESP.getChipModel(), ESP.getChipRevision(), ESP.getFreeHeap());
+  Serial.printf("[CFG] WiFi   : %s\n", WIFI_SSID);
+  Serial.printf("[CFG] Server : %s\n", SERVER_URL);
+  Serial.printf("[CFG] Meja   : %s\n", KODE_MEJA);
+  Serial.printf("[CFG] Token  : %u karakter\n", (unsigned)strlen(IOT_API_TOKEN));
+
+  String serverCek = String(SERVER_URL);
+  if (serverCek.indexOf("127.0.0.1") >= 0 || serverCek.indexOf("localhost") >= 0) {
+    Serial.println("[CFG] PERINGATAN: SERVER_URL memakai loopback (127.0.0.1/localhost).");
+    Serial.println("[CFG] ESP32 tidak bisa mengakses loopback laptop. Pakai IP LAN, mis. 192.168.160.171.");
+  }
+  if (serverCek.endsWith("/")) {
+    Serial.println("[CFG] PERINGATAN: SERVER_URL diakhiri '/'. Slash akan diabaikan otomatis.");
+  }
 
   pinMode(PIN_LED, OUTPUT);
   digitalWrite(PIN_LED, LOW);
@@ -162,6 +189,7 @@ void setup() {
   connectWiFi();
 
   if (WiFi.status() == WL_CONNECTED) {
+    tulisLcd("Cek server...", "Mohon tunggu", true);
     fetchMejaStatus();
     lastStatusCheck = millis();
     intervalPolling = STATUS_INTERVAL_MS;
@@ -219,9 +247,20 @@ void handleTouch() {
     touchActive = false;
 
     if (!longPressDone && duration >= TAP_MIN_MS) {
+      beep(BUZZER_FREQ, 40);
+
+      // Saat layar error, tap = coba hubungi server lagi (tanpa menunggu
+      // interval polling berikutnya).
+      if (errorAktif) {
+        Serial.println("[TOUCH] Tap -> coba server lagi");
+        tulisLcd("Mencoba server", "Mohon tunggu", true);
+        lastStatusCheck = 0;
+        intervalPolling = STATUS_INTERVAL_MS;
+        return;
+      }
+
       currentScreen = (currentScreen + 1) % SCREEN_COUNT;
       Serial.printf("[TOUCH] Tap %lu ms -> layar %d\n", duration, currentScreen + 1);
-      beep(BUZZER_FREQ, 40);
       renderLayar();
     }
   }
@@ -252,10 +291,14 @@ void connectWiFi() {
   lastWifiAttempt = millis();
 
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.printf("[WiFi] OK, IP=%s, RSSI=%d dBm\n",
-                  WiFi.localIP().toString().c_str(), WiFi.RSSI());
+    Serial.printf("[WiFi] OK, IP=%s, GW=%s, mask=%s, kanal=%d, RSSI=%d dBm\n",
+                  WiFi.localIP().toString().c_str(),
+                  WiFi.gatewayIP().toString().c_str(),
+                  WiFi.subnetMask().toString().c_str(),
+                  WiFi.channel(), WiFi.RSSI());
+    Serial.printf("[WiFi] MAC=%s\n", WiFi.macAddress().c_str());
     tulisLcd("WiFi OK", WiFi.localIP().toString());
-    delay(800);
+    delay(500);
   } else {
     Serial.println("[WiFi] Gagal. Cek SSID/password dan pastikan WiFi 2.4 GHz.");
     tulisLcd("WiFi gagal", "Cek SSID/Pass");
@@ -275,11 +318,20 @@ void jagaWiFi() {
 
   lastWifiAttempt = now;
   Serial.println("[WiFi] Menyambung ulang...");
-  tulisLcd("WiFi terputus", "Menyambung...");
+  tampilkanKesalahan("WiFi terputus", "Menyambung...");
   WiFi.begin(WIFI_SSID, WIFI_PASS);
 }
 
 // ======================= HTTP =======================
+// Gabungkan SERVER_URL + path tanpa peduli ada/tidaknya slash di akhir.
+String urlApi(const String& path) {
+  String base = String(SERVER_URL);
+  while (base.endsWith("/")) {
+    base.remove(base.length() - 1);
+  }
+  return base + path;
+}
+
 bool siapkanHttp(HTTPClient& http, const String& url) {
   bool started = false;
 
@@ -313,40 +365,108 @@ bool siapkanHttp(HTTPClient& http, const String& url) {
 // ======================= DATA MEJA =======================
 bool fetchMejaStatus() {
   if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("[HTTP] Dilewati: WiFi belum terhubung");
+    tampilkanKesalahan("WiFi terputus", "Cek jaringan");
     return false;
   }
+
+  String url = urlApi(String("/api/iot/meja/") + KODE_MEJA);
+  Serial.printf("[HTTP] GET %s\n", url.c_str());
 
   HTTPClient http;
-  String url = String(SERVER_URL) + "/api/iot/meja/" + KODE_MEJA;
-
   if (! siapkanHttp(http, url)) {
-    Serial.println("[HTTP] begin gagal");
+    Serial.println("[HTTP] begin gagal: URL tidak valid?");
+    tampilkanKesalahan("HTTP init gagal", "Cek SERVER_URL");
     return false;
   }
 
+  unsigned long mulai = millis();
   int httpCode = http.GET();
+  unsigned long durasi = millis() - mulai;
+
   if (httpCode != 200) {
-    Serial.printf("[HTTP] GET meja gagal: %d\n", httpCode);
+    Serial.printf("[HTTP] GAGAL kode=%d durasi=%lu ms\n", httpCode, durasi);
+
+    if (httpCode > 0) {
+      String body = http.getString();
+      body.trim();
+      if (body.length() > 240) {
+        body = body.substring(0, 240);
+      }
+      Serial.printf("[HTTP] Body: %s\n", body.c_str());
+    }
     http.end();
+
+    if (httpCode <= 0) {
+      if (httpCode == HTTPC_ERROR_CONNECTION_REFUSED) {
+        Serial.println("[HTTP] Koneksi ditolak. Pastikan server listen 0.0.0.0 dan port tidak diblokir firewall.");
+        tampilkanKesalahan("Server offline", "Cek IP/firewall");
+      } else if (httpCode == HTTPC_ERROR_READ_TIMEOUT) {
+        Serial.println("[HTTP] Server terlalu lama menjawab. Bisa juga diblokir firewall.");
+        tampilkanKesalahan("Server lambat", "Cek IP/firewall");
+      } else if (httpCode == HTTPC_ERROR_NOT_CONNECTED || httpCode == HTTPC_ERROR_CONNECTION_LOST) {
+        Serial.println("[HTTP] Koneksi terputus.");
+        tampilkanKesalahan("Koneksi putus", "Cek WiFi");
+      } else {
+        tampilkanKesalahan("Koneksi gagal", String("Kode ") + httpCode);
+      }
+    } else if (httpCode == 401 || httpCode == 403) {
+      Serial.println("[HTTP] Token IoT ditolak. Samakan dengan IOT_API_TOKEN di .env Laravel.");
+      tampilkanKesalahan("Token ditolak", "Cek API token");
+    } else if (httpCode == 404) {
+      Serial.printf("[HTTP] Meja '%s' tidak ditemukan di database.\n", KODE_MEJA);
+      tampilkanKesalahan("Meja tak ada", "Cek KODE_MEJA");
+    } else if (httpCode >= 300 && httpCode < 400) {
+      Serial.println("[HTTP] Server mengalihkan request. Cek APP_URL/URL server.");
+      tampilkanKesalahan("Dialihkan", "Cek APP_URL");
+    } else if (httpCode == 429) {
+      Serial.println("[HTTP] Rate limit. Tunggu sebentar.");
+      tampilkanKesalahan("Terlalu sering", "Tunggu 1 menit");
+    } else if (httpCode >= 500) {
+      Serial.println("[HTTP] Error server. Cek storage/logs/laravel.log.");
+      tampilkanKesalahan("Server error", "Cek log Laravel");
+    } else {
+      tampilkanKesalahan(String("HTTP ") + httpCode, "Cek server");
+    }
     return false;
   }
 
-  // Baca langsung dari stream: tidak perlu String response besar.
-  JsonDocument doc;
-  DeserializationError error = deserializeJson(doc, http.getStream());
+  // Respons endpoint ini kecil (hanya satu meja), jadi aman dibaca utuh.
+  // getString() juga menangani chunked encoding dengan benar.
+  String payload = http.getString();
   http.end();
 
+  Serial.printf("[HTTP] OK %u byte, %lu ms\n", (unsigned)payload.length(), durasi);
+
+  JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, payload);
   if (error) {
     Serial.printf("[JSON] Gagal parse: %s\n", error.c_str());
+    String cuplikan = payload;
+    cuplikan.replace("\n", " ");
+    cuplikan.replace("\r", " ");
+    if (cuplikan.length() > 200) {
+      cuplikan = cuplikan.substring(0, 200);
+    }
+    Serial.printf("[JSON] Body: %s\n", cuplikan.c_str());
+    tampilkanKesalahan("Respons aneh", "Bukan JSON");
     return false;
   }
 
   if (! doc["success"].as<bool>()) {
-    Serial.println("[API] success=false");
+    const char* pesan = doc["message"] | "(tanpa pesan)";
+    Serial.printf("[API] success=false: %s\n", pesan);
+    tampilkanKesalahan("API menolak", "Cek token/meja");
     return false;
   }
 
   JsonObject data = doc["data"].as<JsonObject>();
+  if (data.isNull()) {
+    Serial.println("[API] Field data kosong.");
+    tampilkanKesalahan("Data kosong", "Cek server");
+    return false;
+  }
+
   JsonObject konfigurasi = doc["konfigurasi"].as<JsonObject>();
 
   const char* sesi = data["kode_sesi"] | "----";
@@ -387,16 +507,18 @@ bool fetchMejaStatus() {
     }
   }
 
+  errorAktif = false;
   renderLayar();
-  Serial.printf("[MEJA] %s | sesi=%s | pesanan=%d | total=%.0f\n",
-                KODE_MEJA, kodeSesi.c_str(), jumlahPesanan, totalBayar);
+  Serial.printf("[MEJA] %s | sesi=%s | pesanan=%d | total=%.0f | heap=%u\n",
+                KODE_MEJA, kodeSesi.c_str(), jumlahPesanan, totalBayar,
+                ESP.getFreeHeap());
   return true;
 }
 
 void panggilPelayan() {
   if (WiFi.status() != WL_CONNECTED) {
     errorFeedback();
-    tampilkanPesan("WiFi terputus", "Cek jaringan", 1500);
+    tampilkanKesalahan("WiFi terputus", "Cek jaringan");
     return;
   }
 
@@ -417,34 +539,57 @@ void panggilPelayan() {
            KODE_MEJA, kodeSesi.c_str());
 
   HTTPClient http;
-  String url = String(SERVER_URL) + "/api/iot/panggil-pelayan";
+  String url = urlApi("/api/iot/panggil-pelayan");
+  Serial.printf("[HTTP] POST %s\n", url.c_str());
 
   if (! siapkanHttp(http, url)) {
     errorFeedback();
-    tampilkanPesan("Panggilan gagal", "Cek jaringan", 2000);
+    tampilkanKesalahan("HTTP init gagal", "Cek SERVER_URL");
     return;
   }
 
   http.addHeader("Content-Type", "application/json");
+  unsigned long mulai = millis();
   int httpCode = http.POST((uint8_t*)body, strlen(body));
-  http.end();
+  unsigned long durasi = millis() - mulai;
 
-  Serial.printf("[HTTP] POST panggil: %d\n", httpCode);
+  String respons = http.getString();
+  http.end();
+  respons.trim();
+  if (respons.length() > 200) {
+    respons = respons.substring(0, 200);
+  }
+
+  Serial.printf("[HTTP] POST panggil: kode=%d durasi=%lu ms body=%s\n",
+                httpCode, durasi, respons.c_str());
 
   if (httpCode == 200) {
+    errorAktif = false;
     successFeedback();
     tampilkanPesan(lcdMessage, "Terkirim", 1500);
+  } else if (httpCode == 401) {
+    errorFeedback();
+    tampilkanKesalahan("Token ditolak", "Cek API token");
   } else if (httpCode == 403) {
     errorFeedback();
     tampilkanPesan("Sesi berubah", "Coba lagi", 1500);
     // Paksa polling berikutnya mengambil kode sesi terbaru.
     lastStatusCheck = 0;
+  } else if (httpCode == 404) {
+    errorFeedback();
+    tampilkanKesalahan("Meja tak ada", "Cek KODE_MEJA");
   } else if (httpCode == 429) {
     errorFeedback();
     tampilkanPesan("Masih jeda", "Coba lagi", 1500);
+  } else if (httpCode <= 0) {
+    errorFeedback();
+    tampilkanKesalahan("Server offline", "Cek IP/firewall");
+  } else if (httpCode >= 500) {
+    errorFeedback();
+    tampilkanKesalahan("Server error", "Cek log Laravel");
   } else {
     errorFeedback();
-    tampilkanPesan("Panggilan gagal", "Cek token/WiFi", 2000);
+    tampilkanKesalahan(String("HTTP ") + httpCode, "Cek server");
   }
 }
 
@@ -479,6 +624,11 @@ String formatRupiah(float nominal) {
 
 void renderLayar() {
   if (pesanSementara) {
+    return;
+  }
+
+  if (errorAktif) {
+    tulisLcd(errorBaris1, errorBaris2);
     return;
   }
 
@@ -532,6 +682,17 @@ void tampilkanPesan(const String& line1, const String& line2, unsigned long dura
   pesanSampai = millis() + durationMs;
   pesanSementara = true;
   tulisLcd(pesanBaris1, pesanBaris2, true);
+}
+
+// Kesalahan yang tetap tampil sampai ada polling sukses (atau tap untuk
+// mencoba ulang). Ini mencegah layar terlihat "macet" tanpa penjelasan.
+void tampilkanKesalahan(const String& line1, const String& line2) {
+  errorBaris1 = line1;
+  errorBaris2 = line2;
+  errorAktif = true;
+  pesanSementara = false;
+  tulisLcd(errorBaris1, errorBaris2, true);
+  Serial.printf("[LCD] ERROR: %s | %s\n", line1.c_str(), line2.c_str());
 }
 
 // ======================= BUZZER & LED =======================
