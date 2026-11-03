@@ -752,6 +752,44 @@ class PelayanController extends Controller
         ])->header('Cache-Control', 'no-store, max-age=0');
     }
 
+    public function akhiriSession(Request $request, string $meja): RedirectResponse|JsonResponse
+    {
+        $mejaMakan = MejaMakan::where('kode_meja', $meja)->first()
+            ?? MejaMakan::findOrFail($meja);
+        $this->pastikanAreaMeja($mejaMakan);
+
+        try {
+            SesiMeja::putuskanSesi($mejaMakan);
+        } catch (\RuntimeException $exception) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $exception->getMessage(),
+                ], 422)->header('Cache-Control', 'no-store, max-age=0');
+            }
+
+            return back()->with('error', $exception->getMessage());
+        }
+
+        Realtime::emit(new SesiMejaBerubah(
+            $mejaMakan->kode_meja,
+            $mejaMakan->id,
+            'selesai',
+        ));
+
+        $pesan = 'Sesi meja '.$mejaMakan->kode_meja.' berhasil diakhiri. Kode sesi baru sudah dibuat.';
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'status' => 'ok',
+                'message' => $pesan,
+                'meja' => $mejaMakan->kode_meja,
+            ])->header('Cache-Control', 'no-store, max-age=0');
+        }
+
+        return back()->with('sukses', $pesan);
+    }
+
     public function ubahStatus(Request $request, $id): RedirectResponse|JsonResponse
     {
         $data = $request->validate([

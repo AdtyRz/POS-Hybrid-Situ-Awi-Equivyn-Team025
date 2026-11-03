@@ -73,10 +73,16 @@ LiquidCrystal_I2C lcd(LCD_ADDR, 16, 2);
 const unsigned long STATUS_INTERVAL_MS = 10000;
 const unsigned long RETRY_INTERVAL_MS = 15000;
 const unsigned long WIFI_RETRY_MS = 15000;
+// Setelah sekian lama tidak ada polling sukses, perangkat restart sendiri.
+// LCD tetap menampilkan teks terakhir selama masa reconnect.
+const unsigned long OFFLINE_RESTART_MS = 180000;
+// Setiap beberapa percobaan, reset radio WiFi (tanpa reboot) agar tidak
+// terjebak di state "connected" palsu.
+const uint8_t WIFI_RADIO_RESET_EVERY = 4;
 // Request pertama Laravel bisa lambat (cold start). Jangan terlalu pendek.
 const unsigned long HTTP_TIMEOUT_MS = 5000;
 const unsigned long HTTP_CONNECT_TIMEOUT_MS = 2500;
-const unsigned long LONG_PRESS_MS = 1500;
+const unsigned long LONG_PRESS_MS = 3000;
 const unsigned long TAP_MIN_MS = 50;
 
 // ======================= STATE =======================
@@ -93,7 +99,7 @@ int jumlahPesanan = 0;
 // Fase LCD mengikuti data pesanan pada sesi aktif:
 // - standby  : belum ada pesanan, hanya kode meja + kode verifikasi.
 // - pembayaran: menunggu pembayaran, tampil metode yang dipilih tamu.
-// - lunas    : semua lunas, layar bergilir status/total/kode setiap 5 detik.
+// - lunas    : semua lunas, layar bergilir status/total/kode setiap 20 detik.
 String faseLcd = "standby";
 String metodePembayaran = "";
 
@@ -103,7 +109,7 @@ const int SCREEN_TOTAL = 1;
 const int SCREEN_KODE = 2;
 const int SCREEN_COUNT = 3;
 int currentScreen = SCREEN_STATUS;
-const unsigned long ROTASI_LAYAR_MS = 5000;
+const unsigned long ROTASI_LAYAR_MS = 20000;
 unsigned long lastRotasiLayar = 0;
 
 // Level pin touch saat tidak disentuh (diisi otomatis di setup).
@@ -114,6 +120,10 @@ bool longPressDone = false;
 unsigned long pressStart = 0;
 unsigned long lastStatusCheck = 0;
 unsigned long lastWifiAttempt = 0;
+unsigned long terakhirSuksesMs = 0;
+bool pernahSuksesPolling = false;
+bool wifiTerhubungTerakhir = false;
+uint8_t percobaanWifi = 0;
 unsigned long intervalPolling = STATUS_INTERVAL_MS;
 // true = langsung polling di iterasi loop berikutnya (dipakai saat tap
 // layar error), tanpa menunggu sisa interval.
@@ -228,7 +238,7 @@ void setup() {
     segeraPolling = false;
   }
 
-  Serial.println("Ready. Tap = ganti layar, tahan 1.5s = panggil pelayan.");
+  Serial.println("Ready. Tap = ganti layar, tahan 3s = panggil pelayan. Reconnect otomatis aktif.");
   beep(BUZZER_FREQ, 80);
 }
 
@@ -244,7 +254,16 @@ void loop() {
   handleTouch();
   jagaWiFi();
 
-  // Saat lunas, layar bergilir otomatis setiap 5 detik. Tap tetap bisa
+  // Watchdog koneksi: setelah pernah sukses tetapi tidak ada polling sukses
+  // selama batas waktu, restart otomatis. Selama masa reconnect LCD tetap
+  // menampilkan teks terakhir, jadi tamu tidak melihat layar kosong/error.
+  if (pernahSuksesPolling && millis() - terakhirSuksesMs >= OFFLINE_RESTART_MS) {
+    Serial.println("[WATCHDOG] Server tidak terjangkau terlalu lama. Restart otomatis...");
+    delay(200);
+    ESP.restart();
+  }
+
+  // Saat lunas, layar bergilir otomatis setiap 20 detik. Tap tetap bisa
   // mempercepat perpindahan layar.
   if (!pesanSementara && !errorAktif && faseLcd == "lunas"
       && millis() - lastRotasiLayar >= ROTASI_LAYAR_MS) {
@@ -358,18 +377,35 @@ void connectWiFi() {
                   WiFi.subnetMask().toString().c_str(),
                   WiFi.channel(), WiFi.RSSI());
     Serial.printf("[WiFi] MAC=%s\n", WiFi.macAddress().c_str());
+    wifiTerhubungTerakhir = true;
+    percobaanWifi = 0;
     tulisLcd("WiFi OK", WiFi.localIP().toString());
     delay(500);
   } else {
     Serial.println("[WiFi] Gagal. Cek SSID/password dan pastikan WiFi 2.4 GHz.");
+    wifiTerhubungTerakhir = false;
     tulisLcd("WiFi gagal", "Cek SSID/Pass");
   }
 }
 
 // Reconnect tanpa memblokir loop (beda dengan connectWiFi saat boot).
+// LCD sengaja TIDAK diubah di sini: teks terakhir tetap tampil selama
+// perangkat berusaha menyambung ulang. Setelah data baru diterima, layar
+// di-render ulang oleh fetchMejaStatus().
 void jagaWiFi() {
   if (WiFi.status() == WL_CONNECTED) {
+    if (!wifiTerhubungTerakhir) {
+      Serial.printf("[WiFi] Tersambung kembali. IP=%s\n", WiFi.localIP().toString().c_str());
+      wifiTerhubungTerakhir = true;
+      percobaanWifi = 0;
+      segeraPolling = true;
+    }
     return;
+  }
+
+  if (wifiTerhubungTerakhir) {
+    Serial.println("[WiFi] Terputus. Menyambung ulang otomatis (tanpa sentuh)...");
+    wifiTerhubungTerakhir = false;
   }
 
   unsigned long now = millis();
@@ -378,9 +414,20 @@ void jagaWiFi() {
   }
 
   lastWifiAttempt = now;
-  Serial.println("[WiFi] Menyambung ulang...");
-  tampilkanKesalahan("WiFi terputus", "Menyambung...");
+  percobaanWifi++;
   segeraPolling = true;
+
+  // Setiap beberapa percobaan, reset radio untuk membuang state WiFi yang
+  // macet. Ini bukan reboot, jadi LCD tetap menampilkan teks terakhir.
+  if (percobaanWifi % WIFI_RADIO_RESET_EVERY == 0) {
+    Serial.printf("[WiFi] Reset radio (percobaan %u)...\n", percobaanWifi);
+    WiFi.disconnect(true, false);
+    WiFi.mode(WIFI_STA);
+    WiFi.setSleep(false);
+    WiFi.setAutoReconnect(true);
+  }
+
+  Serial.printf("[WiFi] Sambung ulang otomatis #%u...\n", percobaanWifi);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
 }
 
@@ -427,8 +474,8 @@ bool siapkanHttp(HTTPClient& http, const String& url) {
 // ======================= DATA MEJA =======================
 bool fetchMejaStatus() {
   if (WiFi.status() != WL_CONNECTED) {
+    // Jangan menimpa LCD. Teks terakhir tetap tampil sampai koneksi pulih.
     Serial.println("[HTTP] Dilewati: WiFi belum terhubung");
-    tampilkanKesalahan("WiFi terputus", "Cek jaringan");
     return false;
   }
 
@@ -462,16 +509,15 @@ bool fetchMejaStatus() {
     if (httpCode <= 0) {
       if (httpCode == HTTPC_ERROR_CONNECTION_REFUSED) {
         Serial.println("[HTTP] Koneksi ditolak. Pastikan server listen 0.0.0.0 dan port tidak diblokir firewall.");
-        tampilkanKesalahan("Server offline", "Cek IP/firewall");
       } else if (httpCode == HTTPC_ERROR_READ_TIMEOUT) {
         Serial.println("[HTTP] Server tidak menjawab. Bisa juga diblokir firewall.");
-        tampilkanKesalahan("Server tak jawab", "Cek IP/firewall");
       } else if (httpCode == HTTPC_ERROR_NOT_CONNECTED || httpCode == HTTPC_ERROR_CONNECTION_LOST) {
         Serial.println("[HTTP] Koneksi terputus.");
-        tampilkanKesalahan("Koneksi putus", "Cek WiFi");
       } else {
-        tampilkanKesalahan("Koneksi gagal", String("Kode ") + httpCode);
+        Serial.printf("[HTTP] Koneksi gagal (kode %d).\n", httpCode);
       }
+      // Gangguan koneksi/server bersifat sementara: LCD dibiarkan
+      // menampilkan data terakhir dan polling otomatis mengulang.
     } else if (httpCode == 401 || httpCode == 403) {
       Serial.println("[HTTP] Token IoT ditolak. Samakan dengan IOT_API_TOKEN di .env Laravel.");
       tampilkanKesalahan("Token ditolak", "Cek API token");
@@ -483,11 +529,12 @@ bool fetchMejaStatus() {
       tampilkanKesalahan("Dialihkan", "Cek APP_URL");
     } else if (httpCode == 429) {
       Serial.println("[HTTP] Rate limit. Tunggu sebentar.");
-      tampilkanKesalahan("Terlalu sering", "Tunggu 1 menit");
+      // Transien: biarkan layar tetap menampilkan data terakhir.
     } else if (httpCode >= 500) {
       Serial.println("[HTTP] Error server. Cek storage/logs/laravel.log.");
-      tampilkanKesalahan("Server error", "Cek log Laravel");
+      // Transien: biarkan layar tetap menampilkan data terakhir.
     } else {
+      Serial.printf("[HTTP] HTTP %d. Cek server.\n", httpCode);
       tampilkanKesalahan(String("HTTP ") + httpCode, "Cek server");
     }
     return false;
@@ -597,6 +644,10 @@ bool fetchMejaStatus() {
   }
 
   errorAktif = false;
+  terakhirSuksesMs = millis();
+  pernahSuksesPolling = true;
+  percobaanWifi = 0;
+  wifiTerhubungTerakhir = true;
   renderLayar();
   Serial.printf("[MEJA] %s | sesi=%s | pesanan=%d | total=%.0f | heap=%u\n",
                 KODE_MEJA, kodeSesi.c_str(), jumlahPesanan, totalBayar,
