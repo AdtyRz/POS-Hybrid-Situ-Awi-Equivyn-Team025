@@ -9,56 +9,6 @@
     start: '{{ $startDate }}',
     end: '{{ $endDate }}',
     toast: { show: false, message: '' },
-    liveLoading: false,
-    liveTimer: null,
-    init() {
-        window.addEventListener('realtime', () => this.refreshLiveData());
-    },
-    refreshLiveData() {
-        clearTimeout(this.liveTimer);
-        this.liveTimer = setTimeout(() => this.fetchLiveData(), 400);
-    },
-    async fetchLiveData() {
-        if (this.liveLoading || document.hidden) {
-            return;
-        }
-
-        this.liveLoading = true;
-
-        try {
-            const url = new URL(window.location.href);
-            url.searchParams.set('periode', this.dateFilter);
-
-            if (this.dateFilter === 'kustom') {
-                url.searchParams.set('start', this.start);
-                url.searchParams.set('end', this.end);
-            } else {
-                url.searchParams.delete('start');
-                url.searchParams.delete('end');
-            }
-
-            const response = await fetch(url.toString(), {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                cache: 'no-store',
-            });
-
-            if (!response.ok) {
-                return;
-            }
-
-            const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
-
-            document.querySelectorAll('[data-live]').forEach((target) => {
-                const fresh = doc.querySelector('[data-live=' + target.dataset.live + ']');
-
-                if (fresh) {
-                    target.innerHTML = fresh.innerHTML;
-                }
-            });
-        } finally {
-            this.liveLoading = false;
-        }
-    },
     applyPeriode(periode) {
         if (periode === 'kustom') {
             this.dateFilter = 'kustom';

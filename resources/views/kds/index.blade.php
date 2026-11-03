@@ -513,7 +513,7 @@
                         <span class="font-bold text-[10px] text-[#0B4D2B] uppercase tracking-wider">PORSI SELESAI</span>
                     </div>
                     <span class="text-[10px] font-medium text-[#707971] tracking-wide mt-1 leading-none">
-                        {{ $labelShift }}
+                        <span x-text="shiftLabel">{{ $labelShift }}</span>
                     </span>
                 </div>
             </div>
@@ -526,7 +526,7 @@
                     </svg>
                 </div>
                 <div class="flex flex-col">
-                    <span class="font-bold text-base text-[#0B4D2B] leading-none">{{ $rataRataMasakTeks }}</span>
+                    <span class="font-bold text-base text-[#0B4D2B] leading-none" x-text="averageCookText">{{ $rataRataMasakTeks }}</span>
                     <span class="text-[10px] font-medium text-[#707971] tracking-wide leading-none mt-1">Rata-rata Masak</span>
                 </div>
             </div>
@@ -561,7 +561,7 @@
 
             <div class="h-8 px-3 rounded-lg bg-white border border-[#0B4D2B]/10 shadow-2xs flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-[#0B4D2B] animate-pulse"></span>
-                <span class="text-[11px] font-semibold text-[#052E1B]">KDS Auto-Refresh: 5s</span>
+                <span class="text-[11px] font-semibold text-[#052E1B]">KDS Live Sync</span>
             </div>
         </div>
     </section>
@@ -642,11 +642,16 @@
                 soundEnabled: true,
                 clock: '{{ now('Asia/Jakarta')->format('H:i:s') }}',
                 completedPortions: {{ $selesaiHariIni }},
+                averageCookText: @json($rataRataMasakTeks),
+                shiftLabel: @json($labelShift),
+                stateLoading: false,
+                actionBusy: false,
                 showRunnerModal: false,
                 runnerTarget: '',
                 runnerDbId: null,
                 stasiunUtama: @json($stasiunUtama),
                 stasiun: @json($stasiun),
+                stateUrl: @json(route('kds.' . $target . '.state')),
                 updateUrlBase: @json(url('/kds/' . $target)),
                 toast: {
                     show: false,
@@ -683,6 +688,59 @@
                             });
                         }
                     }, 1000);
+
+                    window.addEventListener('realtime', () => this.refreshState());
+                },
+
+                applyState(payload) {
+                    if (!payload || !Array.isArray(payload.tickets)) return;
+
+                    this.tickets = payload.tickets.map(t => {
+                        const seconds = Math.max(0, Math.floor(Math.abs(Number(t.seconds)) || 0));
+
+                        return {
+                            ...t,
+                            seconds,
+                            isOverdue: !!t.isOverdue || (seconds >= 15 * 60 && t.status !== 'siap'),
+                        };
+                    });
+
+                    if (typeof payload.completedPortions !== 'undefined') {
+                        this.completedPortions = Number(payload.completedPortions) || 0;
+                    }
+
+                    if (payload.averageCookText) {
+                        this.averageCookText = payload.averageCookText;
+                    }
+
+                    if (payload.labelShift) {
+                        this.shiftLabel = payload.labelShift;
+                    }
+                },
+
+                async refreshState() {
+                    if (this.stateLoading || document.hidden) return;
+
+                    this.stateLoading = true;
+
+                    try {
+                        const response = await fetch(this.stateUrl, {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            cache: 'no-store',
+                            credentials: 'same-origin',
+                        });
+
+                        if (!response.ok) return;
+
+                        this.applyState(await response.json());
+                    } catch (error) {
+                        // Koneksi terganggu; event realtime atau aksi berikutnya mencoba lagi.
+                    } finally {
+                        this.stateLoading = false;
+                    }
                 },
 
                 updateClock() {
@@ -711,26 +769,41 @@
                     return sec >= 3600 ? 'jam' : 'mnt';
                 },
 
-                kirimAksi(dbId, aksi, itemId) {
+                async kirimAksi(dbId, aksi, itemId) {
+                    if (this.actionBusy) return;
+
+                    this.actionBusy = true;
                     const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = this.updateUrlBase + '/' + dbId;
-                    const tambah = (nama, nilai) => {
-                        const isi = document.createElement('input');
-                        isi.type = 'hidden';
-                        isi.name = nama;
-                        isi.value = nilai;
-                        form.appendChild(isi);
-                    };
-                    tambah('_token', token);
-                    tambah('_method', 'PATCH');
-                    tambah('aksi', aksi);
-                    if (itemId) {
-                        tambah('item_id', itemId);
+
+                    try {
+                        const response = await fetch(this.updateUrlBase + '/' + dbId, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': token,
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            body: JSON.stringify({
+                                aksi,
+                                item_id: itemId || null,
+                            }),
+                        });
+                        const payload = await response.json().catch(() => ({}));
+
+                        if (!response.ok) {
+                            this.showToast(payload.message || 'Aksi KDS gagal diproses.');
+                            await this.refreshState();
+                            return;
+                        }
+
+                        this.applyState(payload);
+                    } catch (error) {
+                        this.showToast('Koneksi terputus. Mencoba menyegarkan kembali...');
+                        await this.refreshState();
+                    } finally {
+                        this.actionBusy = false;
                     }
-                    document.body.appendChild(form);
-                    form.submit();
                 },
 
                 toggleItem(ticket, itemIndex) {
@@ -857,10 +930,6 @@
         }
     </script>
 
-    <script>
-
-        window.addEventListener('realtime', () => window.realtimeReload(800));
-    </script>
 </body>
 </html>
 

@@ -52,7 +52,7 @@
 </head>
 
 <body class="min-h-screen bg-cream-50 text-stone-800 antialiased font-sans">
-    <div class="max-w-md mx-auto px-4 pt-4 pb-8">
+    <div class="max-w-md mx-auto px-4 pt-4 pb-8" data-live="pesanan-pelacakan">
         <div class="flex items-center justify-between">
             <a href="{{ route('emenu.meja', $meja->id) }}" class="w-9 h-9 flex items-center justify-center"
                 aria-label="Kembali">
@@ -147,11 +147,6 @@
             class="block text-center w-full mt-4 bg-white border border-forest-900 text-forest-900 font-bold rounded-full py-3">Kembali
             ke Katalog</a>
     </div>
-
-    <script>
-
-        window.addEventListener('realtime', () => window.realtimeReload(800));
-    </script>
 </body>
 
 </html>

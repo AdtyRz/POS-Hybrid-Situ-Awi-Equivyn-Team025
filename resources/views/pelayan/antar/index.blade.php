@@ -52,7 +52,7 @@
             </div>
         </section>
 
-        <section class="grid grid-cols-3 gap-1">
+        <section class="grid grid-cols-3 gap-1" data-live="pelayan-antar-stats">
             <div class="bg-[#0B4D2B] rounded-xl p-2.5 flex flex-col items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] h-[68px]">
                 <span class="font-display font-bold text-[32px] text-[#B1F1C2] leading-8 tracking-[-0.32px]">{{ $readyCount }}</span>
                 <span class="text-[10px] font-bold text-[#7FBD92] uppercase tracking-[-0.25px] leading-3 mt-1">HIDANGAN SIAP</span>
@@ -69,7 +69,7 @@
             </div>
         </section>
 
-        <section class="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none">
+        <section class="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none" data-live="pelayan-antar-filters">
             <button @click="activeFilter = 'all'" type="button"
                     :class="activeFilter === 'all' ? 'bg-[#0B4D2B] text-[#B1F1C2]' : 'bg-[#F0EEE7] text-[#1C1C18]'"
                     class="flex items-center gap-1.5 px-4 py-2 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.05)] text-xs font-semibold tracking-[0.24px] whitespace-nowrap transition-all active:scale-95 cursor-pointer flex-shrink-0">
@@ -95,7 +95,7 @@
             </button>
         </section>
 
-        <section class="space-y-2 pt-1">
+        <section class="space-y-2 pt-1" data-live="pelayan-antar-orders">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-1.5">
                     <svg class="w-[12.5px] h-[16.67px] text-[#00341A]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -111,6 +111,7 @@
             <div class="space-y-3 pt-1">
                 @forelse ($siapAntarFormatted as $order)
                     <div x-show="(activeFilter === 'all' || (activeFilter === 'kitchen' && {{ $order['has_dapur'] ? 'true' : 'false' }}) || (activeFilter === 'bar' && {{ $order['has_bar'] ? 'true' : 'false' }})) && !orderState.delivered"
+                         x-cloak
                          x-data="{ orderState: { delivered: false, busy: false } }"
                          class="bg-[#F6F3EC] rounded-xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-col gap-3">
 
@@ -189,7 +190,7 @@
             </div>
         </section>
 
-        <section class="space-y-2 pt-2">
+        <section class="space-y-2 pt-2" data-live="pelayan-antar-delivering">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-1.5">
                     <svg class="w-[15px] h-[16.12px] text-[#7A5900]" fill="currentColor" viewBox="0 0 20 20">
@@ -255,6 +256,7 @@
     </div>
 
     <div x-show="showDenahModal"
+         x-cloak
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
@@ -303,7 +305,7 @@
         </div>
     </div>
 
-    <div x-show="showToast"
+    <div x-show="showToast" x-cloak
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0 translate-y-4"
          x-transition:enter-end="opacity-100 translate-y-0"
@@ -320,11 +322,25 @@
     </div>
 </div>
 
+<script type="application/json" id="pelayan-antar-state">{!! json_encode([
+    'orders' => $siapAntarFormatted,
+], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
+
 <script>
+    const pelayanAntarInitialState = (() => {
+        try {
+            const el = document.getElementById('pelayan-antar-state');
+
+            return el ? JSON.parse(el.textContent) : {};
+        } catch (error) {
+            return {};
+        }
+    })();
+
     function pelayanTabAntar() {
         return {
             activeFilter: 'all',
-            orders: @json($siapAntarFormatted),
+            orders: pelayanAntarInitialState.orders || @json($siapAntarFormatted),
             soundVibrationActive: true,
             showToast: false,
             toastMessage: 'Pesanan berhasil ditandai sedang diantar.',
@@ -333,6 +349,39 @@
 
             init() {
                 this.soundVibrationActive = localStorage.getItem('pelayan_sound_alert') !== '0';
+                window.addEventListener('live:updated', (event) => this.applyLiveState(event));
+            },
+
+            applyLiveState(event) {
+                const doc = event.detail?.document;
+                const raw = doc?.getElementById('pelayan-antar-state')?.textContent;
+
+                if (!raw) return;
+
+                try {
+                    const state = JSON.parse(raw);
+
+                    if (Array.isArray(state.orders)) {
+                        this.orders = state.orders;
+                    }
+
+                    if (this.showDenahModal && this.denahOrder) {
+                        this.denahOrder = this.orders.find(item => item.kode_pesanan === this.denahOrder.kode_pesanan)
+                            ?? this.denahOrder;
+                    }
+                } catch (error) {
+                    // Payload tidak valid; data lama tetap tampil.
+                }
+            },
+
+            refreshLive() {
+                if (typeof window.refreshLiveRegions === 'function') {
+                    return window.refreshLiveRegions({ immediate: true });
+                }
+
+                window.location.reload();
+
+                return Promise.resolve(false);
             },
 
             triggerToast(message) {
@@ -387,7 +436,7 @@
 
                     state.delivered = true;
                     this.triggerToast('Pesanan ditandai sedang diantar.');
-                    setTimeout(() => window.location.reload(), 500);
+                    await this.refreshLive();
                 } catch (error) {
                     this.triggerToast(error.message || 'Status pesanan gagal diperbarui.');
                 } finally {

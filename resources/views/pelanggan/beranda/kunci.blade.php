@@ -111,16 +111,16 @@
                     </template>
                 </div>
 
-                <p x-show="pesanError" x-text="pesanError" aria-live="polite"
+                <p x-show="pesanError" x-cloak x-text="pesanError" aria-live="polite"
                     class="text-red-600 text-xs font-bold text-center mt-3"></p>
 
                 <button type="submit" :disabled="memproses || sukses"
                     class="w-full mt-5 py-3.5 rounded-xl bg-forest-900 hover:bg-forest-600 disabled:cursor-wait disabled:opacity-80 text-white font-extrabold text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-sm transition active:scale-95">
-                    <svg x-show="!sukses" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5"
+                    <svg x-show="!sukses" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5"
                         viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    <svg x-show="sukses" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5"
+                    <svg x-show="sukses" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5"
                         viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
@@ -257,9 +257,6 @@
                 }
             };
         }
-    </script>
-    <script>
-        window.addEventListener('realtime', () => window.realtimeReload(600));
     </script>
 </body>
 
