@@ -181,11 +181,16 @@ Saat boot:
 1. LCD menampilkan `Saung Situ Awi`.
 2. ESP32 menyambung ke WiFi.
 3. ESP32 mengambil status meja **dan konfigurasi LCD** dari `/api/iot/meja/LB-01`.
-4. LCD langsung menampilkan `Kode Verif Saung` beserta kode sesi aktif.
+4. LCD langsung menampilkan kode meja beserta kode sesi aktif:
+
+   ```text
+   Meja : LB-01
+   Kode : 8754
+   ```
 
 Kontrol:
 
-- **Tap singkat**: berganti layar `Kode Verif Saung` -> `Status Pesanan` -> `Total Bayar`.
+- **Tap singkat**: berganti layar `Kode` -> `Status Pesanan` -> `Total Bayar`.
 - **Tap saat layar error**: langsung mencoba menghubungi server lagi.
 - **Tahan sekitar 1,5 detik**: mengirim panggilan pelayan.
 - **Buzzer**: berbunyi saat tap, saat panggilan berhasil, dan saat gagal. Durasi saat panggilan berhasil mengikuti pengaturan **Durasi Buzzer Feedback** di admin.

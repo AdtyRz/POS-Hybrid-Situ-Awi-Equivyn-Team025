@@ -5,7 +5,7 @@
  * Touch  : TTP223 (output aktif HIGH)
  * Buzzer : active buzzer (bisa diganti passive)
  *
- * Tap singkat  : ganti layar Kode Verif Saung -> Status -> Total
+ * Tap singkat  : ganti layar Kode -> Status -> Total
  * Tahan 1.5 s  : panggil pelayan
  *
  * Catatan versi ringan:
@@ -81,6 +81,9 @@ const unsigned long TAP_MIN_MS = 50;
 
 // ======================= STATE =======================
 String kodeSesi = "----";
+// Kode meja yang ditampilkan di LCD. Diisi dari respons API supaya tetap
+// benar walau secrets.h memakai ID Device (mis. ESP32-LB01).
+String kodeMejaTampil = KODE_MEJA;
 String statusRingkas = "Belum ada pesan";
 String lcdMessage = "Panggil Pelayan";
 int buzzerDuration = 3;
@@ -499,6 +502,11 @@ bool fetchMejaStatus() {
 
   JsonObject konfigurasi = doc["konfigurasi"].as<JsonObject>();
 
+  const char* mejaApi = data["kode_meja"] | "";
+  if (strlen(mejaApi) > 0) {
+    kodeMejaTampil = String(mejaApi);
+  }
+
   const char* sesi = data["kode_sesi"] | "----";
   kodeSesi = String(sesi);
   if (kodeSesi.length() == 0) {
@@ -672,8 +680,10 @@ void renderLayar() {
     baris1 = "Total Bayar";
     baris2 = formatRupiah(totalBayar);
   } else {
-    baris1 = "Kode Verif Saung";
-    baris2 = kodeSesi;
+    // Kode meja ikut ditampilkan supaya pelanggan tahu LCD ini milik saung
+    // mana, sekaligus kode verifikasi yang dipakai untuk membuka e-menu.
+    baris1 = String("Meja : ") + kodeMejaTampil;
+    baris2 = String("Kode : ") + kodeSesi;
   }
 
   tulisLcd(baris1, baris2);

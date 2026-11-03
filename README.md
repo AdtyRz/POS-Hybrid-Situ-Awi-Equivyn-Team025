@@ -63,6 +63,12 @@ php artisan reverb:start
 npm run dev          # atau: npm run build (untuk produksi)
 ```
 
+> **Akses dari HP/LAN:** jalankan `npm run build`, bukan `npm run dev`. Vite dev
+> server default hanya mendengarkan loopback, sehingga `public/hot` menunjuk ke
+> `http://[::1]:5173` dan aset gagal dimuat di HP. Untuk server Laravel, pakai
+> `php artisan serve --host=0.0.0.0 --port=8000` lalu buka
+> `http://IP-LAPTOP:8000`, jangan `http://0.0.0.0:8000`.
+
 Pastikan kredensial Reverb ada di `.env` (juga yang ber-prefix `VITE_` untuk sisi browser):
 
 ```env
@@ -147,7 +153,14 @@ di URL. Isi konstanta `IOT_API_TOKEN` pada sketch ESP32 dengan nilai yang sama.
 **Sensor sentuh (ESP32, `esp32-iot/esp32_iot_complete.ino`)** — sensor sentuh dipakai untuk
 berpindah tampilan LCD 16x2:
 
-- **Tap singkat** bergiliran: `Kode Verif Saung` (kode unik sesi) → `Status Pesanan` → `Total Bayar`.
+- **Tap singkat** bergiliran: `Kode` → `Status Pesanan` → `Total Bayar`. Layar kode menampilkan
+  kode meja sekaligus kode verifikasi sesi, misalnya:
+
+  ```text
+  Meja : LB-01
+  Kode : 8754
+  ```
+
   Kode verifikasi tampil pertama karena itu yang dibutuhkan pelanggan untuk membuka e-menu.
 - **Tap saat layar error** langsung memicu percobaan koneksi ulang ke server.
 - **Tahan ~1.5 detik** untuk memanggil pelayan (fungsi lama tetap ada).
