@@ -154,12 +154,21 @@ class EMenuController extends Controller
 
         $riwayat = session('riwayat_meja_' . $mejaMakan->id, []);
 
+        // Tombol "Status Pesanan" tidak boleh hilang hanya karena cookie sesi
+        // browser berganti (mis. pindah host/port setelah pembayaran). Selama
+        // sesi meja aktif punya pesanan, tombol tetap ditampilkan.
+        $adaPesananSesi = Pesanan::query()
+            ->where('meja_id', $mejaMakan->id)
+            ->where('status_pesanan', '!=', Pesanan::STATUS_DIBATALKAN)
+            ->where('waktu_pesan', '>=', $sesi->dibuka_pada)
+            ->exists();
+
         return view('pelanggan.menu.index', [
             'meja' => $mejaMakan,
             'menuJson' => $menuJson,
             'kategoriJson' => $kategoriJson,
             'orderRef' => '#' . $inisial . '-' . $mejaMakan->id . '04',
-            'punyaRiwayat' => count($riwayat) > 0,
+            'punyaRiwayat' => count($riwayat) > 0 || $adaPesananSesi,
             'namaPelanggan' => (string) ($sesi->nama_pelanggan ?? ''),
         ]);
     }
@@ -277,17 +286,25 @@ class EMenuController extends Controller
         }
 
         // Hanya tampilkan pesanan yang dibuat pada sesi meja yang sedang aktif.
-        // Riwayat dari tamu sebelumnya tidak boleh ikut terbawa.
+        // Riwayat dari tamu sebelumnya tidak boleh ikut terbawa. Bila cookie
+        // sesi browser hilang, tampilkan semua pesanan pada sesi aktif ini agar
+        // tombol "Status Pesanan" tetap berguna setelah pembayaran.
         $sesi = SesiMeja::aktifUntuk($mejaMakan);
         $kodeRiwayat = array_reverse(session('riwayat_meja_' . $mejaMakan->id, []));
 
         $daftarPesanan = Pesanan::with(['detailPesanan.menu'])
             ->where('meja_id', $mejaMakan->id)
             ->where('waktu_pesan', '>=', $sesi->dibuka_pada)
-            ->whereIn('kode_pesanan', $kodeRiwayat)
-            ->get()
-            ->sortBy(fn ($pesanan) => array_search($pesanan->kode_pesanan, $kodeRiwayat))
-            ->values();
+            ->when($kodeRiwayat !== [], fn ($query) => $query->whereIn('kode_pesanan', $kodeRiwayat))
+            ->get();
+
+        if ($kodeRiwayat !== []) {
+            $daftarPesanan = $daftarPesanan
+                ->sortBy(fn ($pesanan) => array_search($pesanan->kode_pesanan, $kodeRiwayat))
+                ->values();
+        } else {
+            $daftarPesanan = $daftarPesanan->sortByDesc('waktu_pesan')->values();
+        }
 
         return view('pelanggan.pesanan.pelacakan', [
             'meja' => $mejaMakan,
