@@ -276,8 +276,8 @@
                             <td class="py-3 px-4">
                                 <div class="flex items-center gap-3">
                                     <div class="w-12 h-12 rounded-xl bg-[#F0EEE7] flex items-center justify-center flex-shrink-0 shadow-2xs border border-gray-200/60 overflow-hidden">
-                                        <img x-show="item.photo" :src="item.photo" :alt="item.name" class="w-full h-full object-cover">
-                                        <svg x-show="!item.photo" class="w-6 h-6 text-[#7A5900]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.5"/><path stroke-linecap="round" d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
+                                        <img x-show="item.photo" x-cloak :src="item.photo" :alt="item.name" class="w-full h-full object-cover">
+                                        <svg x-show="!item.photo" x-cloak class="w-6 h-6 text-[#7A5900]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.5"/><path stroke-linecap="round" d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
                                     </div>
                                     <div class="flex flex-col">
                                         <span class="font-bold text-sm text-[#1C1C18] leading-tight" :class="!item.is_aktif ? 'line-through text-gray-500' : ''" x-text="item.name"></span>

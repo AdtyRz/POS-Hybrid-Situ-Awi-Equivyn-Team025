@@ -111,6 +111,7 @@
             <div class="space-y-3 pt-1">
                 @forelse ($siapAntarFormatted as $order)
                     <div x-show="(activeFilter === 'all' || (activeFilter === 'kitchen' && {{ $order['has_dapur'] ? 'true' : 'false' }}) || (activeFilter === 'bar' && {{ $order['has_bar'] ? 'true' : 'false' }})) && !orderState.delivered"
+                         x-cloak
                          x-data="{ orderState: { delivered: false, busy: false } }"
                          class="bg-[#F6F3EC] rounded-xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-col gap-3">
 
@@ -255,6 +256,7 @@
     </div>
 
     <div x-show="showDenahModal"
+         x-cloak
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
@@ -303,7 +305,7 @@
         </div>
     </div>
 
-    <div x-show="showToast"
+    <div x-show="showToast" x-cloak
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0 translate-y-4"
          x-transition:enter-end="opacity-100 translate-y-0"

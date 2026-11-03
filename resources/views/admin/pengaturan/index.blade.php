@@ -4,7 +4,7 @@
 @section('page_category', 'Pengaturan Sistem')
 
 @section('content')
-<div class="flex flex-col gap-8 pb-16" x-data="pengaturanSistemApp()">
+<div class="flex flex-col gap-8 pb-16" x-data="pengaturanSistemApp()" x-cloak>
 
     <div class="flex flex-col gap-3">
         <div class="flex flex-wrap items-center justify-between gap-4 text-xs font-semibold">
