@@ -6,7 +6,9 @@ Fitur:
 
 - Menampilkan status pesanan, total bayar, dan kode sesi meja di LCD 16x2.
 - Tap sensor sentuh untuk berganti layar.
-- Tahan sensor sekitar 1,5 detik untuk memanggil pelayan.
+- Tahan sensor sekitar 3 detik untuk memanggil pelayan.
+- Menyambung ulang WiFi otomatis dan restart sendiri bila server terlalu lama tidak terjangkau,
+  tanpa menimpa teks LCD terakhir.
 - Buzzer dan LED sebagai feedback.
 - Mengambil konfigurasi pesan LCD, durasi buzzer, dan kode sesi dari API Laravel.
 
@@ -194,20 +196,22 @@ Kontrol dan fase layar:
   Touch sengaja diabaikan agar tamu tidak mengubah layar sebelum memesan.
 - **Pembayaran** (ada pesanan belum lunas): QRIS/Midtrans menampilkan `Pembayaran TF`
   dan total; tunai menampilkan `Pembayaran` / `di Kasir`.
-- **Lunas** (semua pesanan sudah dibayar): layar bergilir otomatis setiap 5 detik:
+- **Lunas** (semua pesanan sudah dibayar): layar bergilir otomatis setiap 20 detik:
   `Status Pesanan` → `Total Bayar` → `Meja/Kode`.
 - **Tap singkat**: mempercepat perpindahan layar saat fase lunas. Di fase standby/pembayaran
   tap diabaikan.
 - **Tap saat layar error**: langsung mencoba menghubungi server lagi.
-- **Tahan sekitar 1,5 detik**: mengirim panggilan pelayan (hanya saat fase lunas).
+- **Tahan sekitar 3 detik**: mengirim panggilan pelayan (hanya saat fase lunas).
 - **Buzzer**: berbunyi saat tap, saat panggilan berhasil, dan saat gagal. Durasi saat panggilan berhasil mengikuti pengaturan **Durasi Buzzer Feedback** di admin.
 - **LED**: menyala saat panggilan berhasil.
 
 Data diperbarui otomatis setiap 10 detik. Konfigurasi pesan LCD dan durasi buzzer ikut diambil pada request yang sama, jadi tidak ada request konfigurasi terpisah.
 
-Kode sesi yang tampil adalah kode aktif yang juga dipakai pelanggan untuk membuka e-menu. Jika sesi meja diganti oleh kasir, kode di LCD akan berubah otomatis pada pembaruan berikutnya dan layar kembali ke fase standby. Sesi dibuat otomatis saat meja pertama kali diakses, sehingga setiap meja selalu punya kode.
+**Koneksi ulang otomatis.** Bila WiFi terputus, perangkat mencoba menyambung ulang setiap 15 detik tanpa perlu disentuh; setiap 4 percobaan radio WiFi di-reset ringan (tanpa reboot). Selama reconnect, LCD tetap menampilkan teks terakhir agar tamu tidak melihat layar kosong atau pesan error. Bila server tidak terjangkau selama 180 detik setelah setidaknya satu polling sukses, ESP32 restart otomatis. Watchdog ini sengaja tidak aktif sebelum polling sukses pertama supaya perangkat yang menyala saat server mati tidak reboot berulang.
 
-Panggilan pelayan yang dikirim dari LCD akan muncul di dashboard kasir dan halaman pelayan. Keduanya punya tombol **Konfirmasi Panggilan**; setelah salah satu dikonfirmasi, indikator panggilan hilang di kedua halaman.
+Kode sesi yang tampil adalah kode aktif yang juga dipakai pelanggan untuk membuka e-menu. Jika sesi meja diganti oleh kasir atau pelayan, kode di LCD akan berubah otomatis pada pembaruan berikutnya dan layar kembali ke fase standby. Sesi dibuat otomatis saat meja pertama kali diakses, sehingga setiap meja selalu punya kode.
+
+Panggilan pelayan yang dikirim dari LCD akan muncul di dashboard kasir dan halaman pelayan. Dashboard kasir hanya menampilkan **notifikasi** (banner + indikator merah **PANGGILAN** / **Buzzer Aktif**) tanpa tombol konfirmasi. Hanya pelayan yang dapat menekan **Konfirmasi Panggilan**; setelah dikonfirmasi, indikator panggilan hilang di kedua halaman.
 
 ## 8. Troubleshooting
 
@@ -218,7 +222,9 @@ Panggilan pelayan yang dikirim dari LCD akan muncul di dashboard kasir dan halam
 | Sensor kebalik | Set `TOUCH_AUTO_LEVEL 0`, lalu sesuaikan `TOUCH_ACTIVE_HIGH` (`1` = aktif HIGH, `0` = aktif LOW) |
 | Buzzer tidak bunyi | Cek polaritas, `BUZZER_ACTIVE`, dan `BUZZER_ON_LEVEL` |
 | Buzzer bunyi terus | Balik `BUZZER_ON_LEVEL` |
-| WiFi gagal | Pastikan SSID benar, password benar, dan WiFi 2,4 GHz |
+| WiFi gagal | Pastikan SSID benar, password benar, dan WiFi 2,4 GHz. Perangkat mencoba menyambung ulang otomatis tiap 15 detik |
+| WiFi sempat putus | Tidak perlu disentuh. LCD tetap menampilkan teks terakhir selama reconnect, lalu kembali normal setelah polling sukses |
+| ESP32 restart sendiri | Normal bila server tidak terjangkau lebih dari 180 detik; perangkat restart untuk membersihkan state koneksi. Cek server/IP bila sering terjadi |
 | ESP32 tidak bisa connect ke server | Jangan pakai `localhost`; gunakan IP LAN dan jalankan server dengan `--host=0.0.0.0`. Jika UFW aktif: `sudo ufw allow from 192.168.160.0/24 to any port 8000 proto tcp` |
 | HTTP 401 | `IOT_API_TOKEN` di sketch berbeda dengan `.env` |
 | HTTP 503 | `IOT_API_TOKEN` di server masih kosong |

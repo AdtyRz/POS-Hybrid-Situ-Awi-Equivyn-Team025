@@ -121,43 +121,6 @@ class KasirController extends Controller
     }
 
     /**
-     * Konfirmasi panggilan pelayan dari dashboard kasir. Setelah ini alert
-     * kasir dan halaman pelayan sama-sama hilang karena status menjadi selesai.
-     */
-    public function selesaikanPanggilan(Request $request, int $id): JsonResponse
-    {
-        $data = $request->validate([
-            'status_panggilan' => ['nullable', 'in:selesai'],
-        ]);
-
-        $log = LogPanggilPelayan::with('meja')->findOrFail($id);
-
-        if ($log->status_panggilan !== 'selesai') {
-            $log->update([
-                'status_panggilan' => $data['status_panggilan'] ?? 'selesai',
-                'waktu_selesai' => now(),
-            ]);
-
-            Realtime::emit(new \App\Events\PanggilanPelayan([
-                'id' => $log->id,
-                'meja_id' => $log->meja_id,
-                'meja' => $log->meja?->kode_meja,
-                'area' => $log->meja?->area,
-                'status_panggilan' => $log->status_panggilan,
-            ]));
-        }
-
-        return response()->json([
-            'status' => 'ok',
-            'message' => 'Panggilan berhasil dikonfirmasi',
-            'panggilan' => [
-                'id' => $log->id,
-                'status_panggilan' => $log->status_panggilan,
-            ],
-        ])->header('Cache-Control', 'no-store, max-age=0');
-    }
-
-    /**
      * @return array{pesanan_baru: int, panggilan: int, belum_bayar: int}
      */
     private function hitungNotifikasiTerkunci(Request $request): array
