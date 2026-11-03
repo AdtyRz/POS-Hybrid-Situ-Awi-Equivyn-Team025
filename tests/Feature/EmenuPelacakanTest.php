@@ -174,6 +174,44 @@ class EmenuPelacakanTest extends TestCase
             ->assertSee('Lihat Status Pesanan');
     }
 
+    public function test_tombol_status_tetap_muncul_saat_ada_pesanan_meski_riwayat_browser_hilang(): void
+    {
+        [$meja, $menu] = $this->siapkanMejaDanMenu();
+        $sesi = $this->sesiTerverifikasi($meja);
+
+        app(PesananService::class)->buat(
+            $meja,
+            [$menu->id => 1],
+            [],
+            ['asal' => 'emenu', 'metode' => 'tunai', 'nama_pelanggan' => 'Budi Santoso']
+        );
+
+        // Cookie sesi masih valid, tetapi riwayat pesanan di browser hilang
+        // (mis. pindah host/port). Tombol status harus tetap tampil.
+        $this->withSession($sesi)
+            ->get(route('emenu.meja', $meja->id))
+            ->assertOk()
+            ->assertSee('Lihat Status Pesanan');
+    }
+
+    public function test_pelacakan_menampilkan_pesanan_sesi_aktif_tanpa_riwayat_browser(): void
+    {
+        [$meja, $menu] = $this->siapkanMejaDanMenu();
+        $sesi = $this->sesiTerverifikasi($meja);
+
+        $pesanan = app(PesananService::class)->buat(
+            $meja,
+            [$menu->id => 1],
+            [],
+            ['asal' => 'emenu', 'metode' => 'tunai', 'nama_pelanggan' => 'Budi Santoso']
+        );
+
+        $this->withSession($sesi)
+            ->get(route('emenu.pelacakan', $meja->id))
+            ->assertOk()
+            ->assertSee($pesanan->kode_pesanan);
+    }
+
     public function test_hero_menampilkan_nama_pelanggan_setelah_diisi(): void
     {
         [$meja] = $this->siapkanMejaDanMenu();
