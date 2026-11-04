@@ -115,6 +115,59 @@ class PesananService
     }
 
     /**
+     * Tandai pesanan lunas, potong stok, lalu lepaskan ke dapur/bar.
+     *
+     * Dipakai alur pembayaran pelayan: tunai langsung saat pesanan dibuat,
+     * atau QRIS setelah Midtrans melaporkan settlement. Idempoten supaya
+     * polling status berulang tidak menggandakan pembayaran/mutasi stok.
+     */
+    public function lunasi(
+        Pesanan $pesanan,
+        string $metode,
+        ?int $userId = null,
+        ?string $transactionId = null,
+        ?float $jumlahBayar = null,
+    ): bool {
+        if (! in_array($metode, ['tunai', 'qris'], true)) {
+            throw new RuntimeException('Metode pembayaran tidak valid.');
+        }
+
+        return DB::transaction(function () use ($pesanan, $metode, $userId, $transactionId, $jumlahBayar) {
+            $terkunci = Pesanan::whereKey($pesanan->id)->lockForUpdate()->firstOrFail();
+
+            if ($terkunci->status_pesanan === Pesanan::STATUS_DIBATALKAN) {
+                throw new RuntimeException('Pesanan sudah dibatalkan.');
+            }
+
+            if ($terkunci->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
+                return false;
+            }
+
+            app(StokService::class)->potongSetelahPembayaran($terkunci, $userId);
+
+            if (! $terkunci->pembayaran()->exists()) {
+                $terkunci->pembayaran()->create([
+                    'metode_pembayaran' => $metode,
+                    'status_pembayaran' => 'lunas',
+                    'jumlah_bayar' => $jumlahBayar ?? (float) $terkunci->total_bayar,
+                    'kembalian' => 0,
+                    'transaction_id' => $transactionId,
+                    'order_id' => $metode === 'qris' ? $terkunci->kode_pesanan : null,
+                ]);
+            }
+
+            $terkunci->update([
+                'status_pesanan' => Pesanan::STATUS_DIPROSES,
+                'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+                'metode_pembayaran' => $metode,
+                'kasir_id' => $userId ?? $terkunci->kasir_id,
+            ]);
+
+            return true;
+        });
+    }
+
+    /**
      * Batalkan pesanan. Stok hanya dikembalikan bila stok memang sudah
      * dipotong setelah pembayaran. Proses idempoten agar void ganda aman.
      */
@@ -171,6 +224,15 @@ class PesananService
                 'void_at' => now(),
                 'alasan_void' => $alasan,
             ]);
+
+            $masihAdaPesananAktif = Pesanan::query()
+                ->where('meja_id', $terkunci->meja_id)
+                ->whereNotIn('status_pesanan', [Pesanan::STATUS_SELESAI, Pesanan::STATUS_DIBATALKAN])
+                ->exists();
+
+            if (! $masihAdaPesananAktif) {
+                MejaMakan::whereKey($terkunci->meja_id)->update(['status_meja' => 'kosong']);
+            }
         });
     }
 

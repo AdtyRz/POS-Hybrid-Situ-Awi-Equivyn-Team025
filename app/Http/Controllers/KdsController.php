@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class KdsController extends Controller
@@ -78,7 +79,7 @@ class KdsController extends Controller
         ])->header('Cache-Control', 'no-store, max-age=0');
     }
 
-    private function stateData(string $target): array
+    private function stateData(string $target, bool $lengkap = true): array
     {
         $tiket = DetailPesanan::with(['menu', 'pesanan.meja'])
             ->whereHas('menu.kategori', function ($query) use ($target) {
@@ -126,13 +127,21 @@ class KdsController extends Controller
                         'dbId' => $detail->id,
                         'name' => $detail->menu->nama_menu,
                         'qty' => $detail->jumlah . 'x',
-                        'checked' => $detail->status_item !== 'menunggu',
+                        'status' => $detail->status_item,
+                        'started' => $detail->status_item !== 'menunggu',
+                        'checked' => $detail->status_item === 'siap',
                         'note' => $detail->catatan ? 'Catatan: ' . $detail->catatan : null,
                         'noteType' => $detail->catatan ? (str_contains(strtolower($detail->catatan), 'pedas') ? 'warning' : 'info') : null,
                     ];
                 })->values(),
             ];
         })->values();
+
+        if (! $lengkap) {
+            return [
+                'tiketJson' => $tiketJson,
+            ];
+        }
 
         $selesaiHariIni = DetailPesanan::where('status_item', 'siap')
             ->whereDate('updated_at', today())
@@ -181,25 +190,65 @@ class KdsController extends Controller
         $target = $request->route('target', 'dapur');
 
         $data = $request->validate([
-            'aksi' => ['required', 'in:mulai,siap,item,runner'],
-            'item_id' => ['nullable', 'exists:detail_pesanan,id'],
+            'aksi' => ['required', 'in:mulai,item,runner'],
+            'item_id' => ['required_if:aksi,item', 'nullable', 'integer', 'exists:detail_pesanan,id'],
         ]);
 
         $panggilanRunner = null;
         $statusPayload = null;
 
         DB::transaction(function () use ($target, $id, $data, &$panggilanRunner, &$statusPayload) {
-            $pesanan = Pesanan::findOrFail($id);
+            $pesanan = Pesanan::with('meja')->findOrFail($id);
 
             if ($data['aksi'] === 'runner') {
+                $semuaItemStasiun = DetailPesanan::where('pesanan_id', $pesanan->id)
+                    ->whereHas('menu.kategori', function ($query) use ($target) {
+                        $query->where('target_kds', $target);
+                    })
+                    ->get();
+
+                if ($semuaItemStasiun->isEmpty() || $semuaItemStasiun->contains(
+                    fn ($item) => $item->status_item !== 'siap'
+                )) {
+                    throw ValidationException::withMessages([
+                        'aksi' => 'Panggil runner hanya bisa dilakukan setelah semua item stasiun ini selesai.',
+                    ]);
+                }
+
                 $panggilanRunner = LogPanggilPelayan::create([
                     'meja_id' => $pesanan->meja_id,
                     'status_panggilan' => 'menunggu',
                 ]);
+
+                // Baru setelah runner dikonfirmasi pesanan boleh masuk daftar
+                // siap antar pelayan. Sebelumnya status 'siap' langsung dipasang
+                // saat item terakhir dicentang, sehingga pesanan muncul di
+                // pelayan sebelum tombol Panggil Runner ditekan.
+                $statusPesananBaru = $this->statusPesanan($pesanan);
+
+                if ($pesanan->status_pesanan !== $statusPesananBaru) {
+                    DB::table('pesanan')
+                        ->where('id', $pesanan->id)
+                        ->update([
+                            'status_pesanan' => $statusPesananBaru,
+                            'updated_at' => now(),
+                        ]);
+
+                    $pesanan->status_pesanan = $statusPesananBaru;
+
+                    $statusPayload = [
+                        'kode_pesanan' => $pesanan->kode_pesanan,
+                        'meja' => $pesanan->meja->kode_meja ?? null,
+                        'status_pesanan' => $pesanan->status_pesanan,
+                        'status_pembayaran' => $pesanan->status_pembayaran,
+                        'metode_pembayaran' => $pesanan->metode_pembayaran,
+                    ];
+                }
+
                 return;
             }
 
-            if ($data['aksi'] === 'item' && $data['item_id']) {
+            if ($data['aksi'] === 'item') {
                 $detail = DetailPesanan::where('id', $data['item_id'])
                     ->where('pesanan_id', $pesanan->id)
                     ->whereHas('menu.kategori', function ($query) use ($target) {
@@ -207,21 +256,52 @@ class KdsController extends Controller
                     })
                     ->firstOrFail();
 
-                $detail->update([
-                    'status_item' => $detail->status_item === 'menunggu' ? 'diproses' : 'menunggu',
-                ]);
-            } else {
-                $tujuan = $data['aksi'] === 'siap' ? 'siap' : 'diproses';
+                if ($detail->status_item === 'menunggu') {
+                    throw ValidationException::withMessages([
+                        'item_id' => 'Tekan Mulai ' . ($target === 'bar' ? 'Racik' : 'Masak') . ' terlebih dahulu sebelum menandai item selesai.',
+                    ]);
+                }
 
+                $statusItemBaru = $detail->status_item === 'siap' ? 'diproses' : 'siap';
+
+                DB::table('detail_pesanan')
+                    ->where('id', $detail->id)
+                    ->update([
+                        'status_item' => $statusItemBaru,
+                        'updated_at' => now(),
+                    ]);
+            } else {
                 DetailPesanan::where('pesanan_id', $pesanan->id)
                     ->whereHas('menu.kategori', function ($query) use ($target) {
                         $query->where('target_kds', $target);
                     })
-                    ->update(['status_item' => $tujuan]);
+                    ->where('status_item', 'menunggu')
+                    ->update(['status_item' => 'diproses']);
             }
 
-            $pesanan->refresh();
-            $pesanan->update(['status_pesanan' => $this->statusPesanan($pesanan)]);
+            $statusPesananBaru = $this->statusPesanan($pesanan);
+
+            // Centang item hanya menyelesaikan produksi. Status pesanan tetap
+            // 'diproses' sampai runner dipanggil agar pelayan tidak menerima
+            // pesanan lebih awal. Jika pesanan sudah 'siap' (runner sudah
+            // dipanggil), status dipertahankan selama semua item masih siap.
+            if ($statusPesananBaru === Pesanan::STATUS_SIAP
+                && $pesanan->status_pesanan !== Pesanan::STATUS_SIAP) {
+                $statusPesananBaru = Pesanan::STATUS_DIPROSES;
+            }
+
+            if ($pesanan->status_pesanan !== $statusPesananBaru) {
+                // Update langsung lewat query builder agar aksi KDS tidak
+                // memicu introspeksi skema PostgreSQL setiap klik.
+                DB::table('pesanan')
+                    ->where('id', $pesanan->id)
+                    ->update([
+                        'status_pesanan' => $statusPesananBaru,
+                        'updated_at' => now(),
+                    ]);
+            }
+
+            $pesanan->status_pesanan = $statusPesananBaru;
 
             $statusPayload = [
                 'kode_pesanan' => $pesanan->kode_pesanan,
@@ -248,14 +328,11 @@ class KdsController extends Controller
 
         if ($request->expectsJson() || $request->ajax()) {
             $target = $target === 'bar' ? 'bar' : 'dapur';
-            $state = $this->stateData($target);
+            $state = $this->stateData($target, false);
 
             return response()->json([
                 'target' => $target,
                 'tickets' => $state['tiketJson'],
-                'completedPortions' => $state['selesaiHariIni'],
-                'averageCookText' => $state['rataRataMasakTeks'],
-                'labelShift' => ShiftService::ringkasan()['label'],
                 'updatedAt' => now()->toIso8601String(),
             ])->header('Cache-Control', 'no-store, max-age=0');
         }

@@ -385,17 +385,27 @@
                         <div class="p-4 flex flex-col gap-3">
                             <template x-for="(item, iIndex) in ticket.items" :key="iIndex">
                                 <div
-                                    class="p-2.5 rounded-xl border transition-all cursor-pointer"
-                                    :class="item.checked ? 'bg-[#F9FAFB] border-gray-200' : 'bg-white border-gray-100 hover:border-gray-300'"
-                                    @click="toggleItem(ticket, iIndex)">
+                                    class="p-2.5 rounded-xl border transition-all"
+                                    :class="{
+                                        'bg-[#F9FAFB] border-gray-200': item.checked,
+                                        'bg-white border-gray-100 hover:border-gray-300 cursor-pointer': item.started && !item.checked,
+                                        'bg-white border-gray-100 opacity-60 cursor-not-allowed': !item.started
+                                    }"
+                                    :title="!item.started ? 'Tekan Mulai {{ $kataMulai }} terlebih dahulu' : (item.checked ? 'Klik untuk membatalkan item selesai' : 'Klik jika item sudah selesai')"
+                                    @click="item.started ? toggleItem(ticket, iIndex) : null">
 
                                     <div class="flex items-start gap-2.5">
                                         <div
                                             class="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5 transition-all shadow-2xs"
-                                            :class="item.checked ? 'bg-[#0B4D2B] text-white' : 'border-2 border-gray-300 bg-white'">
+                                            :class="item.checked ? 'bg-[#0B4D2B] text-white' : (item.started ? 'border-2 border-[#0B4D2B]/40 bg-white' : 'border-2 border-gray-200 bg-gray-50')">
                                             <template x-if="item.checked">
                                                 <svg class="w-4 h-4 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            </template>
+                                            <template x-if="!item.checked && !item.started">
+                                                <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                                 </svg>
                                             </template>
                                         </div>
@@ -448,25 +458,14 @@
 
                     <div class="p-4 pt-2 flex flex-col gap-2">
                         <template x-if="ticket.status === 'diproses'">
-                            <div class="flex flex-col gap-2">
-                                <button
-                                    type="button"
-                                    @click="markReady(ticket)"
-                                    class="w-full h-[52px] rounded-xl bg-[#0B4D2B] hover:bg-[#08381F] active:scale-[0.98] text-white font-bold text-base flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer">
-                                    <svg class="w-5 h-5 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                    <span>Tandai {{ $kataSiap }} Siap</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    @click="callRunnerForTicket(ticket)"
-                                    class="w-full h-[42px] rounded-xl bg-[#E0B24E] hover:bg-[#d4a33f] active:scale-[0.98] border border-[#C49A3C] text-[#1F2937] font-bold text-sm flex items-center justify-center gap-2 shadow-2xs transition-all cursor-pointer">
-                                    <svg class="w-4 h-4 text-[#1F2937]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                                    </svg>
-                                    <span>Panggil Runner {{ $kataRunner }}</span>
-                                </button>
+                            <div class="p-3 rounded-xl bg-[#F4F8F5] border border-[#0B4D2B]/15 flex items-center gap-2 text-[#0B4D2B]">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span class="text-xs font-semibold leading-tight">
+                                    Centang item yang sudah selesai.
+                                    <span class="font-bold" x-text="ticket.items.filter(i => i.checked).length + '/' + ticket.items.length + ' item beres'"></span>
+                                </span>
                             </div>
                         </template>
 
@@ -586,7 +585,7 @@
         x-transition:leave="transition ease-in duration-200"
         x-transition:leave-start="opacity-100 translate-y-0"
         x-transition:leave-end="opacity-0 translate-y-4"
-        class="fixed bottom-14 right-6 z-50 max-w-md bg-[#052E1B] text-white p-4 rounded-2xl shadow-xl flex items-center gap-3 border border-[#E0B24E]/30">
+        class="fixed bottom-14 right-6 z-[80] max-w-md bg-[#052E1B] text-white p-4 rounded-2xl shadow-xl flex items-center gap-3 border border-[#E0B24E]/30">
         <div class="w-8 h-8 rounded-xl bg-[#E0B24E] text-[#261900] flex items-center justify-center font-bold flex-shrink-0">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
         </div>
@@ -601,7 +600,7 @@
     <div
         x-cloak
         x-show="showRunnerModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+        class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
         x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100"
@@ -645,7 +644,9 @@
                 averageCookText: @json($rataRataMasakTeks),
                 shiftLabel: @json($labelShift),
                 stateLoading: false,
-                actionBusy: false,
+                pendingActions: 0,
+                needsSync: false,
+                actionQueue: Promise.resolve(),
                 showRunnerModal: false,
                 runnerTarget: '',
                 runnerDbId: null,
@@ -718,8 +719,9 @@
                     }
                 },
 
-                async refreshState() {
+                async refreshState(force = false) {
                     if (this.stateLoading || document.hidden) return;
+                    if (!force && this.pendingActions > 0) return;
 
                     this.stateLoading = true;
 
@@ -769,10 +771,12 @@
                     return sec >= 3600 ? 'jam' : 'mnt';
                 },
 
-                async kirimAksi(dbId, aksi, itemId) {
-                    if (this.actionBusy) return;
+                queueAction(dbId, aksi, itemId) {
+                    this.pendingActions++;
+                    this.actionQueue = this.actionQueue.then(() => this.kirimAksi(dbId, aksi, itemId));
+                },
 
-                    this.actionBusy = true;
+                async kirimAksi(dbId, aksi, itemId) {
                     const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
                     try {
@@ -793,34 +797,61 @@
 
                         if (!response.ok) {
                             this.showToast(payload.message || 'Aksi KDS gagal diproses.');
-                            await this.refreshState();
-                            return;
+                            this.needsSync = true;
+                            return false;
                         }
 
-                        this.applyState(payload);
+                        // Selama masih ada aksi lain di antrean, respons ini belum
+                        // mencerminkan klik terakhir. State final diterapkan oleh
+                        // aksi terakhir agar tampilan tidak melompat mundur.
+                        if (this.pendingActions <= 1) {
+                            this.applyState(payload);
+                        }
+
+                        return true;
                     } catch (error) {
                         this.showToast('Koneksi terputus. Mencoba menyegarkan kembali...');
-                        await this.refreshState();
+                        this.needsSync = true;
+                        return false;
                     } finally {
-                        this.actionBusy = false;
+                        this.pendingActions = Math.max(0, this.pendingActions - 1);
+
+                        if (this.pendingActions === 0 && this.needsSync) {
+                            this.needsSync = false;
+                            await this.refreshState(true);
+                        }
                     }
                 },
 
                 toggleItem(ticket, itemIndex) {
-                    this.kirimAksi(ticket.dbId, 'item', ticket.items[itemIndex].dbId);
+                    const item = ticket.items[itemIndex];
+
+                    if (!item.started) {
+                        this.showToast('Tekan Mulai {{ $kataMulai }} terlebih dahulu sebelum mencentang item.');
+                        return;
+                    }
+
+                    // Ubah tampilan seketika; permintaan ke server berjalan di
+                    // belakang secara berurutan agar klik tetap terasa ringan.
+                    item.checked = !item.checked;
+                    ticket.status = ticket.items.every(i => i.checked) ? 'siap' : 'diproses';
+                    ticket.frozen = ticket.status === 'siap';
+
+                    this.queueAction(ticket.dbId, 'item', item.dbId);
                 },
 
                 startCooking(ticket) {
+                    if (ticket.items.every(item => item.started)) return;
+
                     this.playBeepSound(520, 0.15);
-                    this.kirimAksi(ticket.dbId, 'mulai');
-                },
 
-                markReady(ticket) {
+                    ticket.items.forEach(item => {
+                        item.started = true;
+                    });
+                    ticket.status = 'diproses';
+                    ticket.frozen = false;
 
-                    ticket.status = 'siap';
-                    ticket.frozen = true;
-                    ticket.isOverdue = false;
-                    this.kirimAksi(ticket.dbId, 'siap');
+                    this.queueAction(ticket.dbId, 'mulai');
                 },
 
                 callRunnerForTicket(ticket) {
@@ -835,13 +866,26 @@
                     this.showRunnerModal = true;
                 },
 
-                confirmCallRunner() {
+                async confirmCallRunner() {
+                    const dbId = this.runnerDbId ?? this.tickets.find(t => t.status === 'siap')?.dbId;
                     this.showRunnerModal = false;
-                    if (!this.runnerDbId) {
+
+                    if (!dbId) {
+                        this.showToast('Belum ada pesanan yang siap diantar.');
                         return;
                     }
+
+                    // Tunggu centang item terakhir selesai diproses server,
+                    // supaya panggilan runner tidak ditolak karena item masih
+                    // berstatus diproses.
+                    await this.actionQueue.catch(() => {});
+
                     this.playKitchenChime();
-                    this.kirimAksi(this.runnerDbId, 'runner');
+                    const berhasil = await this.kirimAksi(dbId, 'runner');
+
+                    if (berhasil) {
+                        this.showToast('Runner berhasil dipanggil.');
+                    }
                 },
 
                 testKitchenBell() {

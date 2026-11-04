@@ -195,6 +195,40 @@ class IotLcdFaseTest extends TestCase
         $this->assertCount(2, $data['pesanan']);
     }
 
+    public function test_pesanan_selesai_tidak_lagi_dihitung_sebagai_status_aktif_lcd(): void
+    {
+        $meja = $this->meja();
+        $sesi = SesiMeja::aktifUntuk($meja);
+        $sesi->update(['dibuka_pada' => now()->subMinutes(5)]);
+        $menu = $this->menu();
+
+        $this->pesanan(
+            $meja,
+            $menu,
+            'tunai',
+            Pesanan::PAYMENT_SUDAH_BAYAR,
+            Pesanan::STATUS_DIANTAR,
+        );
+
+        $this->pesanan(
+            $meja,
+            $menu,
+            'tunai',
+            Pesanan::PAYMENT_SUDAH_BAYAR,
+            Pesanan::STATUS_SELESAI,
+        );
+
+        $data = $this->dataMeja($meja);
+
+        $this->assertSame('lunas', $data['fase']);
+        $this->assertTrue($data['ada_pesanan']);
+        $this->assertTrue($data['semua_lunas']);
+        $this->assertSame(50000.0, (float) $data['total_bayar']);
+        $this->assertSame(1, $data['jumlah_pesanan']);
+        $this->assertCount(1, $data['pesanan']);
+        $this->assertSame(Pesanan::STATUS_DIANTAR, $data['pesanan'][0]['status_pesanan']);
+    }
+
     public function test_kasir_hanya_melihat_notifikasi_panggilan_dan_pelayan_yang_menyelesaikan(): void
     {
         $meja = $this->meja();
