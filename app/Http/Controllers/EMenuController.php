@@ -57,6 +57,12 @@ class EMenuController extends Controller
             return $this->kodeKunciDitolak();
         }
 
+        $mejaTerbuka = $this->mejaTerbuka($request);
+
+        if ($mejaTerbuka && (int) $mejaTerbuka->id !== (int) $sesi->meja_id) {
+            return $this->kodeKunciDitolak($this->pesanMejaLain($mejaTerbuka));
+        }
+
         $this->tandaiSesiTerverifikasi($request, $sesi->meja, $sesiAktif);
 
         return redirect()->to(route('emenu.meja', $sesi->meja->kode_meja));
@@ -65,9 +71,15 @@ class EMenuController extends Controller
     /**
      * Halaman kunci: pengunjung memasukkan kode unik yang tampil di LCD meja.
      */
-    public function kunci(string $meja): View
+    public function kunci(Request $request, string $meja): View|RedirectResponse
     {
         $mejaMakan = $this->cariMeja($meja);
+        $mejaTerbuka = $this->mejaTerbuka($request);
+
+        if ($mejaTerbuka && (int) $mejaTerbuka->id !== (int) $mejaMakan->id) {
+            return $this->kodeKunciDitolak($this->pesanMejaLain($mejaTerbuka));
+        }
+
         $sesi = SesiMeja::aktifUntuk($mejaMakan);
 
         return view('pelanggan.beranda.kunci', [
@@ -83,6 +95,11 @@ class EMenuController extends Controller
     public function buka(Request $request, string $meja): RedirectResponse|JsonResponse
     {
         $mejaMakan = $this->cariMeja($meja);
+        $mejaTerbuka = $this->mejaTerbuka($request);
+
+        if ($mejaTerbuka && (int) $mejaTerbuka->id !== (int) $mejaMakan->id) {
+            return $this->tolakMejaLain($request, $mejaTerbuka);
+        }
 
         $data = $request->validate([
             'kode_unik' => ['required', 'string'],
@@ -119,9 +136,30 @@ class EMenuController extends Controller
         return redirect()->to($tujuan);
     }
 
-    public function aplikasi(string $meja): View|RedirectResponse
+    /**
+     * Keluar dari sesi pelanggan: lupakan verifikasi meja dan riwayat
+     * pesanan di browser ini, lalu kembali ke beranda. Ini bukan logout akun
+     * staf, jadi sesi login staf (bila ada) tidak disentuh.
+     */
+    public function keluar(Request $request): RedirectResponse
+    {
+        foreach (array_keys($request->session()->all()) as $kunci) {
+            if (preg_match('/^(sesi_meja|riwayat_meja)_\d+$/', (string) $kunci)) {
+                $request->session()->forget($kunci);
+            }
+        }
+
+        return redirect()->route('emenu.index');
+    }
+
+    public function aplikasi(Request $request, string $meja): View|RedirectResponse
     {
         $mejaMakan = $this->cariMeja($meja);
+        $mejaTerbuka = $this->mejaTerbuka($request);
+
+        if ($mejaTerbuka && (int) $mejaTerbuka->id !== (int) $mejaMakan->id) {
+            return $this->kodeKunciDitolak($this->pesanMejaLain($mejaTerbuka));
+        }
 
         if (! $this->sesiTerverifikasi($mejaMakan)) {
             return $this->kunciRedirect($mejaMakan);
@@ -524,11 +562,59 @@ class EMenuController extends Controller
         return back()->with('panggilan_terkirim', true);
     }
 
-    private function kodeKunciDitolak(): RedirectResponse
+    private function kodeKunciDitolak(?string $pesan = null): RedirectResponse
     {
         return redirect()->route('emenu.index')
-            ->withErrors(['kode_unik' => 'Kode kunci tidak valid atau sesi meja sudah berakhir.'])
+            ->withErrors(['kode_unik' => $pesan ?? 'Kode kunci tidak valid atau sesi meja sudah berakhir.'])
             ->withInput();
+    }
+
+    /**
+     * Satu browser hanya boleh terhubung ke satu meja. Cari meja yang masih
+     * terverifikasi pada session pelanggan agar percobaan membuka meja lain
+     * bisa ditolak.
+     */
+    private function mejaTerbuka(Request $request): ?MejaMakan
+    {
+        foreach ($request->session()->all() as $kunci => $sesiId) {
+            if (! preg_match('/^sesi_meja_(\d+)$/', (string) $kunci, $cocok)) {
+                continue;
+            }
+
+            $meja = MejaMakan::find((int) $cocok[1]);
+
+            if (! $meja) {
+                continue;
+            }
+
+            $aktif = SesiMeja::aktifUntuk($meja);
+
+            if ((int) $sesiId === (int) $aktif->id) {
+                return $meja;
+            }
+        }
+
+        return null;
+    }
+
+    private function pesanMejaLain(MejaMakan $meja): string
+    {
+        return 'Anda masih terhubung ke '.$meja->kode_meja
+            .'. Keluar dari sesi meja tersebut sebelum membuka meja lain.';
+    }
+
+    private function tolakMejaLain(Request $request, MejaMakan $meja): RedirectResponse|JsonResponse
+    {
+        $pesan = $this->pesanMejaLain($meja);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => $pesan,
+                'errors' => ['kode_unik' => [$pesan]],
+            ], 403);
+        }
+
+        return back()->withErrors(['kode_unik' => $pesan]);
     }
 
     private function tandaiSesiTerverifikasi(Request $request, MejaMakan $meja, SesiMeja $sesi): void
