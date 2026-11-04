@@ -239,4 +239,61 @@ class KdsTargetSeparationTest extends TestCase
         $this->assertSame($pesanan->meja_id, (int) \App\Models\LogPanggilPelayan::first()->meja_id);
         $this->assertSame('menunggu', $detailBar->fresh()->status_item);
     }
+
+    public function test_pesanan_baru_muncul_di_pelayan_setelah_runner_dikonfirmasi(): void
+    {
+        $meja = $this->meja();
+        $menuBar = $this->menu('bar', 'Kopi Susu');
+        $pesanan = Pesanan::create([
+            'kode_pesanan' => 'SW-KDS-' . Str::upper(Str::random(6)),
+            'meja_id' => $meja->id,
+            'total_bayar' => 20000,
+            'status_pesanan' => Pesanan::STATUS_MENUNGGU,
+            'status_pembayaran' => Pesanan::PAYMENT_BELUM_BAYAR,
+            'waktu_pesan' => now()->subMinute(),
+        ]);
+        $detail = $pesanan->detailPesanan()->create([
+            'menu_id' => $menuBar->id,
+            'jumlah' => 1,
+            'harga_satuan' => 20000,
+            'subtotal' => 20000,
+            'status_item' => 'menunggu',
+        ]);
+
+        $barista = User::factory()->create(['role' => 'barista']);
+        $pelayan = User::factory()->create([
+            'role' => 'pelayan',
+            'area' => 'Lesehan Bawah',
+            'is_aktif' => true,
+        ]);
+
+        $this->actingAs($barista)
+            ->patch(route('kds.bar.ubah', $pesanan->id), ['aksi' => 'mulai'])
+            ->assertRedirect();
+
+        $this->actingAs($barista)
+            ->patch(route('kds.bar.ubah', $pesanan->id), [
+                'aksi' => 'item',
+                'item_id' => $detail->id,
+            ])
+            ->assertRedirect();
+
+        // Semua item siap, tetapi pesanan belum boleh muncul di pelayan.
+        $this->assertSame(Pesanan::STATUS_DIPROSES, $pesanan->fresh()->status_pesanan);
+        $this->actingAs($pelayan)
+            ->get(route('pelayan.tab-antar'))
+            ->assertOk()
+            ->assertDontSee($pesanan->kode_pesanan);
+
+        $this->actingAs($barista)
+            ->patch(route('kds.bar.ubah', $pesanan->id), ['aksi' => 'runner'])
+            ->assertRedirect();
+
+        // Setelah popup Panggil Runner dikonfirmasi, baru pesanan diteruskan.
+        $this->assertSame(Pesanan::STATUS_SIAP, $pesanan->fresh()->status_pesanan);
+        $this->actingAs($pelayan)
+            ->get(route('pelayan.tab-antar'))
+            ->assertOk()
+            ->assertSee($pesanan->kode_pesanan);
+    }
 }
