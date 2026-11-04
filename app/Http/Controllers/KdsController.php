@@ -79,7 +79,7 @@ class KdsController extends Controller
         ])->header('Cache-Control', 'no-store, max-age=0');
     }
 
-    private function stateData(string $target): array
+    private function stateData(string $target, bool $lengkap = true): array
     {
         $tiket = DetailPesanan::with(['menu', 'pesanan.meja'])
             ->whereHas('menu.kategori', function ($query) use ($target) {
@@ -137,6 +137,12 @@ class KdsController extends Controller
             ];
         })->values();
 
+        if (! $lengkap) {
+            return [
+                'tiketJson' => $tiketJson,
+            ];
+        }
+
         $selesaiHariIni = DetailPesanan::where('status_item', 'siap')
             ->whereDate('updated_at', today())
             ->whereHas('menu.kategori', function ($query) use ($target) {
@@ -192,7 +198,7 @@ class KdsController extends Controller
         $statusPayload = null;
 
         DB::transaction(function () use ($target, $id, $data, &$panggilanRunner, &$statusPayload) {
-            $pesanan = Pesanan::findOrFail($id);
+            $pesanan = Pesanan::with('meja')->findOrFail($id);
 
             if ($data['aksi'] === 'runner') {
                 $semuaItemStasiun = DetailPesanan::where('pesanan_id', $pesanan->id)
@@ -230,9 +236,14 @@ class KdsController extends Controller
                     ]);
                 }
 
-                $detail->update([
-                    'status_item' => $detail->status_item === 'siap' ? 'diproses' : 'siap',
-                ]);
+                $statusItemBaru = $detail->status_item === 'siap' ? 'diproses' : 'siap';
+
+                DB::table('detail_pesanan')
+                    ->where('id', $detail->id)
+                    ->update([
+                        'status_item' => $statusItemBaru,
+                        'updated_at' => now(),
+                    ]);
             } else {
                 DetailPesanan::where('pesanan_id', $pesanan->id)
                     ->whereHas('menu.kategori', function ($query) use ($target) {
@@ -242,8 +253,20 @@ class KdsController extends Controller
                     ->update(['status_item' => 'diproses']);
             }
 
-            $pesanan->refresh();
-            $pesanan->update(['status_pesanan' => $this->statusPesanan($pesanan)]);
+            $statusPesananBaru = $this->statusPesanan($pesanan);
+
+            if ($pesanan->status_pesanan !== $statusPesananBaru) {
+                // Update langsung lewat query builder agar aksi KDS tidak
+                // memicu introspeksi skema PostgreSQL setiap klik.
+                DB::table('pesanan')
+                    ->where('id', $pesanan->id)
+                    ->update([
+                        'status_pesanan' => $statusPesananBaru,
+                        'updated_at' => now(),
+                    ]);
+            }
+
+            $pesanan->status_pesanan = $statusPesananBaru;
 
             $statusPayload = [
                 'kode_pesanan' => $pesanan->kode_pesanan,
@@ -270,14 +293,11 @@ class KdsController extends Controller
 
         if ($request->expectsJson() || $request->ajax()) {
             $target = $target === 'bar' ? 'bar' : 'dapur';
-            $state = $this->stateData($target);
+            $state = $this->stateData($target, false);
 
             return response()->json([
                 'target' => $target,
                 'tickets' => $state['tiketJson'],
-                'completedPortions' => $state['selesaiHariIni'],
-                'averageCookText' => $state['rataRataMasakTeks'],
-                'labelShift' => ShiftService::ringkasan()['label'],
                 'updatedAt' => now()->toIso8601String(),
             ])->header('Cache-Control', 'no-store, max-age=0');
         }

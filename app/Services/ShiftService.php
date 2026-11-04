@@ -27,23 +27,38 @@ class ShiftService
 
     public static function daftarShift(): array
     {
+        $kunci = [];
+
+        foreach (self::DEFAULT_SHIFTS as $index => $default) {
+            $nomor = $index + 1;
+
+            foreach (['nama', 'mulai', 'selesai', 'aktif'] as $field) {
+                $kunci[] = "shift_{$nomor}_{$field}";
+            }
+        }
+
+        // Satu query untuk semua pengaturan shift. Sebelumnya setiap shift
+        // membaca empat pengaturan secara terpisah sehingga satu render KDS
+        // bisa memicu belasan round-trip ke database.
+        $nilai = Pengaturan::query()
+            ->whereIn('kunci', $kunci)
+            ->pluck('nilai', 'kunci');
+
         $daftar = [];
 
         foreach (self::DEFAULT_SHIFTS as $index => $default) {
             $nomor = $index + 1;
-            $nama = trim((string) Pengaturan::nilai("shift_{$nomor}_nama", $default['nama']));
-            $mulai = substr((string) Pengaturan::nilai("shift_{$nomor}_mulai", $default['mulai']), 0, 5);
-            $selesai = substr((string) Pengaturan::nilai("shift_{$nomor}_selesai", $default['selesai']), 0, 5);
+            $nama = trim((string) ($nilai["shift_{$nomor}_nama"] ?? $default['nama']));
+            $mulai = substr((string) ($nilai["shift_{$nomor}_mulai"] ?? $default['mulai']), 0, 5);
+            $selesai = substr((string) ($nilai["shift_{$nomor}_selesai"] ?? $default['selesai']), 0, 5);
+            $aktif = $nilai["shift_{$nomor}_aktif"] ?? ($default['aktif'] ? '1' : '0');
 
             $daftar[] = [
                 'nomor' => $nomor,
                 'nama' => $nama !== '' ? $nama : $default['nama'],
                 'mulai' => $mulai,
                 'selesai' => $selesai,
-                'aktif' => filter_var(
-                    Pengaturan::nilai("shift_{$nomor}_aktif", $default['aktif'] ? '1' : '0'),
-                    FILTER_VALIDATE_BOOLEAN
-                ),
+                'aktif' => filter_var($aktif, FILTER_VALIDATE_BOOLEAN),
             ];
         }
 
