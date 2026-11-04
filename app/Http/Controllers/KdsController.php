@@ -219,6 +219,32 @@ class KdsController extends Controller
                     'meja_id' => $pesanan->meja_id,
                     'status_panggilan' => 'menunggu',
                 ]);
+
+                // Baru setelah runner dikonfirmasi pesanan boleh masuk daftar
+                // siap antar pelayan. Sebelumnya status 'siap' langsung dipasang
+                // saat item terakhir dicentang, sehingga pesanan muncul di
+                // pelayan sebelum tombol Panggil Runner ditekan.
+                $statusPesananBaru = $this->statusPesanan($pesanan);
+
+                if ($pesanan->status_pesanan !== $statusPesananBaru) {
+                    DB::table('pesanan')
+                        ->where('id', $pesanan->id)
+                        ->update([
+                            'status_pesanan' => $statusPesananBaru,
+                            'updated_at' => now(),
+                        ]);
+
+                    $pesanan->status_pesanan = $statusPesananBaru;
+
+                    $statusPayload = [
+                        'kode_pesanan' => $pesanan->kode_pesanan,
+                        'meja' => $pesanan->meja->kode_meja ?? null,
+                        'status_pesanan' => $pesanan->status_pesanan,
+                        'status_pembayaran' => $pesanan->status_pembayaran,
+                        'metode_pembayaran' => $pesanan->metode_pembayaran,
+                    ];
+                }
+
                 return;
             }
 
@@ -254,6 +280,15 @@ class KdsController extends Controller
             }
 
             $statusPesananBaru = $this->statusPesanan($pesanan);
+
+            // Centang item hanya menyelesaikan produksi. Status pesanan tetap
+            // 'diproses' sampai runner dipanggil agar pelayan tidak menerima
+            // pesanan lebih awal. Jika pesanan sudah 'siap' (runner sudah
+            // dipanggil), status dipertahankan selama semua item masih siap.
+            if ($statusPesananBaru === Pesanan::STATUS_SIAP
+                && $pesanan->status_pesanan !== Pesanan::STATUS_SIAP) {
+                $statusPesananBaru = Pesanan::STATUS_DIPROSES;
+            }
 
             if ($pesanan->status_pesanan !== $statusPesananBaru) {
                 // Update langsung lewat query builder agar aksi KDS tidak
