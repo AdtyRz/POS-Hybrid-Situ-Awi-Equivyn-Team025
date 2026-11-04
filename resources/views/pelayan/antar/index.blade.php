@@ -278,7 +278,7 @@
          x-transition:leave="transition ease-in duration-150"
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-4">
+         class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/50 p-4 pb-24 sm:pb-4">
         <div @click.away="showDenahModal = false"
              class="bg-[#FCF9F2] w-full max-w-[390px] rounded-2xl p-5 shadow-2xl border border-[#E5E2DB] space-y-4">
             <div class="flex items-center justify-between pb-2 border-b border-[#E5E2DB]">
@@ -327,7 +327,7 @@
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="opacity-100 translate-y-0"
          x-transition:leave-end="opacity-0 translate-y-4"
-         class="fixed bottom-20 left-4 right-4 z-50 max-w-[390px] mx-auto pointer-events-none">
+         class="fixed bottom-20 left-4 right-4 z-[80] max-w-[390px] mx-auto pointer-events-none">
         <div class="bg-[#31312C] text-[#F3F0EA] rounded-xl px-4 py-3 flex items-center gap-3 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] border border-white/10 pointer-events-auto">
             <svg class="w-[18.33px] h-[18.33px] text-[#FFDEA1] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />

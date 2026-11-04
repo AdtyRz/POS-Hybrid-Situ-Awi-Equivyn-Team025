@@ -585,7 +585,7 @@
         x-transition:leave="transition ease-in duration-200"
         x-transition:leave-start="opacity-100 translate-y-0"
         x-transition:leave-end="opacity-0 translate-y-4"
-        class="fixed bottom-14 right-6 z-50 max-w-md bg-[#052E1B] text-white p-4 rounded-2xl shadow-xl flex items-center gap-3 border border-[#E0B24E]/30">
+        class="fixed bottom-14 right-6 z-[80] max-w-md bg-[#052E1B] text-white p-4 rounded-2xl shadow-xl flex items-center gap-3 border border-[#E0B24E]/30">
         <div class="w-8 h-8 rounded-xl bg-[#E0B24E] text-[#261900] flex items-center justify-center font-bold flex-shrink-0">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
         </div>
@@ -600,7 +600,7 @@
     <div
         x-cloak
         x-show="showRunnerModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+        class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
         x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100"
@@ -644,7 +644,9 @@
                 averageCookText: @json($rataRataMasakTeks),
                 shiftLabel: @json($labelShift),
                 stateLoading: false,
-                actionBusy: false,
+                pendingActions: 0,
+                needsSync: false,
+                actionQueue: Promise.resolve(),
                 showRunnerModal: false,
                 runnerTarget: '',
                 runnerDbId: null,
@@ -717,8 +719,9 @@
                     }
                 },
 
-                async refreshState() {
+                async refreshState(force = false) {
                     if (this.stateLoading || document.hidden) return;
+                    if (!force && this.pendingActions > 0) return;
 
                     this.stateLoading = true;
 
@@ -768,10 +771,12 @@
                     return sec >= 3600 ? 'jam' : 'mnt';
                 },
 
-                async kirimAksi(dbId, aksi, itemId) {
-                    if (this.actionBusy) return;
+                queueAction(dbId, aksi, itemId) {
+                    this.pendingActions++;
+                    this.actionQueue = this.actionQueue.then(() => this.kirimAksi(dbId, aksi, itemId));
+                },
 
-                    this.actionBusy = true;
+                async kirimAksi(dbId, aksi, itemId) {
                     const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
                     try {
@@ -792,18 +797,29 @@
 
                         if (!response.ok) {
                             this.showToast(payload.message || 'Aksi KDS gagal diproses.');
-                            await this.refreshState();
+                            this.needsSync = true;
                             return false;
                         }
 
-                        this.applyState(payload);
+                        // Selama masih ada aksi lain di antrean, respons ini belum
+                        // mencerminkan klik terakhir. State final diterapkan oleh
+                        // aksi terakhir agar tampilan tidak melompat mundur.
+                        if (this.pendingActions <= 1) {
+                            this.applyState(payload);
+                        }
+
                         return true;
                     } catch (error) {
                         this.showToast('Koneksi terputus. Mencoba menyegarkan kembali...');
-                        await this.refreshState();
+                        this.needsSync = true;
                         return false;
                     } finally {
-                        this.actionBusy = false;
+                        this.pendingActions = Math.max(0, this.pendingActions - 1);
+
+                        if (this.pendingActions === 0 && this.needsSync) {
+                            this.needsSync = false;
+                            await this.refreshState(true);
+                        }
                     }
                 },
 
@@ -815,12 +831,27 @@
                         return;
                     }
 
-                    this.kirimAksi(ticket.dbId, 'item', item.dbId);
+                    // Ubah tampilan seketika; permintaan ke server berjalan di
+                    // belakang secara berurutan agar klik tetap terasa ringan.
+                    item.checked = !item.checked;
+                    ticket.status = ticket.items.every(i => i.checked) ? 'siap' : 'diproses';
+                    ticket.frozen = ticket.status === 'siap';
+
+                    this.queueAction(ticket.dbId, 'item', item.dbId);
                 },
 
                 startCooking(ticket) {
+                    if (ticket.items.every(item => item.started)) return;
+
                     this.playBeepSound(520, 0.15);
-                    this.kirimAksi(ticket.dbId, 'mulai');
+
+                    ticket.items.forEach(item => {
+                        item.started = true;
+                    });
+                    ticket.status = 'diproses';
+                    ticket.frozen = false;
+
+                    this.queueAction(ticket.dbId, 'mulai');
                 },
 
                 callRunnerForTicket(ticket) {
@@ -843,6 +874,11 @@
                         this.showToast('Belum ada pesanan yang siap diantar.');
                         return;
                     }
+
+                    // Tunggu centang item terakhir selesai diproses server,
+                    // supaya panggilan runner tidak ditolak karena item masih
+                    // berstatus diproses.
+                    await this.actionQueue.catch(() => {});
 
                     this.playKitchenChime();
                     const berhasil = await this.kirimAksi(dbId, 'runner');

@@ -313,7 +313,7 @@
 
     </div>
 
-    <div x-show="showQrModal" x-cloak x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+    <div x-show="showQrModal" x-cloak x-transition class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
         <div @click.away="showQrModal = false" class="bg-white rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-[#E5E2DB]">
             <div class="flex items-center justify-between pb-2 border-b border-[#F0EEE7]">
                 <div class="flex items-center gap-2">
@@ -346,7 +346,7 @@
         </div>
     </div>
 
-    <div x-show="showMenuModal" x-cloak x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+    <div x-show="showMenuModal" x-cloak x-transition class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
         <div @click.away="showMenuModal = false" class="bg-white rounded-2xl p-5 max-w-sm w-full max-h-[88vh] overflow-y-auto space-y-4 shadow-2xl border border-[#E5E2DB]">
             <div class="flex items-center justify-between pb-2 border-b border-[#F0EEE7]">
                 <div class="flex items-center gap-2">
@@ -425,7 +425,7 @@
         </div>
     </div>
 
-    <div x-show="showQrisPayModal" x-cloak x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+    <div x-show="showQrisPayModal" x-cloak x-transition class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
         <div class="bg-white rounded-2xl p-5 max-w-sm w-full max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl border border-[#E5E2DB]">
             <div class="flex items-center justify-between pb-2 border-b border-[#F0EEE7]">
                 <div class="flex items-center gap-2">
@@ -527,7 +527,7 @@
         </div>
     </div>
 
-    <div x-show="showDetailModal" x-cloak x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+    <div x-show="showDetailModal" x-cloak x-transition class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
         <div @click.away="showDetailModal = false" class="bg-white rounded-2xl p-5 max-w-sm w-full max-h-[88vh] overflow-y-auto space-y-4 shadow-2xl border border-[#E5E2DB]">
             <div class="flex items-center justify-between pb-2 border-b border-[#F0EEE7]">
                 <div class="flex items-center gap-2">
@@ -576,7 +576,7 @@
          x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
          x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+         class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
         <div class="absolute inset-0" @click="showEndSessionModal = false"></div>
         <div class="relative bg-white rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-[#E5E2DB]">
             <div class="flex items-start gap-3">
@@ -618,7 +618,7 @@
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="opacity-100 translate-y-0"
          x-transition:leave-end="opacity-0 translate-y-4"
-         class="fixed bottom-20 left-4 right-4 z-50 max-w-[390px] mx-auto pointer-events-none">
+         class="fixed bottom-20 left-4 right-4 z-[80] max-w-[390px] mx-auto pointer-events-none">
         <div class="bg-[#31312C] text-[#F3F0EA] rounded-xl px-4 py-3 flex items-center gap-3 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] border border-white/10 pointer-events-auto">
             <svg class="w-[18.33px] h-[18.33px] text-[#FFDEA1] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
