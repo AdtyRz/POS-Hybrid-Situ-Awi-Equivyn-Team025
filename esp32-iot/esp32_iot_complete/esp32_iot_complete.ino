@@ -95,6 +95,8 @@ String lcdMessage = "Panggil Pelayan";
 int buzzerDuration = 3;
 float totalBayar = 0;
 int jumlahPesanan = 0;
+int jumlahSelesai = 0;
+bool adaPesanan = false;
 
 // Fase LCD mengikuti data pesanan pada sesi aktif:
 // - standby  : belum ada pesanan, hanya kode meja + kode verifikasi.
@@ -608,6 +610,8 @@ bool fetchMejaStatus() {
 
   totalBayar = data["total_bayar"].as<float>();
   jumlahPesanan = data["jumlah_pesanan"].as<int>();
+  jumlahSelesai = data["jumlah_selesai"].as<int>();
+  adaPesanan = data["ada_pesanan"] | false;
 
   const char* faseApi = data["fase"] | "standby";
   const char* metodeApi = data["metode_pembayaran"] | "";
@@ -632,7 +636,15 @@ bool fetchMejaStatus() {
   }
 
   if (jumlahPesanan <= 0) {
-    statusRingkas = "Belum ada pesan";
+    // Semua pesanan pada sesi sudah selesai. Jangan tampilkan "Belum ada
+    // pesan" karena sesi masih berjalan dan total tagihannya masih ada.
+    if (adaPesanan && jumlahSelesai > 0) {
+      statusRingkas = jumlahSelesai > 1
+        ? "Selesai (" + String(jumlahSelesai) + ")"
+        : "Selesai";
+    } else {
+      statusRingkas = "Belum ada pesan";
+    }
   } else {
     const char* status = data["pesanan"][0]["status_pesanan"] | "-";
     String label = labelStatus(String(status));

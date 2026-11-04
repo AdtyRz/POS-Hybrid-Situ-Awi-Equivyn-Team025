@@ -42,4 +42,16 @@ class MejaMakan extends Model
             'diantar',
         ]);
     }
+
+    /**
+     * Pesanan yang tercatat pada sesi berjalan, termasuk yang sudah selesai.
+     * Dipakai halaman Sesi Meja agar riwayat sesi tidak hilang sebelum kasir
+     * menekan "Akhiri Sesi".
+     */
+    public function pesananSesi(): HasMany
+    {
+        return $this->pesanan()
+            ->where('status_pesanan', '!=', 'dibatalkan')
+            ->orderBy('waktu_pesan');
+    }
 }

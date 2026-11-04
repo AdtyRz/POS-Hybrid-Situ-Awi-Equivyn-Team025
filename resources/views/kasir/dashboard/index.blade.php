@@ -608,8 +608,11 @@
                                     </svg>
                                     <span>TRANSAKSI SELESAI — SUDAH LUNAS</span>
                                 </div>
-                                <p class="text-[11px] text-[#047857]" x-text="'Metode: ' + (currentSaung.paymentType === 'qris' ? 'QRIS Midtrans' : 'Tunai Kasir')"></p>
-                                <p class="text-[11px] text-[#6B6A63]">Pesanan sedang diproses di dapur / bar.</p>
+                                <p class="text-[11px] text-[#047857]" x-text="'Metode: ' + (currentSaung.paymentType === 'qris' ? 'QRIS Midtrans' : (currentSaung.paymentType === 'campuran' ? 'Campuran' : 'Tunai Kasir'))"></p>
+                                <p class="text-[11px] text-[#6B6A63]"
+                                   x-text="currentTable && currentTable.orderCount === 0
+                                       ? 'Semua pesanan sesi ini sudah selesai. Tekan Akhiri Sesi Meja untuk menutup sesi.'
+                                       : 'Pesanan sedang diproses di dapur / bar.'"></p>
                             </div>
                         </template>
 
@@ -1658,9 +1661,10 @@
 
                 akhiriSesiMeja() {
                     const table = this.currentTable;
+                    const jumlahPesanan = Number(table?.sessionOrderCount || table?.orderCount || 0);
 
-                    if (! table || table.orderCount === 0) {
-                        this.showToast('gold', 'Tidak Ada Pesanan', 'Tidak ada pesanan aktif pada meja ini.');
+                    if (! table || jumlahPesanan === 0) {
+                        this.showToast('gold', 'Tidak Ada Pesanan', 'Tidak ada pesanan pada sesi meja ini.');
                         return;
                     }
 
@@ -1673,7 +1677,7 @@
                         open: true,
                         type: 'danger',
                         title: 'Akhiri Sesi Meja',
-                        message: `Akhiri sesi ${table.name}? ${table.orderCount} pesanan aktif akan ditutup dan kode sesi baru dibuat untuk pengunjung berikutnya.`,
+                        message: `Akhiri sesi ${table.name}? ${jumlahPesanan} pesanan pada sesi ini akan ditutup dan kode sesi baru dibuat untuk pengunjung berikutnya.`,
                         confirmLabel: 'Ya, Akhiri Sesi',
                         action: 'session',
                     };
