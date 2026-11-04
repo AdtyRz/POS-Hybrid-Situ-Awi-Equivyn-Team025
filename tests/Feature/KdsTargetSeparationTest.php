@@ -114,6 +114,44 @@ class KdsTargetSeparationTest extends TestCase
             ->assertJsonPath('target', 'dapur');
     }
 
+    public function test_state_kds_mengunci_checkbox_sampai_mulai_masak(): void
+    {
+        [$pesanan, $detailDapur] = $this->pesananDuaStasiun();
+        $koki = User::factory()->create(['role' => 'koki']);
+
+        $this->actingAs($koki)
+            ->getJson(route('kds.dapur.state'))
+            ->assertOk()
+            ->assertJsonPath('tickets.0.status', 'menunggu')
+            ->assertJsonPath('tickets.0.items.0.started', false)
+            ->assertJsonPath('tickets.0.items.0.checked', false);
+
+        $this->actingAs($koki)
+            ->patch(route('kds.dapur.ubah', $pesanan->id), ['aksi' => 'mulai'])
+            ->assertRedirect();
+
+        $this->actingAs($koki)
+            ->getJson(route('kds.dapur.state'))
+            ->assertOk()
+            ->assertJsonPath('tickets.0.status', 'diproses')
+            ->assertJsonPath('tickets.0.items.0.started', true)
+            ->assertJsonPath('tickets.0.items.0.checked', false);
+
+        $this->actingAs($koki)
+            ->patch(route('kds.dapur.ubah', $pesanan->id), [
+                'aksi' => 'item',
+                'item_id' => $detailDapur->id,
+            ])
+            ->assertRedirect();
+
+        $this->actingAs($koki)
+            ->getJson(route('kds.dapur.state'))
+            ->assertOk()
+            ->assertJsonPath('tickets.0.status', 'siap')
+            ->assertJsonPath('tickets.0.items.0.started', true)
+            ->assertJsonPath('tickets.0.items.0.checked', true);
+    }
+
     public function test_koki_tidak_bisa_mengubah_item_milik_stasiun_bar(): void
     {
         [$pesanan, $detailDapur, $detailBar] = $this->pesananDuaStasiun();
@@ -130,6 +168,37 @@ class KdsTargetSeparationTest extends TestCase
         $this->assertSame('menunggu', $detailDapur->fresh()->status_item);
 
         $this->actingAs($koki)
+            ->patchJson(route('kds.dapur.ubah', $pesanan->id), [
+                'aksi' => 'item',
+                'item_id' => $detailDapur->id,
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('item_id');
+
+        $this->assertSame('menunggu', $detailDapur->fresh()->status_item);
+        $this->assertSame('menunggu', $detailBar->fresh()->status_item);
+
+        $this->actingAs($koki)
+            ->patch(route('kds.dapur.ubah', $pesanan->id), [
+                'aksi' => 'mulai',
+            ])
+            ->assertRedirect();
+
+        $this->assertSame('diproses', $detailDapur->fresh()->status_item);
+        $this->assertSame('menunggu', $detailBar->fresh()->status_item);
+
+        $this->actingAs($koki)
+            ->patch(route('kds.dapur.ubah', $pesanan->id), [
+                'aksi' => 'item',
+                'item_id' => $detailDapur->id,
+            ])
+            ->assertRedirect();
+
+        $this->assertSame('siap', $detailDapur->fresh()->status_item);
+        $this->assertSame('menunggu', $detailBar->fresh()->status_item);
+
+        // Klik ulang membatalkan tanda selesai, bukan kembali ke menunggu.
+        $this->actingAs($koki)
             ->patch(route('kds.dapur.ubah', $pesanan->id), [
                 'aksi' => 'item',
                 'item_id' => $detailDapur->id,
@@ -138,5 +207,93 @@ class KdsTargetSeparationTest extends TestCase
 
         $this->assertSame('diproses', $detailDapur->fresh()->status_item);
         $this->assertSame('menunggu', $detailBar->fresh()->status_item);
+    }
+
+    public function test_panggil_runner_baru_bisa_setelah_semua_item_stasiun_selesai(): void
+    {
+        [$pesanan, $detailDapur, $detailBar] = $this->pesananDuaStasiun();
+        $koki = User::factory()->create(['role' => 'koki']);
+
+        $this->actingAs($koki)
+            ->patchJson(route('kds.dapur.ubah', $pesanan->id), [
+                'aksi' => 'runner',
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('aksi');
+
+        $this->assertDatabaseCount('log_panggil_pelayan', 0);
+
+        $this->actingAs($koki)
+            ->patch(route('kds.dapur.ubah', $pesanan->id), ['aksi' => 'mulai'])
+            ->assertRedirect();
+
+        $this->actingAs($koki)
+            ->patch(route('kds.dapur.ubah', $pesanan->id), ['aksi' => 'item', 'item_id' => $detailDapur->id])
+            ->assertRedirect();
+
+        $this->actingAs($koki)
+            ->patch(route('kds.dapur.ubah', $pesanan->id), ['aksi' => 'runner'])
+            ->assertRedirect();
+
+        $this->assertDatabaseCount('log_panggil_pelayan', 1);
+        $this->assertSame($pesanan->meja_id, (int) \App\Models\LogPanggilPelayan::first()->meja_id);
+        $this->assertSame('menunggu', $detailBar->fresh()->status_item);
+    }
+
+    public function test_pesanan_baru_muncul_di_pelayan_setelah_runner_dikonfirmasi(): void
+    {
+        $meja = $this->meja();
+        $menuBar = $this->menu('bar', 'Kopi Susu');
+        $pesanan = Pesanan::create([
+            'kode_pesanan' => 'SW-KDS-' . Str::upper(Str::random(6)),
+            'meja_id' => $meja->id,
+            'total_bayar' => 20000,
+            'status_pesanan' => Pesanan::STATUS_MENUNGGU,
+            'status_pembayaran' => Pesanan::PAYMENT_BELUM_BAYAR,
+            'waktu_pesan' => now()->subMinute(),
+        ]);
+        $detail = $pesanan->detailPesanan()->create([
+            'menu_id' => $menuBar->id,
+            'jumlah' => 1,
+            'harga_satuan' => 20000,
+            'subtotal' => 20000,
+            'status_item' => 'menunggu',
+        ]);
+
+        $barista = User::factory()->create(['role' => 'barista']);
+        $pelayan = User::factory()->create([
+            'role' => 'pelayan',
+            'area' => 'Lesehan Bawah',
+            'is_aktif' => true,
+        ]);
+
+        $this->actingAs($barista)
+            ->patch(route('kds.bar.ubah', $pesanan->id), ['aksi' => 'mulai'])
+            ->assertRedirect();
+
+        $this->actingAs($barista)
+            ->patch(route('kds.bar.ubah', $pesanan->id), [
+                'aksi' => 'item',
+                'item_id' => $detail->id,
+            ])
+            ->assertRedirect();
+
+        // Semua item siap, tetapi pesanan belum boleh muncul di pelayan.
+        $this->assertSame(Pesanan::STATUS_DIPROSES, $pesanan->fresh()->status_pesanan);
+        $this->actingAs($pelayan)
+            ->get(route('pelayan.tab-antar'))
+            ->assertOk()
+            ->assertDontSee($pesanan->kode_pesanan);
+
+        $this->actingAs($barista)
+            ->patch(route('kds.bar.ubah', $pesanan->id), ['aksi' => 'runner'])
+            ->assertRedirect();
+
+        // Setelah popup Panggil Runner dikonfirmasi, baru pesanan diteruskan.
+        $this->assertSame(Pesanan::STATUS_SIAP, $pesanan->fresh()->status_pesanan);
+        $this->actingAs($pelayan)
+            ->get(route('pelayan.tab-antar'))
+            ->assertOk()
+            ->assertSee($pesanan->kode_pesanan);
     }
 }

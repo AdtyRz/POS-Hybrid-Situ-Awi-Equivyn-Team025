@@ -278,8 +278,9 @@
                                 </div>
                             @endif
 
-                            @if ($table['session_active'])
-                                <div class="flex justify-end pt-1">
+                            @if ($table['session_occupied'])
+                                <div class="flex justify-end pt-1"
+                                     x-show="tables.find(item => item.id === {{ $table['id'] }})?.session_occupied ?? false">
                                     <button @click="konfirmasiAkhiriSesi({{ $table['id'] }})" type="button"
                                             class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[#BA1A1A]/30 bg-[#FFDAD6]/40 text-[#93000A] font-bold text-[10px] tracking-[0.24px] transition-all active:scale-95 cursor-pointer hover:bg-[#FFDAD6]">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -312,7 +313,7 @@
 
     </div>
 
-    <div x-show="showQrModal" x-cloak x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+    <div x-show="showQrModal" x-cloak x-transition class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
         <div @click.away="showQrModal = false" class="bg-white rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-[#E5E2DB]">
             <div class="flex items-center justify-between pb-2 border-b border-[#F0EEE7]">
                 <div class="flex items-center gap-2">
@@ -334,7 +335,7 @@
                    class="text-[11px] text-[#0B4D2B] underline break-all text-center" x-text="qrTable?.qr_url ?? '-'">-</a>
             </div>
 
-            <button x-show="qrTable && !qrTable.session_active" @click="aktifkanSesi()" :disabled="qrLoading"
+            <button x-show="qrTable && !qrTable.session_code" @click="aktifkanSesi()" :disabled="qrLoading"
                     type="button"
                     class="w-full py-2.5 bg-[#00341A] hover:bg-[#0B4D2B] text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-98 cursor-pointer disabled:opacity-60">
                 <span x-text="qrLoading ? 'Mengaktifkan...' : 'Aktifkan Sesi & QR'">Aktifkan Sesi & QR</span>
@@ -345,7 +346,7 @@
         </div>
     </div>
 
-    <div x-show="showMenuModal" x-cloak x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+    <div x-show="showMenuModal" x-cloak x-transition class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
         <div @click.away="showMenuModal = false" class="bg-white rounded-2xl p-5 max-w-sm w-full max-h-[88vh] overflow-y-auto space-y-4 shadow-2xl border border-[#E5E2DB]">
             <div class="flex items-center justify-between pb-2 border-b border-[#F0EEE7]">
                 <div class="flex items-center gap-2">
@@ -407,14 +408,126 @@
                 </div>
             </div>
 
-            <button @click="submitPesanan()" :disabled="menuSubmitting || cartTotal <= 0" type="button"
-                    class="w-full py-3 bg-[#0B4D2B] hover:bg-[#00341A] text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-98 cursor-pointer disabled:opacity-60">
-                <span x-text="menuSubmitting ? 'Mengirim...' : 'Kirim ke Dapur / Bar'">Kirim ke Dapur / Bar</span>
-            </button>
+            <p class="text-[10px] text-[#404941] text-center leading-relaxed">
+                Pesanan baru dikirim ke dapur/bar setelah pembayaran diterima.
+            </p>
+
+            <div class="grid grid-cols-2 gap-2">
+                <button @click="submitPesanan('tunai')" :disabled="menuSubmitting || cartTotal <= 0" type="button"
+                        class="w-full py-3 bg-[#0B4D2B] hover:bg-[#00341A] text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-98 cursor-pointer disabled:opacity-60">
+                    <span x-text="menuSubmitting && menuMetode === 'tunai' ? 'Memproses...' : 'Bayar Tunai'">Bayar Tunai</span>
+                </button>
+                <button @click="submitPesanan('qris')" :disabled="menuSubmitting || cartTotal <= 0" type="button"
+                        class="w-full py-3 bg-[#FECE66] hover:bg-[#F5BF45] text-[#765600] font-bold text-xs rounded-xl shadow-xs transition-all active:scale-98 cursor-pointer disabled:opacity-60">
+                    <span x-text="menuSubmitting && menuMetode === 'qris' ? 'Menyiapkan...' : 'QRIS'">QRIS</span>
+                </button>
+            </div>
         </div>
     </div>
 
-    <div x-show="showDetailModal" x-cloak x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+    <div x-show="showQrisPayModal" x-cloak x-transition class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+        <div class="bg-white rounded-2xl p-5 max-w-sm w-full max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl border border-[#E5E2DB]">
+            <div class="flex items-center justify-between pb-2 border-b border-[#F0EEE7]">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full" :class="qrisPayStatus === 'paid' ? 'bg-[#0B4D2B]' : (qrisPayStatus === 'cancelled' ? 'bg-[#BA1A1A]' : 'bg-[#7A5900]')"></span>
+                    <h3 class="font-bold text-base text-[#1C1C18]"
+                        x-text="qrisPayStatus === 'paid' ? 'Pembayaran Berhasil' : (qrisPayStatus === 'cancelled' ? 'Pesanan Dibatalkan' : 'Pembayaran QRIS')">
+                        Pembayaran QRIS
+                    </h3>
+                </div>
+                <button x-show="qrisPayStatus !== 'pending'" @click="tutupQrisPay()" type="button"
+                        class="text-[#707971] hover:text-[#1C1C18] text-lg font-bold cursor-pointer">&times;</button>
+            </div>
+
+            <template x-if="qrisPayOrder">
+                <div class="space-y-3">
+                    <div class="bg-[#F6F3EC] rounded-xl p-3 flex items-center justify-between text-xs">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px]">SAUNG</span>
+                            <span class="font-bold text-[#1C1C18]" x-text="qrisPayOrder.meja || '-'">-</span>
+                        </div>
+                        <div class="flex flex-col items-end">
+                            <span class="text-[10px] font-bold text-[#404941] tracking-[0.4px]">TOTAL</span>
+                            <span class="font-bold text-[#00341A]" x-text="formatRupiah(qrisPayOrder.total)">Rp 0</span>
+                        </div>
+                    </div>
+
+                    <template x-if="qrisPayStatus === 'pending'">
+                        <div class="space-y-3">
+                            <div class="bg-white rounded-xl p-4 flex flex-col items-center gap-2 border border-[#E5E2DB]">
+                                <img :src="qrisPayOrder.qr_url" alt="QRIS pembayaran"
+                                     class="w-60 h-60 object-contain" x-show="qrisPayOrder.qr_url">
+                                <p class="text-[10px] text-[#404941] text-center">Minta tamu memindai QR ini dengan aplikasi bank/e-wallet.</p>
+                                <p class="text-xs font-bold text-[#7A5900]">
+                                    Berlaku <span x-text="formatCountdown(qrisPayCountdown)">5:00</span>
+                                </p>
+                            </div>
+
+                            <p class="text-[11px] font-mono text-[#404941] text-center" x-text="'Kode: ' + qrisPayOrder.kode_pesanan">Kode: -</p>
+
+                            <template x-if="!qrisPayKonfirmasiBatal">
+                                <button @click="qrisPayKonfirmasiBatal = true" type="button"
+                                        class="w-full py-2.5 bg-[#FFDAD6]/60 hover:bg-[#FFDAD6] text-[#93000A] font-bold text-xs rounded-xl transition-all active:scale-98 cursor-pointer">
+                                    Batalkan Pesanan
+                                </button>
+                            </template>
+
+                            <template x-if="qrisPayKonfirmasiBatal">
+                                <div class="space-y-2">
+                                    <p class="text-[11px] text-[#93000A] text-center font-semibold">Batalkan pesanan ini? Tindakan tidak dapat dibatalkan.</p>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <button @click="qrisPayKonfirmasiBatal = false" type="button"
+                                                class="w-full py-2.5 bg-[#F0EEE7] text-[#404941] font-semibold text-xs rounded-xl cursor-pointer">
+                                            Kembali
+                                        </button>
+                                        <button @click="batalkanQrisPay()" :disabled="qrisPayBusy" type="button"
+                                                class="w-full py-2.5 bg-[#BA1A1A] hover:bg-[#93000A] text-white font-bold text-xs rounded-xl transition-all active:scale-98 cursor-pointer disabled:opacity-60">
+                                            <span x-text="qrisPayBusy ? 'Membatalkan...' : 'Ya, Batalkan'">Ya, Batalkan</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <p class="text-[10px] text-[#404941] text-center">Status pembayaran diperiksa otomatis.</p>
+                        </div>
+                    </template>
+
+                    <template x-if="qrisPayStatus === 'paid'">
+                        <div class="space-y-3">
+                            <div class="bg-[#E8F5E9] rounded-xl p-4 flex flex-col items-center gap-2 text-center">
+                                <div class="w-12 h-12 rounded-full bg-[#0B4D2B] text-white flex items-center justify-center">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                                <p class="font-bold text-sm text-[#00341A]">Pembayaran QRIS diterima</p>
+                                <p class="text-[11px] text-[#404941]">Pesanan sudah otomatis dikirim ke dapur dan bar.</p>
+                            </div>
+                            <button @click="tutupQrisPay()" type="button"
+                                    class="w-full py-3 bg-[#0B4D2B] hover:bg-[#00341A] text-white font-bold text-xs rounded-xl transition-all active:scale-98 cursor-pointer">
+                                Selesai
+                            </button>
+                        </div>
+                    </template>
+
+                    <template x-if="qrisPayStatus === 'cancelled'">
+                        <div class="space-y-3">
+                            <div class="bg-[#FFDAD6]/50 rounded-xl p-4 text-center space-y-1">
+                                <p class="font-bold text-sm text-[#93000A]">Pesanan dibatalkan</p>
+                                <p class="text-[11px] text-[#404941]">Tidak ada pembayaran yang tercatat dan stok tidak dipotong.</p>
+                            </div>
+                            <button @click="tutupQrisPay()" type="button"
+                                    class="w-full py-3 bg-[#F0EEE7] text-[#404941] font-semibold text-xs rounded-xl cursor-pointer">
+                                Tutup
+                            </button>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <div x-show="showDetailModal" x-cloak x-transition class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
         <div @click.away="showDetailModal = false" class="bg-white rounded-2xl p-5 max-w-sm w-full max-h-[88vh] overflow-y-auto space-y-4 shadow-2xl border border-[#E5E2DB]">
             <div class="flex items-center justify-between pb-2 border-b border-[#F0EEE7]">
                 <div class="flex items-center gap-2">
@@ -463,7 +576,7 @@
          x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
          x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+         class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
         <div class="absolute inset-0" @click="showEndSessionModal = false"></div>
         <div class="relative bg-white rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-[#E5E2DB]">
             <div class="flex items-start gap-3">
@@ -505,7 +618,7 @@
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="opacity-100 translate-y-0"
          x-transition:leave-end="opacity-0 translate-y-4"
-         class="fixed bottom-20 left-4 right-4 z-50 max-w-[390px] mx-auto pointer-events-none">
+         class="fixed bottom-20 left-4 right-4 z-[80] max-w-[390px] mx-auto pointer-events-none">
         <div class="bg-[#31312C] text-[#F3F0EA] rounded-xl px-4 py-3 flex items-center gap-3 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] border border-white/10 pointer-events-auto">
             <svg class="w-[18.33px] h-[18.33px] text-[#FFDEA1] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -545,6 +658,18 @@
             menuCatatan: '',
             cart: {},
             menuSubmitting: false,
+            menuMetode: null,
+
+            showQrisPayModal: false,
+            qrisPayOrder: null,
+            qrisPayStatus: 'pending',
+            qrisPayCountdown: 0,
+            qrisPayBusy: false,
+            qrisPayKonfirmasiBatal: false,
+            qrisPayTimer: null,
+            qrisPayPoll: null,
+            qrisStatusTemplate: @json(route('pelayan.pesanan.qris-status', ['kode' => '__KODE__'])),
+            qrisBatalTemplate: @json(route('pelayan.pesanan.batal', ['kode' => '__KODE__'])),
 
             showQrModal: false,
             qrTable: null,
@@ -727,6 +852,13 @@
 
                     if (!response.ok) throw new Error(payload.message || 'Sesi gagal diakhiri.');
 
+                    const table = this.tables.find(item => item.id === this.endSessionTable.id);
+                    if (table) {
+                        table.session_occupied = false;
+                        table.session_active = true;
+                        table.session_code = payload.kode_unik ?? table.session_code;
+                    }
+
                     this.showEndSessionModal = false;
                     this.endSessionTable = null;
                     this.triggerToast(payload.message || 'Sesi meja berhasil diakhiri.');
@@ -766,7 +898,7 @@
                 this.cart = { ...this.cart };
             },
 
-            async submitPesanan() {
+            async submitPesanan(metode) {
                 if (this.menuSubmitting || this.cartTotal <= 0) return;
 
                 if (!this.menuMejaId) {
@@ -775,6 +907,7 @@
                 }
 
                 this.menuSubmitting = true;
+                this.menuMetode = metode;
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
                 try {
@@ -788,6 +921,7 @@
                         },
                         body: JSON.stringify({
                             meja_id: this.menuMejaId,
+                            metode: metode,
                             jumlah: this.cart,
                             catatan: this.menuCatatan,
                         }),
@@ -799,13 +933,171 @@
                     this.cart = {};
                     this.menuCatatan = '';
                     this.showMenuModal = false;
-                    this.triggerToast(payload.message || 'Pesanan berhasil dikirim.');
+
+                    if (payload.metode === 'qris' && payload.qris?.qr_url) {
+                        this.bukaQrisPay(payload);
+                    } else {
+                        this.triggerToast(payload.message || 'Pesanan berhasil dikirim.');
+                    }
+
                     await this.refreshLive();
                 } catch (error) {
                     this.triggerToast(error.message || 'Pesanan gagal dikirim.');
                 } finally {
                     this.menuSubmitting = false;
+                    this.menuMetode = null;
                 }
+            },
+
+            bukaQrisPay(payload) {
+                this.bersihkanTimerQris();
+
+                this.qrisPayOrder = {
+                    kode_pesanan: payload.pesanan?.kode_pesanan ?? '',
+                    meja: payload.pesanan?.meja ?? '',
+                    total: Number(payload.pesanan?.total) || 0,
+                    qr_url: payload.qris?.qr_url ?? '',
+                };
+                this.qrisPayStatus = 'pending';
+                this.qrisPayKonfirmasiBatal = false;
+                this.qrisPayBusy = false;
+                this.qrisPayCountdown = Math.max(30, Number(payload.qris?.expires_in) || 300);
+                this.showQrisPayModal = true;
+
+                this.mulaiHitungQris();
+                this.mulaiPollingQris();
+            },
+
+            mulaiHitungQris() {
+                if (this.qrisPayTimer) clearInterval(this.qrisPayTimer);
+
+                this.qrisPayTimer = setInterval(() => {
+                    if (this.qrisPayStatus !== 'pending') {
+                        clearInterval(this.qrisPayTimer);
+                        this.qrisPayTimer = null;
+                        return;
+                    }
+
+                    this.qrisPayCountdown = Math.max(0, this.qrisPayCountdown - 1);
+                }, 1000);
+            },
+
+            mulaiPollingQris() {
+                if (this.qrisPayPoll) clearInterval(this.qrisPayPoll);
+
+                this.qrisPayPoll = setInterval(() => this.cekQrisPay(), 3000);
+            },
+
+            bersihkanTimerQris() {
+                if (this.qrisPayTimer) clearInterval(this.qrisPayTimer);
+                if (this.qrisPayPoll) clearInterval(this.qrisPayPoll);
+                this.qrisPayTimer = null;
+                this.qrisPayPoll = null;
+            },
+
+            async cekQrisPay() {
+                if (!this.showQrisPayModal || this.qrisPayStatus !== 'pending' || !this.qrisPayOrder || this.qrisPayBusy) {
+                    return;
+                }
+
+                this.qrisPayBusy = true;
+
+                try {
+                    const url = this.qrisStatusTemplate.replace('__KODE__', encodeURIComponent(this.qrisPayOrder.kode_pesanan));
+                    const response = await fetch(url, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        cache: 'no-store',
+                    });
+                    const payload = await response.json().catch(() => ({}));
+
+                    if (payload.dibatalkan) {
+                        this.selesaikanQris('cancelled');
+                        return;
+                    }
+
+                    if (!response.ok) return;
+
+                    if (payload.lunas) {
+                        this.selesaikanQris('paid');
+                        this.triggerToast('Pembayaran QRIS diterima. Pesanan dikirim ke dapur dan bar.');
+                        window.setTimeout(() => this.refreshLive(), 400);
+                        return;
+                    }
+
+                    if (payload.expired && payload.qr_url) {
+                        this.qrisPayOrder.qr_url = payload.qr_url;
+                        this.qrisPayCountdown = Math.max(30, Number(payload.expires_in) || 300);
+                        this.triggerToast('QR kedaluwarsa. QR baru sudah dibuat.');
+                    }
+                } catch (error) {
+                    // Jaringan sedang bermasalah; polling berikutnya mencoba lagi.
+                } finally {
+                    this.qrisPayBusy = false;
+                }
+            },
+
+            async batalkanQrisPay() {
+                if (!this.qrisPayOrder || this.qrisPayBusy) return;
+
+                this.qrisPayBusy = true;
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+
+                try {
+                    const url = this.qrisBatalTemplate.replace('__KODE__', encodeURIComponent(this.qrisPayOrder.kode_pesanan));
+                    const response = await fetch(url, {
+                        method: 'DELETE',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
+                    const payload = await response.json().catch(() => ({}));
+
+                    if (response.status === 409 && payload.lunas) {
+                        this.selesaikanQris('paid');
+                        this.triggerToast(payload.message || 'Pembayaran QRIS sudah diterima.');
+                        await this.refreshLive();
+                        return;
+                    }
+
+                    if (!response.ok) throw new Error(payload.message || 'Pesanan gagal dibatalkan.');
+
+                    this.selesaikanQris('cancelled');
+                    this.triggerToast(payload.message || 'Pesanan dibatalkan.');
+                    await this.refreshLive();
+                } catch (error) {
+                    this.triggerToast(error.message || 'Pesanan gagal dibatalkan.');
+                } finally {
+                    this.qrisPayBusy = false;
+                }
+            },
+
+            selesaikanQris(status) {
+                this.qrisPayStatus = status;
+                this.qrisPayKonfirmasiBatal = false;
+                this.bersihkanTimerQris();
+            },
+
+            tutupQrisPay() {
+                if (this.qrisPayStatus === 'pending') return;
+
+                this.bersihkanTimerQris();
+                this.showQrisPayModal = false;
+                this.qrisPayOrder = null;
+                this.qrisPayStatus = 'pending';
+                this.qrisPayKonfirmasiBatal = false;
+            },
+
+            formatCountdown(seconds) {
+                const total = Math.max(0, Number(seconds) || 0);
+                const menit = Math.floor(total / 60);
+                const sisa = total % 60;
+
+                return menit + ':' + String(sisa).padStart(2, '0');
             },
 
             async respondCall(panggilanId, state) {
@@ -882,9 +1174,15 @@
                 this.qrTable = { ...table };
                 this.qrReady = false;
                 this.showQrModal = true;
+
+                // Pastikan kode 4/6 digit langsung tampil. Sesi dibuat sekali
+                // saat QR dibuka bila meja belum punya sesi aktif.
+                if (!this.qrTable.session_code) {
+                    this.aktifkanSesi(true);
+                }
             },
 
-            async aktifkanSesi() {
+            async aktifkanSesi(otomatis = false) {
                 if (!this.qrTable || this.qrLoading) return;
 
                 this.qrLoading = true;
@@ -916,7 +1214,10 @@
                     }
 
                     this.$nextTick(() => this.renderQr());
-                    this.triggerToast('Sesi meja berhasil diaktifkan.');
+
+                    if (!otomatis) {
+                        this.triggerToast('Sesi meja berhasil diaktifkan.');
+                    }
                 } catch (error) {
                     this.triggerToast(error.message || 'Sesi gagal diaktifkan.');
                 } finally {

@@ -10,6 +10,8 @@ use App\Models\Menu;
 use App\Models\Pesanan;
 use App\Models\SesiMeja;
 use App\Models\User;
+use App\Services\IotStatusService;
+use App\Services\MidtransService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -207,6 +209,7 @@ class PelayanDashboardTest extends TestCase
         $response = $this->actingAs($pelayan)
             ->postJson(route('pelayan.pesanan.store'), [
                 'meja_id' => $meja->id,
+                'metode' => 'tunai',
                 'jumlah' => [
                     $menuDapur->id => 2,
                     $menuBar->id => 1,
@@ -214,21 +217,32 @@ class PelayanDashboardTest extends TestCase
                 'catatan' => 'Satu tanpa nasi',
             ])
             ->assertCreated()
-            ->assertJsonPath('status', 'ok');
+            ->assertJsonPath('status', 'ok')
+            ->assertJsonPath('metode', 'tunai');
 
         $kodePesanan = $response->json('pesanan.kode_pesanan');
         $pesanan = Pesanan::where('kode_pesanan', $kodePesanan)->firstOrFail();
 
         $this->assertSame($meja->id, $pesanan->meja_id);
         $this->assertSame('Bapak Andi', $pesanan->nama_pelanggan);
-        $this->assertSame(Pesanan::STATUS_MENUNGGU, $pesanan->status_pesanan);
+        $this->assertSame(Pesanan::STATUS_DIPROSES, $pesanan->status_pesanan);
+        $this->assertSame(Pesanan::PAYMENT_SUDAH_BAYAR, $pesanan->status_pembayaran);
+        $this->assertSame('tunai', $pesanan->metode_pembayaran);
         $this->assertSame(3, $pesanan->detailPesanan()->sum('jumlah'));
         $this->assertSame(2, $pesanan->detailPesanan()->where('menu_id', $menuDapur->id)->value('jumlah'));
         $this->assertSame(1, $pesanan->detailPesanan()->where('menu_id', $menuBar->id)->value('jumlah'));
+        $this->assertSame(8, (int) $menuDapur->fresh()->stok_menu);
+        $this->assertSame(5, (int) $menuBar->fresh()->stok_menu);
+        $this->assertDatabaseHas('pembayaran', [
+            'pesanan_id' => $pesanan->id,
+            'metode_pembayaran' => 'tunai',
+            'status_pembayaran' => 'lunas',
+        ]);
 
         $this->actingAs($pelayan)
             ->postJson(route('pelayan.pesanan.store'), [
                 'meja_id' => $mejaLain->id,
+                'metode' => 'tunai',
                 'jumlah' => [$menuDapur->id => 1],
             ])
             ->assertForbidden();
@@ -236,9 +250,18 @@ class PelayanDashboardTest extends TestCase
         $this->actingAs($pelayan)
             ->postJson(route('pelayan.pesanan.store'), [
                 'meja_id' => $meja->id,
+                'metode' => 'tunai',
                 'jumlah' => [$menuDapur->id => 99],
             ])
             ->assertStatus(422);
+
+        $this->actingAs($pelayan)
+            ->postJson(route('pelayan.pesanan.store'), [
+                'meja_id' => $meja->id,
+                'jumlah' => [$menuDapur->id => 1],
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('metode');
 
         $bukaMeja = $this->actingAs($pelayan)
             ->postJson(route('pelayan.meja.buka', $meja->kode_meja))
@@ -303,6 +326,42 @@ class PelayanDashboardTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_sesi_baru_setelah_diakhiri_tidak_lagi_menghitung_meja_terisi(): void
+    {
+        $this->withoutVite();
+
+        $pelayan = $this->pelayan();
+        $meja = $this->meja('LB-06', 'Lesehan Bawah');
+        $menu = $this->menu('Ikan Bakar', 'dapur');
+
+        $sesiLama = SesiMeja::aktifUntuk($meja);
+        $pesanan = $this->pesanan($meja, $menu, Pesanan::STATUS_DIPROSES);
+        $pesanan->update(['status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR]);
+
+        $response = $this->actingAs($pelayan)
+            ->patchJson(route('pelayan.session.tutup', $meja->kode_meja))
+            ->assertOk()
+            ->assertJsonPath('status', 'ok')
+            ->assertJsonPath('session_occupied', false);
+
+        $kodeBaru = (string) $response->json('kode_unik');
+        $this->assertNotSame($sesiLama->kode_unik, $kodeBaru);
+        $this->assertSame($kodeBaru, SesiMeja::aktifUntuk($meja)->kode_unik);
+
+        $halaman = $this->actingAs($pelayan)
+            ->get(route('pelayan.tab-saung'))
+            ->assertOk()
+            ->assertViewHas('terisiCount', 0)
+            ->assertViewHas('tersediaCount', 1);
+
+        $table = collect($halaman->viewData('tables'))->firstWhere('id', $meja->id);
+
+        $this->assertNotNull($table);
+        $this->assertSame($kodeBaru, $table['session_code']);
+        $this->assertFalse($table['session_occupied']);
+        $this->assertSame('tersedia', $table['status']);
+    }
+
     public function test_tab_saung_tidak_menghitung_sesi_lintas_hari_sebagai_meja_terisi(): void
     {
         $this->withoutVite();
@@ -328,5 +387,220 @@ class PelayanDashboardTest extends TestCase
         $this->assertSame('selesai', $basi->fresh()->status);
         $response->assertViewHas('terisiCount', 1);
         $response->assertViewHas('tersediaCount', 1);
+    }
+
+    public function test_pesanan_qris_pelayan_menunggu_settlement_dan_belum_masuk_kds(): void
+    {
+        $pelayan = $this->pelayan();
+        $meja = $this->meja('LB-07', 'Lesehan Bawah');
+        $menu = $this->menu('Kepiting Rebus', 'dapur', 6);
+
+        $this->partialMock(MidtransService::class, function ($mock) {
+            $mock->shouldReceive('createQrisCharge')->once()->andReturn([
+                'order_id' => 'SW-QRIS-TEST',
+                'transaction_id' => 'trx-pending',
+                'qr_url' => 'https://example.test/qris-pending.png',
+                'transaction_status' => 'pending',
+            ]);
+            $mock->shouldReceive('qrisExpiryMinutes')->andReturn(5);
+        });
+
+        $response = $this->actingAs($pelayan)
+            ->postJson(route('pelayan.pesanan.store'), [
+                'meja_id' => $meja->id,
+                'metode' => 'qris',
+                'jumlah' => [$menu->id => 2],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('metode', 'qris')
+            ->assertJsonPath('qris.qr_url', 'https://example.test/qris-pending.png')
+            ->assertJsonPath('qris.expires_in', 300);
+
+        $pesanan = Pesanan::where('kode_pesanan', $response->json('pesanan.kode_pesanan'))->firstOrFail();
+
+        $this->assertSame(Pesanan::STATUS_MENUNGGU_VERIFIKASI, $pesanan->status_pesanan);
+        $this->assertSame(Pesanan::PAYMENT_PENDING_VERIFIKASI, $pesanan->status_pembayaran);
+        $this->assertSame('qris', $pesanan->metode_pembayaran);
+        $this->assertDatabaseMissing('pembayaran', ['pesanan_id' => $pesanan->id]);
+        $this->assertSame(6, (int) $menu->fresh()->stok_menu);
+
+        // KDS hanya membaca status menunggu/diproses/siap.
+        $this->assertFalse(
+            Pesanan::whereKey($pesanan->id)
+                ->whereIn('status_pesanan', [Pesanan::STATUS_MENUNGGU, Pesanan::STATUS_DIPROSES, Pesanan::STATUS_SIAP])
+                ->exists()
+        );
+    }
+
+    public function test_qris_pelayan_lunas_setelah_settlement_lalu_masuk_kds(): void
+    {
+        $pelayan = $this->pelayan();
+        $meja = $this->meja('LB-08', 'Lesehan Bawah');
+        $menu = $this->menu('Udang Bakar', 'dapur', 4);
+
+        $this->partialMock(MidtransService::class, function ($mock) {
+            $mock->shouldReceive('createQrisCharge')->once()->andReturn([
+                'order_id' => 'SW-QRIS-SETTLE',
+                'transaction_id' => 'trx-settle',
+                'qr_url' => 'https://example.test/qris-settle.png',
+                'transaction_status' => 'pending',
+            ]);
+            $mock->shouldReceive('qrisExpiryMinutes')->andReturn(5);
+            $mock->shouldReceive('getTransactionStatus')->once()->andReturn((object) [
+                'transaction_status' => 'settlement',
+                'fraud_status' => 'accept',
+                'transaction_id' => 'trx-settle',
+            ]);
+        });
+
+        $response = $this->actingAs($pelayan)
+            ->postJson(route('pelayan.pesanan.store'), [
+                'meja_id' => $meja->id,
+                'metode' => 'qris',
+                'jumlah' => [$menu->id => 3],
+            ])
+            ->assertCreated();
+
+        $kode = (string) $response->json('pesanan.kode_pesanan');
+
+        $this->actingAs($pelayan)
+            ->getJson(route('pelayan.pesanan.qris-status', $kode))
+            ->assertOk()
+            ->assertJsonPath('lunas', true)
+            ->assertJsonPath('status_pesanan', Pesanan::STATUS_DIPROSES)
+            ->assertJsonPath('status_pembayaran', Pesanan::PAYMENT_SUDAH_BAYAR);
+
+        $pesanan = Pesanan::where('kode_pesanan', $kode)->firstOrFail();
+
+        $this->assertSame(Pesanan::STATUS_DIPROSES, $pesanan->status_pesanan);
+        $this->assertSame(Pesanan::PAYMENT_SUDAH_BAYAR, $pesanan->status_pembayaran);
+        $this->assertSame(1, (int) $menu->fresh()->stok_menu);
+        $this->assertDatabaseHas('pembayaran', [
+            'pesanan_id' => $pesanan->id,
+            'metode_pembayaran' => 'qris',
+            'status_pembayaran' => 'lunas',
+            'transaction_id' => 'trx-settle',
+        ]);
+
+        $this->assertTrue(
+            Pesanan::whereKey($pesanan->id)
+                ->whereIn('status_pesanan', [Pesanan::STATUS_MENUNGGU, Pesanan::STATUS_DIPROSES, Pesanan::STATUS_SIAP])
+                ->exists()
+        );
+    }
+
+    public function test_pelayan_bisa_membatalkan_pesanan_qris_yang_belum_dibayar(): void
+    {
+        $pelayan = $this->pelayan();
+        $pelayanLain = $this->pelayan('Lesehan Atas');
+        $meja = $this->meja('LB-09', 'Lesehan Bawah');
+        $menu = $this->menu('Cumi Goreng', 'dapur', 5);
+
+        $this->partialMock(MidtransService::class, function ($mock) {
+            $mock->shouldReceive('createQrisCharge')->once()->andReturn([
+                'order_id' => 'SW-QRIS-CANCEL',
+                'transaction_id' => 'trx-cancel',
+                'qr_url' => 'https://example.test/qris-cancel.png',
+                'transaction_status' => 'pending',
+            ]);
+            $mock->shouldReceive('qrisExpiryMinutes')->andReturn(5);
+            $mock->shouldReceive('getTransactionStatus')->once()->andReturn((object) [
+                'transaction_status' => 'pending',
+                'fraud_status' => 'accept',
+                'transaction_id' => 'trx-cancel',
+            ]);
+        });
+
+        $response = $this->actingAs($pelayan)
+            ->postJson(route('pelayan.pesanan.store'), [
+                'meja_id' => $meja->id,
+                'metode' => 'qris',
+                'jumlah' => [$menu->id => 1],
+            ])
+            ->assertCreated();
+
+        $kode = (string) $response->json('pesanan.kode_pesanan');
+
+        $this->actingAs($pelayanLain)
+            ->deleteJson(route('pelayan.pesanan.batal', $kode))
+            ->assertForbidden();
+
+        $this->actingAs($pelayan)
+            ->deleteJson(route('pelayan.pesanan.batal', $kode))
+            ->assertOk()
+            ->assertJsonPath('status', 'ok')
+            ->assertJsonPath('status_pesanan', Pesanan::STATUS_DIBATALKAN);
+
+        $pesanan = Pesanan::where('kode_pesanan', $kode)->firstOrFail();
+
+        $this->assertSame(Pesanan::STATUS_DIBATALKAN, $pesanan->status_pesanan);
+        $this->assertDatabaseMissing('pembayaran', ['pesanan_id' => $pesanan->id]);
+        $this->assertSame(5, (int) $menu->fresh()->stok_menu);
+
+        $this->actingAs($pelayan)
+            ->getJson(route('pelayan.pesanan.qris-status', $kode))
+            ->assertStatus(410)
+            ->assertJsonPath('dibatalkan', true);
+    }
+
+    public function test_tab_antar_memakai_tombol_status_tunggal_untuk_pesanan(): void
+    {
+        $this->withoutVite();
+
+        $pelayan = $this->pelayan();
+        $meja = $this->meja('LB-11', 'Lesehan Bawah');
+        $menu = $this->menu('Nasi Timbel', 'dapur');
+
+        $this->pesanan($meja, $menu, Pesanan::STATUS_SIAP);
+        $this->pesanan($meja, $menu, Pesanan::STATUS_DIANTAR);
+
+        $this->actingAs($pelayan)
+            ->get(route('pelayan.tab-antar'))
+            ->assertOk()
+            ->assertSee('Konfirmasi Kirim')
+            ->assertSee('Pesanan Sudah Dikirim')
+            ->assertDontSee('Selesai Diantar');
+    }
+
+    public function test_pelayan_menyelesaikan_pengantaran_dan_pesanan_keluar_dari_lcd(): void
+    {
+        $this->withoutVite();
+
+        $pelayan = $this->pelayan();
+        $meja = $this->meja('LB-10', 'Lesehan Bawah');
+        $menu = $this->menu('Sate Ayam', 'dapur');
+
+        $sesi = SesiMeja::aktifUntuk($meja);
+        $sesi->update(['dibuka_pada' => now()->subMinutes(5)]);
+
+        $pesanan = $this->pesanan($meja, $menu, Pesanan::STATUS_DIANTAR);
+        $pesanan->update(['status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR]);
+
+        $this->actingAs($pelayan)
+            ->get(route('pelayan.tab-antar'))
+            ->assertOk()
+            ->assertViewHas('deliveringCount', 1);
+
+        $this->actingAs($pelayan)
+            ->patchJson(route('pesanan.status', $pesanan->kode_pesanan), [
+                'status_pesanan' => Pesanan::STATUS_SELESAI,
+            ])
+            ->assertOk()
+            ->assertJsonPath('pesanan.status_pesanan', Pesanan::STATUS_SELESAI);
+
+        $this->assertSame(Pesanan::STATUS_SELESAI, $pesanan->fresh()->status_pesanan);
+        $this->assertSame('kosong', $meja->fresh()->status_meja);
+
+        $this->actingAs($pelayan)
+            ->get(route('pelayan.tab-antar'))
+            ->assertOk()
+            ->assertViewHas('deliveringCount', 0);
+
+        $lcd = app(IotStatusService::class)->detailMeja($meja->kode_meja);
+
+        $this->assertSame('lunas', $lcd['data']['fase']);
+        $this->assertSame(0, $lcd['data']['jumlah_pesanan']);
+        $this->assertCount(0, $lcd['data']['pesanan']);
+        $this->assertSame(25000.0, (float) $lcd['data']['total_bayar']);
     }
 }

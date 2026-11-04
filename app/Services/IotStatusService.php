@@ -65,6 +65,14 @@ class IotStatusService
             ->orderByDesc('waktu_pesan')
             ->get();
 
+        // LCD hanya menampilkan progres pesanan yang masih berjalan. Pesanan
+        // yang sudah selesai tetap dihitung untuk total tagihan sesi, tetapi
+        // tidak boleh membuat status "Diproses (2)" terus muncul setelah
+        // pelayan menyelesaikan pengantaran.
+        $pesananAktif = $pesanan
+            ->reject(fn (Pesanan $p) => $p->status_pesanan === Pesanan::STATUS_SELESAI)
+            ->values();
+
         $belumBayar = $pesanan->filter(
             fn (Pesanan $p) => $p->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR
         );
@@ -110,8 +118,8 @@ class IotStatusService
                 'ada_pesanan' => $pesanan->isNotEmpty(),
                 'semua_lunas' => $pesanan->isNotEmpty() && $belumBayar->isEmpty(),
                 'total_bayar' => (float) $pesanan->sum('total_bayar'),
-                'jumlah_pesanan' => $pesanan->count(),
-                'pesanan' => $pesanan->map(fn ($p) => [
+                'jumlah_pesanan' => $pesananAktif->count(),
+                'pesanan' => $pesananAktif->map(fn ($p) => [
                     'kode_pesanan' => $p->kode_pesanan,
                     'status_pesanan' => $p->status_pesanan,
                     'status_pembayaran' => $p->status_pembayaran,
