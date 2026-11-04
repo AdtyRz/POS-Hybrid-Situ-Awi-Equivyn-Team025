@@ -405,6 +405,9 @@
     <form id="formPanggil" method="POST" action="{{ route('emenu.panggil', $meja->id) }}" class="hidden">
         @csrf
     </form>
+    <form id="formKeluar" method="POST" action="{{ route('emenu.keluar') }}" class="hidden">
+        @csrf
+    </form>
     <script>
         function pelangganApp() {
             return {
@@ -616,7 +619,10 @@
                     if (this.step === 2) {
                         this.goToStep(1);
                     } else {
-                        window.location.href = '/';
+                        // Panah kembali di header sekaligus menjadi tombol
+                        // keluar pelanggan: lupakan verifikasi meja lalu
+                        // kembali ke beranda, bukan ke halaman login staf.
+                        document.getElementById('formKeluar')?.submit();
                     }
                 },
                 triggerWaiterCall() {

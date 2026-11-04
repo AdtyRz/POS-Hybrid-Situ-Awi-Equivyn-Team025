@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [EMenuController::class, 'beranda'])->name('emenu.index');
 Route::post('/masuk', [EMenuController::class, 'masuk'])
-    ->middleware('throttle:5,1')
+    ->middleware('throttle:5,1,pin')
     ->name('emenu.masuk');
 
 Route::middleware('pesanan.no-store')->group(function () {
@@ -26,7 +26,7 @@ Route::middleware('pesanan.no-store')->group(function () {
         ->middleware('throttle:60,1')
         ->name('emenu.kunci');
     Route::post('/meja/{meja}/buka', [EMenuController::class, 'buka'])
-        ->middleware('throttle:5,1')
+        ->middleware('throttle:5,1,pin')
         ->name('emenu.buka');
     Route::get('/meja/{meja}/pelacakan', [EMenuController::class, 'pelacakan'])
         ->middleware('throttle:30,1')
@@ -34,6 +34,9 @@ Route::middleware('pesanan.no-store')->group(function () {
     Route::post('/meja/{meja}/panggil', [EMenuController::class, 'panggil'])
         ->middleware('throttle:10,1')
         ->name('emenu.panggil');
+    Route::post('/keluar', [EMenuController::class, 'keluar'])
+        ->middleware('throttle:30,1')
+        ->name('emenu.keluar');
     Route::post('/meja/{meja}/checkout', [EMenuController::class, 'checkout'])
         ->middleware('throttle:20,1')
         ->name('emenu.checkout');

@@ -129,6 +129,12 @@ dapat memesan.
 - Verifikasi disimpan di session dengan key `sesi_meja_{id}`, dibandingkan dengan sesi aktif
   saat ini; begitu sesi ditutup, pelanggan otomatis diminta memasukkan kode baru. Riwayat
   pesanan tamu sebelumnya juga dihapus saat sesi baru diverifikasi.
+- **Satu browser hanya terhubung ke satu meja.** Setelah pelanggan membuka LB-01, percobaan
+  membuka meja lain (mis. LB-02) lewat PIN, QR, atau URL langsung akan ditolak dan diarahkan
+  kembali ke beranda dengan pesan kesalahan.
+- Tombol panah kembali di header e-menu menjadi tombol **keluar pelanggan** (tanpa teks
+  tambahan). Tombol ini menghapus verifikasi meja/riwayat di browser lalu membuka beranda
+  `GET /` (bukan halaman login staf) melalui `POST /keluar`.
 - Session ID dirotasi setelah kode saung benar untuk mencegah session fixation. Endpoint
   `buka` dibatasi 5 percobaan/menit, dan halaman pesanan memakai header `no-store`.
 
