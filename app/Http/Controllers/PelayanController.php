@@ -125,6 +125,53 @@ class PelayanController extends Controller
             ->get();
     }
 
+    /**
+     * Pesanan yang tercatat pada sesi aktif, termasuk yang sudah selesai.
+     * Dipakai agar meja tidak tampil "Tersedia" selama sesi tamu masih
+     * berjalan, sama seperti halaman Sesi Meja kasir.
+     */
+    private function pesananSesi(Collection $sesi): Collection
+    {
+        $query = $this->filterByArea(
+            Pesanan::with(['meja', 'detailPesanan.menu.kategori'])
+        )->where('status_pesanan', '!=', Pesanan::STATUS_DIBATALKAN);
+
+        $mulai = $sesi
+            ->map(fn (SesiMeja $item) => $item->dibuka_pada)
+            ->filter()
+            ->min();
+
+        if ($mulai) {
+            // Batasi query ke rentang sesi berjalan agar riwayat lama tidak
+            // ikut dimuat. Pesanan yang masih berjalan tetap diambil walau
+            // dibuat sebelum sesi saat ini.
+            $query->where(function ($q) use ($mulai) {
+                $q->where('waktu_pesan', '>=', $mulai)
+                    ->orWhereNotIn('status_pesanan', [
+                        Pesanan::STATUS_SELESAI,
+                        Pesanan::STATUS_DIBATALKAN,
+                    ]);
+            });
+        }
+
+        return $query->orderBy('waktu_pesan')
+            ->get()
+            ->filter(function (Pesanan $pesanan) use ($sesi) {
+                $sesiMeja = $sesi->get($pesanan->meja_id);
+
+                if (! $sesiMeja) {
+                    return ! in_array($pesanan->status_pesanan, [
+                        Pesanan::STATUS_SELESAI,
+                        Pesanan::STATUS_DIBATALKAN,
+                    ], true);
+                }
+
+                return $pesanan->waktu_pesan !== null
+                    && $pesanan->waktu_pesan->greaterThanOrEqualTo($sesiMeja->dibuka_pada);
+            })
+            ->values();
+    }
+
     private function sesiAktif(Collection $meja): Collection
     {
         SesiMeja::tutupSesiLintasHari();
@@ -268,26 +315,33 @@ class PelayanController extends Controller
         ];
     }
 
-    private function payloadMeja(MejaMakan $meja, Collection $panggilan, Collection $pesanan, ?SesiMeja $sesi): array
+    private function payloadMeja(MejaMakan $meja, Collection $panggilan, Collection $pesanan, Collection $pesananSesi, ?SesiMeja $sesi): array
     {
         $panggilanMeja = $panggilan->first(fn ($item) => (int) $item->meja_id === (int) $meja->id);
-        $pesananMeja = $pesanan
+        $pesananAktifMeja = $pesanan
             ->filter(fn ($item) => (int) $item->meja_id === (int) $meja->id)
             ->sortBy('waktu_pesan')
             ->values();
-        $orders = $pesananMeja->map(fn ($item) => $this->payloadPesanan($item))->values();
+        $pesananSesiMeja = $pesananSesi
+            ->filter(fn ($item) => (int) $item->meja_id === (int) $meja->id)
+            ->sortBy('waktu_pesan')
+            ->values();
+        $orders = $pesananSesiMeja->map(fn ($item) => $this->payloadPesanan($item))->values();
+        $ordersAktif = $pesananAktifMeja->map(fn ($item) => $this->payloadPesanan($item))->values();
         $items = $orders->flatMap(fn ($item) => $item['items'])->values();
+        $itemsAktif = $ordersAktif->flatMap(fn ($item) => $item['items'])->values();
         $totalQty = (int) $items->sum('jumlah');
-        $readyQty = (int) $items
+        $totalQtyAktif = (int) $itemsAktif->sum('jumlah');
+        $readyQty = (int) $itemsAktif
             ->filter(fn ($item) => in_array($item['status_item'], ['siap', 'diantar'], true))
             ->sum('jumlah');
-        $progress = $totalQty > 0 ? (int) round($readyQty / $totalQty * 100) : 0;
-        $total = (float) $pesananMeja->sum(fn ($item) => (float) $item->total_bayar);
-        $primary = $pesananMeja->first(fn ($item) => $item->status_pesanan === Pesanan::STATUS_SIAP)
-            ?? $pesananMeja->first(fn ($item) => $item->status_pesanan === Pesanan::STATUS_DIANTAR)
-            ?? $pesananMeja->first(fn ($item) => $item->status_pesanan === Pesanan::STATUS_DIPROSES)
-            ?? $pesananMeja->last();
-        $customer = $pesananMeja
+        $progress = $totalQtyAktif > 0 ? (int) round($readyQty / $totalQtyAktif * 100) : 0;
+        $total = (float) $pesananSesiMeja->sum(fn ($item) => (float) $item->total_bayar);
+        $primary = $pesananAktifMeja->first(fn ($item) => $item->status_pesanan === Pesanan::STATUS_SIAP)
+            ?? $pesananAktifMeja->first(fn ($item) => $item->status_pesanan === Pesanan::STATUS_DIANTAR)
+            ?? $pesananAktifMeja->first(fn ($item) => $item->status_pesanan === Pesanan::STATUS_DIPROSES)
+            ?? $pesananSesiMeja->last();
+        $customer = $pesananSesiMeja
             ->map(fn ($item) => $item->nama_pelanggan)
             ->filter()
             ->first();
@@ -306,54 +360,63 @@ class PelayanController extends Controller
             $statusDot = 'bg-[#BA1A1A] animate-ping';
             $cardClass = 'bg-white border-[#BA1A1A]/30 ring-1 ring-[#BA1A1A]';
             $borderClass = 'border-[#BA1A1A]/30';
-        } elseif ($pesananMeja->contains('status_pesanan', Pesanan::STATUS_SIAP)) {
+        } elseif ($pesananAktifMeja->contains('status_pesanan', Pesanan::STATUS_SIAP)) {
             $status = 'siap_antar';
             $statusLabel = 'Siap Antar';
             $statusColor = 'text-[#7A5900]';
             $statusDot = 'bg-[#7A5900]';
             $cardClass = 'bg-white border-[#FECE66]/70';
             $borderClass = 'border-[#FECE66]/70';
-        } elseif ($pesananMeja->contains('status_pesanan', Pesanan::STATUS_DIANTAR)) {
+        } elseif ($pesananAktifMeja->contains('status_pesanan', Pesanan::STATUS_DIANTAR)) {
             $status = 'diantar';
             $statusLabel = 'Diantar';
             $statusColor = 'text-[#7A5900]';
             $statusDot = 'bg-[#FECE66]';
             $cardClass = 'bg-white border-[#F0EEE7]';
             $borderClass = 'border-[#F0EEE7]';
-        } elseif ($pesananMeja->contains('status_pesanan', Pesanan::STATUS_DIPROSES)) {
+        } elseif ($pesananAktifMeja->contains('status_pesanan', Pesanan::STATUS_DIPROSES)) {
             $status = 'diproses';
             $statusLabel = 'Diproses';
             $statusColor = 'text-[#7A5900]';
             $statusDot = 'bg-[#7A5900]';
             $cardClass = 'bg-white border-[#F0EEE7]';
             $borderClass = 'border-[#F0EEE7]';
-        } elseif ($pesananMeja->contains('status_pesanan', Pesanan::STATUS_MENUNGGU_VERIFIKASI)) {
+        } elseif ($pesananAktifMeja->contains('status_pesanan', Pesanan::STATUS_MENUNGGU_VERIFIKASI)) {
             $status = 'verifikasi';
             $statusLabel = 'Verifikasi Bayar';
             $statusColor = 'text-[#7A5900]';
             $statusDot = 'bg-[#FECE66]';
             $cardClass = 'bg-white border-[#F0EEE7]';
             $borderClass = 'border-[#F0EEE7]';
-        } elseif ($pesananMeja->contains('status_pesanan', Pesanan::STATUS_MENUNGGU_PEMBAYARAN)) {
+        } elseif ($pesananAktifMeja->contains('status_pesanan', Pesanan::STATUS_MENUNGGU_PEMBAYARAN)) {
             $status = 'pembayaran';
             $statusLabel = 'Bayar di Kasir';
             $statusColor = 'text-[#7A5900]';
             $statusDot = 'bg-[#FECE66]';
             $cardClass = 'bg-white border-[#F0EEE7]';
             $borderClass = 'border-[#F0EEE7]';
-        } elseif ($pesananMeja->isNotEmpty()) {
+        } elseif ($pesananAktifMeja->isNotEmpty()) {
             $status = 'menunggu';
             $statusLabel = 'Menunggu';
             $statusColor = 'text-[#00341A]';
             $statusDot = 'bg-[#0B4D2B]';
             $cardClass = 'bg-white border-[#F0EEE7]';
             $borderClass = 'border-[#F0EEE7]';
+        } elseif ($pesananSesiMeja->isNotEmpty()) {
+            // Sesi masih berjalan meskipun semua pesanannya sudah selesai.
+            // Meja belum boleh tampil sebagai "Tersedia" sampai sesi ditutup.
+            $status = 'terisi';
+            $statusLabel = 'Terisi';
+            $statusColor = 'text-[#00341A]';
+            $statusDot = 'bg-[#0B4D2B]';
+            $cardClass = 'bg-white border-[#F0EEE7]';
+            $borderClass = 'border-[#F0EEE7]';
         }
 
-        $billInfo = $pesananMeja->isEmpty()
+        $billInfo = $pesananSesiMeja->isEmpty()
             ? 'Kapasitas '.$meja->kapasitas.' Orang'
             : 'Bill '.($customer ?: ($meja->kapasitas.' Tamu'))
-                .' • '.$pesananMeja->count().' pesanan'
+                .' • '.$pesananSesiMeja->count().' pesanan'
                 .' • Rp '.number_format($total, 0, ',', '.');
         $itemsSummary = $orders
             ->flatMap(fn ($item) => $item['items'])
@@ -398,10 +461,9 @@ class PelayanController extends Controller
             'call' => $panggilanMeja ? $this->payloadPanggilan($panggilanMeja) : null,
             'session_code' => $sesi?->kode_unik,
             'session_active' => (bool) $sesi,
-            // Tombol "Akhiri Sesi" hanya relevan bila meja punya tagihan
-            // berjalan. Sesi kosong (kode untuk tamu berikutnya) tetap aktif
-            // tetapi tidak dihitung sebagai meja terisi.
-            'session_occupied' => $pesananMeja->isNotEmpty(),
+            // Tombol "Akhiri Sesi" relevan selama sesi berjalan dan sudah
+            // memiliki pesanan, termasuk yang sudah selesai/dibayar.
+            'session_occupied' => $pesananSesiMeja->isNotEmpty(),
             'qr_url' => route('emenu.meja', $meja->kode_meja),
             'device' => filled($meja->id_device) ? $meja->id_device : 'QR Meja',
             'has_device' => filled($meja->id_device),
@@ -414,9 +476,10 @@ class PelayanController extends Controller
         $panggilan = $this->panggilanMenunggu();
         $pesanan = $this->pesananAktif();
         $sesi = $this->sesiAktif($meja);
+        $pesananSesi = $this->pesananSesi($sesi);
 
         $tables = $meja
-            ->map(fn ($item) => $this->payloadMeja($item, $panggilan, $pesanan, $sesi->get($item->id)))
+            ->map(fn ($item) => $this->payloadMeja($item, $panggilan, $pesanan, $pesananSesi, $sesi->get($item->id)))
             ->values();
 
         $clusters = $meja

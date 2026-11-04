@@ -148,6 +148,9 @@ dapat memesan.
   Tombol **Akhiri Sesi** selalu memunculkan popup konfirmasi **Tidak** / **Ya, Akhiri Sesi**
   sebelum sesi ditutup. Sesi dengan tagihan belum lunas ditolak dan popup menampilkan pesan
   kesalahan.
+- Status meja di halaman pelayan (Saung dan Panggilan) dihitung dari isi sesi berjalan,
+  termasuk pesanan yang sudah selesai/dibayar. Meja baru kembali **Tersedia** setelah sesi
+  ditutup dan kode baru dibuat.
 
 ### Integrasi IoT
 

@@ -362,6 +362,42 @@ class PelayanDashboardTest extends TestCase
         $this->assertSame('tersedia', $table['status']);
     }
 
+    public function test_meja_dengan_pesanan_selesai_dalam_sesi_tetap_terisi(): void
+    {
+        $this->withoutVite();
+
+        $pelayan = $this->pelayan();
+        $meja = $this->meja('LB-08', 'Lesehan Bawah');
+        $menu = $this->menu('Ayam Bakar', 'dapur');
+
+        $sesi = SesiMeja::aktifUntuk($meja);
+        $pesanan = $this->pesanan($meja, $menu, Pesanan::STATUS_SELESAI);
+        $pesanan->update([
+            'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+            'waktu_pesan' => $sesi->dibuka_pada->copy()->addMinute(),
+        ]);
+
+        $halaman = $this->actingAs($pelayan)
+            ->get(route('pelayan.tab-saung'))
+            ->assertOk()
+            ->assertViewHas('terisiCount', 1)
+            ->assertViewHas('tersediaCount', 0);
+
+        $table = collect($halaman->viewData('tables'))->firstWhere('id', $meja->id);
+
+        $this->assertNotNull($table);
+        $this->assertSame('terisi', $table['status']);
+        $this->assertSame('Terisi', $table['status_label']);
+        $this->assertTrue($table['session_occupied']);
+        $this->assertSame(1, $table['order_count']);
+        $this->assertSame('Rp 25.000', $table['total_format']);
+
+        $this->actingAs($pelayan)
+            ->get(route('pelayan.notifikasi-panggilan'))
+            ->assertOk()
+            ->assertSee('Terisi');
+    }
+
     public function test_tab_saung_tidak_menghitung_sesi_lintas_hari_sebagai_meja_terisi(): void
     {
         $this->withoutVite();
