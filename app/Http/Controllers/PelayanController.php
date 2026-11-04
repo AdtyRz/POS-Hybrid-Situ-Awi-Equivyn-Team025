@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Events\PanggilanPelayan;
 use App\Events\PesananBaru;
 use App\Events\SesiMejaBerubah;
+use App\Events\StatusPesananBerubah;
 use App\Models\Kategori;
 use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
 use App\Models\Pesanan;
 use App\Models\SesiMeja;
+use App\Services\MidtransService;
 use App\Services\PesananService;
 use App\Services\ShiftService;
 use App\Support\Realtime;
@@ -17,6 +19,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -345,13 +348,6 @@ class PelayanController extends Controller
             $statusDot = 'bg-[#0B4D2B]';
             $cardClass = 'bg-white border-[#F0EEE7]';
             $borderClass = 'border-[#F0EEE7]';
-        } elseif ($sesi) {
-            $status = 'sesi';
-            $statusLabel = 'Sesi Aktif';
-            $statusColor = 'text-[#00341A]';
-            $statusDot = 'bg-[#0B4D2B]';
-            $cardClass = 'bg-white border-[#F0EEE7]';
-            $borderClass = 'border-[#F0EEE7]';
         }
 
         $billInfo = $pesananMeja->isEmpty()
@@ -402,6 +398,10 @@ class PelayanController extends Controller
             'call' => $panggilanMeja ? $this->payloadPanggilan($panggilanMeja) : null,
             'session_code' => $sesi?->kode_unik,
             'session_active' => (bool) $sesi,
+            // Tombol "Akhiri Sesi" hanya relevan bila meja punya tagihan
+            // berjalan. Sesi kosong (kode untuk tamu berikutnya) tetap aktif
+            // tetapi tidak dihitung sebagai meja terisi.
+            'session_occupied' => $pesananMeja->isNotEmpty(),
             'qr_url' => route('emenu.meja', $meja->kode_meja),
             'device' => filled($meja->id_device) ? $meja->id_device : 'QR Meja',
             'has_device' => filled($meja->id_device),
@@ -667,10 +667,13 @@ class PelayanController extends Controller
         ));
     }
 
-    public function simpanPesanan(Request $request, PesananService $service): JsonResponse
+    public function simpanPesanan(Request $request, PesananService $service, MidtransService $midtrans): JsonResponse
     {
         $data = $request->validate([
             'meja_id' => ['required', 'exists:meja_makan,id'],
+            // Pesanan pelayan wajib dibayar dulu; KDS baru menerima tiket
+            // setelah status pesanan berubah menjadi 'diproses'.
+            'metode' => ['required', 'in:tunai,qris'],
             'jumlah' => ['required', 'array', 'min:1'],
             'jumlah.*' => ['nullable', 'integer', 'min:0', 'max:99'],
             'catatan' => ['nullable', 'string', 'max:255'],
@@ -697,21 +700,78 @@ class PelayanController extends Controller
             ->latest('id')
             ->first();
 
+        $metode = $data['metode'];
+
         try {
-            $pesanan = $service->buat(
-                $meja,
-                $dipilih->all(),
-                $catatanMenu,
-                [
-                    'asal' => 'kasir',
-                    'metode' => 'tunai',
-                    'kasir_id' => auth()->id(),
-                    'catatan' => $data['catatan'] ?? null,
-                    'nama_pelanggan' => $sesi?->nama_pelanggan,
-                ],
-            );
+            $pesanan = DB::transaction(function () use ($service, $meja, $dipilih, $catatanMenu, $data, $sesi, $metode) {
+                $pesanan = $service->buat(
+                    $meja,
+                    $dipilih->all(),
+                    $catatanMenu,
+                    [
+                        // 'emenu' membuat status awal tertahan di meja pembayaran,
+                        // bukan langsung masuk antrean KDS.
+                        'asal' => 'emenu',
+                        'metode' => $metode,
+                        'kasir_id' => auth()->id(),
+                        'catatan' => $data['catatan'] ?? null,
+                        'nama_pelanggan' => $sesi?->nama_pelanggan,
+                    ],
+                );
+
+                if ($metode === 'tunai') {
+                    $service->lunasi($pesanan, 'tunai', auth()->id());
+                    $pesanan->refresh();
+                }
+
+                return $pesanan->load(['detailPesanan', 'meja']);
+            });
         } catch (\RuntimeException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);
+        }
+
+        if ($metode === 'qris') {
+            $qris = $midtrans->createQrisCharge($pesanan);
+
+            if (! $qris || empty($qris['qr_url'])) {
+                $service->batalkan($pesanan, auth()->id(), 'QRIS gagal dibuat.');
+                $pesanan->refresh();
+
+                Realtime::emit(new StatusPesananBerubah([
+                    'kode_pesanan' => $pesanan->kode_pesanan,
+                    'meja' => $meja->kode_meja,
+                    'status_pesanan' => $pesanan->status_pesanan,
+                    'status_pembayaran' => $pesanan->status_pembayaran,
+                    'metode_pembayaran' => $pesanan->metode_pembayaran,
+                ]));
+
+                return response()->json([
+                    'message' => 'QRIS gagal dibuat. Pesanan dibatalkan, silakan coba lagi.',
+                ], 422)->header('Cache-Control', 'no-store, max-age=0');
+            }
+
+            Realtime::emit(new StatusPesananBerubah([
+                'kode_pesanan' => $pesanan->kode_pesanan,
+                'meja' => $meja->kode_meja,
+                'status_pesanan' => $pesanan->status_pesanan,
+                'status_pembayaran' => $pesanan->status_pembayaran,
+                'metode_pembayaran' => $pesanan->metode_pembayaran,
+            ]));
+
+            return response()->json([
+                'status' => 'ok',
+                'message' => 'Pesanan QRIS dibuat. Minta tamu memindai kode QR.',
+                'metode' => 'qris',
+                'pesanan' => [
+                    'kode_pesanan' => $pesanan->kode_pesanan,
+                    'meja' => $meja->kode_meja,
+                    'total' => (float) $pesanan->total_bayar,
+                ],
+                'qris' => [
+                    'qr_url' => $qris['qr_url'],
+                    'expires_in' => $midtrans->qrisExpiryMinutes() * 60,
+                ],
+            ], 201)->header('Cache-Control', 'no-store, max-age=0');
         }
 
         Realtime::emit(new PesananBaru([
@@ -726,13 +786,134 @@ class PelayanController extends Controller
 
         return response()->json([
             'status' => 'ok',
-            'message' => 'Pesanan tambahan berhasil dikirim ke dapur dan bar.',
+            'message' => 'Pembayaran tunai diterima. Pesanan dikirim ke dapur dan bar.',
+            'metode' => 'tunai',
             'pesanan' => [
                 'kode_pesanan' => $pesanan->kode_pesanan,
                 'meja' => $meja->kode_meja,
                 'total' => (float) $pesanan->total_bayar,
             ],
         ], 201)->header('Cache-Control', 'no-store, max-age=0');
+    }
+
+    public function qrisStatus(string $kode, PesananService $service, MidtransService $midtrans): JsonResponse
+    {
+        $pesanan = Pesanan::with('meja')->where('kode_pesanan', $kode)->firstOrFail();
+        $this->pastikanAreaMeja($pesanan->meja);
+
+        if ($pesanan->status_pesanan === Pesanan::STATUS_DIBATALKAN) {
+            return response()->json([
+                'lunas' => false,
+                'dibatalkan' => true,
+                'status_pesanan' => $pesanan->status_pesanan,
+                'status_pembayaran' => $pesanan->status_pembayaran,
+                'message' => 'Pesanan sudah dibatalkan.',
+            ], 410)->header('Cache-Control', 'no-store, max-age=0');
+        }
+
+        if ($pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR) {
+            $status = $midtrans->getTransactionStatus($kode);
+            $transactionStatus = strtolower($status->transaction_status ?? '');
+            $fraudStatus = strtolower($status->fraud_status ?? '');
+
+            $sukses = $transactionStatus === 'settlement'
+                || ($transactionStatus === 'capture' && $fraudStatus === 'accept');
+
+            if ($sukses) {
+                $service->lunasi($pesanan, 'qris', auth()->id(), $status->transaction_id ?? null);
+                $pesanan->refresh()->load('meja');
+
+                Realtime::emit(new StatusPesananBerubah([
+                    'kode_pesanan' => $pesanan->kode_pesanan,
+                    'meja' => $pesanan->meja?->kode_meja,
+                    'status_pesanan' => $pesanan->status_pesanan,
+                    'status_pembayaran' => $pesanan->status_pembayaran,
+                    'metode_pembayaran' => $pesanan->metode_pembayaran,
+                ]));
+            } elseif ($transactionStatus === 'expire') {
+                // QR kedaluwarsa: order_id yang sama boleh di-charge ulang
+                // menurut aturan Midtrans, jadi tampilkan QR baru.
+                $qris = $midtrans->createQrisCharge($pesanan, true);
+
+                return response()->json([
+                    'lunas' => false,
+                    'expired' => true,
+                    'status_pesanan' => $pesanan->status_pesanan,
+                    'status_pembayaran' => $pesanan->status_pembayaran,
+                    'qr_url' => $qris['qr_url'] ?? null,
+                    'expires_in' => $midtrans->qrisExpiryMinutes() * 60,
+                ])->header('Cache-Control', 'no-store, max-age=0');
+            }
+        }
+
+        $pesanan->refresh();
+
+        return response()->json([
+            'lunas' => $pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR,
+            'dibatalkan' => $pesanan->status_pesanan === Pesanan::STATUS_DIBATALKAN,
+            'status_pesanan' => $pesanan->status_pesanan,
+            'status_pembayaran' => $pesanan->status_pembayaran,
+        ])->header('Cache-Control', 'no-store, max-age=0');
+    }
+
+    public function batalkanPesanan(string $kode, PesananService $service, MidtransService $midtrans): JsonResponse
+    {
+        $pesanan = Pesanan::with('meja')->where('kode_pesanan', $kode)->firstOrFail();
+        $this->pastikanAreaMeja($pesanan->meja);
+
+        // Lindungi dari race condition: jangan batalkan QRIS yang ternyata
+        // sudah settlement di Midtrans sebelum polling sempat menandainya lunas.
+        if ($pesanan->metode_pembayaran === 'qris' && $pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR) {
+            $status = $midtrans->getTransactionStatus($kode);
+            $transactionStatus = strtolower($status->transaction_status ?? '');
+            $fraudStatus = strtolower($status->fraud_status ?? '');
+            $sudahDibayar = $transactionStatus === 'settlement'
+                || ($transactionStatus === 'capture' && $fraudStatus === 'accept');
+
+            if ($sudahDibayar) {
+                $service->lunasi($pesanan, 'qris', auth()->id(), $status->transaction_id ?? null);
+                $pesanan->refresh()->load('meja');
+
+                Realtime::emit(new StatusPesananBerubah([
+                    'kode_pesanan' => $pesanan->kode_pesanan,
+                    'meja' => $pesanan->meja?->kode_meja,
+                    'status_pesanan' => $pesanan->status_pesanan,
+                    'status_pembayaran' => $pesanan->status_pembayaran,
+                    'metode_pembayaran' => $pesanan->metode_pembayaran,
+                ]));
+
+                return response()->json([
+                    'message' => 'Pembayaran QRIS sudah diterima. Pesanan tidak dibatalkan.',
+                    'lunas' => true,
+                    'status_pesanan' => $pesanan->status_pesanan,
+                    'status_pembayaran' => $pesanan->status_pembayaran,
+                ], 409)->header('Cache-Control', 'no-store, max-age=0');
+            }
+        }
+
+        try {
+            $service->batalkan($pesanan, auth()->id(), 'Dibatalkan pelayan sebelum pembayaran.');
+        } catch (\RuntimeException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], 422)->header('Cache-Control', 'no-store, max-age=0');
+        }
+
+        $pesanan->refresh()->load('meja');
+
+        Realtime::emit(new StatusPesananBerubah([
+            'kode_pesanan' => $pesanan->kode_pesanan,
+            'meja' => $pesanan->meja?->kode_meja,
+            'status_pesanan' => $pesanan->status_pesanan,
+            'status_pembayaran' => $pesanan->status_pembayaran,
+            'metode_pembayaran' => $pesanan->metode_pembayaran,
+        ]));
+
+        return response()->json([
+            'status' => 'ok',
+            'message' => 'Pesanan dibatalkan.',
+            'status_pesanan' => $pesanan->status_pesanan,
+        ])->header('Cache-Control', 'no-store, max-age=0');
     }
 
     public function bukaMeja(string $meja): JsonResponse
@@ -761,7 +942,7 @@ class PelayanController extends Controller
         $this->pastikanAreaMeja($mejaMakan);
 
         try {
-            SesiMeja::putuskanSesi($mejaMakan);
+            $sesiBaru = SesiMeja::putuskanSesi($mejaMakan);
         } catch (\RuntimeException $exception) {
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
@@ -786,6 +967,8 @@ class PelayanController extends Controller
                 'status' => 'ok',
                 'message' => $pesan,
                 'meja' => $mejaMakan->kode_meja,
+                'kode_unik' => $sesiBaru->kode_unik,
+                'session_occupied' => false,
             ])->header('Cache-Control', 'no-store, max-age=0');
         }
 

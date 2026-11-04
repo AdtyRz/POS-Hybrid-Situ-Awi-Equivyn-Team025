@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class KdsController extends Controller
@@ -126,7 +127,9 @@ class KdsController extends Controller
                         'dbId' => $detail->id,
                         'name' => $detail->menu->nama_menu,
                         'qty' => $detail->jumlah . 'x',
-                        'checked' => $detail->status_item !== 'menunggu',
+                        'status' => $detail->status_item,
+                        'started' => $detail->status_item !== 'menunggu',
+                        'checked' => $detail->status_item === 'siap',
                         'note' => $detail->catatan ? 'Catatan: ' . $detail->catatan : null,
                         'noteType' => $detail->catatan ? (str_contains(strtolower($detail->catatan), 'pedas') ? 'warning' : 'info') : null,
                     ];
@@ -181,8 +184,8 @@ class KdsController extends Controller
         $target = $request->route('target', 'dapur');
 
         $data = $request->validate([
-            'aksi' => ['required', 'in:mulai,siap,item,runner'],
-            'item_id' => ['nullable', 'exists:detail_pesanan,id'],
+            'aksi' => ['required', 'in:mulai,item,runner'],
+            'item_id' => ['required_if:aksi,item', 'nullable', 'integer', 'exists:detail_pesanan,id'],
         ]);
 
         $panggilanRunner = null;
@@ -192,6 +195,20 @@ class KdsController extends Controller
             $pesanan = Pesanan::findOrFail($id);
 
             if ($data['aksi'] === 'runner') {
+                $semuaItemStasiun = DetailPesanan::where('pesanan_id', $pesanan->id)
+                    ->whereHas('menu.kategori', function ($query) use ($target) {
+                        $query->where('target_kds', $target);
+                    })
+                    ->get();
+
+                if ($semuaItemStasiun->isEmpty() || $semuaItemStasiun->contains(
+                    fn ($item) => $item->status_item !== 'siap'
+                )) {
+                    throw ValidationException::withMessages([
+                        'aksi' => 'Panggil runner hanya bisa dilakukan setelah semua item stasiun ini selesai.',
+                    ]);
+                }
+
                 $panggilanRunner = LogPanggilPelayan::create([
                     'meja_id' => $pesanan->meja_id,
                     'status_panggilan' => 'menunggu',
@@ -199,7 +216,7 @@ class KdsController extends Controller
                 return;
             }
 
-            if ($data['aksi'] === 'item' && $data['item_id']) {
+            if ($data['aksi'] === 'item') {
                 $detail = DetailPesanan::where('id', $data['item_id'])
                     ->where('pesanan_id', $pesanan->id)
                     ->whereHas('menu.kategori', function ($query) use ($target) {
@@ -207,17 +224,22 @@ class KdsController extends Controller
                     })
                     ->firstOrFail();
 
+                if ($detail->status_item === 'menunggu') {
+                    throw ValidationException::withMessages([
+                        'item_id' => 'Tekan Mulai ' . ($target === 'bar' ? 'Racik' : 'Masak') . ' terlebih dahulu sebelum menandai item selesai.',
+                    ]);
+                }
+
                 $detail->update([
-                    'status_item' => $detail->status_item === 'menunggu' ? 'diproses' : 'menunggu',
+                    'status_item' => $detail->status_item === 'siap' ? 'diproses' : 'siap',
                 ]);
             } else {
-                $tujuan = $data['aksi'] === 'siap' ? 'siap' : 'diproses';
-
                 DetailPesanan::where('pesanan_id', $pesanan->id)
                     ->whereHas('menu.kategori', function ($query) use ($target) {
                         $query->where('target_kds', $target);
                     })
-                    ->update(['status_item' => $tujuan]);
+                    ->where('status_item', 'menunggu')
+                    ->update(['status_item' => 'diproses']);
             }
 
             $pesanan->refresh();

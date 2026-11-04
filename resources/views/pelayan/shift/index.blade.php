@@ -414,14 +414,6 @@
         </section>
 
         <section class="space-y-2 pt-2 pb-2">
-            <button @click="showHandoverModal = true" type="button"
-                    class="w-full h-14 rounded-xl bg-[#0B4D2B] hover:bg-[#00341A] text-[#FCF9F2] font-bold text-sm tracking-[0.14px] shadow-[0_4px_16px_rgba(11,77,43,0.25)] flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer">
-                <svg class="w-[18.33px] h-[16.5px] text-[#FECE66]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                </svg>
-                <span>Ringkasan Serah Terima Shift</span>
-            </button>
-
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit"
@@ -429,56 +421,11 @@
                     <svg class="w-[15px] h-[15px] text-[#BA1A1A]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
-                    <span>Keluar / Ganti Akun PIN</span>
+                    <span>Logout</span>
                 </button>
             </form>
         </section>
 
-    </div>
-
-    <div x-show="showHandoverModal" x-cloak x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-        <div @click.away="showHandoverModal = false" class="bg-white rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-[#E5E2DB]">
-            <div class="flex items-center justify-between pb-2 border-b border-[#F0EEE7]">
-                <div class="flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-[#00341A]"></span>
-                    <h3 class="font-bold text-base text-[#1C1C18]">Ringkasan Serah Terima</h3>
-                </div>
-                <button @click="showHandoverModal = false" class="text-[#707971] hover:text-[#1C1C18] text-lg font-bold cursor-pointer">&times;</button>
-            </div>
-
-            <p class="text-xs text-[#404941] leading-relaxed">
-                Ringkasan kondisi {{ $currentArea }} pada {{ $shift['label'] }}. Angka berikut dihitung dari database saat halaman dimuat.
-            </p>
-
-            <div class="space-y-2">
-                <div class="bg-[#F6F3EC] rounded-lg p-2.5 flex items-center justify-between text-xs">
-                    <span class="font-semibold text-[#1C1C18]">Panggilan menunggu</span>
-                    <span class="font-bold text-[#BA1A1A]">{{ $navPanggilanCount }}</span>
-                </div>
-                <div class="bg-[#F6F3EC] rounded-lg p-2.5 flex items-center justify-between text-xs">
-                    <span class="font-semibold text-[#1C1C18]">Pesanan siap antar</span>
-                    <span class="font-bold text-[#7A5900]">{{ $navReadyCount }}</span>
-                </div>
-                <div class="bg-[#F6F3EC] rounded-lg p-2.5 flex items-center justify-between text-xs">
-                    <span class="font-semibold text-[#1C1C18]">Pesanan selesai hari ini</span>
-                    <span class="font-bold text-[#00341A]">{{ $statistik['orders_finished'] }}</span>
-                </div>
-                <div class="bg-[#F6F3EC] rounded-lg p-2.5 flex items-center justify-between text-xs">
-                    <span class="font-semibold text-[#1C1C18]">Meja terisi</span>
-                    <span class="font-bold text-[#00341A]">{{ $terisiCount }}/{{ $totalMeja }}</span>
-                </div>
-                <div class="bg-[#F6F3EC] rounded-lg p-2.5 flex items-center justify-between text-xs">
-                    <span class="font-semibold text-[#1C1C18]">Node IoT terhubung</span>
-                    <span class="font-bold text-[#00341A]">{{ $device['terhubung'] }}/{{ $device['total'] }}</span>
-                </div>
-            </div>
-
-            <div class="flex flex-col gap-2">
-                <button @click="showHandoverModal = false" type="button" class="w-full py-3 bg-[#0B4D2B] hover:bg-[#00341A] text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-98 cursor-pointer">
-                    Tutup Ringkasan
-                </button>
-            </div>
-        </div>
     </div>
 
     <div x-show="showToast" x-cloak
@@ -504,7 +451,6 @@
         return {
             soundAlert: true,
             vibrateAlert: true,
-            showHandoverModal: false,
             toastMessage: 'Preferensi perangkat diperbarui.',
             showToast: false,
 
