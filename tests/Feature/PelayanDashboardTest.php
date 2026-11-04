@@ -562,7 +562,7 @@ class PelayanDashboardTest extends TestCase
             ->assertDontSee('Selesai Diantar');
     }
 
-    public function test_pelayan_menyelesaikan_pengantaran_dan_pesanan_keluar_dari_lcd(): void
+    public function test_pelayan_menyelesaikan_pengantaran_dan_pesanan_tetap_di_sesi(): void
     {
         $this->withoutVite();
 
@@ -589,7 +589,8 @@ class PelayanDashboardTest extends TestCase
             ->assertJsonPath('pesanan.status_pesanan', Pesanan::STATUS_SELESAI);
 
         $this->assertSame(Pesanan::STATUS_SELESAI, $pesanan->fresh()->status_pesanan);
-        $this->assertSame('kosong', $meja->fresh()->status_meja);
+        // Sesi masih berjalan, jadi meja belum boleh dianggap kosong.
+        $this->assertSame('terisi', $meja->fresh()->status_meja);
 
         $this->actingAs($pelayan)
             ->get(route('pelayan.tab-antar'))
@@ -600,6 +601,8 @@ class PelayanDashboardTest extends TestCase
 
         $this->assertSame('lunas', $lcd['data']['fase']);
         $this->assertSame(0, $lcd['data']['jumlah_pesanan']);
+        $this->assertSame(1, $lcd['data']['jumlah_selesai']);
+        $this->assertTrue($lcd['data']['ada_pesanan']);
         $this->assertCount(0, $lcd['data']['pesanan']);
         $this->assertSame(25000.0, (float) $lcd['data']['total_bayar']);
     }

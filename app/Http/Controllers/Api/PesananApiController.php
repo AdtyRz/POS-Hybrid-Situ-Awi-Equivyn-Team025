@@ -118,14 +118,7 @@ class PesananApiController extends Controller
             $pesanan->update(['status_pesanan' => $data['status_pesanan']]);
         }
 
-        $masihAdaPesananAktif = Pesanan::query()
-            ->where('meja_id', $pesanan->meja_id)
-            ->whereNotIn('status_pesanan', [Pesanan::STATUS_SELESAI, Pesanan::STATUS_DIBATALKAN])
-            ->exists();
-
-        if (! $masihAdaPesananAktif) {
-            $pesanan->meja()->update(['status_meja' => 'kosong']);
-        }
+        SesiMeja::sinkronkanStatusMeja($pesanan->meja_id);
 
         $pesanan->refresh();
 

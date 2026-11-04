@@ -224,6 +224,44 @@ class SesiMeja extends Model
     }
 
     /**
+     * Selaraskan status meja dengan isi sesi aktif.
+     *
+     * Meja tetap dianggap terisi selama sesi aktif masih memiliki pesanan,
+     * termasuk pesanan yang sudah selesai. Dengan begitu kasir masih bisa
+     * melihat tagihan/struk dan menekan "Akhiri Sesi"; meja baru dikosongkan
+     * setelah sesi ditutup atau kedaluwarsa.
+     */
+    public static function sinkronkanStatusMeja(int $mejaId): void
+    {
+        $sesi = static::query()
+            ->where('meja_id', $mejaId)
+            ->where('status', 'aktif')
+            ->latest('id')
+            ->first();
+
+        $query = Pesanan::query()->where('meja_id', $mejaId);
+
+        if ($sesi && $sesi->dibuka_pada !== null) {
+            $query->where('status_pesanan', '!=', Pesanan::STATUS_DIBATALKAN)
+                ->where(function ($q) use ($sesi) {
+                    $q->whereNotIn('status_pesanan', [
+                        Pesanan::STATUS_SELESAI,
+                        Pesanan::STATUS_DIBATALKAN,
+                    ])->orWhere('waktu_pesan', '>=', $sesi->dibuka_pada);
+                });
+        } else {
+            $query->whereNotIn('status_pesanan', [
+                Pesanan::STATUS_SELESAI,
+                Pesanan::STATUS_DIBATALKAN,
+            ]);
+        }
+
+        MejaMakan::whereKey($mejaId)->update([
+            'status_meja' => $query->exists() ? 'terisi' : 'kosong',
+        ]);
+    }
+
+    /**
      * Kode unik sesi sesuai pengaturan panjang digit (4 atau 6 digit) yang
      * tidak dipakai sesi aktif mana pun dan berbeda dari kode sebelumnya.
      */

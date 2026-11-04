@@ -225,6 +225,7 @@ class IotLcdFaseTest extends TestCase
         $this->assertTrue($data['semua_lunas']);
         $this->assertSame(50000.0, (float) $data['total_bayar']);
         $this->assertSame(1, $data['jumlah_pesanan']);
+        $this->assertSame(1, $data['jumlah_selesai']);
         $this->assertCount(1, $data['pesanan']);
         $this->assertSame(Pesanan::STATUS_DIANTAR, $data['pesanan'][0]['status_pesanan']);
     }

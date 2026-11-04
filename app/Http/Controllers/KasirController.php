@@ -20,7 +20,7 @@ class KasirController extends Controller
 {
     public function daftarMejaSession(): View
     {
-        $meja = MejaMakan::with(['pesananAktif.detailPesanan.menu'])
+        $meja = MejaMakan::with(['pesananSesi.detailPesanan.menu'])
             ->orderBy('kode_meja')
             ->get();
 
@@ -29,7 +29,30 @@ class KasirController extends Controller
             return [$m->id => SesiMeja::aktifUntuk($m)];
         });
 
-        return view('kasir.sesi.index', compact('meja', 'sesiAktif'));
+        // Tampilkan semua pesanan pada sesi berjalan, termasuk yang sudah
+        // selesai, sampai kasir menutup sesi. Tanpa ini riwayat sesi langsung
+        // hilang dari halaman Sesi Meja setelah pelayan menyelesaikan antar.
+        $pesananSesi = $meja->mapWithKeys(function ($m) use ($sesiAktif) {
+            $sesi = $sesiAktif->get($m->id);
+
+            $daftar = $m->pesananSesi
+                ->filter(fn ($pesanan) => $sesi !== null
+                    && $pesanan->waktu_pesan !== null
+                    && $pesanan->waktu_pesan->greaterThanOrEqualTo($sesi->dibuka_pada))
+                ->values();
+
+            return [$m->id => $daftar];
+        });
+
+        // Label status di halaman ini mengikuti isi sesi, bukan kolom
+        // status_meja yang bisa tertinggal dari data lama.
+        $meja->each(function ($m) use ($pesananSesi) {
+            $m->status_meja = ($pesananSesi->get($m->id) ?? collect())->isNotEmpty()
+                ? 'terisi'
+                : 'kosong';
+        });
+
+        return view('kasir.sesi.index', compact('meja', 'sesiAktif', 'pesananSesi'));
     }
 
     /**

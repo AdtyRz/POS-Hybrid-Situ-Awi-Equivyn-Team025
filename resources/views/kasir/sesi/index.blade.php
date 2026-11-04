@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Session Meja</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
 </head>
 
 <body class="min-h-screen bg-[#FBF8F1] p-4" x-data="sessionPage()">
@@ -40,6 +40,7 @@
             membuat kode unik baru.</p>
 
         @foreach ($meja as $m)
+            @php($daftarPesanan = $pesananSesi[$m->id] ?? collect())
             <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 mb-4">
                 <div class="flex items-center justify-between mb-3">
                     <div>
@@ -52,12 +53,12 @@
                                 class="px-3 py-1 rounded-lg bg-forest-900 text-gold-500 font-mono font-extrabold text-lg tracking-[0.3em]">{{ ($sesiAktif[$m->id] ?? null)->kode_unik ?? '----' }}</span>
                         </div>
                     </div>
-                    @if ($m->pesananAktif->count() > 0)
+                    @if ($daftarPesanan->count() > 0)
                         <form method="POST" action="{{ route('kasir.session.tutup', $m->kode_meja) }}">
                             @csrf
                             @method('PATCH')
                             <button type="button"
-                                @click="mintaKonfirmasi($el.closest('form'), 'Selesaikan sesi meja ini? Semua pesanan aktif akan ditandai selesai dan kode unik baru akan dibuat.')"
+                                @click="mintaKonfirmasi($el.closest('form'), 'Selesaikan sesi meja ini? Semua pesanan pada sesi ini akan ditutup dan kode unik baru akan dibuat.')"
                                 class="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm shadow-sm transition">
                                 Selesaikan Sesi
                             </button>
@@ -75,15 +76,16 @@
                     @endif
                 </div>
 
-                @if ($m->pesananAktif->count() > 0)
+                @if ($daftarPesanan->count() > 0)
                     <div class="space-y-2 mb-3">
-                        @foreach ($m->pesananAktif as $p)
+                        @foreach ($daftarPesanan as $p)
                             <div class="bg-cream-50 rounded-xl border border-stone-100 p-3">
                                 <div class="flex items-center justify-between">
                                     <div>
                                         <p class="font-bold text-sm text-forest-900">Pemesan: {{ $p->nama_pelanggan ?: 'Tamu' }}</p>
                                         <p class="text-stone-500 text-xs">{{ $p->detailPesanan->sum('jumlah') }} item •
-                                            Rp{{ number_format($p->total_bayar, 0, ',', '.') }}</p>
+                                            Rp{{ number_format($p->total_bayar, 0, ',', '.') }} •
+                                            <span class="font-semibold">{{ $p->status_pesanan === 'selesai' ? 'Selesai' : 'Aktif' }}</span></p>
                                     </div>
                                     <span
                                         class="px-2 py-1 rounded-full text-[10px] font-bold {{ $p->status_pembayaran === 'sudah_bayar' ? 'bg-forest-100 text-forest-700' : 'bg-gold-100 text-gold-700' }}">
@@ -94,7 +96,7 @@
                         @endforeach
                     </div>
                 @else
-                    <p class="text-stone-400 text-sm text-center py-4">Tidak ada pesanan aktif</p>
+                    <p class="text-stone-400 text-sm text-center py-4">Tidak ada pesanan pada sesi ini</p>
                 @endif
             </div>
         @endforeach

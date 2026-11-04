@@ -73,6 +73,10 @@ class IotStatusService
             ->reject(fn (Pesanan $p) => $p->status_pesanan === Pesanan::STATUS_SELESAI)
             ->values();
 
+        $pesananSelesai = $pesanan
+            ->filter(fn (Pesanan $p) => $p->status_pesanan === Pesanan::STATUS_SELESAI)
+            ->values();
+
         $belumBayar = $pesanan->filter(
             fn (Pesanan $p) => $p->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR
         );
@@ -111,7 +115,7 @@ class IotStatusService
                 'id' => $meja->id,
                 'kode_meja' => $meja->kode_meja,
                 'area' => $meja->area,
-                'status_meja' => $meja->status_meja,
+                'status_meja' => $pesanan->isNotEmpty() ? 'terisi' : $meja->status_meja,
                 'kode_sesi' => $sesi->kode_unik,
                 'fase' => $fase,
                 'metode_pembayaran' => $metodePembayaran,
@@ -119,6 +123,7 @@ class IotStatusService
                 'semua_lunas' => $pesanan->isNotEmpty() && $belumBayar->isEmpty(),
                 'total_bayar' => (float) $pesanan->sum('total_bayar'),
                 'jumlah_pesanan' => $pesananAktif->count(),
+                'jumlah_selesai' => $pesananSelesai->count(),
                 'pesanan' => $pesananAktif->map(fn ($p) => [
                     'kode_pesanan' => $p->kode_pesanan,
                     'status_pesanan' => $p->status_pesanan,

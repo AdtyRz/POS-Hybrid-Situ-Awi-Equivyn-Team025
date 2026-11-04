@@ -152,7 +152,7 @@ Endpoint API untuk perangkat IoT meja menyertakan kode sesi dan **wajib** mengir
 - `GET /api/iot/meja/{ident}` — detail satu meja (dicari via `id_device` atau `kode_meja`) + `kode_sesi`,
   `fase` (`standby`/`pembayaran`/`lunas`), `metode_pembayaran` (`tunai`/`qris`/`campuran`),
   `semua_lunas`, `pesanan[]` (kode, status pesanan/pembayaran, metode, total) pada sesi berjalan,
-  `total_bayar`, dan `jumlah_pesanan`.
+  `total_bayar`, `jumlah_pesanan`, dan `jumlah_selesai`.
 - `POST /api/iot/panggil-pelayan` — body `{"kode_meja":"LB-01","kode_sesi":"1234"}`. Kode sesi
   harus kode yang sedang aktif; kode lama ditolak.
 

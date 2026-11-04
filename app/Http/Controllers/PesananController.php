@@ -108,6 +108,9 @@ class PesananController extends Controller
             ->toArray();
 
         $saungsJson = $mejaSemua->map(function ($m) use ($aktif, $tunggu, $paidOrders, $sesiTerakhir) {
+            $sesi = $sesiTerakhir->get($m->id);
+            $sesiAktif = $sesi !== null && $sesi->status === 'aktif';
+
             $dasar = [
                 'id' => $m->kode_meja,
                 'dbId' => $m->id,
@@ -120,6 +123,12 @@ class PesananController extends Controller
                 'paymentStatus' => null,
                 'orderStatus' => null,
                 'hasAlert' => in_array($m->id, $tunggu),
+                'sessionActive' => $sesiAktif,
+                'sessionCode' => $sesiAktif ? $sesi->kode_unik : null,
+                'sessionOccupied' => false,
+                'sessionOrderCount' => 0,
+                'sessionTotal' => 0,
+                'sessionUnpaidCount' => 0,
                 'orderId' => '-',
                 'kodePesanan' => null,
                 'customer' => '-',
@@ -204,9 +213,70 @@ class PesananController extends Controller
             $dasar['unpaidOrderCount'] = $orders->filter(
                 fn ($order) => $order['status'] !== 'paid'
             )->count();
-            $dasar['allOrdersPaid'] = $orders->isNotEmpty() && $dasar['unpaidOrderCount'] === 0;
+
+            // Pesanan sesi berjalan tetap dihitung sebagai isi meja walau
+            // semuanya sudah selesai. Ini mencegah kartu kasir berubah
+            // menjadi "Kosong" sebelum kasir menekan "Akhiri Sesi".
+            $pesananSesi = collect();
+
+            if ($sesiAktif) {
+                $pesananSesi = $aktif->get($m->id, collect())
+                    ->merge($paidOrders->get($m->id, collect()))
+                    ->filter(fn ($pesanan) => $pesanan->waktu_pesan !== null
+                        && $pesanan->waktu_pesan->greaterThanOrEqualTo($sesi->dibuka_pada))
+                    ->unique('id')
+                    ->sortBy('waktu_pesan')
+                    ->values();
+
+                $dasar['sessionOccupied'] = $pesananSesi->isNotEmpty();
+                $dasar['sessionOrderCount'] = $pesananSesi->count();
+                $dasar['sessionTotal'] = (float) $pesananSesi->sum('total_bayar');
+                $dasar['sessionUnpaidCount'] = $pesananSesi->filter(
+                    fn ($pesanan) => $pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR
+                )->count();
+            }
+
+            $dasar['allOrdersPaid'] = $dasar['sessionOccupied']
+                ? $dasar['sessionUnpaidCount'] === 0
+                : ($orders->isNotEmpty() && $dasar['unpaidOrderCount'] === 0);
 
             if ($orders->isEmpty()) {
+                if ($pesananSesi->isEmpty()) {
+                    return $dasar;
+                }
+
+                $primarySesi = $pesananSesi->last();
+                $payloadSesi = $this->payloadKasir($primarySesi);
+                $metodeSesi = $pesananSesi->pluck('metode_pembayaran')->filter()->unique();
+
+                $dasar['status'] = $dasar['allOrdersPaid']
+                    ? 'paid'
+                    : ($pesananSesi->contains(
+                        fn ($pesanan) => $pesanan->status_pembayaran === Pesanan::PAYMENT_PENDING_VERIFIKASI
+                    ) ? 'waiting_qris' : 'waiting_cash');
+                $dasar['paymentType'] = $metodeSesi->count() > 1
+                    ? 'campuran'
+                    : $metodeSesi->first();
+                $dasar['paymentStatus'] = $dasar['allOrdersPaid']
+                    ? Pesanan::PAYMENT_SUDAH_BAYAR
+                    : $payloadSesi['paymentStatus'];
+                $dasar['orderStatus'] = $payloadSesi['orderStatus'];
+                $dasar['orderId'] = $payloadSesi['orderId'];
+                $dasar['kodePesanan'] = $payloadSesi['kodePesanan'];
+                $dasar['customer'] = $payloadSesi['customer'];
+                $dasar['qrTime'] = $payloadSesi['qrTime'];
+                $dasar['elapsedTime'] = $payloadSesi['elapsedTime'];
+                $dasar['itemCount'] = (int) $pesananSesi->sum(
+                    fn ($pesanan) => $pesanan->detailPesanan->sum('jumlah')
+                );
+                $dasar['totalPortions'] = $dasar['itemCount'];
+                $dasar['subtotal'] = (float) $pesananSesi->sum(
+                    fn ($pesanan) => $pesanan->detailPesanan->sum('subtotal')
+                );
+                $dasar['total'] = $dasar['sessionTotal'];
+                $dasar['items'] = $payloadSesi['items'];
+                $dasar['unpaidOrderCount'] = $dasar['sessionUnpaidCount'];
+
                 return $dasar;
             }
 
@@ -524,14 +594,11 @@ class PesananController extends Controller
             });
         }
 
-        $masihAdaPesananAktif = Pesanan::query()
-            ->where('meja_id', $pesanan->meja_id)
-            ->whereNotIn('status_pesanan', [Pesanan::STATUS_SELESAI, Pesanan::STATUS_DIBATALKAN])
-            ->exists();
-
-        if (! $masihAdaPesananAktif) {
-            $pesanan->meja()->update(['status_meja' => 'kosong']);
-        }
+        // Sesi yang masih berjalan tetap menandai meja sebagai terisi,
+        // termasuk ketika semua pesanannya sudah selesai. Meja baru
+        // dikosongkan setelah sesi ditutup lewat "Akhiri Sesi" atau
+        // kedaluwarsa, supaya tagihan/struk tidak hilang lebih awal.
+        SesiMeja::sinkronkanStatusMeja($pesanan->meja_id);
 
         Realtime::emit(new StatusPesananBerubah([
             'kode_pesanan' => $pesanan->kode_pesanan,

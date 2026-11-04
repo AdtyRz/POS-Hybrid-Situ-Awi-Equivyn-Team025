@@ -6,6 +6,7 @@ use App\Models\DetailPesanan;
 use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
+use App\Models\SesiMeja;
 use App\Models\StokMutasi;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -225,14 +226,7 @@ class PesananService
                 'alasan_void' => $alasan,
             ]);
 
-            $masihAdaPesananAktif = Pesanan::query()
-                ->where('meja_id', $terkunci->meja_id)
-                ->whereNotIn('status_pesanan', [Pesanan::STATUS_SELESAI, Pesanan::STATUS_DIBATALKAN])
-                ->exists();
-
-            if (! $masihAdaPesananAktif) {
-                MejaMakan::whereKey($terkunci->meja_id)->update(['status_meja' => 'kosong']);
-            }
+            SesiMeja::sinkronkanStatusMeja($terkunci->meja_id);
         });
     }
 
