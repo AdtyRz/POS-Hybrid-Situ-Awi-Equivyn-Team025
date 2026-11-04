@@ -113,7 +113,7 @@
 
                 <div class="pt-2 mt-2 border-t border-[#C8C2B3]/30 flex items-center justify-between">
                     <span class="text-[11px] text-[#6B6A63] font-medium"
-                          x-text="saung.status === 'empty' ? 'Status:' : 'Total Tagihan:'">
+                          x-text="saung.status === 'empty' ? 'Status:' : (saung.orderCount > 1 ? 'Total ' + saung.orderCount + ' Pesanan:' : 'Total Tagihan:')">
                     </span>
                     <span class="font-bold"
                           :class="saung.status === 'empty' ? 'text-[#047857] text-xs' : 'text-[#00341A] text-sm'"

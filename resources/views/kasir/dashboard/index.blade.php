@@ -417,8 +417,15 @@
                                 <span x-text="'Subtotal (' + currentSaung.totalPortions + ' porsi):'"></span>
                                 <span class="font-mono font-semibold text-[#2B2A26]" x-text="formatRupiah(currentSaung.subtotal)"></span>
                             </div>
+                            <div x-show="currentTable && currentTable.orderCount > 1"
+                                 class="pt-1 flex items-baseline justify-between text-[10px] text-[#6B6A63]">
+                                <span>Total semua pesanan:</span>
+                                <span class="font-mono font-bold text-[#2B2A26]"
+                                      x-text="formatRupiah(currentTable ? currentTable.total : 0)"></span>
+                            </div>
                             <div class="pt-1.5 mt-1 border-t border-[#C8C2B3]/50 flex items-baseline justify-between">
-                                <span class="font-extrabold text-[11px] text-[#00341A] uppercase tracking-wider">
+                                <span class="font-extrabold text-[11px] text-[#00341A] uppercase tracking-wider"
+                                      x-text="(currentTable && currentTable.orderCount > 1) ? 'TOTAL TAGIHAN BERSIH (ORDER TERPILIH):' : 'TOTAL TAGIHAN BERSIH:'">
                                     TOTAL TAGIHAN BERSIH:
                                 </span>
                                 <span class="font-extrabold text-lg sm:text-xl text-[#00341A] tracking-tight"

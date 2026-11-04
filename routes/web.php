@@ -162,6 +162,8 @@ Route::middleware(['auth', 'role:pelayan'])->group(function () {
     Route::patch('/pelayan/panggilan/{id}', [PelayanController::class, 'ubahStatus'])->name('pelayan.panggilan.ubah');
     Route::patch('/pelayan/session/{meja}', [PelayanController::class, 'akhiriSession'])->name('pelayan.session.tutup');
     Route::post('/pelayan/pesanan', [PelayanController::class, 'simpanPesanan'])->name('pelayan.pesanan.store');
+    Route::get('/pelayan/pesanan/{kode}/qris-status', [PelayanController::class, 'qrisStatus'])->name('pelayan.pesanan.qris-status');
+    Route::delete('/pelayan/pesanan/{kode}', [PelayanController::class, 'batalkanPesanan'])->name('pelayan.pesanan.batal');
     Route::post('/pelayan/meja/{meja}/buka', [PelayanController::class, 'bukaMeja'])->name('pelayan.meja.buka');
 });
 

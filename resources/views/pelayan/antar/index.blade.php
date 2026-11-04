@@ -202,26 +202,41 @@
             </div>
 
             @forelse ($deliveringOrders as $order)
-                <div class="bg-[#F0EEE7] rounded-xl p-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-between min-h-[60px]">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-9 h-9 rounded-full bg-[#FFDEA1] text-[#261900] font-bold text-[10px] flex items-center justify-center flex-shrink-0">
-                            {{ $order['meja']['kode_meja'] }}
-                        </div>
-                        <div class="flex flex-col">
-                            <div class="flex items-center gap-1.5 leading-4">
-                                <span class="font-bold text-xs text-[#1C1C18] tracking-[0.24px]">Pemesan: {{ $order['customer'] }}</span>
-                                <span class="w-1.5 h-1.5 rounded-full bg-[#7A5900]"></span>
+                <div x-data="{ orderState: { busy: false, done: false, sent: false } }"
+                     x-show="!orderState.done"
+                     class="bg-[#F0EEE7] rounded-xl p-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-col gap-2.5">
+                    <div class="flex items-center justify-between min-h-[44px]">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-9 h-9 rounded-full bg-[#FFDEA1] text-[#261900] font-bold text-[10px] flex items-center justify-center flex-shrink-0">
+                                {{ $order['meja']['kode_meja'] }}
                             </div>
-                            <span class="font-semibold text-xs text-[#00341A] leading-4 mt-0.5">
-                                {{ $order['meja']['kode_meja'] }} • {{ $order['main_item'] }}{{ $order['side_items'] ? ' ' . $order['side_items'] : '' }}
-                            </span>
+                            <div class="flex flex-col min-w-0">
+                                <div class="flex items-center gap-1.5 leading-4">
+                                    <span class="font-bold text-xs text-[#1C1C18] tracking-[0.24px] truncate">Pemesan: {{ $order['customer'] }}</span>
+                                    <span class="w-1.5 h-1.5 rounded-full bg-[#7A5900] flex-shrink-0"></span>
+                                </div>
+                                <span class="font-semibold text-xs text-[#00341A] leading-4 mt-0.5 truncate">
+                                    {{ $order['meja']['kode_meja'] }} • {{ $order['main_item'] }}{{ $order['side_items'] ? ' ' . $order['side_items'] : '' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col items-end leading-3 flex-shrink-0 ml-2">
+                            <span class="font-bold text-[10px] text-[#7A5900] tracking-[0.4px]">{{ $order['time_ago'] }}</span>
+                            <span class="font-bold text-[10px] text-[#404941] tracking-[0.4px] mt-1">Di Jalur</span>
                         </div>
                     </div>
 
-                    <div class="flex flex-col items-end leading-3">
-                        <span class="font-bold text-[10px] text-[#7A5900] tracking-[0.4px]">{{ $order['time_ago'] }}</span>
-                        <span class="font-bold text-[10px] text-[#404941] tracking-[0.4px] mt-1">Di Jalur</span>
-                    </div>
+                    <button @click="finishOrder('{{ $order['kode_pesanan'] }}', orderState)"
+                            :disabled="orderState.busy || orderState.sent"
+                            type="button"
+                            :class="orderState.sent ? 'bg-[#2E6A45]' : 'bg-[#0B4D2B] hover:bg-[#00341A]'"
+                            class="w-full h-10 rounded-lg text-white font-bold text-xs tracking-[0.14px] flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-98 disabled:opacity-60">
+                        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span x-text="orderState.busy ? 'Menyimpan...' : (orderState.sent ? 'Pesanan Sudah Dikirim' : 'Konfirmasi Kirim')">Konfirmasi Kirim</span>
+                    </button>
                 </div>
             @empty
                 <div class="bg-[#F0EEE7] rounded-xl p-4 flex flex-col items-center justify-center text-center">
@@ -435,10 +450,46 @@
                     }
 
                     state.delivered = true;
-                    this.triggerToast('Pesanan ditandai sedang diantar.');
+                    this.triggerToast('Pesanan dikonfirmasi untuk diantar.');
                     await this.refreshLive();
                 } catch (error) {
                     this.triggerToast(error.message || 'Status pesanan gagal diperbarui.');
+                } finally {
+                    state.busy = false;
+                }
+            },
+
+            async finishOrder(kodePesanan, state) {
+                if (state.busy) return;
+
+                state.busy = true;
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+
+                try {
+                    const response = await fetch(`/pesanan/${encodeURIComponent(kodePesanan)}/status`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: JSON.stringify({ status_pesanan: 'selesai' }),
+                    });
+
+                    if (!response.ok) {
+                        const payload = await response.json().catch(() => ({}));
+                        throw new Error(payload.message || 'Status pengantaran gagal diselesaikan.');
+                    }
+
+                    state.sent = true;
+                    state.busy = false;
+                    this.triggerToast('Pesanan sudah dikirim.');
+                    await new Promise(resolve => setTimeout(resolve, 900));
+                    state.done = true;
+                    await this.refreshLive();
+                } catch (error) {
+                    this.triggerToast(error.message || 'Status pengantaran gagal diselesaikan.');
                 } finally {
                     state.busy = false;
                 }

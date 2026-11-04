@@ -330,6 +330,32 @@ class KasirMultiOrderLockTest extends TestCase
         $this->assertNull($pesanan->fresh()->void_at);
     }
 
+    public function test_total_tagihan_meja_hanya_menghitung_pesanan_aktif(): void
+    {
+        $this->withoutVite();
+
+        $kasir = $this->kasir();
+        $meja = $this->meja('LB-73');
+        $menu = $this->menu(10000);
+
+        $aktif = $this->pesanan($meja, $menu);
+        $this->lunasi($aktif);
+
+        $selesai = $this->pesanan($meja, $menu, 2);
+        $this->lunasi($selesai);
+        $selesai->update(['status_pesanan' => Pesanan::STATUS_SELESAI]);
+
+        $response = $this->actingAs($kasir)->get(route('kasir.dashboard'));
+
+        $response->assertOk()->assertSee('Total semua pesanan');
+
+        $saung = collect($response->viewData('saungsJson'))
+            ->firstWhere('id', $meja->kode_meja);
+
+        $this->assertSame(1, $saung['orderCount']);
+        $this->assertSame(10000.0, (float) $saung['total']);
+    }
+
     public function test_endpoint_versi_realtime_publik_dan_berubah_setelah_data_berubah(): void
     {
         $this->get(route('realtime.version'))->assertOk();
