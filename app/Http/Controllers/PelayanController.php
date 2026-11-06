@@ -877,13 +877,21 @@ class PelayanController extends Controller
         if ($pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR) {
             $status = $midtrans->getTransactionStatus($kode);
             $transactionStatus = strtolower($status->transaction_status ?? '');
-            $fraudStatus = strtolower($status->fraud_status ?? '');
 
-            $sukses = $transactionStatus === 'settlement'
-                || ($transactionStatus === 'capture' && $fraudStatus === 'accept');
+            if ($midtrans->verifikasiQris($pesanan, $status)) {
+                try {
+                    $service->lunasi($pesanan, 'qris', auth()->id(), $status->transaction_id ?? null);
+                } catch (\RuntimeException $exception) {
+                    $pesanan->refresh();
 
-            if ($sukses) {
-                $service->lunasi($pesanan, 'qris', auth()->id(), $status->transaction_id ?? null);
+                    return response()->json([
+                        'lunas' => false,
+                        'status_pesanan' => $pesanan->status_pesanan,
+                        'status_pembayaran' => $pesanan->status_pembayaran,
+                        'message' => $exception->getMessage(),
+                    ], 422)->header('Cache-Control', 'no-store, max-age=0');
+                }
+
                 $pesanan->refresh()->load('meja');
 
                 Realtime::emit(new StatusPesananBerubah([
@@ -928,13 +936,17 @@ class PelayanController extends Controller
         // sudah settlement di Midtrans sebelum polling sempat menandainya lunas.
         if ($pesanan->metode_pembayaran === 'qris' && $pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR) {
             $status = $midtrans->getTransactionStatus($kode);
-            $transactionStatus = strtolower($status->transaction_status ?? '');
-            $fraudStatus = strtolower($status->fraud_status ?? '');
-            $sudahDibayar = $transactionStatus === 'settlement'
-                || ($transactionStatus === 'capture' && $fraudStatus === 'accept');
 
-            if ($sudahDibayar) {
-                $service->lunasi($pesanan, 'qris', auth()->id(), $status->transaction_id ?? null);
+            if ($midtrans->verifikasiQris($pesanan, $status)) {
+                try {
+                    $service->lunasi($pesanan, 'qris', auth()->id(), $status->transaction_id ?? null);
+                } catch (\RuntimeException $exception) {
+                    return response()->json([
+                        'message' => $exception->getMessage(),
+                        'lunas' => false,
+                    ], 422)->header('Cache-Control', 'no-store, max-age=0');
+                }
+
                 $pesanan->refresh()->load('meja');
 
                 Realtime::emit(new StatusPesananBerubah([

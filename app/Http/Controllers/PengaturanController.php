@@ -25,6 +25,15 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PengaturanController extends Controller
 {
+    /**
+     * Kolom yang tidak boleh ikut diekspor karena berisi kredensial/token.
+     */
+    private const KOLOM_RAHASIA_CADANGAN = [
+        'users' => ['password', 'remember_token'],
+        'meja_makan' => ['qr_token', 'id_device'],
+        'sesi_meja' => ['kode_unik'],
+    ];
+
     public function index(): View
     {
         $profil = collect(Pengaturan::DEFAULTS)
@@ -293,10 +302,20 @@ class PengaturanController extends Controller
                 continue;
             }
 
+            $kolomRahasia = self::KOLOM_RAHASIA_CADANGAN[$nama] ?? [];
+
             $cadangan['tabel'][$nama] = DB::table($nama)
                 ->orderBy('id')
                 ->get()
-                ->map(fn ($baris) => (array) $baris)
+                ->map(function ($baris) use ($kolomRahasia) {
+                    $data = (array) $baris;
+
+                    foreach ($kolomRahasia as $kolom) {
+                        unset($data[$kolom]);
+                    }
+
+                    return $data;
+                })
                 ->all();
         }
 
@@ -307,6 +326,7 @@ class PengaturanController extends Controller
             echo $json;
         }, $namaFile, [
             'Content-Type' => 'application/json; charset=UTF-8',
+            'Cache-Control' => 'no-store, private, max-age=0',
         ]);
     }
 

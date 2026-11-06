@@ -15,13 +15,11 @@ use App\Models\Pengaturan;
 use App\Models\SesiMeja;
 use App\Services\MidtransService;
 use App\Services\PesananService;
-use App\Services\StokService;
 use App\Support\AksesPesanan;
 use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class EMenuController extends Controller
@@ -404,32 +402,25 @@ class EMenuController extends Controller
             $status = $midtrans->getTransactionStatus($kode_pesanan);
 
             $transactionStatus = strtolower($status->transaction_status ?? '');
-            $fraudStatus = strtolower($status->fraud_status ?? '');
 
-            $sukses = $transactionStatus === 'settlement'
-                || ($transactionStatus === 'capture' && $fraudStatus === 'accept');
+            if ($midtrans->verifikasiQris($pesanan, $status)) {
+                try {
+                    app(PesananService::class)->lunasi(
+                        $pesanan,
+                        'qris',
+                        null,
+                        $status->transaction_id ?? null,
+                    );
+                } catch (\RuntimeException $exception) {
+                    $pesanan->refresh();
 
-            if ($sukses) {
-                DB::transaction(function () use ($pesanan, $status) {
-                    $pesanan->update([
-                        'status_pesanan' => Pesanan::STATUS_DIPROSES,
-                        'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
-                        'metode_pembayaran' => 'qris',
-                    ]);
-
-                    if (! $pesanan->pembayaran) {
-                        $pesanan->pembayaran()->create([
-                            'metode_pembayaran' => 'qris',
-                            'status_pembayaran' => 'lunas',
-                            'jumlah_bayar' => (float) $pesanan->total_bayar,
-                            'kembalian' => 0,
-                            'transaction_id' => $status->transaction_id ?? null,
-                            'order_id' => $pesanan->kode_pesanan,
-                        ]);
-                    }
-
-                    app(StokService::class)->potongSetelahPembayaran($pesanan, null);
-                });
+                    return response()->json([
+                        'lunas' => false,
+                        'status_pesanan' => $pesanan->status_pesanan,
+                        'status_pembayaran' => $pesanan->status_pembayaran,
+                        'message' => $exception->getMessage(),
+                    ], 422)->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+                }
 
                 $pesanan->refresh();
                 Realtime::emit(new StatusPesananBerubah([
@@ -506,21 +497,13 @@ class EMenuController extends Controller
     }
 
     /**
-     * URL status pesanan sekaligus membawa kode saung aktif sebagai cadangan
-     * bila cookie sesi browser sudah tidak berlaku.
+     * URL status pesanan tanpa membawa kode saung. Kode sesi adalah kredensial
+     * meja dan tidak boleh ikut tercatat di URL, riwayat browser, atau header
+     * Referer. Akses tetap memakai cookie sesi/riwayat milik browser tamu.
      */
     private function urlStatusPesanan(Pesanan $pesanan): string
     {
-        $sesi = SesiMeja::query()
-            ->where('meja_id', $pesanan->meja_id)
-            ->where('status', 'aktif')
-            ->latest('id')
-            ->first();
-
-        return route('emenu.status', array_filter([
-            'kode_pesanan' => $pesanan->kode_pesanan,
-            'kode_saung' => $sesi?->kode_unik,
-        ]));
+        return route('emenu.status', ['kode_pesanan' => $pesanan->kode_pesanan]);
     }
 
     public function panggil(Request $request, string $meja): RedirectResponse

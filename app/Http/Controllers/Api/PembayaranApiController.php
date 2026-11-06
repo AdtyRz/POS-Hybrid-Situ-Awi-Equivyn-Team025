@@ -7,11 +7,13 @@ use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Models\Pesanan;
 use App\Models\Pembayaran;
+use App\Services\MidtransService;
 use App\Services\StokService;
 use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\Api\PembayaranApiRequest;
+use RuntimeException;
 
 class PembayaranApiController extends Controller
 {
@@ -36,24 +38,51 @@ class PembayaranApiController extends Controller
             return ApiResponse::validation(['jumlah_bayar' => ['Uang kurang']], 'Pembayaran gagal');
         }
 
-        DB::transaction(function () use ($pesanan, $data, $dibayar, $tagihan) {
-            app(StokService::class)->potongSetelahPembayaran($pesanan, auth()->id());
+        $midtrans = app(MidtransService::class);
 
-            Pembayaran::create([
-                'pesanan_id' => $pesanan->id,
-                'metode_pembayaran' => $data['metode_pembayaran'],
-                'status_pembayaran' => 'lunas',
-                'jumlah_bayar' => $dibayar,
-                'kembalian' => $dibayar - $tagihan,
-            ]);
+        if ($data['metode_pembayaran'] === 'qris' && ! $midtrans->verifikasiQris($pesanan)) {
+            return ApiResponse::validation(
+                ['metode_pembayaran' => ['Pembayaran QRIS belum terverifikasi oleh Midtrans.']],
+                'Pembayaran gagal'
+            );
+        }
 
-            $pesanan->update([
-                'status_pesanan' => Pesanan::STATUS_DIPROSES,
-                'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
-                'metode_pembayaran' => $data['metode_pembayaran'],
-                'kasir_id' => auth()->id(),
-            ]);
-        });
+        if ($data['metode_pembayaran'] === 'qris') {
+            $dibayar = $tagihan;
+        }
+
+        try {
+            DB::transaction(function () use ($pesanan, $data, $dibayar, $tagihan) {
+                $terkunci = Pesanan::query()->whereKey($pesanan->id)->lockForUpdate()->firstOrFail();
+
+                if ($terkunci->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
+                    throw new RuntimeException('Pesanan sudah lunas');
+                }
+
+                if ($terkunci->status_pesanan === Pesanan::STATUS_DIBATALKAN) {
+                    throw new RuntimeException('Pesanan sudah dibatalkan');
+                }
+
+                app(StokService::class)->potongSetelahPembayaran($terkunci, auth()->id());
+
+                Pembayaran::create([
+                    'pesanan_id' => $terkunci->id,
+                    'metode_pembayaran' => $data['metode_pembayaran'],
+                    'status_pembayaran' => 'lunas',
+                    'jumlah_bayar' => $dibayar,
+                    'kembalian' => $data['metode_pembayaran'] === 'qris' ? 0 : $dibayar - $tagihan,
+                ]);
+
+                $terkunci->update([
+                    'status_pesanan' => Pesanan::STATUS_DIPROSES,
+                    'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+                    'metode_pembayaran' => $data['metode_pembayaran'],
+                    'kasir_id' => auth()->id(),
+                ]);
+            });
+        } catch (RuntimeException $exception) {
+            return ApiResponse::validation(['kode_pesanan' => [$exception->getMessage()]], 'Pembayaran gagal');
+        }
 
         $pesanan->refresh();
 

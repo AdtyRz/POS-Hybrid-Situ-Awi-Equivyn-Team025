@@ -564,6 +564,23 @@ class PesananController extends Controller
             return back()->withErrors(['status_pesanan' => 'Perpindahan status tidak diizinkan.']);
         }
 
+        // Pesanan e-menu yang masih menunggu pembayaran (tunai di kasir atau
+        // verifikasi QRIS) tidak boleh dilepas ke KDS sebelum benar-benar lunas.
+        if ($data['status_pesanan'] === Pesanan::STATUS_DIPROSES
+            && in_array($pesanan->status_pesanan, [
+                Pesanan::STATUS_MENUNGGU_VERIFIKASI,
+                Pesanan::STATUS_MENUNGGU_PEMBAYARAN,
+            ], true)
+            && $pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR) {
+            $pesan = 'Pesanan belum lunas. Selesaikan pembayaran sebelum mengirim ke dapur/bar.';
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['message' => $pesan], 422);
+            }
+
+            return back()->withErrors(['status_pesanan' => $pesan]);
+        }
+
         if ($data['status_pesanan'] === 'dibatalkan') {
             if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
                 $pesan = 'Pesanan yang sudah lunas tidak dapat dibatalkan.';

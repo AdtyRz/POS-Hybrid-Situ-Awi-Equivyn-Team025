@@ -156,4 +156,41 @@ class MidtransService
             return null;
         }
     }
+
+    /**
+     * Pastikan status transaksi QRIS benar-benar lunas dan memang milik
+     * pesanan ini. Jangan pernah menandai lunas hanya berdasarkan input
+     * kasir atau callback tanpa memeriksa order_id dan nominalnya.
+     */
+    public function verifikasiQris(Pesanan $pesanan, mixed $status = null): bool
+    {
+        $status ??= $this->getTransactionStatus($pesanan->kode_pesanan);
+
+        if (! is_object($status) && ! is_array($status)) {
+            return false;
+        }
+
+        $data = (array) $status;
+        $transactionStatus = strtolower((string) ($data['transaction_status'] ?? ''));
+        $fraudStatus = strtolower((string) ($data['fraud_status'] ?? ''));
+
+        $lunas = $transactionStatus === 'settlement'
+            || ($transactionStatus === 'capture' && $fraudStatus === 'accept');
+
+        if (! $lunas) {
+            return false;
+        }
+
+        $orderId = (string) ($data['order_id'] ?? '');
+        $grossAmount = $data['gross_amount'] ?? null;
+
+        if ($orderId === ''
+            || ! hash_equals((string) $pesanan->kode_pesanan, $orderId)
+            || $grossAmount === null
+            || $grossAmount === '') {
+            return false;
+        }
+
+        return abs((float) $grossAmount - (float) $pesanan->total_bayar) < 0.01;
+    }
 }

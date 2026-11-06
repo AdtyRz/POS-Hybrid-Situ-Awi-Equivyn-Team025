@@ -61,11 +61,11 @@ Route::get('/realtime/version', [RealtimeController::class, 'version'])
     ->middleware('throttle:120,1')
     ->name('realtime.version');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'aktif'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
 
-Route::middleware(['auth', 'role:admin'])->group(function () {
+Route::middleware(['auth', 'aktif', 'role:admin'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/admin/analitik-laporan', [AdminController::class, 'dashboard'])->name('admin.analitik-laporan');
 Route::get('/admin/analitik-laporan/cetak-pdf', [AdminController::class, 'cetakAnalitikPdf'])->name('admin.analitik-laporan.cetak-pdf');
@@ -117,7 +117,7 @@ Route::get('/admin/analitik-laporan/ekspor-xlsx', [AdminController::class, 'eksp
     Route::delete('/admin/akun/{id}', [AdminController::class, 'hapusAkun'])->name('admin.akun.hapus');
 });
 
-Route::middleware(['auth', 'role:kasir'])->group(function () {
+Route::middleware(['auth', 'aktif', 'role:kasir'])->group(function () {
     Route::get('/kasir/locked', [KasirController::class, 'locked'])->name('kasir.locked');
     Route::post('/kasir/lock', [KasirController::class, 'lock'])->name('kasir.lock');
     Route::post('/kasir/unlock', [KasirController::class, 'unlock'])
@@ -127,7 +127,7 @@ Route::middleware(['auth', 'role:kasir'])->group(function () {
         ->name('kasir.locked.notifications');
 });
 
-Route::middleware(['auth', 'role:kasir', 'kasir.unlocked'])->group(function () {
+Route::middleware(['auth', 'aktif', 'role:kasir', 'kasir.unlocked'])->group(function () {
     Route::get('/kasir/dashboard', [PesananController::class, 'index'])->name('kasir.dashboard');
     Route::get('/kasir/state', [PesananController::class, 'state'])->name('kasir.state');
     Route::get('/kasir/pesanan/tambah', [PesananController::class, 'create'])->name('kasir.pesanan.create');
@@ -145,19 +145,19 @@ Route::middleware(['auth', 'aktif', 'role:admin,kasir,pelayan', 'kasir.unlocked'
     Route::patch('/pesanan/{kode}/status', [PesananController::class, 'ubahStatus'])->name('pesanan.status');
 });
 
-Route::middleware(['auth', 'role:koki'])->group(function () {
+Route::middleware(['auth', 'aktif', 'role:koki'])->group(function () {
     Route::get('/kds/dapur', [KdsController::class, 'index'])->defaults('target', 'dapur')->name('kds.dapur');
     Route::get('/kds/dapur/state', [KdsController::class, 'state'])->defaults('target', 'dapur')->name('kds.dapur.state');
     Route::patch('/kds/dapur/{id}', [KdsController::class, 'update'])->defaults('target', 'dapur')->name('kds.dapur.ubah');
 });
 
-Route::middleware(['auth', 'role:barista'])->group(function () {
+Route::middleware(['auth', 'aktif', 'role:barista'])->group(function () {
     Route::get('/kds/bar', [KdsController::class, 'index'])->defaults('target', 'bar')->name('kds.bar');
     Route::get('/kds/bar/state', [KdsController::class, 'state'])->defaults('target', 'bar')->name('kds.bar.state');
     Route::patch('/kds/bar/{id}', [KdsController::class, 'update'])->defaults('target', 'bar')->name('kds.bar.ubah');
 });
 
-Route::middleware(['auth', 'role:pelayan'])->group(function () {
+Route::middleware(['auth', 'aktif', 'role:pelayan'])->group(function () {
     Route::get('/pelayan/notifikasi-panggilan', [PelayanController::class, 'notifikasiPanggilan'])->name('pelayan.notifikasi-panggilan');
     Route::get('/pelayan/tab-antar', [PelayanController::class, 'tabAntar'])->name('pelayan.tab-antar');
     Route::get('/pelayan/tab-saung', [PelayanController::class, 'tabSaung'])->name('pelayan.tab-saung');
