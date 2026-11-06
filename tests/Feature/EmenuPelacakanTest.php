@@ -354,10 +354,7 @@ class EmenuPelacakanTest extends TestCase
 
         $this->withSession($sesi)
             ->get(route('emenu.bayar-tunai', $pesanan->kode_pesanan))
-            ->assertRedirect(route('emenu.status', [
-                'kode_pesanan' => $pesanan->kode_pesanan,
-                'kode_saung' => SesiMeja::aktifUntuk($meja)->kode_unik,
-            ]));
+            ->assertRedirect(route('emenu.status', $pesanan->kode_pesanan));
     }
 
     public function test_endpoint_status_tunai_memberi_sinyal_lunas_dan_url_status(): void
@@ -379,10 +376,7 @@ class EmenuPelacakanTest extends TestCase
             ->assertOk()
             ->assertJsonPath('lunas', true)
             ->assertJsonPath('status_pembayaran', Pesanan::PAYMENT_SUDAH_BAYAR)
-            ->assertJsonPath('redirect', route('emenu.status', [
-                'kode_pesanan' => $pesanan->kode_pesanan,
-                'kode_saung' => SesiMeja::aktifUntuk($meja)->kode_unik,
-            ]));
+            ->assertJsonPath('redirect', route('emenu.status', $pesanan->kode_pesanan));
     }
 
     public function test_halaman_bayar_tunai_lunas_tetap_mengarah_ke_status_tanpa_cookie_sesi(): void
@@ -407,10 +401,7 @@ class EmenuPelacakanTest extends TestCase
         $this->flushSession();
 
         $this->get(route('emenu.bayar-tunai', $pesanan->kode_pesanan))
-            ->assertRedirect(route('emenu.status', [
-                'kode_pesanan' => $pesanan->kode_pesanan,
-                'kode_saung' => $sesi->kode_unik,
-            ]));
+            ->assertRedirect(route('emenu.status', $pesanan->kode_pesanan));
     }
 
     public function test_endpoint_status_tunai_tetap_menyatakan_lunas_tanpa_cookie_sesi(): void

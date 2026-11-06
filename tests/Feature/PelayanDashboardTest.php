@@ -482,7 +482,9 @@ class PelayanDashboardTest extends TestCase
                 'transaction_status' => 'pending',
             ]);
             $mock->shouldReceive('qrisExpiryMinutes')->andReturn(5);
-            $mock->shouldReceive('getTransactionStatus')->once()->andReturn((object) [
+            $mock->shouldReceive('getTransactionStatus')->once()->andReturnUsing(fn ($orderId) => (object) [
+                'order_id' => $orderId,
+                'gross_amount' => '75000.00',
                 'transaction_status' => 'settlement',
                 'fraud_status' => 'accept',
                 'transaction_id' => 'trx-settle',

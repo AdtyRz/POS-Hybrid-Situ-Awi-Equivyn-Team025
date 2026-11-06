@@ -62,7 +62,7 @@ Route::prefix('v1')->group(function () {
             ->middleware('throttle:120,1');
     });
 
-    Route::middleware(['auth', 'role:pelayan'])->group(function () {
+    Route::middleware(['auth', 'aktif', 'role:pelayan'])->group(function () {
         Route::post('/iot/panggilan/{id}/tangani', [IotApiController::class, 'tangani']);
     });
 });

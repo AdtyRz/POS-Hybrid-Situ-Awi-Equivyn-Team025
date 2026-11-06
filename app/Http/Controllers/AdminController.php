@@ -19,6 +19,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -1123,7 +1124,22 @@ class AdminController extends Controller
             $data['password'] = Hash::make($data['password']);
         }
 
-        $user->update($data);
+        $gantiSandi = array_key_exists('password', $data);
+        $emailLama = $user->email;
+
+        DB::transaction(function () use ($user, $data, $gantiSandi, $emailLama) {
+            $user->update($data);
+
+            if ($gantiSandi) {
+                // Password baru harus mematikan semua sesi, remember-me, dan
+                // token lama agar perangkat yang pernah login tidak tetap aktif.
+                $this->cabutKredensialStaf($user);
+
+                if ($emailLama !== $user->email && Schema::hasTable('password_reset_tokens')) {
+                    DB::table('password_reset_tokens')->where('email', $emailLama)->delete();
+                }
+            }
+        });
 
         return back()->with('sukses', 'Data akun ' . $user->nama . ' berhasil diperbarui.');
     }
@@ -1132,15 +1148,24 @@ class AdminController extends Controller
     {
         $user = User::findOrFail($id);
 
-        if ($user->id === auth()->id() && $user->is_aktif) {
-            return back()->withErrors(['akun' => 'Akun yang sedang digunakan tidak dapat dinonaktifkan.']);
+        // Jangan izinkan siapa pun mengubah status akunnya sendiri. Tanpa ini
+        // admin yang sudah nonaktif bisa mengaktifkan dirinya kembali bila
+        // masih memiliki sesi/remember-me lama.
+        if ((int) $user->id === (int) auth()->id()) {
+            return back()->withErrors(['akun' => 'Status akun yang sedang digunakan tidak dapat diubah sendiri.']);
         }
 
         if ($user->role === 'admin' && $user->is_aktif && $this->jumlahAdminAktif() <= 1) {
             return back()->withErrors(['akun' => 'Admin aktif terakhir tidak dapat dinonaktifkan.']);
         }
 
-        $user->update(['is_aktif' => ! $user->is_aktif]);
+        DB::transaction(function () use ($user) {
+            $user->update(['is_aktif' => ! $user->is_aktif]);
+
+            if (! $user->is_aktif) {
+                $this->cabutKredensialStaf($user);
+            }
+        });
 
         return back()->with('sukses', 'Status akun ' . $user->nama . ' berhasil diubah menjadi ' . ($user->is_aktif ? 'aktif' : 'nonaktif') . '.');
     }
@@ -1174,6 +1199,31 @@ class AdminController extends Controller
         });
 
         return back()->with('sukses', 'Akun ' . $user->nama . ' berhasil dihapus.');
+    }
+
+    /**
+     * Cabut semua kredensial staf: remember-me, sesi database, personal
+     * access token, dan token reset password. Dipakai saat akun dinonaktifkan
+     * atau password diganti.
+     */
+    private function cabutKredensialStaf(User $user): void
+    {
+        $user->forceFill(['remember_token' => null])->save();
+
+        if (Schema::hasTable('sessions')) {
+            DB::table('sessions')->where('user_id', $user->id)->delete();
+        }
+
+        if (Schema::hasTable('personal_access_tokens')) {
+            DB::table('personal_access_tokens')
+                ->where('tokenable_type', User::class)
+                ->where('tokenable_id', $user->id)
+                ->delete();
+        }
+
+        if ($user->email && Schema::hasTable('password_reset_tokens')) {
+            DB::table('password_reset_tokens')->where('email', $user->email)->delete();
+        }
     }
 
     private function jumlahAdminAktif(): int
