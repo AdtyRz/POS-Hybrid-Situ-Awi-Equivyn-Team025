@@ -191,7 +191,7 @@ class PengaturanController extends Controller
             ->with('sukses', 'Pengaturan sistem berhasil disimpan.');
     }
 
-    public function unggahLogo(Request $request): RedirectResponse
+    public function unggahLogo(Request $request): RedirectResponse|JsonResponse
     {
         $request->validate([
             'logo' => [
@@ -234,9 +234,21 @@ class PengaturanController extends Controller
             }
         }
 
+        $pesan = 'Logo restoran berhasil diperbarui dan akan dipakai pada struk.';
+
+        if ($request->expectsJson() || $request->header('X-Admin-Ajax') === '1') {
+            return response()
+                ->json([
+                    'success' => true,
+                    'message' => $pesan,
+                    'logo_url' => Pengaturan::logoUrl(),
+                ])
+                ->header('Cache-Control', 'no-store, private, max-age=0');
+        }
+
         return redirect()
             ->route('admin.pengaturan-sistem')
-            ->with('sukses', 'Logo restoran berhasil diperbarui dan akan dipakai pada struk.');
+            ->with('sukses', $pesan);
     }
 
     public function diagnostik(): JsonResponse

@@ -1479,6 +1479,21 @@
                 if (this.flashSuccess) {
                     this.showToast(this.flashSuccess);
                 }
+
+                window.addEventListener('admin:form-saved', (event) => {
+                    const form = event.detail?.form;
+
+                    if (!form || !form.action.includes('/pengaturan-sistem/logo')) return;
+
+                    event.detail.handled = true;
+                    form.reset();
+
+                    if (event.detail.payload?.logo_url) {
+                        this.logoSrc = event.detail.payload.logo_url + '?v=' + Date.now();
+                    }
+
+                    this.showToast(event.detail.message || 'Logo restoran berhasil diperbarui.');
+                });
             },
 
             keBool(nilai) {
@@ -1553,23 +1568,23 @@
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': this.csrf,
                             'X-Requested-With': 'XMLHttpRequest',
+                            'X-Admin-Ajax': '1',
                         },
                         body: JSON.stringify(this.payload()),
                     });
 
-                    if (respons.status === 422) {
-                        const data = await respons.json();
-                        const pesan = Object.values(data.errors || {}).flat()[0] || 'Periksa kembali isian pengaturan.';
+                    const data = await respons.json().catch(() => ({}));
+
+                    if (! respons.ok) {
+                        const pesan = Object.values(data.errors || {}).flat()[0]
+                            || data.message
+                            || 'Periksa kembali isian pengaturan.';
                         this.showToast(pesan, true);
                         return;
                     }
 
-                    if (! respons.ok) {
-                        throw new Error('HTTP ' + respons.status);
-                    }
-
                     this.saveSuccess = true;
-                    this.showToast('Pengaturan sistem berhasil disimpan.');
+                    this.showToast(data.message || 'Pengaturan sistem berhasil disimpan.');
                     setTimeout(() => this.saveSuccess = false, 3000);
                 } catch (error) {
                     this.showToast('Pengaturan gagal disimpan. Periksa koneksi server.', true);

@@ -179,7 +179,11 @@
     </script>
 
     <script>
-        window.addEventListener('realtime:panggilan.pelayan', () => {
+        window.addEventListener('realtime:panggilan.pelayan', (event) => {
+            // Hanya panggilan baru yang boleh membunyikan chime. Saat admin
+            // menyelesaikan panggilan, halaman cukup menyegarkan daftar.
+            if (event.detail?.panggilan?.status_panggilan !== 'menunggu') return;
+
             if (typeof playChime === 'function') playChime('urgent');
         });
     </script>

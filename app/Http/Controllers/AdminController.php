@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AdminDiperbarui;
 use App\Events\MenuDiperbarui;
+use App\Events\PanggilanPelayan;
 use App\Models\DetailPesanan;
 use App\Models\Kategori;
 use App\Models\LogPanggilPelayan;
@@ -591,6 +593,8 @@ class AdminController extends Controller
 
         Kategori::create($data + ['jenis' => 'menu']);
 
+        Realtime::emit(new MenuDiperbarui('kategori'));
+
         return back()->with('sukses', 'Kategori baru berhasil ditambahkan!');
     }
 
@@ -699,7 +703,7 @@ class AdminController extends Controller
             'status_panggilan' => 'menunggu',
         ]);
 
-        Realtime::emit(new \App\Events\PanggilanPelayan([
+        Realtime::emit(new PanggilanPelayan([
             'id' => $panggilan->id,
             'meja_id' => $meja->id,
             'meja' => $meja->kode_meja,
@@ -718,12 +722,25 @@ class AdminController extends Controller
 
         $meja = MejaMakan::where('kode_meja', $validated['kode_meja'])->firstOrFail();
 
+        $panggilan = LogPanggilPelayan::where('meja_id', $meja->id)
+            ->where('status_panggilan', 'menunggu')
+            ->latest('waktu_panggil')
+            ->first();
+
         LogPanggilPelayan::where('meja_id', $meja->id)
             ->where('status_panggilan', 'menunggu')
             ->update([
                 'status_panggilan' => 'selesai',
                 'waktu_selesai' => now(),
             ]);
+
+        Realtime::emit(new PanggilanPelayan([
+            'id' => $panggilan?->id,
+            'meja_id' => $meja->id,
+            'meja' => $meja->kode_meja,
+            'area' => $meja->area,
+            'status_panggilan' => 'selesai',
+        ]));
 
         return redirect()->route('admin.master-meja')->with('success', 'Panggilan saung ' . $meja->kode_meja . ' diselesaikan.');
     }
@@ -745,6 +762,8 @@ class AdminController extends Controller
             'target_kds' => null,
         ]);
 
+        Realtime::emit(new AdminDiperbarui('meja'));
+
         return redirect()->route('admin.master-meja')->with('success', 'Kategori area berhasil ditambahkan.');
     }
 
@@ -757,6 +776,8 @@ class AdminController extends Controller
         $meja = MejaMakan::where('kode_meja', $validated['kode_meja'])->firstOrFail();
         $sesi = SesiMeja::aktifUntuk($meja);
         $sesi->update(['kode_unik' => SesiMeja::kodeUnikBaru($sesi->kode_unik)]);
+
+        Realtime::emit(new AdminDiperbarui('meja'));
 
         return redirect()->route('admin.master-meja')->with('success', 'Token saung ' . $meja->kode_meja . ' berhasil diregenerasi.');
     }
@@ -798,6 +819,9 @@ class AdminController extends Controller
                 $meja->qr_token = strtoupper('QR-' . $meja->kode_meja . substr(str()->random(6), 0, 6));
             }
             $meja->save();
+
+            Realtime::emit(new AdminDiperbarui('meja'));
+
             return redirect()->route('admin.master-meja')->with('success', 'Meja berhasil diperbarui.');
         }
 
@@ -813,6 +837,8 @@ class AdminController extends Controller
             'qr_token' => strtoupper('QR-' . $validated['kode_meja'] . substr(str()->random(6), 0, 6)),
             'status_meja' => 'kosong',
         ]);
+
+        Realtime::emit(new AdminDiperbarui('meja'));
 
         return redirect()->route('admin.master-meja')->with('success', 'Unit saung baru berhasil ditambahkan.');
     }
@@ -834,6 +860,8 @@ class AdminController extends Controller
 
         $meja->logPanggil()->delete();
         $meja->delete();
+
+        Realtime::emit(new AdminDiperbarui('meja'));
 
         return redirect()->route('admin.master-meja')
             ->with('success', 'Meja ' . $kode . ' berhasil dihapus.');
@@ -858,6 +886,8 @@ class AdminController extends Controller
 
         $nama = $kategori->nama_kategori;
         $kategori->delete();
+
+        Realtime::emit(new AdminDiperbarui('meja'));
 
         return redirect()->route('admin.master-meja')
             ->with('success', 'Kategori ' . $nama . ' berhasil dihapus.');
@@ -1093,6 +1123,8 @@ class AdminController extends Controller
 
         User::create($data);
 
+        Realtime::emit(new AdminDiperbarui('akun'));
+
         return back()->with('sukses', 'Akun staf baru berhasil didaftarkan.');
     }
 
@@ -1141,6 +1173,8 @@ class AdminController extends Controller
             }
         });
 
+        Realtime::emit(new AdminDiperbarui('akun'));
+
         return back()->with('sukses', 'Data akun ' . $user->nama . ' berhasil diperbarui.');
     }
 
@@ -1166,6 +1200,8 @@ class AdminController extends Controller
                 $this->cabutKredensialStaf($user);
             }
         });
+
+        Realtime::emit(new AdminDiperbarui('akun'));
 
         return back()->with('sukses', 'Status akun ' . $user->nama . ' berhasil diubah menjadi ' . ($user->is_aktif ? 'aktif' : 'nonaktif') . '.');
     }
@@ -1197,6 +1233,8 @@ class AdminController extends Controller
 
             $user->delete();
         });
+
+        Realtime::emit(new AdminDiperbarui('akun'));
 
         return back()->with('sukses', 'Akun ' . $user->nama . ' berhasil dihapus.');
     }

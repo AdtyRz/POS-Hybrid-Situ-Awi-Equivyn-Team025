@@ -41,6 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
             'aktif' => \App\Http\Middleware\CheckIsActive::class,
+            'admin.ajax' => \App\Http\Middleware\AdminAjaxResponse::class,
             'kasir.unlocked' => \App\Http\Middleware\EnsureKasirUnlocked::class,
             'iot.token' => \App\Http\Middleware\VerifyIotToken::class,
             'pesanan.no-store' => \App\Http\Middleware\NoStorePesanan::class,

@@ -26,7 +26,7 @@ try {
     console.warn('WebSocket realtime tidak tersedia, memakai polling fallback.', error);
 }
 
-const REALTIME_EVENTS = ['pesanan.baru', 'status.berubah', 'panggilan.pelayan', 'menu.diperbarui', 'sesi.berubah', 'pengaturan.diperbarui'];
+const REALTIME_EVENTS = ['pesanan.baru', 'status.berubah', 'panggilan.pelayan', 'menu.diperbarui', 'sesi.berubah', 'pengaturan.diperbarui', 'admin.diperbarui'];
 
 const DEFAULT_CHANNELS = [];
 
