@@ -54,7 +54,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" data-live="admin-akun-stats">
         
         <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[160px] relative overflow-hidden">
             <div class="flex items-start justify-between">
@@ -157,7 +157,7 @@
                 :class="activeRoleFilter === 'all' ? 'bg-[#0B4D2B] text-white shadow-xs font-bold' : 'bg-[#F0EEE7] text-[#404941] hover:text-black font-semibold'"
                 class="px-3.5 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer">
                 <span>Semua Staf</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="activeRoleFilter === 'all' ? 'bg-white/20 text-white' : 'bg-gray-200 text-[#1C1C18]'">{{ $statistik['total'] }}</span>
+                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="activeRoleFilter === 'all' ? 'bg-white/20 text-white' : 'bg-gray-200 text-[#1C1C18]'" x-text="staffs.length"></span>
             </button>
 
             <button 
@@ -166,7 +166,7 @@
                 :class="activeRoleFilter === 'admin' ? 'bg-[#0B4D2B] text-white shadow-xs font-bold' : 'bg-[#F0EEE7] text-[#404941] hover:text-black font-semibold'"
                 class="px-3.5 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer">
                 <span>Admin/Owner</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="activeRoleFilter === 'admin' ? 'bg-white/20 text-white' : 'bg-[#FFDEA1] text-[#261900]'">{{ $jumlahPeran['admin'] }}</span>
+                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="activeRoleFilter === 'admin' ? 'bg-white/20 text-white' : 'bg-[#FFDEA1] text-[#261900]'" x-text="jumlahPeran('admin')"></span>
             </button>
 
             <button 
@@ -175,7 +175,7 @@
                 :class="activeRoleFilter === 'kasir' ? 'bg-[#0B4D2B] text-white shadow-xs font-bold' : 'bg-[#F0EEE7] text-[#404941] hover:text-black font-semibold'"
                 class="px-3.5 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer">
                 <span>Kasir</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="activeRoleFilter === 'kasir' ? 'bg-white/20 text-white' : 'bg-[#B1F1C2] text-[#00210E]'">{{ $jumlahPeran['kasir'] }}</span>
+                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="activeRoleFilter === 'kasir' ? 'bg-white/20 text-white' : 'bg-[#B1F1C2] text-[#00210E]'" x-text="jumlahPeran('kasir')"></span>
             </button>
 
             <button 
@@ -184,7 +184,7 @@
                 :class="activeRoleFilter === 'koki' ? 'bg-[#0B4D2B] text-white shadow-xs font-bold' : 'bg-[#F0EEE7] text-[#404941] hover:text-black font-semibold'"
                 class="px-3.5 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer">
                 <span>Koki Dapur</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="activeRoleFilter === 'koki' ? 'bg-white/20 text-white' : 'bg-[#E5E2DB] text-[#1C1C18]'">{{ $jumlahPeran['koki'] }}</span>
+                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="activeRoleFilter === 'koki' ? 'bg-white/20 text-white' : 'bg-[#E5E2DB] text-[#1C1C18]'" x-text="jumlahPeran('koki')"></span>
             </button>
 
             <button 
@@ -193,7 +193,7 @@
                 :class="activeRoleFilter === 'barista' ? 'bg-[#0B4D2B] text-white shadow-xs font-bold' : 'bg-[#F0EEE7] text-[#404941] hover:text-black font-semibold'"
                 class="px-3.5 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer">
                 <span>Barista</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="activeRoleFilter === 'barista' ? 'bg-white/20 text-white' : 'bg-[#E5E2DB] text-[#1C1C18]'">{{ $jumlahPeran['barista'] }}</span>
+                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="activeRoleFilter === 'barista' ? 'bg-white/20 text-white' : 'bg-[#E5E2DB] text-[#1C1C18]'" x-text="jumlahPeran('barista')"></span>
             </button>
 
             <button 
@@ -202,7 +202,7 @@
                 :class="activeRoleFilter === 'pelayan' ? 'bg-[#0B4D2B] text-white shadow-xs font-bold' : 'bg-[#F0EEE7] text-[#404941] hover:text-black font-semibold'"
                 class="px-3.5 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer">
                 <span>Pelayan / Runner</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="activeRoleFilter === 'pelayan' ? 'bg-white/20 text-white' : 'bg-[#E5E2DB] text-[#1C1C18]'">{{ $jumlahPeran['pelayan'] }}</span>
+                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="activeRoleFilter === 'pelayan' ? 'bg-white/20 text-white' : 'bg-[#E5E2DB] text-[#1C1C18]'" x-text="jumlahPeran('pelayan')"></span>
             </button>
         </div>
 
@@ -224,7 +224,7 @@
     <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
         
         <div class="p-4 bg-[#F6F3EC] border-b border-gray-200 flex items-center justify-between text-xs">
-            <span class="font-bold text-[#1C1C18]">Menampilkan <span x-text="filteredStaffs.length"></span> dari {{ $statistik['total'] }} akun staf resmi Situ Awi Resto</span>
+            <span class="font-bold text-[#1C1C18]">Menampilkan <span x-text="filteredStaffs.length"></span> dari <span x-text="staffs.length"></span> akun staf resmi Situ Awi Resto</span>
             <span class="text-[10px] font-bold text-[#0B4D2B] flex items-center gap-1">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -491,7 +491,7 @@
                 </button>
             </div>
 
-            <form method="POST" action="{{ route('admin.akun.simpan') }}" class="flex flex-col gap-4 text-xs">
+            <form method="POST" action="{{ route('admin.akun.simpan') }}" class="flex flex-col gap-4 text-xs" data-ajax-reset>
                 @csrf
                 <input type="hidden" name="_form" value="tambah">
                 @if ($errors->any() && old('_form') === 'tambah')
@@ -740,6 +740,11 @@
 
 </div>
 
+<script type="application/json" id="manajemen-akun-state">{!! json_encode([
+    'staffs' => $stafJson,
+    'sessions' => $sesiJson,
+], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
+
 <script>
     function manajemenAkunApp() {
         return {
@@ -782,6 +787,58 @@
                 this.penunjukWaktu = setInterval(() => {
                     this.now = Date.now();
                 }, 1000);
+
+                window.addEventListener('live:updated', (event) => this.applyLiveState(event));
+                window.addEventListener('admin:form-saved', (event) => this.formTersimpan(event));
+            },
+
+            jumlahPeran(role) {
+                return this.staffs.filter((staf) => staf.roleKey === role).length;
+            },
+
+            formTersimpan(event) {
+                const form = event.detail?.form;
+
+                if (!form || !form.action.includes('/admin/akun')) return;
+
+                event.detail.handled = true;
+                this.addModalOpen = false;
+                this.detailOpen = false;
+                this.deleteConfirmOpen = false;
+                this.pendingDeleteForm = null;
+
+                if (form.hasAttribute('data-ajax-reset')) {
+                    form.reset();
+                }
+
+                this.showToast(event.detail.message || 'Data akun berhasil disimpan.');
+            },
+
+            applyLiveState(event) {
+                const raw = event.detail?.document?.getElementById('manajemen-akun-state')?.textContent;
+
+                if (!raw) return;
+
+                try {
+                    const state = JSON.parse(raw);
+
+                    this.staffs = state.staffs || [];
+                    this.sessions = state.sessions || [];
+
+                    if (this.selectedStaff) {
+                        const terbaru = this.staffs.find(
+                            (staf) => String(staf.id) === String(this.selectedStaff.id)
+                        );
+
+                        if (terbaru) {
+                            this.selectedStaff = terbaru;
+                        } else {
+                            this.closeDetail();
+                        }
+                    }
+                } catch (error) {
+                    // Payload tidak valid; data lama tetap ditampilkan.
+                }
             },
 
             waktuRelatif(ts) {
@@ -894,8 +951,10 @@
                 this.deleteConfirmOpen = false;
                 const form = this.pendingDeleteForm;
                 this.pendingDeleteForm = null;
+
                 if (form) {
-                    HTMLFormElement.prototype.submit.call(form);
+                    this.deleteConfirmOpen = false;
+                    window.adminSubmitForm(form);
                 }
             }
         };

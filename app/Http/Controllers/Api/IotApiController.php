@@ -132,6 +132,16 @@ class IotApiController extends Controller
             'waktu_selesai' => now(),
         ]);
 
+        $log->loadMissing('meja');
+
+        Realtime::emit(new PanggilanPelayan([
+            'id' => $log->id,
+            'meja_id' => $log->meja_id,
+            'meja' => $log->meja?->kode_meja,
+            'area' => $log->meja?->area,
+            'status_panggilan' => 'ditangani',
+        ]));
+
         return ApiResponse::success($log->fresh());
     }
 }

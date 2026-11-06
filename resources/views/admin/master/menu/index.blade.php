@@ -713,6 +713,19 @@
                     clearTimeout(this._refreshTimer);
                     this._refreshTimer = setTimeout(() => this.refreshData(), 180);
                 });
+
+                window.addEventListener('admin:form-saved', (event) => {
+                    const form = event.detail?.form;
+
+                    if (!form || !form.action.includes('/admin/menu')) return;
+
+                    event.detail.handled = true;
+                    this.addModalOpen = false;
+                    form.reset();
+                    this.addPhotoPreview = '';
+                    this.showToast(event.detail.message || 'Menu berhasil disimpan.');
+                    this.refreshData();
+                });
             },
 
             normalisasiMenu(item) {

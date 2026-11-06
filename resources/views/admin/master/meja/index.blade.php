@@ -638,7 +638,7 @@
                     </button>
                 </div>
 
-                <form method="POST" action="{{ route('admin.meja.simpan') }}" class="flex flex-col gap-4 text-xs">
+                <form method="POST" action="{{ route('admin.meja.simpan') }}" class="flex flex-col gap-4 text-xs" data-ajax-reset>
                     @csrf
                     <div class="grid grid-cols-2 gap-4">
                         <div class="flex flex-col gap-1.5">
@@ -778,7 +778,7 @@
                     </button>
                 </div>
 
-                <form method="POST" action="{{ route('admin.master-meja.tambah-area') }}" class="flex flex-col gap-2 text-xs">
+                <form method="POST" action="{{ route('admin.master-meja.tambah-area') }}" class="flex flex-col gap-2 text-xs" data-ajax-reset>
                     @csrf
                     <label class="font-bold text-[#1C1C18]">Nama Area/Cluster Baru *</label>
                     <div class="flex items-center gap-2">
@@ -791,7 +791,7 @@
                     </div>
                 </form>
 
-                <div class="flex flex-col gap-2">
+                <div class="flex flex-col gap-2" data-live="master-meja-kategori">
                     <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[#707971]">
                         <span>Kategori Tersimpan ({{ count($kategoriList) }})</span>
                         <span>Dipakai</span>
@@ -1000,6 +1000,24 @@
                     this.$watch('selectedSaung', () => this.$nextTick(() => this.renderQr()));
 
                     window.addEventListener('live:updated', (event) => this.applyLiveState(event));
+                    window.addEventListener('admin:form-saved', (event) => this.formTersimpan(event));
+                },
+                formTersimpan(event) {
+                    const form = event.detail?.form;
+
+                    if (!form) return;
+
+                    event.detail.handled = true;
+
+                    if (form.hasAttribute('data-ajax-reset')) {
+                        form.reset();
+                    }
+
+                    this.addModalOpen = false;
+                    this.editModalOpen = false;
+                    this.kategoriModalOpen = false;
+                    this.confirmDialog.open = false;
+                    this.showToast(event.detail.message || 'Perubahan berhasil disimpan.');
                 },
                 applyLiveState(event) {
                     const doc = event.detail?.document;

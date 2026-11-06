@@ -39,6 +39,7 @@ class Realtime
                 'log_panggil_pelayan',
                 'sesi_meja',
                 'menu',
+                'kategori',
                 'meja_makan',
                 'pengaturan',
                 'users',

@@ -16,7 +16,7 @@
         <script>
             window.__CHANNELS__ = ['admin', 'kasir', 'menu'];
         </script>
-        @vite(['resources/css/app.css', 'resources/js/alpine.js'])
+        @vite(['resources/css/app.css', 'resources/js/alpine.js', 'resources/js/admin-ajax.js'])
         <script>
             window.addEventListener('load', function () {
                 var realtime = document.createElement('script');
@@ -213,7 +213,7 @@
                             <span class="text-[10px] font-bold text-[#707971] tracking-wide leading-tight mt-0.5">{{ $labelPeranPengguna }}</span>
                         </div>
                     </div>
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
+                    <form method="POST" action="{{ route('logout') }}" class="inline" data-no-ajax>
                         @csrf
                         <button type="submit" class="w-8 h-8 rounded-lg hover:bg-gray-200/60 active:scale-95 flex items-center justify-center text-[#404941] transition-all cursor-pointer" title="Keluar / Logout">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
