@@ -25,9 +25,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PengaturanController extends Controller
 {
-    /**
-     * Kolom yang tidak boleh ikut diekspor karena berisi kredensial/token.
-     */
+
+
+
     private const KOLOM_RAHASIA_CADANGAN = [
         'users' => ['password', 'remember_token'],
         'meja_makan' => ['qr_token', 'id_device'],
@@ -256,10 +256,10 @@ class PengaturanController extends Controller
         return response()->json($this->diagnostikData());
     }
 
-    /**
-     * Uji endpoint status meja dari halaman admin. Endpoint perangkat asli
-     * tetap memakai token IoT; route ini memakai sesi admin yang sudah login.
-     */
+
+
+
+
     public function statusMejaIot(IotStatusService $service): JsonResponse
     {
         return response()

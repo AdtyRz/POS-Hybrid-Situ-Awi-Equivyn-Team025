@@ -309,7 +309,7 @@
         <script>
             let checkCount = 0;
             const maxChecks = 200;
-            const qrisStatusUrl = "{{ route('emenu.qris.status', $pesanan->kode_pesanan) }}";
+            const qrisStatusUrl = @json($qrisStatusUrl);
             const qrTtl = {{ (int) ($qrisTtl ?? 300) }};
             let remaining = qrTtl;
 

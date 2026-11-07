@@ -352,8 +352,8 @@ class KasirMultiOrderLockTest extends TestCase
         $saung = collect($response->viewData('saungsJson'))
             ->firstWhere('id', $meja->kode_meja);
 
-        // Semua pesanan sudah selesai, tetapi sesi belum diakhiri. Kartu
-        // kasir tidak boleh berubah menjadi "Kosong".
+
+
         $this->assertSame('paid', $saung['status']);
         $this->assertTrue($saung['sessionOccupied']);
         $this->assertTrue($saung['allOrdersPaid']);

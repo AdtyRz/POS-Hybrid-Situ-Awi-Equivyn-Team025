@@ -1042,7 +1042,7 @@
                             }
                         });
                     } catch (error) {
-                        // Abaikan payload yang tidak valid; data lama tetap tampil.
+
                     }
                 },
                 qrUrl() {

@@ -11,8 +11,8 @@ class SesiMejaSeeder extends Seeder
     public function run(): void
     {
         MejaMakan::orderBy('kode_meja')->get()->each(function (MejaMakan $meja) {
-            // aktifUntuk() hanya membuat sesi baru bila meja belum punya sesi aktif,
-            // jadi seeder ini aman dijalankan berulang kali.
+
+
             SesiMeja::aktifUntuk($meja);
         });
 

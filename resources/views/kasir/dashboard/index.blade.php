@@ -977,7 +977,7 @@
                     this.pilihOrderAwal();
                     this.sinkronkanPilihanStruk(true);
 
-                    // Fallback mandiri: tetap sinkron walau WebSocket mati.
+
                     setInterval(() => this.refreshKasirState(), 8000);
                 },
 
@@ -1173,7 +1173,7 @@
                             this.cashReceived = 0;
                         }
                     } catch (error) {
-                        // Polling berikutnya akan mencoba lagi.
+
                     } finally {
                         this._stateLoading = false;
                     }
@@ -1183,8 +1183,8 @@
                     const orders = this.currentTable?.receiptOrders || [];
                     const codes = orders.map(order => order.kode_pesanan);
 
-                    // Semua pesanan lunas dipilih agar satu struk memuat seluruh
-                    // pesanan sesi ini dan bisa langsung dicetak ulang.
+
+
                     if (reset) {
                         this.selectedReceiptCodes = [...codes];
                         this.knownReceiptCodes = [...codes];
@@ -1357,7 +1357,6 @@
                         html, body { margin: 0; padding: 0; background: #fff; }
                         body {
                             width: ${paperSize};
-                            /* 58mm: area cetak ±48mm, 80mm: area cetak ±72mm. */
                             padding: ${paperSize === '58mm' ? '3mm 5mm 5mm' : '4mm 4mm 6mm'};
                             color: #000;
                             font-family: 'Courier New', Courier, monospace;
@@ -1438,8 +1437,8 @@
                     dokumen.head.appendChild(gaya);
                     dokumen.body.className = paperSize === '58mm' ? 'paper-58' : 'paper-80';
 
-                    // Semua pesanan yang dicentang digabung menjadi SATU struk.
-                    // Logo, header, dan footer hanya muncul sekali.
+
+
                     const itemMap = new Map();
 
                     orders.forEach((order) => {
@@ -1511,37 +1510,59 @@
                         ${this.printLogo ? `<img class="logo" src="${esc(this.logoSrc)}" alt="Logo">` : ''}
                         <div class="brand">${esc((this.receiptHeader || 'SAUNG SITU AWI').toUpperCase())}</div>
                         ${this.restoAddress ? `<div class="address">${esc(this.restoAddress)}</div>` : ''}
+
                         ${this.restoPhone ? `<div class="phone">Telp: ${esc(this.restoPhone)}</div>` : ''}
                         <div class="divider"></div>
+
                         <table class="meta"><tbody>${metaRows}</tbody></table>
                         <div class="divider"></div>
+
                         <table class="items">
                             <thead>
                                 <tr>
                                     <th class="qty">Qty</th>
+
                                     <th class="nama">Item</th>
+
                                     <th class="harga">Jumlah</th>
+
                                 </tr>
+
                             </thead>
+
                             <tbody>${itemRows || '<tr><td class="empty" colspan="3">Tidak ada item</td></tr>'}</tbody>
+
                         </table>
+
                         <div class="divider"></div>
+
                         <table class="summary">
                             <tbody>
                                 <tr>
                                     <td>Subtotal</td>
+
                                     <td class="nominal">${esc(this.formatRupiah(subtotal))}</td>
+
                                 </tr>
+
                                 <tr class="total">
                                     <td>TOTAL</td>
+
                                     <td class="nominal">${esc(this.formatRupiah(total))}</td>
+
                                 </tr>
+
                             </tbody>
+
                         </table>
+
                         <div class="divider"></div>
+
                         <div class="status">LUNAS</div>
+
                         ${metode ? `<div class="payment">Pembayaran: ${esc(metode)}</div>` : ''}
                         <div class="divider"></div>
+
                         ${this.receiptFooter ? `<div class="footer">${esc(this.receiptFooter)}</div>` : ''}
                     `;
                     dokumen.body.appendChild(bagian);
@@ -1640,8 +1661,6 @@
                         const target = this.saungs.find(item => item.dbId === saung.dbId) || saung;
                         const terpilih = new Set(kode);
 
-                        // Jangan hapus struk dari daftar: tandai saja sebagai
-                        // sudah dicetak agar kasir tetap bisa mencetak ulang.
                         target.receiptOrders = (target.receiptOrders || []).map(order => (
                             terpilih.has(order.kode_pesanan)
                                 ? { ...order, printed: true }
@@ -1784,8 +1803,8 @@
     </script>
 
     <script>
-        // Reload halaman tidak lagi dipakai di kasir. Event realtime memanggil
-        // refreshKasirState() agar input uang dan pilihan order tidak hilang.
+
+
     </script>
 </body>
 </html>

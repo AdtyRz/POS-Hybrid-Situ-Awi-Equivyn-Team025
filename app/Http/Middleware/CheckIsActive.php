@@ -13,8 +13,8 @@ class CheckIsActive
         $user = $request->user();
 
         if ($user && ! $user->is_aktif) {
-            // Pastikan remember-me tidak bisa dipakai lagi meskipun akun
-            // dinonaktifkan langsung lewat database.
+
+
             if ($user->remember_token !== null) {
                 $user->forceFill(['remember_token' => null])->save();
             }

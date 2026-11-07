@@ -19,22 +19,22 @@ class MidtransService
         Config::$is3ds = config('midtrans.is_3ds', true);
     }
 
-    /**
-     * Buat transaksi QRIS via Midtrans Core API dan ambil URL gambar QR-nya.
-     * Mengembalikan array berisi order_id, qr_url, dan transaction_status,
-     * atau null bila konfigurasi Midtrans belum siap / terjadi error.
-     */
+
+
+
+
+
     public function createQrisCharge(Pesanan $pesanan, bool $renewIfExpired = false): ?array
     {
         try {
             $status = $this->getTransactionStatus($pesanan->kode_pesanan);
             $trx = strtolower($status->transaction_status ?? '');
 
-            // Selama transaksi masih pending, pakai ulang QR yang ada (order_id aktif tidak boleh di-charge ulang).
+
             if ($trx === 'pending') {
                 $qrUrl = $status ? $this->extractQrUrl($status->actions ?? []) : null;
 
-                // Endpoint status tidak menyertakan actions, jadi susun ulang URL QR dari transaction_id.
+
                 if (! $qrUrl) {
                     $qrUrl = $this->buildQrisUrl($status->transaction_id ?? null);
                 }
@@ -48,8 +48,8 @@ class MidtransService
                 ];
             }
 
-            // Baru charge kalau belum pernah ada transaksi, atau transaksi lama sudah expire
-            // (order_id yang sudah expire boleh dipakai ulang menurut aturan Midtrans).
+
+
             $params = [
                 'payment_type' => 'qris',
                 'transaction_details' => [
@@ -149,7 +149,7 @@ class MidtransService
         try {
             return Transaction::status($orderId);
         } catch (\Exception $e) {
-            // 404 = transaksi belum ada di Midtrans (normal untuk pesanan baru), jangan dianggap error.
+
             if ((int) $e->getCode() !== 404) {
                 report($e);
             }
@@ -157,11 +157,11 @@ class MidtransService
         }
     }
 
-    /**
-     * Pastikan status transaksi QRIS benar-benar lunas dan memang milik
-     * pesanan ini. Jangan pernah menandai lunas hanya berdasarkan input
-     * kasir atau callback tanpa memeriksa order_id dan nominalnya.
-     */
+
+
+
+
+
     public function verifikasiQris(Pesanan $pesanan, mixed $status = null): bool
     {
         $status ??= $this->getTransactionStatus($pesanan->kode_pesanan);

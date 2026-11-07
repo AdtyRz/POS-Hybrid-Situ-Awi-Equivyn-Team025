@@ -39,20 +39,30 @@ class PembayaranApiController extends Controller
         }
 
         $midtrans = app(MidtransService::class);
+        $statusMidtrans = null;
 
-        if ($data['metode_pembayaran'] === 'qris' && ! $midtrans->verifikasiQris($pesanan)) {
-            return ApiResponse::validation(
-                ['metode_pembayaran' => ['Pembayaran QRIS belum terverifikasi oleh Midtrans.']],
-                'Pembayaran gagal'
-            );
+        if ($data['metode_pembayaran'] === 'qris') {
+
+            $statusMidtrans = $midtrans->getTransactionStatus($pesanan->kode_pesanan);
+
+            if (! $midtrans->verifikasiQris($pesanan, $statusMidtrans)) {
+                return ApiResponse::validation(
+                    ['metode_pembayaran' => ['Pembayaran QRIS belum terverifikasi oleh Midtrans.']],
+                    'Pembayaran gagal'
+                );
+            }
         }
+
+        $transactionId = filled(data_get($statusMidtrans, 'transaction_id'))
+            ? trim((string) data_get($statusMidtrans, 'transaction_id'))
+            : null;
 
         if ($data['metode_pembayaran'] === 'qris') {
             $dibayar = $tagihan;
         }
 
         try {
-            DB::transaction(function () use ($pesanan, $data, $dibayar, $tagihan) {
+            DB::transaction(function () use ($pesanan, $data, $dibayar, $tagihan, $transactionId) {
                 $terkunci = Pesanan::query()->whereKey($pesanan->id)->lockForUpdate()->firstOrFail();
 
                 if ($terkunci->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
@@ -71,6 +81,8 @@ class PembayaranApiController extends Controller
                     'status_pembayaran' => 'lunas',
                     'jumlah_bayar' => $dibayar,
                     'kembalian' => $data['metode_pembayaran'] === 'qris' ? 0 : $dibayar - $tagihan,
+                    'transaction_id' => $data['metode_pembayaran'] === 'qris' ? $transactionId : null,
+                    'order_id' => $data['metode_pembayaran'] === 'qris' ? $terkunci->kode_pesanan : null,
                 ]);
 
                 $terkunci->update([

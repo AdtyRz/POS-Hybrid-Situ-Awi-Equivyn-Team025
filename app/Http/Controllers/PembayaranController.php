@@ -118,12 +118,23 @@ class PembayaranController extends Controller
         }
 
         $midtrans = app(MidtransService::class);
+        $statusMidtrans = null;
 
-        if ($data['metode_pembayaran'] === 'qris' && ! $midtrans->verifikasiQris($pesanan)) {
-            return back()->withErrors([
-                'metode_pembayaran' => 'Pembayaran QRIS belum terverifikasi oleh Midtrans. Minta tamu menyelesaikan pembayaran terlebih dahulu.',
-            ])->withInput();
+        if ($data['metode_pembayaran'] === 'qris') {
+
+
+            $statusMidtrans = $midtrans->getTransactionStatus($pesanan->kode_pesanan);
+
+            if (! $midtrans->verifikasiQris($pesanan, $statusMidtrans)) {
+                return back()->withErrors([
+                    'metode_pembayaran' => 'Pembayaran QRIS belum terverifikasi oleh Midtrans. Minta tamu menyelesaikan pembayaran terlebih dahulu.',
+                ])->withInput();
+            }
         }
+
+        $transactionId = filled(data_get($statusMidtrans, 'transaction_id'))
+            ? trim((string) data_get($statusMidtrans, 'transaction_id'))
+            : null;
 
         $jumlahBayar = $data['metode_pembayaran'] === 'qris'
             ? (float) $pesanan->total_bayar
@@ -133,7 +144,7 @@ class PembayaranController extends Controller
             : $jumlahBayar - (float) $pesanan->total_bayar;
 
         try {
-            DB::transaction(function () use ($pesanan, $data, $jumlahBayar, $kembalian) {
+            DB::transaction(function () use ($pesanan, $data, $jumlahBayar, $kembalian, $transactionId) {
                 $terkunci = Pesanan::query()->whereKey($pesanan->id)->lockForUpdate()->firstOrFail();
 
                 if ($terkunci->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
@@ -152,10 +163,12 @@ class PembayaranController extends Controller
                     'status_pembayaran' => 'lunas',
                     'jumlah_bayar' => $jumlahBayar,
                     'kembalian' => $kembalian,
+                    'transaction_id' => $data['metode_pembayaran'] === 'qris' ? $transactionId : null,
+                    'order_id' => $data['metode_pembayaran'] === 'qris' ? $terkunci->kode_pesanan : null,
                 ]);
 
-                // Tunai dan QRIS yang sudah terverifikasi sama-sama langsung
-                // dilepas ke KDS setelah stok berhasil dipotong.
+
+
                 $terkunci->update([
                     'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
                     'status_pesanan' => Pesanan::STATUS_DIPROSES,
@@ -177,8 +190,8 @@ class PembayaranController extends Controller
             'metode_pembayaran' => $pesanan->metode_pembayaran,
         ]));
 
-        // Opsional: tutup sesi meja setelah pembayaran (dipakai form lain bila ada).
-        // Tombol cetak struk di POS tidak lagi otomatis menutup sesi.
+
+
         if ($request->boolean('selesaikan_sesi') && $pesanan->meja) {
             $meja = $pesanan->meja;
 
@@ -202,10 +215,10 @@ class PembayaranController extends Controller
             ->with('sukses', 'Pembayaran lunas. Cetak struk dapat dilakukan dari tombol Cetak Struk.');
     }
 
-    /**
-     * Tandai pesanan lunas yang struknya sudah dicetak. Pesanan yang sudah
-     * ditandai tidak akan muncul lagi pada cetak struk berikutnya.
-     */
+
+
+
+
     public function tandaiStruk(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -225,8 +238,8 @@ class PembayaranController extends Controller
             'updated_at' => now(),
         ]);
 
-        // QRIS mandiri tidak punya kasir saat pembayaran; kasir yang mencetak
-        // struk menjadi penanggung jawab transaksi pada laporan.
+
+
         Pesanan::query()
             ->where('meja_id', $data['meja_id'])
             ->whereIn('kode_pesanan', $data['kode_pesanan'])

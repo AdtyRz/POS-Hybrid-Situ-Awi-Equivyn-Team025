@@ -40,6 +40,20 @@ composer install
 npm install
 ```
 
+### 3. Konfigurasi, Migrasi & Seed
+
+```bash
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+```
+
+Seeder staf memakai sandi terpisah per peran melalui `.env`:
+`SEED_ADMIN_PASSWORD`, `SEED_KASIR_PASSWORD`, `SEED_PELAYAN_PASSWORD`,
+`SEED_KOKI_PASSWORD`, dan `SEED_BARISTA_PASSWORD`. Di lingkungan `local`/`testing`,
+variabel yang kosong akan diisi sandi acak unik dan ditampilkan di console saat
+seeder dijalankan. Di luar `local`/`testing`, semua variabel tersebut wajib diisi.
+
 ---
 
 ## ⚡ Realtime (Laravel Reverb + Laravel Echo)
@@ -122,10 +136,11 @@ dapat memesan.
   berakhir — bukan lewat tombol manual. Kode baru dijamin berbeda dari kode sesi sebelumnya.
 - **Gate verifikasi** berlaku pada e-menu, `checkout`, `pelacakan`, dan **semua halaman detail
   pesanan** (`status`, `verifikasi`, `bayar-tunai`, polling QRIS). Halaman detail hanya bisa
-  dibuka bila ada bukti akses yang cocok: cookie sesi meja, parameter `kode_saung` sesi aktif,
-  atau kode pesanan yang tersimpan di riwayat browser. Pesanan juga harus dibuat pada sesi
-  aktif tersebut. Fallback `kode_saung` dan riwayat browser dipakai agar status pembayaran tetap
-  bisa dibuka setelah kasir menutup sesi atau cookie browser hilang.
+  dibuka bila ada bukti akses yang cocok: cookie sesi meja, kode pesanan yang tersimpan di
+  riwayat browser, atau URL status bertanda tangan sementara yang diterbitkan setelah
+  pembayaran terverifikasi. Pesanan juga harus dibuat pada sesi aktif tersebut. Kode saung
+  tidak pernah diterima dari query string atau header, sehingga URL yang bocor tidak bisa
+  dipakai ulang sebagai kredensial.
 - Verifikasi disimpan di session dengan key `sesi_meja_{id}`, dibandingkan dengan sesi aktif
   saat ini; begitu sesi ditutup, pelanggan otomatis diminta memasukkan kode baru. Riwayat
   pesanan tamu sebelumnya juga dihapus saat sesi baru diverifikasi.
@@ -210,11 +225,10 @@ Panduan wiring, library, upload, dan troubleshooting ada di
 `GET /api/v1/pesanan/{kode}` tidak lagi publik. Akses diberikan bila salah satu terpenuhi:
 
 1. Login staf aktif (admin/kasir/pelayan/koki/barista), atau
-2. Query/header `qr_token` / `X-QR-Token` milik meja, atau
-3. Query/header `kode_saung` / `X-Kode-Saung` yang cocok dengan sesi aktif.
+2. Query/header `qr_token` / `X-QR-Token` milik meja.
 
-Pesanan juga harus dibuat di dalam sesi meja yang sedang aktif. Respons tidak lagi memuat
-`qr_token`/`id_device`.
+Kode saung tidak diterima sebagai kredensial API. Pesanan juga harus dibuat di dalam sesi
+meja yang sedang aktif. Respons tidak lagi memuat `qr_token`/`id_device`.
 
 ### KDS API per Stasiun
 

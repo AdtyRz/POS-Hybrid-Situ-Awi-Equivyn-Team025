@@ -31,8 +31,8 @@ class PesananApiController extends Controller
             return ApiResponse::validation(['qr_token' => ['QR token tidak valid atau tidak sesuai dengan meja ini.']], 'QR token tidak valid');
         }
 
-        // Pesanan API selalu diikat ke sesi meja aktif. Sesi dibuat lebih dulu
-        // agar pesanan tidak bisa dianggap milik sesi tamu sebelumnya.
+
+
         SesiMeja::aktifUntuk($meja);
 
         try {
@@ -71,19 +71,16 @@ class PesananApiController extends Controller
         $qrToken = $request->query('qr_token')
             ?: $request->header('X-QR-Token')
             ?: $request->bearerToken();
-        $kodeSaung = $request->query('kode_saung')
-            ?: $request->header('X-Kode-Saung');
 
         $staf = AksesPesanan::staf($request->user());
 
-        if (! $staf && blank($qrToken) && blank($kodeSaung)) {
-            return ApiResponse::error('Akses pesanan memerlukan login staf, QR token meja, atau kode saung.', null, 401)
+        if (! $staf && blank($qrToken)) {
+            return ApiResponse::error('Akses pesanan memerlukan login staf atau QR token meja.', null, 401)
                 ->withHeaders(['Cache-Control' => 'no-store, private, max-age=0']);
         }
 
         $boleh = $staf
-            || AksesPesanan::qrTokenValid($pesanan, $qrToken)
-            || AksesPesanan::kodeSesiValid($pesanan, $kodeSaung);
+            || AksesPesanan::qrTokenValid($pesanan, $qrToken);
 
         if (! $boleh) {
             return ApiResponse::forbidden('Sesi meja sudah berakhir atau bukti akses tidak valid.')

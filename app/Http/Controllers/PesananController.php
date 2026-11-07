@@ -24,9 +24,9 @@ class PesananController extends Controller
     {
         $data = $this->bangunDataKasir($request->query('meja'));
 
-        // Satu query untuk semua pengaturan halaman ini, bukan tujuh query
-        // terpisah. Nilai selalu dibaca ulang tiap request agar perubahan
-        // admin langsung terlihat tanpa cache basi.
+
+
+
         $pengaturan = Pengaturan::query()->pluck('nilai', 'kunci');
         $nilai = function (string $kunci, mixed $default = null) use ($pengaturan): mixed {
             $hasil = $pengaturan[$kunci] ?? null;
@@ -56,9 +56,9 @@ class PesananController extends Controller
         )));
     }
 
-    /**
-     * Endpoint ringan untuk menyegarkan data POS tanpa reload halaman.
-     */
+
+
+
     public function state(Request $request): JsonResponse
     {
         $data = $this->bangunDataKasir($request->query('meja'));
@@ -73,23 +73,23 @@ class PesananController extends Controller
             ->header('Cache-Control', 'no-store, max-age=0');
     }
 
-    /**
-     * @return array{saungsJson: \Illuminate\Support\Collection, iotAlertJson: array, selectedSaungId: string|null}
-     */
+
+
+
     private function bangunDataKasir(?string $mejaDipilih = null): array
     {
         $mejaSemua = MejaMakan::orderBy('kode_meja')->get();
 
-        // Satu meja dapat memiliki lebih dari satu pesanan aktif. Jangan
-        // keyBy(), karena itu akan membuang semua order kecuali satu.
+
+
         $aktif = Pesanan::with(['detailPesanan.menu', 'meja'])
             ->whereNotIn('status_pesanan', ['selesai', 'dibatalkan'])
             ->orderBy('waktu_pesan')
             ->get()
             ->groupBy('meja_id');
 
-        // Semua pesanan lunas pada sesi terakhir tetap dimuat agar struk dapat
-        // dicetak ulang. Pembatasan sesi mencegah struk tamu sebelumnya muncul.
+
+
         $paidOrders = Pesanan::with(['detailPesanan.menu'])
             ->whereIn('meja_id', $mejaSemua->pluck('id'))
             ->where('status_pembayaran', Pesanan::PAYMENT_SUDAH_BAYAR)
@@ -214,9 +214,9 @@ class PesananController extends Controller
                 fn ($order) => $order['status'] !== 'paid'
             )->count();
 
-            // Pesanan sesi berjalan tetap dihitung sebagai isi meja walau
-            // semuanya sudah selesai. Ini mencegah kartu kasir berubah
-            // menjadi "Kosong" sebelum kasir menekan "Akhiri Sesi".
+
+
+
             $pesananSesi = collect();
 
             if ($sesiAktif) {
@@ -341,7 +341,7 @@ class PesananController extends Controller
         $pertama = $saungsJson->sortBy(fn ($s) => $statusPriority[$s['status']] ?? 99)->first();
         $selectedSaungId = $pertama ? $pertama['id'] : null;
 
-        // Bila kasir baru menyelesaikan pembayaran, kembalikan fokus ke meja tersebut.
+
         if ($mejaDipilih && $saungsJson->contains('id', $mejaDipilih)) {
             $selectedSaungId = $mejaDipilih;
         }
@@ -349,9 +349,9 @@ class PesananController extends Controller
         return compact('saungsJson', 'iotAlertJson', 'selectedSaungId');
     }
 
-    /**
-     * Payload satu pesanan untuk panel kasir dan pemilih order.
-     */
+
+
+
     private function payloadKasir(Pesanan $pesanan): array
     {
         $detail = $pesanan->detailPesanan;
@@ -444,9 +444,9 @@ class PesananController extends Controller
             return 'waiting_qris';
         }
 
-        // Meja hanya boleh dianggap lunas bila seluruh order aktif sudah
-        // lunas. Order yang masih diproses tetapi belum lunas harus tetap
-        // mendominasi status meja.
+
+
+
         $belumLunas = $orders->filter(fn ($order) => $order['status'] !== 'paid');
 
         if ($belumLunas->isNotEmpty()) {
@@ -543,9 +543,9 @@ class PesananController extends Controller
             abort(403, $pesan);
         }
 
-        // Bug 3 FIX: Tambahkan semua status yang didefinisikan di model
-        // Status menunggu_pembayaran & menunggu_verifikasi berasal dari e-menu checkout
-        // Tanpa ini, PATCH ke /pesanan/{kode}/status crash dengan undefined array key
+
+
+
         $alur = [
             'menunggu'              => ['diproses', 'dibatalkan'],
             'menunggu_pembayaran'   => ['diproses', 'dibatalkan'],
@@ -564,8 +564,8 @@ class PesananController extends Controller
             return back()->withErrors(['status_pesanan' => 'Perpindahan status tidak diizinkan.']);
         }
 
-        // Pesanan e-menu yang masih menunggu pembayaran (tunai di kasir atau
-        // verifikasi QRIS) tidak boleh dilepas ke KDS sebelum benar-benar lunas.
+
+
         if ($data['status_pesanan'] === Pesanan::STATUS_DIPROSES
             && in_array($pesanan->status_pesanan, [
                 Pesanan::STATUS_MENUNGGU_VERIFIKASI,
@@ -611,10 +611,10 @@ class PesananController extends Controller
             });
         }
 
-        // Sesi yang masih berjalan tetap menandai meja sebagai terisi,
-        // termasuk ketika semua pesanannya sudah selesai. Meja baru
-        // dikosongkan setelah sesi ditutup lewat "Akhiri Sesi" atau
-        // kedaluwarsa, supaya tagihan/struk tidak hilang lebih awal.
+
+
+
+
         SesiMeja::sinkronkanStatusMeja($pesanan->meja_id);
 
         Realtime::emit(new StatusPesananBerubah([
@@ -624,8 +624,8 @@ class PesananController extends Controller
             'status_pembayaran' => $pesanan->status_pembayaran,
             'metode_pembayaran' => $pesanan->metode_pembayaran,
         ]));
-        // Bug 2 FIX: Return JSON untuk AJAX request (fetch dari Alpine tab-antar)
-        // Return redirect untuk form biasa (kasir dashboard)
+
+
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
                 'status'  => 'ok',

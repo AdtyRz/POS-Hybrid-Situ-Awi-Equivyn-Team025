@@ -22,7 +22,7 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
         $request->session()->regenerate();
 
-        // Login baru selalu membuka status operasional staf.
+
         $request->user()?->update(['status_operasional' => 'aktif']);
 
         ShiftService::mulai($request);

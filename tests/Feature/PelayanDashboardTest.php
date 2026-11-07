@@ -460,7 +460,7 @@ class PelayanDashboardTest extends TestCase
         $this->assertDatabaseMissing('pembayaran', ['pesanan_id' => $pesanan->id]);
         $this->assertSame(6, (int) $menu->fresh()->stok_menu);
 
-        // KDS hanya membaca status menunggu/diproses/siap.
+
         $this->assertFalse(
             Pesanan::whereKey($pesanan->id)
                 ->whereIn('status_pesanan', [Pesanan::STATUS_MENUNGGU, Pesanan::STATUS_DIPROSES, Pesanan::STATUS_SIAP])
@@ -627,7 +627,7 @@ class PelayanDashboardTest extends TestCase
             ->assertJsonPath('pesanan.status_pesanan', Pesanan::STATUS_SELESAI);
 
         $this->assertSame(Pesanan::STATUS_SELESAI, $pesanan->fresh()->status_pesanan);
-        // Sesi masih berjalan, jadi meja belum boleh dianggap kosong.
+
         $this->assertSame('terisi', $meja->fresh()->status_meja);
 
         $this->actingAs($pelayan)

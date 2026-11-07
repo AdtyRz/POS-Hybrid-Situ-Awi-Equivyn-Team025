@@ -84,9 +84,9 @@ class IotLcdFaseTest extends TestCase
         return $pesanan->fresh();
     }
 
-    /**
-     * @return array<string, mixed>
-     */
+
+
+
     private function dataMeja(MejaMakan $meja): array
     {
         return $this->withHeader('X-IoT-Token', 'token-iot-uji')
@@ -268,7 +268,7 @@ class IotLcdFaseTest extends TestCase
             ->assertJsonPath('iotAlert.active', true)
             ->assertJsonPath('iotAlert.id', $panggilan->id);
 
-        // Kasir tidak memiliki endpoint konfirmasi; hanya pelayan yang boleh.
+
         $this->actingAs($kasir)
             ->patchJson('/kasir/panggilan/' . $panggilan->id, [
                 'status_panggilan' => 'selesai',

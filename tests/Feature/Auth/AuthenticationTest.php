@@ -63,15 +63,15 @@ class AuthenticationTest extends TestCase
             'password' => 'password',
         ])->assertRedirect(route('dashboard', absolute: false));
 
-        // statefulApi() menambahkan middleware sesi Sanctum ke grup api.
+
         $apiMiddleware = app(\Illuminate\Routing\Router::class)->getMiddlewareGroups()['api'];
         $this->assertContains(
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             $apiMiddleware,
         );
 
-        // Cookie sesi first-party harus diterima sebelum validasi berjalan.
-        // Tanpa middleware stateful, request berakhir 401.
+
+
         $this->postJson('/api/v1/pembayaran', [])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['kode_pesanan']);

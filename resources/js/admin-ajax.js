@@ -1,11 +1,4 @@
-/*
- * Pengiriman form admin tanpa reload halaman.
- *
- * Semua form POST/PUT/PATCH/DELETE di konsol admin dikirim lewat fetch.
- * Server membalas JSON (lihat middleware AdminAjaxResponse), lalu halaman
- * menyegarkan region [data-live] dan menampilkan toast. Form yang memang
- * perlu navigasi penuh dapat diberi atribut data-no-ajax.
- */
+
 const TOAST_ID = 'admin-ajax-toast';
 let toastTimer = null;
 

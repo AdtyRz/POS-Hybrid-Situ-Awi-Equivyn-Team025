@@ -376,7 +376,7 @@
                         this.alertSeconds = 0;
                     }
                 } catch (error) {
-                    // Payload tidak valid; data lama tetap tampil.
+
                 }
             },
 

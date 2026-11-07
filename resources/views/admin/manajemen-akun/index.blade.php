@@ -41,8 +41,8 @@
                     <span>Log Akses Keamanan</span>
                 </button>
 
-                <button 
-                    type="button" 
+                <button
+                    type="button"
                     @click="addModalOpen = true"
                     class="h-10 px-5 rounded-xl bg-[#0B4D2B] hover:bg-[#08381F] active:scale-95 text-white font-semibold text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer">
                     <svg class="w-4 h-4 text-white stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,7 +55,7 @@
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" data-live="admin-akun-stats">
-        
+
         <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[160px] relative overflow-hidden">
             <div class="flex items-start justify-between">
                 <div>
@@ -149,9 +149,9 @@
     </div>
 
     <div class="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
-        
+
         <div class="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 text-xs">
-            <button 
+            <button
                 type="button"
                 @click="activeRoleFilter = 'all'; currentPage = 1"
                 :class="activeRoleFilter === 'all' ? 'bg-[#0B4D2B] text-white shadow-xs font-bold' : 'bg-[#F0EEE7] text-[#404941] hover:text-black font-semibold'"
@@ -160,7 +160,7 @@
                 <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="activeRoleFilter === 'all' ? 'bg-white/20 text-white' : 'bg-gray-200 text-[#1C1C18]'" x-text="staffs.length"></span>
             </button>
 
-            <button 
+            <button
                 type="button"
                 @click="activeRoleFilter = 'admin'; currentPage = 1"
                 :class="activeRoleFilter === 'admin' ? 'bg-[#0B4D2B] text-white shadow-xs font-bold' : 'bg-[#F0EEE7] text-[#404941] hover:text-black font-semibold'"
@@ -169,7 +169,7 @@
                 <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="activeRoleFilter === 'admin' ? 'bg-white/20 text-white' : 'bg-[#FFDEA1] text-[#261900]'" x-text="jumlahPeran('admin')"></span>
             </button>
 
-            <button 
+            <button
                 type="button"
                 @click="activeRoleFilter = 'kasir'; currentPage = 1"
                 :class="activeRoleFilter === 'kasir' ? 'bg-[#0B4D2B] text-white shadow-xs font-bold' : 'bg-[#F0EEE7] text-[#404941] hover:text-black font-semibold'"
@@ -178,7 +178,7 @@
                 <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="activeRoleFilter === 'kasir' ? 'bg-white/20 text-white' : 'bg-[#B1F1C2] text-[#00210E]'" x-text="jumlahPeran('kasir')"></span>
             </button>
 
-            <button 
+            <button
                 type="button"
                 @click="activeRoleFilter = 'koki'; currentPage = 1"
                 :class="activeRoleFilter === 'koki' ? 'bg-[#0B4D2B] text-white shadow-xs font-bold' : 'bg-[#F0EEE7] text-[#404941] hover:text-black font-semibold'"
@@ -187,7 +187,7 @@
                 <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="activeRoleFilter === 'koki' ? 'bg-white/20 text-white' : 'bg-[#E5E2DB] text-[#1C1C18]'" x-text="jumlahPeran('koki')"></span>
             </button>
 
-            <button 
+            <button
                 type="button"
                 @click="activeRoleFilter = 'barista'; currentPage = 1"
                 :class="activeRoleFilter === 'barista' ? 'bg-[#0B4D2B] text-white shadow-xs font-bold' : 'bg-[#F0EEE7] text-[#404941] hover:text-black font-semibold'"
@@ -196,7 +196,7 @@
                 <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold" :class="activeRoleFilter === 'barista' ? 'bg-white/20 text-white' : 'bg-[#E5E2DB] text-[#1C1C18]'" x-text="jumlahPeran('barista')"></span>
             </button>
 
-            <button 
+            <button
                 type="button"
                 @click="activeRoleFilter = 'pelayan'; currentPage = 1"
                 :class="activeRoleFilter === 'pelayan' ? 'bg-[#0B4D2B] text-white shadow-xs font-bold' : 'bg-[#F0EEE7] text-[#404941] hover:text-black font-semibold'"
@@ -207,11 +207,11 @@
         </div>
 
         <div class="relative w-full md:w-72">
-            <input 
-                type="text" 
+            <input
+                type="text"
                 x-model="searchQuery"
                 @input="currentPage = 1"
-                placeholder="Cari nama staf, email akun, nomor ID..." 
+                placeholder="Cari nama staf, email akun, nomor ID..."
                 class="w-full h-10 pl-10 pr-4 rounded-xl bg-[#F6F3EC] text-xs border border-transparent focus:outline-hidden focus:border-[#0B4D2B] focus:bg-white transition-all shadow-inner">
             <svg class="w-4 h-4 text-[#707971] absolute left-3.5 top-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <circle cx="11" cy="11" r="8" />
@@ -222,7 +222,7 @@
     </div>
 
     <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
-        
+
         <div class="p-4 bg-[#F6F3EC] border-b border-gray-200 flex items-center justify-between text-xs">
             <span class="font-bold text-[#1C1C18]">Menampilkan <span x-text="filteredStaffs.length"></span> dari <span x-text="staffs.length"></span> akun staf resmi Situ Awi Resto</span>
             <span class="text-[10px] font-bold text-[#0B4D2B] flex items-center gap-1">
@@ -249,10 +249,10 @@
                 <tbody class="divide-y divide-gray-100">
                     <template x-for="s in paginatedStaffs" :key="s.id">
                         <tr class="hover:bg-[#FBF8F1]/60 transition-colors">
-                            
+
                             <td class="py-3.5 px-4">
                                 <div class="flex items-center gap-3">
-                                    <div 
+                                    <div
                                         class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-2xs"
                                         :class="s.avatarBg"
                                         x-text="s.avatar">
@@ -265,7 +265,7 @@
                             </td>
 
                             <td class="py-3.5 px-4">
-                                <span 
+                                <span
                                     class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold"
                                     :class="{
                                         'bg-[#FFDEA1] text-[#261900]': s.roleBadge === 'owner',
@@ -287,14 +287,14 @@
                             <td class="py-3.5 px-4 text-[#404941]" x-text="s.device"></td>
 
                             <td class="py-3.5 px-4 text-center">
-                                <span 
+                                <span
                                     class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold"
                                     :class="{
                                         'bg-[#B1F1C2]/40 text-[#00341A]': s.status === 'online',
                                         'bg-[#FFDEA1]/60 text-[#7A4B00]': s.status === 'standby',
                                         'bg-[#E5E2DB] text-[#707971]': s.status !== 'online' && s.status !== 'standby'
                                     }">
-                                    <span 
+                                    <span
                                         class="w-1.5 h-1.5 rounded-full"
                                         :class="{
                                             'bg-[#0B4D2B]': s.status === 'online',
@@ -315,8 +315,8 @@
 
                             <td class="py-3.5 px-4 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         @click="openDetail(s)"
                                         class="px-2 py-1 rounded-lg bg-[#F6F3EC] hover:bg-gray-200 text-[#707971] font-bold text-[10px] transition-all cursor-pointer">
                                         Detail
@@ -357,7 +357,7 @@
     </div>
 
     <div class="bg-[#F0EEE7] rounded-3xl p-6 sm:p-8 shadow-xs border border-[#C0C9BF]/30 flex flex-col gap-6">
-        
+
         <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#C0C9BF]/30">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-[#0B4D2B] flex items-center justify-center text-white shadow-xs">
@@ -380,7 +380,7 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            
+
             <div class="bg-white rounded-xl p-4 shadow-2xs border border-gray-100 flex flex-col justify-between min-h-[220px]">
                 <div>
                     <div class="flex items-center justify-between">
@@ -464,9 +464,9 @@
         </div>
     </div>
 
-    <div 
+    <div
         x-cloak
-        x-show="addModalOpen" 
+        x-show="addModalOpen"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
         x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0"
@@ -474,11 +474,11 @@
         x-transition:leave="transition ease-in duration-150"
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0">
-        
-        <div 
+
+        <div
             class="w-full max-w-lg bg-white rounded-3xl border border-gray-200 shadow-2xl p-6 sm:p-8 flex flex-col gap-5"
             @click.outside="addModalOpen = false">
-            
+
             <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                 <div>
                     <h3 class="font-display font-bold text-xl text-[#00341A]">Tambah Akun Staf Baru</h3>
@@ -528,14 +528,14 @@
                 </div>
 
                 <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
-                    <button 
-                        type="button" 
-                        @click="addModalOpen = false" 
+                    <button
+                        type="button"
+                        @click="addModalOpen = false"
                         class="flex-1 py-3 rounded-xl border border-gray-300 text-gray-700 font-bold hover:bg-gray-50 active:scale-95 transition-all cursor-pointer">
                         Batal
                     </button>
-                    <button 
-                        type="submit" 
+                    <button
+                        type="submit"
                         class="flex-1 py-3 rounded-xl bg-[#0B4D2B] text-white font-bold hover:bg-[#08381F] active:scale-95 transition-all shadow-xs cursor-pointer">
                         Simpan Akun
                     </button>
@@ -544,7 +544,7 @@
         </div>
     </div>
 
-    <div 
+    <div
         x-cloak
         x-show="detailOpen"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
@@ -726,7 +726,7 @@
 
     <div
         x-cloak
-        x-show="toast.show" 
+        x-show="toast.show"
         x-transition:enter="transition ease-out duration-300"
         x-transition:enter-start="opacity-0 translate-y-4"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -837,7 +837,7 @@
                         }
                     }
                 } catch (error) {
-                    // Payload tidak valid; data lama tetap ditampilkan.
+
                 }
             },
 

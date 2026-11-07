@@ -197,7 +197,7 @@ class KdsTargetSeparationTest extends TestCase
         $this->assertSame('siap', $detailDapur->fresh()->status_item);
         $this->assertSame('menunggu', $detailBar->fresh()->status_item);
 
-        // Klik ulang membatalkan tanda selesai, bukan kembali ke menunggu.
+
         $this->actingAs($koki)
             ->patch(route('kds.dapur.ubah', $pesanan->id), [
                 'aksi' => 'item',
@@ -235,8 +235,7 @@ class KdsTargetSeparationTest extends TestCase
             ->patch(route('kds.dapur.ubah', $pesanan->id), ['aksi' => 'runner'])
             ->assertRedirect();
 
-        $this->assertDatabaseCount('log_panggil_pelayan', 1);
-        $this->assertSame($pesanan->meja_id, (int) \App\Models\LogPanggilPelayan::first()->meja_id);
+        $this->assertDatabaseCount('log_panggil_pelayan', 0);
         $this->assertSame('menunggu', $detailBar->fresh()->status_item);
     }
 
@@ -278,7 +277,7 @@ class KdsTargetSeparationTest extends TestCase
             ])
             ->assertRedirect();
 
-        // Semua item siap, tetapi pesanan belum boleh muncul di pelayan.
+
         $this->assertSame(Pesanan::STATUS_DIPROSES, $pesanan->fresh()->status_pesanan);
         $this->actingAs($pelayan)
             ->get(route('pelayan.tab-antar'))
@@ -289,7 +288,7 @@ class KdsTargetSeparationTest extends TestCase
             ->patch(route('kds.bar.ubah', $pesanan->id), ['aksi' => 'runner'])
             ->assertRedirect();
 
-        // Setelah popup Panggil Runner dikonfirmasi, baru pesanan diteruskan.
+
         $this->assertSame(Pesanan::STATUS_SIAP, $pesanan->fresh()->status_pesanan);
         $this->actingAs($pelayan)
             ->get(route('pelayan.tab-antar'))

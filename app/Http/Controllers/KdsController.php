@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\PanggilanPelayan;
 use App\Events\StatusPesananBerubah;
 use App\Models\DetailPesanan;
-use App\Models\LogPanggilPelayan;
 use App\Models\Pesanan;
 use App\Services\ShiftService;
 use App\Support\Realtime;
@@ -87,9 +85,9 @@ class KdsController extends Controller
             })
             ->whereIn('status_item', ['menunggu', 'diproses', 'siap'])
             ->whereHas('pesanan', function ($query) {
-                // Tampilkan tiket selama pesanan masih dalam alur produksi:
-                // 'menunggu' = baru masuk, 'diproses' = sedang dimasak, 'siap' = selesai tapi runner belum ambil.
-                // Tiket baru hilang dari KDS saat status berubah ke 'diantar' atau 'selesai'.
+
+
+
                 $query->whereIn('status_pesanan', ['menunggu', 'diproses', 'siap']);
             })
             ->orderBy('created_at')
@@ -100,9 +98,9 @@ class KdsController extends Controller
             $pesanan = $baris->first()->pesanan;
             $status = $this->statusTiket($baris);
 
-            // Bug FIX: Timer harus berhenti saat tiket status "siap".
-            // Untuk tiket "siap", hitung detik dari waktu_pesan → max(updated_at) item (waktu selesai masak).
-            // Untuk tiket lain, hitung dari waktu_pesan → sekarang (timer masih berjalan).
+
+
+
             if ($status === 'siap') {
                 $waktuSelesai = $baris->max('updated_at');
                 $detik = $waktuSelesai
@@ -150,9 +148,9 @@ class KdsController extends Controller
             })
             ->sum('jumlah');
 
-        // Bug FIX: Hitung rata-rata waktu masak dari database (bukan hardcode "14 Mnt").
-        // Ambil semua pesanan yang punya item "siap" hari ini di stasiun ini,
-        // lalu hitung selisih waktu_pesan → max(updated_at) per pesanan.
+
+
+
         $pesananSelesaiHariIni = DetailPesanan::with('pesanan')
             ->whereHas('menu.kategori', function ($query) use ($target) {
                 $query->where('target_kds', $target);
@@ -194,10 +192,9 @@ class KdsController extends Controller
             'item_id' => ['required_if:aksi,item', 'nullable', 'integer', 'exists:detail_pesanan,id'],
         ]);
 
-        $panggilanRunner = null;
         $statusPayload = null;
 
-        DB::transaction(function () use ($target, $id, $data, &$panggilanRunner, &$statusPayload) {
+        DB::transaction(function () use ($target, $id, $data, &$statusPayload) {
             $pesanan = Pesanan::with('meja')->findOrFail($id);
 
             if ($data['aksi'] === 'runner') {
@@ -215,15 +212,6 @@ class KdsController extends Controller
                     ]);
                 }
 
-                $panggilanRunner = LogPanggilPelayan::create([
-                    'meja_id' => $pesanan->meja_id,
-                    'status_panggilan' => 'menunggu',
-                ]);
-
-                // Baru setelah runner dikonfirmasi pesanan boleh masuk daftar
-                // siap antar pelayan. Sebelumnya status 'siap' langsung dipasang
-                // saat item terakhir dicentang, sehingga pesanan muncul di
-                // pelayan sebelum tombol Panggil Runner ditekan.
                 $statusPesananBaru = $this->statusPesanan($pesanan);
 
                 if ($pesanan->status_pesanan !== $statusPesananBaru) {
@@ -281,18 +269,18 @@ class KdsController extends Controller
 
             $statusPesananBaru = $this->statusPesanan($pesanan);
 
-            // Centang item hanya menyelesaikan produksi. Status pesanan tetap
-            // 'diproses' sampai runner dipanggil agar pelayan tidak menerima
-            // pesanan lebih awal. Jika pesanan sudah 'siap' (runner sudah
-            // dipanggil), status dipertahankan selama semua item masih siap.
+
+
+
+
             if ($statusPesananBaru === Pesanan::STATUS_SIAP
                 && $pesanan->status_pesanan !== Pesanan::STATUS_SIAP) {
                 $statusPesananBaru = Pesanan::STATUS_DIPROSES;
             }
 
             if ($pesanan->status_pesanan !== $statusPesananBaru) {
-                // Update langsung lewat query builder agar aksi KDS tidak
-                // memicu introspeksi skema PostgreSQL setiap klik.
+
+
                 DB::table('pesanan')
                     ->where('id', $pesanan->id)
                     ->update([
@@ -314,16 +302,6 @@ class KdsController extends Controller
 
         if ($statusPayload) {
             Realtime::emit(new StatusPesananBerubah($statusPayload));
-        }
-
-        if ($panggilanRunner) {
-            Realtime::emit(new PanggilanPelayan([
-                'id' => $panggilanRunner->id,
-                'meja_id' => $panggilanRunner->meja_id,
-                'meja' => $panggilanRunner->meja->kode_meja ?? null,
-                'area' => $panggilanRunner->meja->area ?? null,
-                'status_panggilan' => 'menunggu',
-            ]));
         }
 
         if ($request->expectsJson() || $request->ajax()) {
@@ -355,10 +333,10 @@ class KdsController extends Controller
 
     private function statusPesanan(Pesanan $pesanan): string
     {
-        // Bug 5 FIX: Cek status_item PER semua item di pesanan ini
-        // Pesanan dianggap 'siap' jika SEMUA item (lintas KDS) sudah siap.
-        // Pesanan 'diproses' jika ada item yang sudah mulai diproses.
-        // Ini memastikan dapur dan bar harus sama-sama selesai sebelum pesanan muncul di tab pelayan.
+
+
+
+
         $allStatus = DetailPesanan::where('pesanan_id', $pesanan->id)
             ->pluck('status_item');
 

@@ -9,11 +9,11 @@ use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * Mengubah redirect hasil simpan di konsol admin menjadi JSON ketika form
- * dikirim lewat fetch. Dengan begitu halaman tidak perlu dimuat ulang dan
- * pesan sukses/galat tetap bisa ditampilkan sebagai toast.
- */
+
+
+
+
+
 class AdminAjaxResponse
 {
     public function handle(Request $request, Closure $next): Response

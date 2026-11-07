@@ -57,14 +57,7 @@ window.realtimeReload = (delay = 500) => {
     window.realtimeReload._timer = setTimeout(() => window.location.reload(), delay);
 };
 
-/*
- * Pembaruan halaman tanpa reload.
- *
- * Halaman menandai bagian yang boleh berubah dengan [data-live="nama"].
- * Saat ada event realtime, kita mengambil HTML halaman yang sama, lalu
- * mengganti isi setiap region dengan versi terbaru dari server. Fokus
- * pengguna dilindungi: region yang sedang dipakai mengetik tidak diganti.
- */
+
 let liveRefreshTimer = null;
 let liveRefreshInFlight = false;
 let liveRefreshQueued = false;
@@ -139,7 +132,7 @@ const fetchLiveDocument = async () => {
 
         return applyLiveDocument(doc);
     } catch (error) {
-        // Jaringan bermasalah; event realtime berikutnya akan mencoba lagi.
+
         return false;
     } finally {
         liveRefreshInFlight = false;
@@ -175,11 +168,7 @@ window.addEventListener('realtime', () => {
     }
 });
 
-/*
- * Fallback polling. Ini yang membuat halaman tetap sinkron ketika Reverb
- * tidak berjalan atau WebSocket terputus. Polling hanya membaca satu hash
- * versi data, lalu memicu event realtime bila ada perubahan.
- */
+
 const versionUrl = document.querySelector('meta[name="realtime-version-url"]')?.content;
 const versionMeta = document.querySelector('meta[name="realtime-version"]')?.content;
 const pollInterval = Number(window.__REALTIME_POLL_MS__ ?? 4000);
@@ -219,7 +208,7 @@ const pollVersion = async () => {
             lastVersion = data.version || lastVersion;
         }
     } catch (error) {
-        // Jaringan sedang bermasalah; percobaan berikutnya tetap berjalan.
+
     }
 
     pollTimer = setTimeout(pollVersion, pollInterval);

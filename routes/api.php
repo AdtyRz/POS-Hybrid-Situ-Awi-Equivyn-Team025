@@ -8,15 +8,15 @@ use App\Http\Controllers\Api\PembayaranApiController;
 use App\Http\Controllers\Api\PesananApiController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Endpoint perangkat IoT
-|--------------------------------------------------------------------------
-|
-| Semua endpoint di bawah ini hanya untuk LCD/ESP32. Token dikirim lewat
-| header X-IoT-Token dan tidak pernah ditaruh di URL.
-|
-*/
+
+
+
+
+
+
+
+
+
 Route::middleware('iot.token')->prefix('iot')->group(function () {
     Route::post('/panggil-pelayan', [IotApiController::class, 'panggilPelayan'])
         ->middleware('throttle:10,1');
@@ -32,8 +32,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/menu', [MenuController::class, 'index']);
     Route::get('/meja', [MejaController::class, 'index']);
 
-    // Endpoint pelanggan. Detail pesanan tetap wajib membawa bukti sah
-    // (staf login, qr_token meja, atau kode saung aktif).
+
+
     Route::middleware('pesanan.no-store')->group(function () {
         Route::post('/pesanan', [PesananApiController::class, 'store'])
             ->middleware('throttle:20,1');

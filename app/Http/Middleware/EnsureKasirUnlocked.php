@@ -8,10 +8,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnsureKasirUnlocked
 {
-    /**
-     * Kasir yang mengunci terminal tidak boleh mengakses data POS sampai
-     * membuka kunci dengan password akunnya sendiri.
-     */
+
+
+
+
     public function handle(Request $request, Closure $next): Response
     {
         if (auth()->check() && auth()->user()->role === 'kasir' && $request->session()->get('kasir_locked')) {
