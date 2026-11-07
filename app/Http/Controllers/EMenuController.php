@@ -20,6 +20,7 @@ use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\View\View;
 
@@ -175,7 +176,7 @@ class EMenuController extends Controller
                 'price' => (float) $menu->harga,
                 'desc' => $menu->deskripsi ?? '',
                 'category' => $menu->kategori_id,
-                'image' => $menu->foto_menu ? asset('storage/' . $menu->foto_menu) : '',
+                'image' => $menu->foto_menu ? Storage::disk()->url($menu->foto_menu) : '',
                 'stock' => max(0, (int) $menu->stok_menu),
                 'isSoldOut' => $menu->stok_menu <= 0,
                 'badge' => $menu->stok_menu <= 0 ? 'Stok Habis' : '',

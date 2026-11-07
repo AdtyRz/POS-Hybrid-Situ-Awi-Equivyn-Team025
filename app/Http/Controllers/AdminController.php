@@ -354,7 +354,7 @@ class AdminController extends Controller
                 'description' => $menu->deskripsi ?? '',
                 'badge' => $menu->kategori->nama_kategori,
                 'price' => (float) $menu->harga,
-                'photo' => $menu->foto_menu ? asset('storage/' . $menu->foto_menu) : '',
+                'photo' => $menu->foto_menu ? Storage::disk()->url($menu->foto_menu) : '',
                 'category' => 'k' . $menu->kategori_id,
                 'kategoriId' => $menu->kategori_id,
                 'kds' => $menu->kategori->target_kds === 'dapur' ? 'KDS Dapur (Makanan)' : 'KDS Bar (Minuman)',
@@ -429,7 +429,7 @@ class AdminController extends Controller
             ]);
         }
 
-        return $file->storeAs('menu', str()->random(40) . '.' . $ekstensi, 'public');
+        return $file->storeAs('menu', str()->random(40) . '.' . $ekstensi);
     }
 
     public function simpanMenu(Request $request): RedirectResponse
@@ -458,7 +458,7 @@ class AdminController extends Controller
             Menu::create($data);
         } catch (\Throwable $e) {
             if ($data['foto_menu']) {
-                Storage::disk('public')->delete($data['foto_menu']);
+                Storage::disk()->delete($data['foto_menu']);
             }
 
             throw $e;
@@ -501,14 +501,14 @@ class AdminController extends Controller
             $menu->update($data);
         } catch (\Throwable $e) {
             if ($fotoBaru) {
-                Storage::disk('public')->delete($fotoBaru);
+                Storage::disk()->delete($fotoBaru);
             }
 
             throw $e;
         }
 
         if ($fotoBaru && $fotoLama) {
-            Storage::disk('public')->delete($fotoLama);
+            Storage::disk()->delete($fotoLama);
         }
 
         Realtime::emit(new MenuDiperbarui('menu'));
@@ -561,7 +561,7 @@ class AdminController extends Controller
         $menu->delete();
 
         if ($foto) {
-            Storage::disk('public')->delete($foto);
+            Storage::disk()->delete($foto);
         }
 
         Realtime::emit(new MenuDiperbarui('menu'));
