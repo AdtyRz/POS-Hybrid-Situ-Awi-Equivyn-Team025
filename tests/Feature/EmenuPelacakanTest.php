@@ -552,6 +552,65 @@ class EmenuPelacakanTest extends TestCase
             ->assertDontSee('Sebutkan kode meja');
     }
 
+    public function test_status_pesanan_diantar_menampilkan_tahap_sedang_diantar(): void
+    {
+        [$meja, $menu] = $this->siapkanMejaDanMenu();
+        $sesi = $this->sesiTerverifikasi($meja);
+
+        $pesanan = app(PesananService::class)->buat(
+            $meja,
+            [$menu->id => 1],
+            [],
+            ['asal' => 'emenu', 'metode' => 'tunai', 'nama_pelanggan' => 'Budi Santoso']
+        );
+
+        $pesanan->update([
+            'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+            'status_pesanan' => Pesanan::STATUS_DIANTAR,
+        ]);
+
+        $response = $this->withSession($sesi)
+            ->get(route('emenu.status', $pesanan->kode_pesanan))
+            ->assertOk()
+            ->assertSee('Sedang Diantar ke Meja')
+            ->assertSeeInOrder(['Sedang Diantar ke Meja', 'Aktif'])
+            ->assertViewHas('tahap', 4);
+
+        $html = $response->getContent();
+
+        $this->assertSame(1, substr_count($html, '>Aktif</span>'));
+        $this->assertSame(0, substr_count($html, '>Tiba</span>'));
+    }
+
+    public function test_status_pesanan_selesai_menampilkan_tahap_pesanan_tiba(): void
+    {
+        [$meja, $menu] = $this->siapkanMejaDanMenu();
+        $sesi = $this->sesiTerverifikasi($meja);
+
+        $pesanan = app(PesananService::class)->buat(
+            $meja,
+            [$menu->id => 1],
+            [],
+            ['asal' => 'emenu', 'metode' => 'tunai', 'nama_pelanggan' => 'Budi Santoso']
+        );
+
+        $pesanan->update([
+            'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+            'status_pesanan' => Pesanan::STATUS_SELESAI,
+        ]);
+
+        $response = $this->withSession($sesi)
+            ->get(route('emenu.status', $pesanan->kode_pesanan))
+            ->assertOk()
+            ->assertSee('Pesanan Tiba di ' . $meja->kode_meja)
+            ->assertViewHas('tahap', 5);
+
+        $html = $response->getContent();
+
+        $this->assertSame(0, substr_count($html, '>Aktif</span>'));
+        $this->assertSame(1, substr_count($html, '>Tiba</span>'));
+    }
+
     public function test_halaman_verifikasi_qris_menampilkan_kode_meja_dan_expiry_dari_pengaturan(): void
     {
         [$meja, $menu] = $this->siapkanMejaDanMenu();

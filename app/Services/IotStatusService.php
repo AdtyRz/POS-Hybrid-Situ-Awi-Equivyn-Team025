@@ -71,6 +71,12 @@ class IotStatusService
 
         $pesananAktif = $pesanan
             ->reject(fn (Pesanan $p) => $p->status_pesanan === Pesanan::STATUS_SELESAI)
+            ->sortBy(fn (Pesanan $p) => match ($p->status_pesanan) {
+                Pesanan::STATUS_DIANTAR => 0,
+                Pesanan::STATUS_SIAP => 1,
+                Pesanan::STATUS_DIPROSES => 2,
+                default => 3,
+            })
             ->values();
 
         $pesananSelesai = $pesanan
