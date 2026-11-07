@@ -11,7 +11,7 @@ use App\Services\IotStatusService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AdminSettingsAndReportsTest extends TestCase
@@ -96,10 +96,37 @@ class AdminSettingsAndReportsTest extends TestCase
         $path = Pengaturan::nilai('logo_path');
 
         $this->assertNotEmpty($path);
-        $this->assertStringStartsWith('asset/resto/', $path);
-        $this->assertFileExists(public_path($path));
+        $this->assertStringStartsWith('logo/', $path);
+        Storage::disk()->assertExists($path);
+        $this->assertSame(Storage::disk()->url($path), Pengaturan::logoUrl());
 
-        File::delete(public_path($path));
+        Storage::disk()->delete($path);
+    }
+
+    public function test_logo_lama_di_public_dan_logo_baru_di_disk_default_memakai_url_yang_benar(): void
+    {
+        Pengaturan::simpanBanyak(['logo_path' => 'asset/resto/logo-lama.png']);
+        $this->assertSame(asset('asset/resto/logo-lama.png'), Pengaturan::logoUrl());
+
+        Pengaturan::simpanBanyak(['logo_path' => 'logo/logo-baru.png']);
+        $this->assertSame(Storage::disk()->url('logo/logo-baru.png'), Pengaturan::logoUrl());
+
+        Pengaturan::simpanBanyak(['logo_path' => '']);
+        $this->assertSame(asset('asset/Logo.png'), Pengaturan::logoUrl());
+    }
+
+    public function test_unggah_logo_baru_menghapus_logo_lama_di_disk(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('logo/logo-lama.png', 'logo lama');
+        Pengaturan::simpanBanyak(['logo_path' => 'logo/logo-lama.png']);
+
+        $this->actingAs($this->admin())->post(route('admin.pengaturan-sistem.logo'), [
+            'logo' => UploadedFile::fake()->image('logo-resto.png', 120, 80),
+        ])->assertRedirect(route('admin.pengaturan-sistem'));
+
+        Storage::disk('public')->assertMissing('logo/logo-lama.png');
+        Storage::disk('public')->assertExists(Pengaturan::nilai('logo_path'));
     }
 
     public function test_cetak_rekap_shift_menampilkan_transaksi_shift_aktif(): void

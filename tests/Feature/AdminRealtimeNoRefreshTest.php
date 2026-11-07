@@ -6,10 +6,12 @@ use App\Events\AdminDiperbarui;
 use App\Events\PanggilanPelayan;
 use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
+use App\Models\Pengaturan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -190,27 +192,24 @@ class AdminRealtimeNoRefreshTest extends TestCase
 
     public function test_unggah_logo_admin_ajax_mengembalikan_json_dan_url_baru(): void
     {
+        Storage::fake('public');
+
         $admin = $this->admin();
-        $sebelum = glob(public_path('asset/resto/*')) ?: [];
 
-        try {
-            $response = $this->actingAs($admin)
-                ->ajax()
-                ->post(route('admin.pengaturan-sistem.logo'), [
-                    'logo' => UploadedFile::fake()->image('logo-resto.png', 200, 120),
-                ]);
+        $response = $this->actingAs($admin)
+            ->ajax()
+            ->post(route('admin.pengaturan-sistem.logo'), [
+                'logo' => UploadedFile::fake()->image('logo-resto.png', 200, 120),
+            ]);
 
-            $response->assertOk()
-                ->assertJsonPath('success', true)
-                ->assertJsonStructure(['message', 'logo_url']);
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonStructure(['message', 'logo_url']);
 
-            $this->assertStringContainsString('asset/resto/', $response->json('logo_url'));
-        } finally {
-            $sesudah = glob(public_path('asset/resto/*')) ?: [];
+        $path = Pengaturan::nilai('logo_path');
 
-            foreach (array_diff($sesudah, $sebelum) as $berkas) {
-                @unlink($berkas);
-            }
-        }
+        $this->assertStringStartsWith('logo/', $path);
+        Storage::disk('public')->assertExists($path);
+        $this->assertSame(Storage::disk('public')->url($path), $response->json('logo_url'));
     }
 }

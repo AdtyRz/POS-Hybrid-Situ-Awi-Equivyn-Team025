@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class Pengaturan extends Model
 {
@@ -79,8 +80,28 @@ class Pengaturan extends Model
 
     public static function logoUrl(): string
     {
-        $path = trim((string) static::nilai('logo_path', ''));
+        return static::mediaUrl((string) static::nilai('logo_path', ''));
+    }
 
-        return $path !== '' ? asset($path) : asset('asset/Logo.png');
+    /**
+     * URL berkas media di disk default, tetap mendukung path lama di public/.
+     */
+    public static function mediaUrl(?string $path): string
+    {
+        $path = trim((string) $path);
+
+        if ($path === '') {
+            return asset('asset/Logo.png');
+        }
+
+        if (preg_match('#^https?://#i', $path) === 1) {
+            return $path;
+        }
+
+        if (str_starts_with($path, 'asset/')) {
+            return asset($path);
+        }
+
+        return Storage::disk()->url($path);
     }
 }
