@@ -32,6 +32,15 @@ Pastikan juga:
 | Masalah keamanan | Ikuti [SECURITY.md](SECURITY.md), jangan buka issue publik |
 | Kontribusi kode | Buka pull request ke branch `feature/backend` |
 
+## Kontak Email
+
+Untuk pertanyaan yang tidak bersifat sensitif, hubungi:
+
+- [aditya.riqi1003@gmail.com](mailto:aditya.riqi1003@gmail.com)
+- [dfxyam269@gmail.com](mailto:dfxyam269@gmail.com)
+
+Jangan kirim laporan celah keamanan melalui email. Gunakan jalur privat di [SECURITY.md](SECURITY.md).
+
 ## Informasi yang Perlu Disertakan
 
 Agar masalah dapat direproduksi, sertakan:
