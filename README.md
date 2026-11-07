@@ -93,6 +93,7 @@ REVERB_APP_SECRET=...
 REVERB_HOST="localhost"
 REVERB_PORT=8080
 REVERB_SCHEME=http
+REVERB_ALLOWED_ORIGINS=http://localhost:8000
 
 VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
 VITE_REVERB_HOST="${REVERB_HOST}"
@@ -106,8 +107,11 @@ Setelah mengubah `.env`, bersihkan cache: `php artisan config:clear`.
 
 - **Events** (`app/Events`, `ShouldBroadcastNow`): `PesananBaru`, `StatusPesananBerubah`,
   `PanggilanPelayan`, `MenuDiperbarui`, `SesiMejaBerubah`.
-- **Channel publik** (`routes/channels.php`): `kds.dapur`, `kds.bar`, `kasir`, `pelayan`,
+- **Channel privat** (`routes/channels.php`): `kds.dapur`, `kds.bar`, `kasir`, `pelayan`,
   `admin`, `menu`, `meja.{kode_meja}` per meja, dan `pesanan.{kode_pesanan}` per pesanan.
+  Channel staf hanya bisa dilanggan oleh akun aktif dengan role yang sesuai; channel meja
+  dan pesanan hanya bisa dilanggan oleh pemilik sesi meja (atau staf). Atur
+  `REVERB_ALLOWED_ORIGINS` ke domain aplikasi pada produksi agar origin WebSocket dibatasi.
 - **Relay browser**: `resources/js/echo.js` berlangganan channel lalu memancarkan DOM event
   `realtime` / `realtime:<nama>`. Halaman cukup mendengarkan event tersebut untuk reload/refresh.
   Halaman standalone (emenu pelanggan) memakai entry `resources/js/reverb.js` dan mengeset
