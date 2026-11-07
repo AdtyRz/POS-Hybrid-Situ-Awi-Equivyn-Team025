@@ -26,9 +26,9 @@ Sistem Point of Sale (POS) Hybrid & IoT terintegrasi untuk UMKM Kuliner / Wisata
 ## 🛠️ Panduan Instalasi Local
 
 ### 1. Prasyarat
-- **PHP**: `>= 8.5`
+- **PHP**: `>= 8.3`
 - **Composer**: `>= 2.x`
-- **Node.js**: `>= 18.x` & **npm**
+- **Node.js**: `>= 20.19` atau `>= 22.12` & **npm**
 
 ### 2. Clone & Install Dependency
 ```bash
@@ -53,6 +53,31 @@ Seeder staf memakai sandi terpisah per peran melalui `.env`:
 `SEED_KOKI_PASSWORD`, dan `SEED_BARISTA_PASSWORD`. Di lingkungan `local`/`testing`,
 variabel yang kosong akan diisi sandi acak unik dan ditampilkan di console saat
 seeder dijalankan. Di luar `local`/`testing`, semua variabel tersebut wajib diisi.
+
+---
+
+## 🚀 Deploy Produksi
+
+Panduan lengkap ada di [`DEPLOYMENT.md`](DEPLOYMENT.md). Ringkasan:
+
+```bash
+cp .env.production.example .env
+php artisan key:generate
+composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+npm ci
+npm run build
+php artisan migrate --force
+php artisan storage:link
+php artisan optimize
+```
+
+Konfigurasi Nginx dan Supervisor tersedia di folder [`deploy`](deploy). Health
+check produksi berada di `/health`.
+
+Aplikasi membutuhkan PostgreSQL, proses Reverb yang berjalan terus, dan Node.js
+20.19+ untuk build aset. VPS lebih cocok daripada shared hosting cPanel biasa.
+Jika Reverb tidak tersedia, gunakan `BROADCAST_CONNECTION=null`; halaman tetap
+memakai polling fallback.
 
 ---
 
