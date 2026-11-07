@@ -24,14 +24,14 @@ class KasirController extends Controller
             ->orderBy('kode_meja')
             ->get();
 
-        // Sertakan kode unik sesi aktif tiap meja untuk ditampilkan/diinformasikan kasir.
+
         $sesiAktif = $meja->mapWithKeys(function ($m) {
             return [$m->id => SesiMeja::aktifUntuk($m)];
         });
 
-        // Tampilkan semua pesanan pada sesi berjalan, termasuk yang sudah
-        // selesai, sampai kasir menutup sesi. Tanpa ini riwayat sesi langsung
-        // hilang dari halaman Sesi Meja setelah pelayan menyelesaikan antar.
+
+
+
         $pesananSesi = $meja->mapWithKeys(function ($m) use ($sesiAktif) {
             $sesi = $sesiAktif->get($m->id);
 
@@ -44,8 +44,8 @@ class KasirController extends Controller
             return [$m->id => $daftar];
         });
 
-        // Label status di halaman ini mengikuti isi sesi, bukan kolom
-        // status_meja yang bisa tertinggal dari data lama.
+
+
         $meja->each(function ($m) use ($pesananSesi) {
             $m->status_meja = ($pesananSesi->get($m->id) ?? collect())->isNotEmpty()
                 ? 'terisi'
@@ -55,11 +55,11 @@ class KasirController extends Controller
         return view('kasir.sesi.index', compact('meja', 'sesiAktif', 'pesananSesi'));
     }
 
-    /**
-     * Selesaikan sesi meja (cara manual kasir): semua pesanan yang sudah
-     * dibayar ditandai selesai, meja dikosongkan, lalu kode unik baru
-     * di-generate untuk sesi baru. Sesi dengan tagihan belum lunas ditolak.
-     */
+
+
+
+
+
     public function akhiriSession(Request $request, $meja): RedirectResponse
     {
         if (is_numeric($meja)) {
@@ -83,10 +83,10 @@ class KasirController extends Controller
         return back();
     }
 
-    /**
-     * Kunci terminal kasir. Status akun di admin berubah menjadi standby,
-     * tetapi sesi login tetap hidup.
-     */
+
+
+
+
     public function lock(Request $request): RedirectResponse
     {
         $request->user()?->update(['status_operasional' => 'standby']);
@@ -97,10 +97,10 @@ class KasirController extends Controller
         return redirect()->route('kasir.locked');
     }
 
-    /**
-     * Halaman kunci tidak menampilkan detail transaksi. Hanya jumlah
-     * notifikasi yang boleh terlihat oleh orang lain.
-     */
+
+
+
+
     public function locked(Request $request): View|RedirectResponse
     {
         if (! $request->session()->get('kasir_locked')) {
@@ -113,9 +113,9 @@ class KasirController extends Controller
         ]);
     }
 
-    /**
-     * Buka kunci hanya dengan password akun kasir yang sedang login.
-     */
+
+
+
     public function unlock(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -143,9 +143,9 @@ class KasirController extends Controller
             ->header('Cache-Control', 'no-store, max-age=0');
     }
 
-    /**
-     * @return array{pesanan_baru: int, panggilan: int, belum_bayar: int}
-     */
+
+
+
     private function hitungNotifikasiTerkunci(Request $request): array
     {
         $sejak = $request->session()->get('kasir_locked_at');

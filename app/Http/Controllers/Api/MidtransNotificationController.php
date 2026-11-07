@@ -40,7 +40,7 @@ class MidtransNotificationController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Order not found'], 404);
         }
 
-        // If already paid or cancelled, just respond OK without changing anything.
+
         if (
             $pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR
             || $pesanan->status_pesanan === Pesanan::STATUS_DIBATALKAN
@@ -60,7 +60,7 @@ class MidtransNotificationController extends Controller
 
         try {
             DB::transaction(function () use ($pesanan, $transactionStatus, $fraudStatus, $transactionId) {
-                // Payment success conditions
+
                 $isSuccess = false;
                 if ($transactionStatus === 'capture') {
                     $isSuccess = ($fraudStatus === 'accept');
@@ -76,8 +76,8 @@ class MidtransNotificationController extends Controller
                         $transactionId,
                     );
                 } elseif (in_array($transactionStatus, ['deny', 'cancel', 'expire', 'failure'])) {
-                    // On failure, don't change meja status immediately - let business logic decide
-                    // Just ensure we don't mark as paid
+
+
                     $pesanan->update([
                         'status_pembayaran' => $pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR
                             ? Pesanan::PAYMENT_SUDAH_BAYAR

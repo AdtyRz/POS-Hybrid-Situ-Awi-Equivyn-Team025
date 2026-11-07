@@ -12,11 +12,11 @@ class SesiMejaBerubah implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    /**
-     * @param  string  $kodeMeja  Kode meja (mis. LB-01) sebagai nama channel.
-     * @param  int     $mejaId    ID meja.
-     * @param  string  $status    'dibuka' saat sesi baru, 'selesai' saat ditutup.
-     */
+
+
+
+
+
     public function __construct(
         public string $kodeMeja,
         public int $mejaId,

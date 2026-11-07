@@ -174,12 +174,11 @@ class PesananAccessSecurityTest extends TestCase
             ->assertJsonMissingPath('data.meja.id_device');
 
         $this->getJson('/api/v1/pesanan/' . $pesanan->kode_pesanan . '?kode_saung=' . $sesi->kode_unik)
-            ->assertOk();
+            ->assertStatus(401);
 
-        $kodeSalah = $sesi->kode_unik === '0000' ? '0001' : '0000';
-
-        $this->getJson('/api/v1/pesanan/' . $pesanan->kode_pesanan . '?kode_saung=' . $kodeSalah)
-            ->assertForbidden();
+        $this->withHeader('X-Kode-Saung', $sesi->kode_unik)
+            ->getJson('/api/v1/pesanan/' . $pesanan->kode_pesanan)
+            ->assertStatus(401);
     }
 
     public function test_iot_wajib_token_dan_kode_sesi_aktif(): void

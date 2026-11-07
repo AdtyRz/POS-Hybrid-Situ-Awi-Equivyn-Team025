@@ -43,11 +43,11 @@ class MejaMakan extends Model
         ]);
     }
 
-    /**
-     * Pesanan yang tercatat pada sesi berjalan, termasuk yang sudah selesai.
-     * Dipakai halaman Sesi Meja agar riwayat sesi tidak hilang sebelum kasir
-     * menekan "Akhiri Sesi".
-     */
+
+
+
+
+
     public function pesananSesi(): HasMany
     {
         return $this->pesanan()

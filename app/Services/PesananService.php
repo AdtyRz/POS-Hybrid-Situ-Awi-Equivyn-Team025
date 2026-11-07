@@ -14,18 +14,18 @@ use RuntimeException;
 
 class PesananService
 {
-    /**
-     * Buat pesanan dari satu pintu (e-menu, kasir, atau API).
-     *
-     * Stok sengaja tidak dipotong di sini. Sesuai alur POS, stok baru
-     * dikurangi setelah pembayaran berhasil melalui StokService.
-     *
-     * Opsi yang didukung:
-     * - asal: emenu|kasir|api (menentukan status awal)
-     * - metode: tunai|qris
-     * - kasir_id: int|null
-     * - catatan: string|null (catatan tingkat pesanan)
-     */
+
+
+
+
+
+
+
+
+
+
+
+
     public function buat(MejaMakan $meja, array $jumlahPerMenu, array $catatanPerMenu = [], array $opsi = []): Pesanan
     {
         return DB::transaction(function () use ($meja, $jumlahPerMenu, $catatanPerMenu, $opsi) {
@@ -64,7 +64,7 @@ class PesananService
                 $subtotal += (float) $menu->harga * $jumlah;
             }
 
-            // Tidak ada pajak/biaya tambahan. Total tagihan murni subtotal menu.
+
             $totalBayar = $subtotal;
 
             $asal = $opsi['asal'] ?? 'api';
@@ -115,13 +115,13 @@ class PesananService
         });
     }
 
-    /**
-     * Tandai pesanan lunas, potong stok, lalu lepaskan ke dapur/bar.
-     *
-     * Dipakai alur pembayaran pelayan: tunai langsung saat pesanan dibuat,
-     * atau QRIS setelah Midtrans melaporkan settlement. Idempoten supaya
-     * polling status berulang tidak menggandakan pembayaran/mutasi stok.
-     */
+
+
+
+
+
+
+
     public function lunasi(
         Pesanan $pesanan,
         string $metode,
@@ -168,10 +168,10 @@ class PesananService
         });
     }
 
-    /**
-     * Batalkan pesanan. Stok hanya dikembalikan bila stok memang sudah
-     * dipotong setelah pembayaran. Proses idempoten agar void ganda aman.
-     */
+
+
+
+
     public function batalkan(Pesanan $pesanan, ?int $userId = null, string $alasan = 'Pesanan dibatalkan.'): void
     {
         DB::transaction(function () use ($pesanan, $userId, $alasan) {
@@ -230,9 +230,9 @@ class PesananService
         });
     }
 
-    /**
-     * @return array{0: string, 1: string}
-     */
+
+
+
     private function statusAwal(string $asal, ?string $metode): array
     {
         if ($asal === 'emenu' && $metode === 'qris') {

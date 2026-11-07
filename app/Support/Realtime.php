@@ -6,14 +6,14 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-/**
- * Pembungkus broadcast yang aman.
- *
- * Broadcast WebSocket (Reverb) tidak boleh mematahkan alur bisnis inti.
- * Bila server Reverb sedang mati/tidak dapat dihubungi, kegagalan broadcast
- * cukup dicatat sebagai warning — data pesanan tetap tersimpan dan halaman
- * yang tidak menerima event akan tetap menyegarkan diri lewat fallback polling.
- */
+
+
+
+
+
+
+
+
 class Realtime
 {
     public static function emit(object $event): void
@@ -25,10 +25,10 @@ class Realtime
         }
     }
 
-    /**
-     * Sidik jari data yang berubah. Halaman memakai nilai ini untuk fallback
-     * polling bila WebSocket/Reverb tidak tersedia.
-     */
+
+
+
+
     public static function version(): string
     {
         return Cache::remember('realtime-version', 2, function () {

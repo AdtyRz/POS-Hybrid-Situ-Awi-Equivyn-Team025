@@ -1163,8 +1163,8 @@ class AdminController extends Controller
             $user->update($data);
 
             if ($gantiSandi) {
-                // Password baru harus mematikan semua sesi, remember-me, dan
-                // token lama agar perangkat yang pernah login tidak tetap aktif.
+
+
                 $this->cabutKredensialStaf($user);
 
                 if ($emailLama !== $user->email && Schema::hasTable('password_reset_tokens')) {
@@ -1182,9 +1182,9 @@ class AdminController extends Controller
     {
         $user = User::findOrFail($id);
 
-        // Jangan izinkan siapa pun mengubah status akunnya sendiri. Tanpa ini
-        // admin yang sudah nonaktif bisa mengaktifkan dirinya kembali bila
-        // masih memiliki sesi/remember-me lama.
+
+
+
         if ((int) $user->id === (int) auth()->id()) {
             return back()->withErrors(['akun' => 'Status akun yang sedang digunakan tidak dapat diubah sendiri.']);
         }
@@ -1239,11 +1239,11 @@ class AdminController extends Controller
         return back()->with('sukses', 'Akun ' . $user->nama . ' berhasil dihapus.');
     }
 
-    /**
-     * Cabut semua kredensial staf: remember-me, sesi database, personal
-     * access token, dan token reset password. Dipakai saat akun dinonaktifkan
-     * atau password diganti.
-     */
+
+
+
+
+
     private function cabutKredensialStaf(User $user): void
     {
         $user->forceFill(['remember_token' => null])->save();

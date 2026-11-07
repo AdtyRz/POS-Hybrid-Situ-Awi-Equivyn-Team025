@@ -21,8 +21,8 @@ class StokService
         }
 
         return DB::transaction(function () use ($pesanan, $penggunaId) {
-            // Kunci pesanan lebih dulu agar dua pembayaran bersamaan tidak
-            // sama-sama lolos dari pengecekan mutasi/stok.
+
+
             $terkunci = Pesanan::query()->whereKey($pesanan->id)->lockForUpdate()->first();
 
             if (! $terkunci) {

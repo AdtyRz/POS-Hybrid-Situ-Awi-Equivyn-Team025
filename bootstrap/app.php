@@ -15,15 +15,15 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
         then: function () {
-            // Webhook Midtrans bersifat stateless. Didaftarkan di luar group
-            // "web" agar tidak diblokir CSRF (Midtrans tidak mengirim token).
+
+
             Route::post('/midtrans/notification', [MidtransNotificationController::class, 'handle'])
                 ->name('midtrans.notification');
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // env() dipakai karena binding config belum tersedia saat callback ini
-        // berjalan. Di produksi, set TRUSTED_PROXIES sebagai environment server.
+
+
         $trustedProxies = array_values(array_filter(array_map(
             'trim',
             explode(',', (string) env('TRUSTED_PROXIES', '127.0.0.1,::1'))
@@ -31,8 +31,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->trustProxies(at: $trustedProxies);
 
-        // Izinkan klien first-party (cookie sesi) memakai API tanpa token.
-        // Klien pihak ketiga tetap memakai bearer token Sanctum.
+
+
         $middleware->statefulApi();
 
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);

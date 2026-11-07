@@ -39,10 +39,10 @@ class IotApiController extends Controller
             ->header('Cache-Control', 'no-store, private, max-age=0');
     }
 
-    /**
-     * Panggilan pelayan dari perangkat IoT. Perangkat wajib mengirim kode sesi
-     * yang sedang tampil di LCD. Kode sesi lama otomatis ditolak.
-     */
+
+
+
+
     public function panggilPelayan(Request $request): JsonResponse
     {
         $data = $request->validate([

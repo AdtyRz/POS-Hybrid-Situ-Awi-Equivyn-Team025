@@ -619,9 +619,9 @@
                     if (this.step === 2) {
                         this.goToStep(1);
                     } else {
-                        // Panah kembali di header sekaligus menjadi tombol
-                        // keluar pelanggan: lupakan verifikasi meja lalu
-                        // kembali ke beranda, bukan ke halaman login staf.
+
+
+
                         document.getElementById('formKeluar')?.submit();
                     }
                 },

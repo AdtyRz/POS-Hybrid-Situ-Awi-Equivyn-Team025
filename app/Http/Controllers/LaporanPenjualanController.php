@@ -88,8 +88,8 @@ class LaporanPenjualanController extends Controller
         $hariIni = Carbon::now($zona);
         $shift = $this->shiftSaatIni($hariIni);
 
-        // Gunakan tanggal yang sedang difilter bila satu hari, selain itu
-        // cetak rekap shift untuk hari ini.
+
+
         $tanggal = $filter['mulai']->isSameDay($filter['selesai'])
             ? $filter['mulai']->copy()->setTimezone($zona)
             : $hariIni->copy();

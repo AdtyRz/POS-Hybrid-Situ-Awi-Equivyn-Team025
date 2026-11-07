@@ -252,7 +252,7 @@ class SesiMejaTest extends TestCase
             ->assertSessionMissing('riwayat_meja_' . $meja->id)
             ->assertSessionMissing('sesi_meja_' . $lain->id);
 
-        // Setelah keluar, pelanggan bebas membuka meja lain.
+
         $this->post(route('emenu.masuk'), ['kode_unik' => $sesiLain->kode_unik])
             ->assertRedirect(route('emenu.meja', $lain->kode_meja))
             ->assertSessionHas('sesi_meja_' . $lain->id, $sesiLain->id);

@@ -112,16 +112,22 @@ class SecurityHardeningTest extends TestCase
 
         $response = $this->get(route('emenu.bayar-tunai', $pesanan->kode_pesanan));
 
-        $response->assertRedirect(route('emenu.status', $pesanan->kode_pesanan));
+        $response->assertRedirect();
 
         $location = (string) $response->headers->get('Location');
+        $this->assertStringContainsString('signature=', $location);
         $this->assertStringNotContainsString('kode_saung', $location);
         $this->assertStringNotContainsString($sesi->kode_unik, $location);
+
+        $this->get($location)
+            ->assertOk()
+            ->assertSee($pesanan->kode_pesanan);
 
         $status = $this->getJson(route('emenu.bayar-tunai.status', $pesanan->kode_pesanan))
             ->assertOk()
             ->assertJsonPath('lunas', true);
 
+        $this->assertStringContainsString('signature=', (string) $status->json('redirect'));
         $this->assertStringNotContainsString('kode_saung', (string) $status->json('redirect'));
         $this->assertStringNotContainsString($sesi->kode_unik, (string) $status->json('redirect'));
     }
@@ -247,10 +253,12 @@ class SecurityHardeningTest extends TestCase
         $menu = $this->menu(10, 25000);
         $pesanan = $this->pesananQris($meja, $menu, 2);
 
-        $this->partialMock(MidtransService::class, function ($mock) use ($pesanan) {
+        $status = $this->statusMidtrans($pesanan, 'settlement');
+
+        $this->partialMock(MidtransService::class, function ($mock) use ($status) {
             $mock->shouldReceive('getTransactionStatus')
                 ->once()
-                ->andReturn($this->statusMidtrans($pesanan, 'settlement'));
+                ->andReturn($status);
         });
 
         $this->actingAs($kasir)
@@ -269,6 +277,8 @@ class SecurityHardeningTest extends TestCase
             'pesanan_id' => $pesanan->id,
             'metode_pembayaran' => 'qris',
             'status_pembayaran' => 'lunas',
+            'transaction_id' => $status->transaction_id,
+            'order_id' => $pesanan->kode_pesanan,
         ]);
         $this->assertSame(8, (int) $menu->fresh()->stok_menu);
     }
@@ -300,6 +310,37 @@ class SecurityHardeningTest extends TestCase
         $this->assertSame(Pesanan::PAYMENT_PENDING_VERIFIKASI, $pesanan->status_pembayaran);
         $this->assertDatabaseMissing('pembayaran', ['pesanan_id' => $pesanan->id]);
         $this->assertSame(10, (int) $menu->fresh()->stok_menu);
+    }
+
+    public function test_api_pembayaran_qris_menyimpan_id_transaksi_midtrans(): void
+    {
+        $kasir = $this->pengguna('kasir');
+        $meja = $this->meja();
+        $menu = $this->menu(10, 25000);
+        $pesanan = $this->pesananQris($meja, $menu);
+
+        $status = $this->statusMidtrans($pesanan, 'settlement');
+
+        $this->partialMock(MidtransService::class, function ($mock) use ($status) {
+            $mock->shouldReceive('getTransactionStatus')
+                ->once()
+                ->andReturn($status);
+        });
+
+        $this->actingAs($kasir)
+            ->postJson('/api/v1/pembayaran', [
+                'kode_pesanan' => $pesanan->kode_pesanan,
+                'metode_pembayaran' => 'qris',
+                'jumlah_bayar' => (float) $pesanan->total_bayar,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('success', true);
+
+        $this->assertDatabaseHas('pembayaran', [
+            'pesanan_id' => $pesanan->id,
+            'transaction_id' => $status->transaction_id,
+            'order_id' => $pesanan->kode_pesanan,
+        ]);
     }
 
     public function test_cadangan_tidak_mengekspor_password_remember_token_atau_kode_sesi(): void
@@ -382,9 +423,21 @@ class SecurityHardeningTest extends TestCase
         $this->app['env'] = 'production';
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('SEED_STAFF_PASSWORD');
+        $this->expectExceptionMessage('SEED_ADMIN_PASSWORD');
 
         (new SituAwiSeeder())->run();
+    }
+
+    public function test_seeder_local_membuat_sandi_unik_per_peran(): void
+    {
+        $metode = new \ReflectionMethod(SituAwiSeeder::class, 'kataSandiStaf');
+        $metode->setAccessible(true);
+
+        $sandi = $metode->invoke(new SituAwiSeeder());
+
+        $this->assertCount(5, $sandi);
+        $this->assertCount(5, array_unique($sandi));
+        $this->assertNotContains('password123', $sandi);
     }
 
     public function test_example_env_mematikan_debug(): void
@@ -392,5 +445,17 @@ class SecurityHardeningTest extends TestCase
         $isi = file_get_contents(base_path('.env.example'));
 
         $this->assertMatchesRegularExpression('/^APP_DEBUG=false$/m', $isi);
+    }
+
+    public function test_example_env_memakai_sandi_seed_terpisah(): void
+    {
+        $isi = file_get_contents(base_path('.env.example'));
+
+        $this->assertStringNotContainsString('SEED_STAFF_PASSWORD', $isi);
+        $this->assertStringNotContainsString('password123', $isi);
+
+        foreach (['ADMIN', 'KASIR', 'PELAYAN', 'KOKI', 'BARISTA'] as $peran) {
+            $this->assertStringContainsString('SEED_' . $peran . '_PASSWORD=', $isi);
+        }
     }
 }

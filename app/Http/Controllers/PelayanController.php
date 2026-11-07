@@ -125,11 +125,11 @@ class PelayanController extends Controller
             ->get();
     }
 
-    /**
-     * Pesanan yang tercatat pada sesi aktif, termasuk yang sudah selesai.
-     * Dipakai agar meja tidak tampil "Tersedia" selama sesi tamu masih
-     * berjalan, sama seperti halaman Sesi Meja kasir.
-     */
+
+
+
+
+
     private function pesananSesi(Collection $sesi): Collection
     {
         $query = $this->filterByArea(
@@ -142,9 +142,9 @@ class PelayanController extends Controller
             ->min();
 
         if ($mulai) {
-            // Batasi query ke rentang sesi berjalan agar riwayat lama tidak
-            // ikut dimuat. Pesanan yang masih berjalan tetap diambil walau
-            // dibuat sebelum sesi saat ini.
+
+
+
             $query->where(function ($q) use ($mulai) {
                 $q->where('waktu_pesan', '>=', $mulai)
                     ->orWhereNotIn('status_pesanan', [
@@ -403,8 +403,8 @@ class PelayanController extends Controller
             $cardClass = 'bg-white border-[#F0EEE7]';
             $borderClass = 'border-[#F0EEE7]';
         } elseif ($pesananSesiMeja->isNotEmpty()) {
-            // Sesi masih berjalan meskipun semua pesanannya sudah selesai.
-            // Meja belum boleh tampil sebagai "Tersedia" sampai sesi ditutup.
+
+
             $status = 'terisi';
             $statusLabel = 'Terisi';
             $statusColor = 'text-[#00341A]';
@@ -461,8 +461,8 @@ class PelayanController extends Controller
             'call' => $panggilanMeja ? $this->payloadPanggilan($panggilanMeja) : null,
             'session_code' => $sesi?->kode_unik,
             'session_active' => (bool) $sesi,
-            // Tombol "Akhiri Sesi" relevan selama sesi berjalan dan sudah
-            // memiliki pesanan, termasuk yang sudah selesai/dibayar.
+
+
             'session_occupied' => $pesananSesiMeja->isNotEmpty(),
             'qr_url' => route('emenu.meja', $meja->kode_meja),
             'device' => filled($meja->id_device) ? $meja->id_device : 'QR Meja',
@@ -734,8 +734,8 @@ class PelayanController extends Controller
     {
         $data = $request->validate([
             'meja_id' => ['required', 'exists:meja_makan,id'],
-            // Pesanan pelayan wajib dibayar dulu; KDS baru menerima tiket
-            // setelah status pesanan berubah menjadi 'diproses'.
+
+
             'metode' => ['required', 'in:tunai,qris'],
             'jumlah' => ['required', 'array', 'min:1'],
             'jumlah.*' => ['nullable', 'integer', 'min:0', 'max:99'],
@@ -772,8 +772,8 @@ class PelayanController extends Controller
                     $dipilih->all(),
                     $catatanMenu,
                     [
-                        // 'emenu' membuat status awal tertahan di meja pembayaran,
-                        // bukan langsung masuk antrean KDS.
+
+
                         'asal' => 'emenu',
                         'metode' => $metode,
                         'kasir_id' => auth()->id(),
@@ -902,8 +902,8 @@ class PelayanController extends Controller
                     'metode_pembayaran' => $pesanan->metode_pembayaran,
                 ]));
             } elseif ($transactionStatus === 'expire') {
-                // QR kedaluwarsa: order_id yang sama boleh di-charge ulang
-                // menurut aturan Midtrans, jadi tampilkan QR baru.
+
+
                 $qris = $midtrans->createQrisCharge($pesanan, true);
 
                 return response()->json([
@@ -932,8 +932,8 @@ class PelayanController extends Controller
         $pesanan = Pesanan::with('meja')->where('kode_pesanan', $kode)->firstOrFail();
         $this->pastikanAreaMeja($pesanan->meja);
 
-        // Lindungi dari race condition: jangan batalkan QRIS yang ternyata
-        // sudah settlement di Midtrans sebelum polling sempat menandainya lunas.
+
+
         if ($pesanan->metode_pembayaran === 'qris' && $pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR) {
             $status = $midtrans->getTransactionStatus($kode);
 

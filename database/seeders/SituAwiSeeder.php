@@ -13,36 +13,36 @@ class SituAwiSeeder extends Seeder
     public function run(): void
     {
         $now = now();
-        $kataSandi = $this->kataSandiStaf();
+        $sandi = $this->kataSandiStaf();
 
         DB::table('users')->insert([
             [
                 'nama' => 'Admin Utama', 'email' => 'admin@situawi.com',
-                'password' => Hash::make($kataSandi), 'role' => 'admin',
+                'password' => Hash::make($sandi['admin']), 'role' => 'admin',
                 'no_telp' => '081200000001', 'is_aktif' => true,
                 'created_at' => $now, 'updated_at' => $now,
             ],
             [
                 'nama' => 'Kasir Saung', 'email' => 'kasir@situawi.com',
-                'password' => Hash::make($kataSandi), 'role' => 'kasir',
+                'password' => Hash::make($sandi['kasir']), 'role' => 'kasir',
                 'no_telp' => '081200000002', 'is_aktif' => true,
                 'created_at' => $now, 'updated_at' => $now,
             ],
             [
                 'nama' => 'Pelayan Saung', 'email' => 'pelayan@situawi.com',
-                'password' => Hash::make($kataSandi), 'role' => 'pelayan',
+                'password' => Hash::make($sandi['pelayan']), 'role' => 'pelayan',
                 'no_telp' => '081200000003', 'is_aktif' => true,
                 'created_at' => $now, 'updated_at' => $now,
             ],
             [
                 'nama' => 'Koki Dapur', 'email' => 'koki@situawi.com',
-                'password' => Hash::make($kataSandi), 'role' => 'koki',
+                'password' => Hash::make($sandi['koki']), 'role' => 'koki',
                 'no_telp' => '081200000004', 'is_aktif' => true,
                 'created_at' => $now, 'updated_at' => $now,
             ],
             [
                 'nama' => 'Barista Bar', 'email' => 'barista@situawi.com',
-                'password' => Hash::make($kataSandi), 'role' => 'barista',
+                'password' => Hash::make($sandi['barista']), 'role' => 'barista',
                 'no_telp' => '081200000005', 'is_aktif' => true,
                 'created_at' => $now, 'updated_at' => $now,
             ],
@@ -169,25 +169,42 @@ class SituAwiSeeder extends Seeder
         }
     }
 
-    /**
-     * Password staf tidak boleh hardcoded untuk produksi. Di local/testing
-     * default lama tetap dipakai agar alur demo tidak berubah; di lingkungan
-     * lain SEED_STAFF_PASSWORD wajib diisi.
-     */
-    private function kataSandiStaf(): string
+    private function kataSandiStaf(): array
     {
-        $dariEnv = trim((string) env('SEED_STAFF_PASSWORD', ''));
+        $peran = ['admin', 'kasir', 'pelayan', 'koki', 'barista'];
+        $lokal = app()->environment(['local', 'testing']);
+        $sandi = [];
+        $kurang = [];
 
-        if ($dariEnv !== '') {
-            return $dariEnv;
+        foreach ($peran as $nama) {
+            $kunci = 'SEED_' . strtoupper($nama) . '_PASSWORD';
+            $nilai = trim((string) env($kunci, ''));
+
+            if ($nilai !== '') {
+                $sandi[$nama] = $nilai;
+
+                continue;
+            }
+
+            if (! $lokal) {
+                $kurang[] = $kunci;
+
+                continue;
+            }
+
+            $sandi[$nama] = Str::password(16);
+
+            $this->command?->warn(
+                $kunci . ' tidak diisi. Sandi ' . $nama . ' dibuat otomatis: ' . $sandi[$nama]
+            );
         }
 
-        if (app()->environment(['local', 'testing'])) {
-            return 'password123';
+        if ($kurang !== []) {
+            throw new RuntimeException(
+                implode(', ', $kurang) . ' wajib diisi sebelum menjalankan seeder di luar local/testing.'
+            );
         }
 
-        throw new RuntimeException(
-            'SEED_STAFF_PASSWORD wajib diisi sebelum menjalankan seeder di luar local/testing.'
-        );
+        return $sandi;
     }
 }
