@@ -6,10 +6,10 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Indeks untuk query operasional yang sebelumnya hanya mengandalkan PK.
-     * PostgreSQL tidak membuat indeks otomatis untuk kolom foreign key.
-     */
+
+
+
+
     public function up(): void
     {
         Schema::table('detail_pesanan', function (Blueprint $table) {

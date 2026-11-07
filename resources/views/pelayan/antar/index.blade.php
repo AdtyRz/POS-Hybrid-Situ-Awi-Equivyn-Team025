@@ -385,7 +385,7 @@
                             ?? this.denahOrder;
                     }
                 } catch (error) {
-                    // Payload tidak valid; data lama tetap tampil.
+
                 }
             },
 

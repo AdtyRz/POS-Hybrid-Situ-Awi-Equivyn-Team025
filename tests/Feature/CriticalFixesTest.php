@@ -57,7 +57,7 @@ class CriticalFixesTest extends TestCase
         ]);
     }
 
-    // A.1 — konflik route /pesanan/{...}
+
     public function test_detail_pesanan_staf_terlindungi_dan_tidak_tertimpa_e_menu(): void
     {
         $meja = $this->buatMeja();
@@ -83,7 +83,7 @@ class CriticalFixesTest extends TestCase
             ->assertStatus(200);
     }
 
-    // A.2 — otorisasi API v1
+
     public function test_api_ubah_status_butuh_login(): void
     {
         $meja = $this->buatMeja();
@@ -318,7 +318,7 @@ class CriticalFixesTest extends TestCase
         $this->actingAs($pelayan)->getJson('/api/v1/iot/panggilan')->assertStatus(200);
     }
 
-    // A.2 — pesanan tamu diamankan QR token
+
     public function test_api_buat_pesanan_tanpa_qr_token_ditolak(): void
     {
         $meja = $this->buatMeja();
@@ -370,7 +370,7 @@ class CriticalFixesTest extends TestCase
             ->assertJsonMissingPath('data.0.qr_token');
     }
 
-    // A.4 — login menolak akun nonaktif
+
     public function test_akun_nonaktif_tidak_bisa_login(): void
     {
         $user = User::factory()->create(['is_aktif' => false]);

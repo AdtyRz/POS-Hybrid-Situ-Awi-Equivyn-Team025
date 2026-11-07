@@ -141,7 +141,7 @@
             </div>
 
             <div class="space-y-3 mt-4">
-                <a href="{{ route('emenu.status', $pesanan->kode_pesanan) }}"
+                <a href="{{ $urlStatus }}"
                     class="flex w-full items-center justify-center gap-2 text-center bg-forest-900 text-white font-extrabold rounded-2xl py-4 shadow-sm hover:bg-forest-600 transition active:scale-95">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -158,8 +158,8 @@
         let checkCount = 0;
         const maxChecks = 200;
         const orderCode = "{{ $pesanan->kode_pesanan }}";
-        const statusUrl = "{{ route('emenu.status', $pesanan->kode_pesanan) }}";
-        const qrisStatusUrl = "{{ route('emenu.qris.status', $pesanan->kode_pesanan) }}";
+        const statusUrl = @json($urlStatus);
+        const qrisStatusUrl = @json($urlQrisStatus);
         const qrTtl = {{ (int) ($qrisTtl ?? 300) }};
         let remaining = qrTtl;
 
@@ -189,7 +189,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.lunas) {
-                        window.location.href = statusUrl;
+                        window.location.href = data.redirect || statusUrl;
                         return;
                     }
                     if (data.expired && data.qr_url) {
@@ -221,7 +221,7 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if (data.lunas) window.location.href = statusUrl;
+                    if (data.lunas) window.location.href = data.redirect || statusUrl;
                 })
                 .catch(() => {});
         });

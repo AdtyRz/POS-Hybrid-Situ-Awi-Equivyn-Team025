@@ -24,9 +24,9 @@ class PesananController extends Controller
     {
         $data = $this->bangunDataKasir($request->query('meja'));
 
-        // Satu query untuk semua pengaturan halaman ini, bukan tujuh query
-        // terpisah. Nilai selalu dibaca ulang tiap request agar perubahan
-        // admin langsung terlihat tanpa cache basi.
+
+
+
         $pengaturan = Pengaturan::query()->pluck('nilai', 'kunci');
         $nilai = function (string $kunci, mixed $default = null) use ($pengaturan): mixed {
             $hasil = $pengaturan[$kunci] ?? null;
@@ -56,9 +56,9 @@ class PesananController extends Controller
         )));
     }
 
-    /**
-     * Endpoint ringan untuk menyegarkan data POS tanpa reload halaman.
-     */
+
+
+
     public function state(Request $request): JsonResponse
     {
         $data = $this->bangunDataKasir($request->query('meja'));
@@ -73,23 +73,23 @@ class PesananController extends Controller
             ->header('Cache-Control', 'no-store, max-age=0');
     }
 
-    /**
-     * @return array{saungsJson: \Illuminate\Support\Collection, iotAlertJson: array, selectedSaungId: string|null}
-     */
+
+
+
     private function bangunDataKasir(?string $mejaDipilih = null): array
     {
         $mejaSemua = MejaMakan::orderBy('kode_meja')->get();
 
-        // Satu meja dapat memiliki lebih dari satu pesanan aktif. Jangan
-        // keyBy(), karena itu akan membuang semua order kecuali satu.
+
+
         $aktif = Pesanan::with(['detailPesanan.menu', 'meja'])
             ->whereNotIn('status_pesanan', ['selesai', 'dibatalkan'])
             ->orderBy('waktu_pesan')
             ->get()
             ->groupBy('meja_id');
 
-        // Semua pesanan lunas pada sesi terakhir tetap dimuat agar struk dapat
-        // dicetak ulang. Pembatasan sesi mencegah struk tamu sebelumnya muncul.
+
+
         $paidOrders = Pesanan::with(['detailPesanan.menu'])
             ->whereIn('meja_id', $mejaSemua->pluck('id'))
             ->where('status_pembayaran', Pesanan::PAYMENT_SUDAH_BAYAR)
@@ -108,6 +108,9 @@ class PesananController extends Controller
             ->toArray();
 
         $saungsJson = $mejaSemua->map(function ($m) use ($aktif, $tunggu, $paidOrders, $sesiTerakhir) {
+            $sesi = $sesiTerakhir->get($m->id);
+            $sesiAktif = $sesi !== null && $sesi->status === 'aktif';
+
             $dasar = [
                 'id' => $m->kode_meja,
                 'dbId' => $m->id,
@@ -120,6 +123,12 @@ class PesananController extends Controller
                 'paymentStatus' => null,
                 'orderStatus' => null,
                 'hasAlert' => in_array($m->id, $tunggu),
+                'sessionActive' => $sesiAktif,
+                'sessionCode' => $sesiAktif ? $sesi->kode_unik : null,
+                'sessionOccupied' => false,
+                'sessionOrderCount' => 0,
+                'sessionTotal' => 0,
+                'sessionUnpaidCount' => 0,
                 'orderId' => '-',
                 'kodePesanan' => null,
                 'customer' => '-',
@@ -204,9 +213,70 @@ class PesananController extends Controller
             $dasar['unpaidOrderCount'] = $orders->filter(
                 fn ($order) => $order['status'] !== 'paid'
             )->count();
-            $dasar['allOrdersPaid'] = $orders->isNotEmpty() && $dasar['unpaidOrderCount'] === 0;
+
+
+
+
+            $pesananSesi = collect();
+
+            if ($sesiAktif) {
+                $pesananSesi = $aktif->get($m->id, collect())
+                    ->merge($paidOrders->get($m->id, collect()))
+                    ->filter(fn ($pesanan) => $pesanan->waktu_pesan !== null
+                        && $pesanan->waktu_pesan->greaterThanOrEqualTo($sesi->dibuka_pada))
+                    ->unique('id')
+                    ->sortBy('waktu_pesan')
+                    ->values();
+
+                $dasar['sessionOccupied'] = $pesananSesi->isNotEmpty();
+                $dasar['sessionOrderCount'] = $pesananSesi->count();
+                $dasar['sessionTotal'] = (float) $pesananSesi->sum('total_bayar');
+                $dasar['sessionUnpaidCount'] = $pesananSesi->filter(
+                    fn ($pesanan) => $pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR
+                )->count();
+            }
+
+            $dasar['allOrdersPaid'] = $dasar['sessionOccupied']
+                ? $dasar['sessionUnpaidCount'] === 0
+                : ($orders->isNotEmpty() && $dasar['unpaidOrderCount'] === 0);
 
             if ($orders->isEmpty()) {
+                if ($pesananSesi->isEmpty()) {
+                    return $dasar;
+                }
+
+                $primarySesi = $pesananSesi->last();
+                $payloadSesi = $this->payloadKasir($primarySesi);
+                $metodeSesi = $pesananSesi->pluck('metode_pembayaran')->filter()->unique();
+
+                $dasar['status'] = $dasar['allOrdersPaid']
+                    ? 'paid'
+                    : ($pesananSesi->contains(
+                        fn ($pesanan) => $pesanan->status_pembayaran === Pesanan::PAYMENT_PENDING_VERIFIKASI
+                    ) ? 'waiting_qris' : 'waiting_cash');
+                $dasar['paymentType'] = $metodeSesi->count() > 1
+                    ? 'campuran'
+                    : $metodeSesi->first();
+                $dasar['paymentStatus'] = $dasar['allOrdersPaid']
+                    ? Pesanan::PAYMENT_SUDAH_BAYAR
+                    : $payloadSesi['paymentStatus'];
+                $dasar['orderStatus'] = $payloadSesi['orderStatus'];
+                $dasar['orderId'] = $payloadSesi['orderId'];
+                $dasar['kodePesanan'] = $payloadSesi['kodePesanan'];
+                $dasar['customer'] = $payloadSesi['customer'];
+                $dasar['qrTime'] = $payloadSesi['qrTime'];
+                $dasar['elapsedTime'] = $payloadSesi['elapsedTime'];
+                $dasar['itemCount'] = (int) $pesananSesi->sum(
+                    fn ($pesanan) => $pesanan->detailPesanan->sum('jumlah')
+                );
+                $dasar['totalPortions'] = $dasar['itemCount'];
+                $dasar['subtotal'] = (float) $pesananSesi->sum(
+                    fn ($pesanan) => $pesanan->detailPesanan->sum('subtotal')
+                );
+                $dasar['total'] = $dasar['sessionTotal'];
+                $dasar['items'] = $payloadSesi['items'];
+                $dasar['unpaidOrderCount'] = $dasar['sessionUnpaidCount'];
+
                 return $dasar;
             }
 
@@ -271,7 +341,7 @@ class PesananController extends Controller
         $pertama = $saungsJson->sortBy(fn ($s) => $statusPriority[$s['status']] ?? 99)->first();
         $selectedSaungId = $pertama ? $pertama['id'] : null;
 
-        // Bila kasir baru menyelesaikan pembayaran, kembalikan fokus ke meja tersebut.
+
         if ($mejaDipilih && $saungsJson->contains('id', $mejaDipilih)) {
             $selectedSaungId = $mejaDipilih;
         }
@@ -279,9 +349,9 @@ class PesananController extends Controller
         return compact('saungsJson', 'iotAlertJson', 'selectedSaungId');
     }
 
-    /**
-     * Payload satu pesanan untuk panel kasir dan pemilih order.
-     */
+
+
+
     private function payloadKasir(Pesanan $pesanan): array
     {
         $detail = $pesanan->detailPesanan;
@@ -374,9 +444,9 @@ class PesananController extends Controller
             return 'waiting_qris';
         }
 
-        // Meja hanya boleh dianggap lunas bila seluruh order aktif sudah
-        // lunas. Order yang masih diproses tetapi belum lunas harus tetap
-        // mendominasi status meja.
+
+
+
         $belumLunas = $orders->filter(fn ($order) => $order['status'] !== 'paid');
 
         if ($belumLunas->isNotEmpty()) {
@@ -473,9 +543,9 @@ class PesananController extends Controller
             abort(403, $pesan);
         }
 
-        // Bug 3 FIX: Tambahkan semua status yang didefinisikan di model
-        // Status menunggu_pembayaran & menunggu_verifikasi berasal dari e-menu checkout
-        // Tanpa ini, PATCH ke /pesanan/{kode}/status crash dengan undefined array key
+
+
+
         $alur = [
             'menunggu'              => ['diproses', 'dibatalkan'],
             'menunggu_pembayaran'   => ['diproses', 'dibatalkan'],
@@ -492,6 +562,23 @@ class PesananController extends Controller
                 return response()->json(['message' => 'Perpindahan status tidak diizinkan.'], 422);
             }
             return back()->withErrors(['status_pesanan' => 'Perpindahan status tidak diizinkan.']);
+        }
+
+
+
+        if ($data['status_pesanan'] === Pesanan::STATUS_DIPROSES
+            && in_array($pesanan->status_pesanan, [
+                Pesanan::STATUS_MENUNGGU_VERIFIKASI,
+                Pesanan::STATUS_MENUNGGU_PEMBAYARAN,
+            ], true)
+            && $pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR) {
+            $pesan = 'Pesanan belum lunas. Selesaikan pembayaran sebelum mengirim ke dapur/bar.';
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['message' => $pesan], 422);
+            }
+
+            return back()->withErrors(['status_pesanan' => $pesan]);
         }
 
         if ($data['status_pesanan'] === 'dibatalkan') {
@@ -524,14 +611,11 @@ class PesananController extends Controller
             });
         }
 
-        $masihAdaPesananAktif = Pesanan::query()
-            ->where('meja_id', $pesanan->meja_id)
-            ->whereNotIn('status_pesanan', [Pesanan::STATUS_SELESAI, Pesanan::STATUS_DIBATALKAN])
-            ->exists();
 
-        if (! $masihAdaPesananAktif) {
-            $pesanan->meja()->update(['status_meja' => 'kosong']);
-        }
+
+
+
+        SesiMeja::sinkronkanStatusMeja($pesanan->meja_id);
 
         Realtime::emit(new StatusPesananBerubah([
             'kode_pesanan' => $pesanan->kode_pesanan,
@@ -540,8 +624,8 @@ class PesananController extends Controller
             'status_pembayaran' => $pesanan->status_pembayaran,
             'metode_pembayaran' => $pesanan->metode_pembayaran,
         ]));
-        // Bug 2 FIX: Return JSON untuk AJAX request (fetch dari Alpine tab-antar)
-        // Return redirect untuk form biasa (kasir dashboard)
+
+
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
                 'status'  => 'ok',

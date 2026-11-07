@@ -1,9 +1,9 @@
 import defaultTheme from 'tailwindcss/defaultTheme';
 import forms from '@tailwindcss/forms';
 
-/** @type {import('tailwindcss').Config} */
-// Situ Awi — Design System "Warm Forest Hospitality"
-// Sumber: 02_Design_System & Palet Warna.docx + DesignV1_3.md
+
+
+
 export default {
   content: [
     './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
@@ -12,7 +12,7 @@ export default {
     './resources/**/*.js',
   ],
   theme: {
-    // Breakpoint acuan: 360–414 mobile (basis), 768 tablet, 1366 desktop
+
     screens: {
       sm: '640px',
       md: '768px',
@@ -27,13 +27,13 @@ export default {
           900: '#052E1B',
           800: '#06381F',
           700: '#0A4A28',
-          600: '#0B4D2B', // brand primary
+          600: '#0B4D2B',
           400: '#12703F',
           100: '#D9EBE0',
         },
         gold: {
           600: '#C9982F',
-          500: '#E0B24E', // aksen utama
+          500: '#E0B24E',
           300: '#F3E27A',
           50: '#FBF3DD',
         },
@@ -52,18 +52,18 @@ export default {
         display: ['"Playfair Display"', 'Georgia', ...defaultTheme.fontFamily.serif],
         sans: ['"Plus Jakarta Sans"', ...defaultTheme.fontFamily.sans],
       },
-      // Skala mobile 12/14/16/20/24/32/40 + skala KDS 20/28/40/56
+
       fontSize: {
-        xs: ['0.75rem', { lineHeight: '1.5' }],   // 12
-        sm: ['0.875rem', { lineHeight: '1.5' }],  // 14
-        base: ['1rem', { lineHeight: '1.55' }],   // 16
-        xl: ['1.25rem', { lineHeight: '1.4' }],   // 20
-        '2xl': ['1.5rem', { lineHeight: '1.3' }], // 24
-        '3xl': ['2rem', { lineHeight: '1.2' }],   // 32
-        '4xl': ['2.5rem', { lineHeight: '1.15' }],// 40
-        '5xl': ['3rem', { lineHeight: '1.1' }],   // 48 (hero desktop)
-        'kds-md': ['1.75rem', { lineHeight: '1.2' }], // 28
-        'kds-xl': ['3.5rem', { lineHeight: '1.1' }],  // 56
+        xs: ['0.75rem', { lineHeight: '1.5' }],
+        sm: ['0.875rem', { lineHeight: '1.5' }],
+        base: ['1rem', { lineHeight: '1.55' }],
+        xl: ['1.25rem', { lineHeight: '1.4' }],
+        '2xl': ['1.5rem', { lineHeight: '1.3' }],
+        '3xl': ['2rem', { lineHeight: '1.2' }],
+        '4xl': ['2.5rem', { lineHeight: '1.15' }],
+        '5xl': ['3rem', { lineHeight: '1.1' }],
+        'kds-md': ['1.75rem', { lineHeight: '1.2' }],
+        'kds-xl': ['3.5rem', { lineHeight: '1.1' }],
       },
       borderRadius: {
         card: '16px',
@@ -77,7 +77,7 @@ export default {
         sidebar: '2px 0 12px rgba(0, 0, 0, 0.05)',
         toast: '0 4px 16px rgba(0, 0, 0, 0.12)',
       },
-      // Calm motion: ease-out-expo lembut, tanpa bounce
+
       transitionTimingFunction: {
         calm: 'cubic-bezier(0.22, 1, 0.36, 1)',
       },
@@ -87,7 +87,7 @@ export default {
         reveal: '800ms',
       },
       spacing: {
-        touch: '44px', // touch target minimal
+        touch: '44px',
         sidebar: '240px',
       },
       maxWidth: {

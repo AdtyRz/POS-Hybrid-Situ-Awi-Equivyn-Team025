@@ -6,11 +6,12 @@ use App\Events\StatusPesananBerubah;
 use App\Http\Controllers\Controller;
 use App\Models\Pesanan;
 use App\Services\MidtransService;
-use App\Services\StokService;
+use App\Services\PesananService;
 use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class MidtransNotificationController extends Controller
 {
@@ -39,7 +40,7 @@ class MidtransNotificationController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Order not found'], 404);
         }
 
-        // If already paid or cancelled, just respond OK without changing anything.
+
         if (
             $pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR
             || $pesanan->status_pesanan === Pesanan::STATUS_DIBATALKAN
@@ -47,46 +48,51 @@ class MidtransNotificationController extends Controller
             return response()->json(['status' => 'ok', 'message' => 'No action needed']);
         }
 
-        DB::transaction(function () use ($pesanan, $transactionStatus, $fraudStatus, $transactionId) {
-            // Payment success conditions
-            $isSuccess = false;
-            if ($transactionStatus === 'capture') {
-                $isSuccess = ($fraudStatus === 'accept');
-            } elseif ($transactionStatus === 'settlement') {
-                $isSuccess = true;
-            }
+        $grossAmount = $payload['gross_amount'] ?? null;
 
-            if ($isSuccess) {
-                // Set as paid and move to kitchen
-                $pesanan->update([
-                    'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
-                    'status_pesanan' => Pesanan::STATUS_DIPROSES,
-                    'metode_pembayaran' => 'qris',
-                ]);
+        if ($grossAmount === null
+            || abs((float) $grossAmount - (float) $pesanan->total_bayar) >= 0.01) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Nominal transaksi tidak sesuai dengan tagihan.',
+            ], 400);
+        }
 
-                // Create payment record if not exists (minimal)
-                if (! $pesanan->pembayaran) {
-                    $pesanan->pembayaran()->create([
-                        'metode_pembayaran' => 'qris',
-                        'status_pembayaran' => 'lunas',
-                        'jumlah_bayar' => (float) $pesanan->total_bayar,
-                        'kembalian' => 0,
-                        'transaction_id' => $transactionId,
-                        'order_id' => $orderId,
-                    ]);
+        try {
+            DB::transaction(function () use ($pesanan, $transactionStatus, $fraudStatus, $transactionId) {
+
+                $isSuccess = false;
+                if ($transactionStatus === 'capture') {
+                    $isSuccess = ($fraudStatus === 'accept');
+                } elseif ($transactionStatus === 'settlement') {
+                    $isSuccess = true;
                 }
 
-                app(StokService::class)->potongSetelahPembayaran($pesanan, null);
-            } elseif (in_array($transactionStatus, ['deny', 'cancel', 'expire', 'failure'])) {
-                // On failure, don't change meja status immediately - let business logic decide
-                // Just ensure we don't mark as paid
-                $pesanan->update([
-                    'status_pembayaran' => $pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR
-                        ? Pesanan::PAYMENT_SUDAH_BAYAR
-                        : Pesanan::PAYMENT_BELUM_BAYAR,
-                ]);
-            }
-        });
+                if ($isSuccess) {
+                    app(PesananService::class)->lunasi(
+                        $pesanan,
+                        'qris',
+                        null,
+                        $transactionId,
+                    );
+                } elseif (in_array($transactionStatus, ['deny', 'cancel', 'expire', 'failure'])) {
+
+
+                    $pesanan->update([
+                        'status_pembayaran' => $pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR
+                            ? Pesanan::PAYMENT_SUDAH_BAYAR
+                            : Pesanan::PAYMENT_BELUM_BAYAR,
+                    ]);
+                }
+            });
+        } catch (RuntimeException $exception) {
+            $pesanan->refresh();
+
+            return response()->json([
+                'status' => 'error',
+                'message' => $exception->getMessage(),
+            ], 409);
+        }
 
         $pesanan->refresh();
         Realtime::emit(new StatusPesananBerubah([

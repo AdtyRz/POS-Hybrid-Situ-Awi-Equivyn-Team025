@@ -1,5 +1,5 @@
 <div class="pb-28 lg:pb-10">
-    {{-- Hero --}}
+
     <section class="relative overflow-hidden rounded-3xl border border-forest-100/70 bg-white p-5 shadow-sm lg:border-forest-700/40 lg:bg-gradient-to-br lg:from-forest-900 lg:via-forest-800 lg:to-forest-700 lg:p-8 lg:shadow-xl lg:shadow-forest-900/10">
         <div class="pointer-events-none absolute inset-0 hidden lg:block">
             <div class="absolute -right-24 -top-28 h-72 w-72 rounded-full bg-gold-500/15 blur-3xl"></div>
@@ -58,7 +58,7 @@
         </div>
     </section>
 
-    {{-- Connection strip --}}
+
     <div class="mt-4 flex flex-col gap-3 rounded-2xl border border-forest-600 bg-gradient-to-r from-forest-800 to-forest-700 px-4 py-3.5 text-cream-50 shadow-md sm:flex-row sm:items-center sm:justify-between lg:mt-5 lg:rounded-2xl lg:px-5 lg:py-3.5">
         <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-xl bg-forest-900/60 border border-forest-400/40 flex items-center justify-center shrink-0">
@@ -99,7 +99,7 @@
 
     <div class="mt-5 lg:mt-6 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-7">
         <div class="min-w-0">
-            {{-- Search & category controls --}}
+
             <div class="space-y-3 lg:rounded-2xl lg:border lg:border-forest-100/70 lg:bg-white lg:p-4 lg:shadow-sm">
                 <div class="relative flex items-center gap-2">
                     <div class="relative flex-1">
@@ -156,7 +156,7 @@
                 </div>
             </div>
 
-            {{-- Section heading --}}
+
             <div class="mt-5 flex items-end justify-between gap-3 lg:mt-6">
                 <div>
                     <div class="flex items-center gap-2">
@@ -174,7 +174,7 @@
                 </div>
             </div>
 
-            {{-- Menu grid --}}
+
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-5 pt-3">
                 <template x-for="item in filteredMenuItems" :key="item.id">
                     <div class="group bg-white rounded-2xl border border-forest-100/70 overflow-hidden shadow-sm flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 hover:border-gold-300 hover:shadow-lg cursor-pointer"
@@ -283,7 +283,7 @@
             </div>
         </div>
 
-        {{-- Sidebar: fills after the grid on mobile/tablet, sticky cart on desktop --}}
+
         <aside class="mt-5 space-y-4 lg:mt-0 lg:sticky lg:top-24">
             <div class="hidden lg:flex flex-col overflow-hidden rounded-3xl border border-forest-100/70 bg-white shadow-sm">
                 <div class="border-b border-forest-600/40 bg-gradient-to-r from-forest-900 to-forest-800 px-5 py-4 text-cream-50">
@@ -407,7 +407,7 @@
         </aside>
     </div>
 
-    {{-- Mobile cart bar --}}
+
     <div x-show="totalCartItemsCount > 0"
          x-transition:enter="transition ease-out duration-300 transform"
          x-transition:enter-start="translate-y-24 opacity-0"

@@ -155,7 +155,7 @@
                 document.getElementById('notif-panggilan').textContent = data.panggilan ?? 0;
                 document.getElementById('notif-belum-bayar').textContent = data.belum_bayar ?? 0;
             } catch (error) {
-                // Diamkan; polling berikutnya akan mencoba lagi.
+
             }
         }
 

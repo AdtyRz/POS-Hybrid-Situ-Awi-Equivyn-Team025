@@ -31,15 +31,15 @@ class SesiMeja extends Model
         return $query->where('status', 'aktif');
     }
 
-    /**
-     * Ambil sesi aktif meja. Bila belum ada, buat sesi baru lengkap dengan kode unik.
-     * Dengan begitu tiap meja selalu punya kode yang tampil di LCD.
-     *
-     * Saat pengelolaan otomatis aktif, sesi yang sudah melewati batas waktu
-     * tanpa transaksi akan ditutup dan diganti kode baru. Sesi yang masih
-     * memiliki pesanan aktif tidak pernah ditutup otomatis agar tagihan tamu
-     * tidak berubah menjadi lunas tanpa pembayaran.
-     */
+
+
+
+
+
+
+
+
+
     public static function aktifUntuk(MejaMakan $meja): self
     {
         $sesi = static::query()
@@ -57,9 +57,9 @@ class SesiMeja extends Model
             return static::bukaBaru($meja);
         }
 
-        // Samakan panjang kode sesi yang sedang berjalan dengan pengaturan
-        // terbaru agar LCD, halaman kunci, dan master meja tidak tertinggal
-        // memakai kode 4 digit setelah admin beralih ke 6 digit (atau sebaliknya).
+
+
+
         if (strlen((string) $sesi->kode_unik) !== static::panjangKode()) {
             $sesi->update([
                 'kode_unik' => static::kodeUnikBaru($sesi->kode_unik),
@@ -69,19 +69,19 @@ class SesiMeja extends Model
         return $sesi;
     }
 
-    /**
-     * Panjang kode sesi sesuai pengaturan enkripsi (4 atau 6 digit).
-     */
+
+
+
     public static function panjangKode(): int
     {
         return Pengaturan::nilai('encryption_level') === '6 Digit' ? 6 : 4;
     }
 
-    /**
-     * Tutup sesi aktif yang dibuka sebelum hari ini dan tidak memiliki
-     * pesanan aktif. Sesi lintas hari tidak relevan untuk operasional saung,
-     * tetapi sesi yang masih memiliki tagihan berjalan tetap dipertahankan.
-     */
+
+
+
+
+
     public static function tutupSesiLintasHari(): int
     {
         $awalHari = now('Asia/Jakarta')->startOfDay();
@@ -144,7 +144,7 @@ class SesiMeja extends Model
                 'ditutup_pada' => now(),
             ]);
 
-            // Struk milik sesi lama tidak boleh terbawa ke pengunjung berikutnya.
+
             Pesanan::query()
                 ->where('meja_id', $sesi->meja_id)
                 ->where('status_pembayaran', Pesanan::PAYMENT_SUDAH_BAYAR)
@@ -155,10 +155,10 @@ class SesiMeja extends Model
         });
     }
 
-    /**
-     * Buat sesi baru (aktif) untuk meja berikut kode unik sesuai pengaturan
-     * panjang digit (4 atau 6 digit).
-     */
+
+
+
+
     public static function bukaBaru(MejaMakan $meja): self
     {
         $sebelumnya = static::query()
@@ -174,13 +174,13 @@ class SesiMeja extends Model
         ]);
     }
 
-    /**
-     * Tutup sesi aktif meja lalu buka sesi baru dengan kode unik yang baru.
-     * Hanya pesanan yang sudah dibayar yang boleh ditutup. Stok sudah dipotong
-     * pada saat pembayaran, jadi proses ini tidak memotong stok lagi.
-     *
-     * @throws \RuntimeException bila masih ada pesanan aktif yang belum dibayar.
-     */
+
+
+
+
+
+
+
     public static function putuskanSesi(MejaMakan $meja): self
     {
         return DB::transaction(function () use ($meja) {
@@ -202,7 +202,7 @@ class SesiMeja extends Model
                 'status_pesanan' => Pesanan::STATUS_SELESAI,
             ]);
 
-            // Tutup struk sesi ini agar tidak muncul pada pengunjung berikutnya.
+
             Pesanan::query()
                 ->where('meja_id', $meja->id)
                 ->where('status_pembayaran', Pesanan::PAYMENT_SUDAH_BAYAR)
@@ -223,10 +223,48 @@ class SesiMeja extends Model
         });
     }
 
-    /**
-     * Kode unik sesi sesuai pengaturan panjang digit (4 atau 6 digit) yang
-     * tidak dipakai sesi aktif mana pun dan berbeda dari kode sebelumnya.
-     */
+
+
+
+
+
+
+
+
+    public static function sinkronkanStatusMeja(int $mejaId): void
+    {
+        $sesi = static::query()
+            ->where('meja_id', $mejaId)
+            ->where('status', 'aktif')
+            ->latest('id')
+            ->first();
+
+        $query = Pesanan::query()->where('meja_id', $mejaId);
+
+        if ($sesi && $sesi->dibuka_pada !== null) {
+            $query->where('status_pesanan', '!=', Pesanan::STATUS_DIBATALKAN)
+                ->where(function ($q) use ($sesi) {
+                    $q->whereNotIn('status_pesanan', [
+                        Pesanan::STATUS_SELESAI,
+                        Pesanan::STATUS_DIBATALKAN,
+                    ])->orWhere('waktu_pesan', '>=', $sesi->dibuka_pada);
+                });
+        } else {
+            $query->whereNotIn('status_pesanan', [
+                Pesanan::STATUS_SELESAI,
+                Pesanan::STATUS_DIBATALKAN,
+            ]);
+        }
+
+        MejaMakan::whereKey($mejaId)->update([
+            'status_meja' => $query->exists() ? 'terisi' : 'kosong',
+        ]);
+    }
+
+
+
+
+
     public static function kodeUnikBaru(?string $kecuali = null): string
     {
         $digit = static::panjangKode();
@@ -249,7 +287,7 @@ class SesiMeja extends Model
             }
         }
 
-        // Fallback sangat jarang: pakai angka acak apa adanya.
+
         return str_pad((string) random_int(0, $maks), $digit, '0', STR_PAD_LEFT);
     }
 }

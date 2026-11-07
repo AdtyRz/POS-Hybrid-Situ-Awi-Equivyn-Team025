@@ -42,4 +42,16 @@ class MejaMakan extends Model
             'diantar',
         ]);
     }
+
+
+
+
+
+
+    public function pesananSesi(): HasMany
+    {
+        return $this->pesanan()
+            ->where('status_pesanan', '!=', 'dibatalkan')
+            ->orderBy('waktu_pesan');
+    }
 }

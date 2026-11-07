@@ -739,7 +739,7 @@
 
                         this.applyState(await response.json());
                     } catch (error) {
-                        // Koneksi terganggu; event realtime atau aksi berikutnya mencoba lagi.
+
                     } finally {
                         this.stateLoading = false;
                     }
@@ -801,9 +801,9 @@
                             return false;
                         }
 
-                        // Selama masih ada aksi lain di antrean, respons ini belum
-                        // mencerminkan klik terakhir. State final diterapkan oleh
-                        // aksi terakhir agar tampilan tidak melompat mundur.
+
+
+
                         if (this.pendingActions <= 1) {
                             this.applyState(payload);
                         }
@@ -831,8 +831,8 @@
                         return;
                     }
 
-                    // Ubah tampilan seketika; permintaan ke server berjalan di
-                    // belakang secara berurutan agar klik tetap terasa ringan.
+
+
                     item.checked = !item.checked;
                     ticket.status = ticket.items.every(i => i.checked) ? 'siap' : 'diproses';
                     ticket.frozen = ticket.status === 'siap';
@@ -875,9 +875,9 @@
                         return;
                     }
 
-                    // Tunggu centang item terakhir selesai diproses server,
-                    // supaya panggilan runner tidak ditolak karena item masih
-                    // berstatus diproses.
+
+
+
                     await this.actionQueue.catch(() => {});
 
                     this.playKitchenChime();

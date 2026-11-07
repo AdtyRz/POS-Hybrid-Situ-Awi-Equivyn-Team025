@@ -758,7 +758,7 @@
                         }
                     }
                 } catch (error) {
-                    // Payload tidak valid; biarkan data lama tetap tampil.
+
                 }
             },
 
@@ -1033,7 +1033,7 @@
                         this.triggerToast('QR kedaluwarsa. QR baru sudah dibuat.');
                     }
                 } catch (error) {
-                    // Jaringan sedang bermasalah; polling berikutnya mencoba lagi.
+
                 } finally {
                     this.qrisPayBusy = false;
                 }
@@ -1175,8 +1175,8 @@
                 this.qrReady = false;
                 this.showQrModal = true;
 
-                // Pastikan kode 4/6 digit langsung tampil. Sesi dibuat sekali
-                // saat QR dibuka bila meja belum punya sesi aktif.
+
+
                 if (!this.qrTable.session_code) {
                     this.aktifkanSesi(true);
                 }

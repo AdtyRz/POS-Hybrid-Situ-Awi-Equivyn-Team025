@@ -37,9 +37,9 @@ class ShiftService
             }
         }
 
-        // Satu query untuk semua pengaturan shift. Sebelumnya setiap shift
-        // membaca empat pengaturan secara terpisah sehingga satu render KDS
-        // bisa memicu belasan round-trip ke database.
+
+
+
         $nilai = Pengaturan::query()
             ->whereIn('kunci', $kunci)
             ->pluck('nilai', 'kunci');

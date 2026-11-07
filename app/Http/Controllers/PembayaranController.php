@@ -7,6 +7,7 @@ use App\Events\StatusPesananBerubah;
 use App\Models\Pembayaran;
 use App\Models\Pesanan;
 use App\Models\SesiMeja;
+use App\Services\MidtransService;
 use App\Services\StokService;
 use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
@@ -14,6 +15,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use RuntimeException;
 
 class PembayaranController extends Controller
 {
@@ -115,38 +117,70 @@ class PembayaranController extends Controller
             return back()->withErrors(['jumlah_bayar' => 'Uang yang dibayar kurang dari total tagihan.'])->withInput();
         }
 
-        $kembalian = $data['jumlah_bayar'] - (float) $pesanan->total_bayar;
+        $midtrans = app(MidtransService::class);
+        $statusMidtrans = null;
 
-        DB::transaction(function () use ($pesanan, $data, $kembalian) {
-            app(StokService::class)->potongSetelahPembayaran($pesanan, auth()->id());
+        if ($data['metode_pembayaran'] === 'qris') {
 
-            Pembayaran::create([
-                'pesanan_id' => $pesanan->id,
-                'metode_pembayaran' => $data['metode_pembayaran'],
-                'status_pembayaran' => 'lunas',
-                'jumlah_bayar' => $data['jumlah_bayar'],
-                'kembalian' => $kembalian,
-            ]);
 
-            // Determine next status based on payment method
-            if ($data['metode_pembayaran'] === 'tunai') {
-                // Cash: After payment, order goes to kitchen
-                $pesanan->update([
-                    'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
-                    'status_pesanan' => Pesanan::STATUS_DIPROSES,
-                    'metode_pembayaran' => 'tunai',
-                    'kasir_id' => auth()->id(),
-                ]);
-            } else {
-                // QRIS: Already verified via callback, just mark as paid
-                $pesanan->update([
-                    'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
-                    'status_pesanan' => Pesanan::STATUS_DIPROSES,
-                    'metode_pembayaran' => 'qris',
-                    'kasir_id' => auth()->id(),
-                ]);
+            $statusMidtrans = $midtrans->getTransactionStatus($pesanan->kode_pesanan);
+
+            if (! $midtrans->verifikasiQris($pesanan, $statusMidtrans)) {
+                return back()->withErrors([
+                    'metode_pembayaran' => 'Pembayaran QRIS belum terverifikasi oleh Midtrans. Minta tamu menyelesaikan pembayaran terlebih dahulu.',
+                ])->withInput();
             }
-        });
+        }
+
+        $transactionId = filled(data_get($statusMidtrans, 'transaction_id'))
+            ? trim((string) data_get($statusMidtrans, 'transaction_id'))
+            : null;
+
+        $jumlahBayar = $data['metode_pembayaran'] === 'qris'
+            ? (float) $pesanan->total_bayar
+            : (float) $data['jumlah_bayar'];
+        $kembalian = $data['metode_pembayaran'] === 'qris'
+            ? 0
+            : $jumlahBayar - (float) $pesanan->total_bayar;
+
+        try {
+            DB::transaction(function () use ($pesanan, $data, $jumlahBayar, $kembalian, $transactionId) {
+                $terkunci = Pesanan::query()->whereKey($pesanan->id)->lockForUpdate()->firstOrFail();
+
+                if ($terkunci->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
+                    throw new RuntimeException('Pesanan ini sudah dibayar.');
+                }
+
+                if ($terkunci->status_pesanan === Pesanan::STATUS_DIBATALKAN) {
+                    throw new RuntimeException('Pesanan ini sudah dibatalkan.');
+                }
+
+                app(StokService::class)->potongSetelahPembayaran($terkunci, auth()->id());
+
+                Pembayaran::create([
+                    'pesanan_id' => $terkunci->id,
+                    'metode_pembayaran' => $data['metode_pembayaran'],
+                    'status_pembayaran' => 'lunas',
+                    'jumlah_bayar' => $jumlahBayar,
+                    'kembalian' => $kembalian,
+                    'transaction_id' => $data['metode_pembayaran'] === 'qris' ? $transactionId : null,
+                    'order_id' => $data['metode_pembayaran'] === 'qris' ? $terkunci->kode_pesanan : null,
+                ]);
+
+
+
+                $terkunci->update([
+                    'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+                    'status_pesanan' => Pesanan::STATUS_DIPROSES,
+                    'metode_pembayaran' => $data['metode_pembayaran'],
+                    'kasir_id' => auth()->id(),
+                ]);
+            });
+        } catch (RuntimeException $exception) {
+            return back()->withErrors(['kode_pesanan' => $exception->getMessage()])->withInput();
+        }
+
+        $pesanan->refresh();
 
         Realtime::emit(new StatusPesananBerubah([
             'kode_pesanan' => $pesanan->kode_pesanan,
@@ -156,8 +190,8 @@ class PembayaranController extends Controller
             'metode_pembayaran' => $pesanan->metode_pembayaran,
         ]));
 
-        // Opsional: tutup sesi meja setelah pembayaran (dipakai form lain bila ada).
-        // Tombol cetak struk di POS tidak lagi otomatis menutup sesi.
+
+
         if ($request->boolean('selesaikan_sesi') && $pesanan->meja) {
             $meja = $pesanan->meja;
 
@@ -181,10 +215,10 @@ class PembayaranController extends Controller
             ->with('sukses', 'Pembayaran lunas. Cetak struk dapat dilakukan dari tombol Cetak Struk.');
     }
 
-    /**
-     * Tandai pesanan lunas yang struknya sudah dicetak. Pesanan yang sudah
-     * ditandai tidak akan muncul lagi pada cetak struk berikutnya.
-     */
+
+
+
+
     public function tandaiStruk(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -204,8 +238,8 @@ class PembayaranController extends Controller
             'updated_at' => now(),
         ]);
 
-        // QRIS mandiri tidak punya kasir saat pembayaran; kasir yang mencetak
-        // struk menjadi penanggung jawab transaksi pada laporan.
+
+
         Pesanan::query()
             ->where('meja_id', $data['meja_id'])
             ->whereIn('kode_pesanan', $data['kode_pesanan'])

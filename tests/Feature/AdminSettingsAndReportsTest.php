@@ -117,7 +117,7 @@ class AdminSettingsAndReportsTest extends TestCase
             'metode_pembayaran' => 'tunai',
         ]);
 
-        // useCurrent() pada SQLite memakai jam nyata, bukan jam test.
+
         $pesanan->update(['waktu_pesan' => now()]);
 
         $this->actingAs($this->admin())

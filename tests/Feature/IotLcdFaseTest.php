@@ -84,9 +84,9 @@ class IotLcdFaseTest extends TestCase
         return $pesanan->fresh();
     }
 
-    /**
-     * @return array<string, mixed>
-     */
+
+
+
     private function dataMeja(MejaMakan $meja): array
     {
         return $this->withHeader('X-IoT-Token', 'token-iot-uji')
@@ -225,7 +225,38 @@ class IotLcdFaseTest extends TestCase
         $this->assertTrue($data['semua_lunas']);
         $this->assertSame(50000.0, (float) $data['total_bayar']);
         $this->assertSame(1, $data['jumlah_pesanan']);
+        $this->assertSame(1, $data['jumlah_selesai']);
         $this->assertCount(1, $data['pesanan']);
+        $this->assertSame(Pesanan::STATUS_DIANTAR, $data['pesanan'][0]['status_pesanan']);
+    }
+
+    public function test_lcd_memprioritaskan_status_diantar_daripada_pesanan_aktif_lain(): void
+    {
+        $meja = $this->meja();
+        $sesi = SesiMeja::aktifUntuk($meja);
+        $sesi->update(['dibuka_pada' => now()->subMinutes(5)]);
+        $menu = $this->menu();
+
+        $diantar = $this->pesanan(
+            $meja,
+            $menu,
+            'tunai',
+            Pesanan::PAYMENT_SUDAH_BAYAR,
+            Pesanan::STATUS_DIANTAR,
+        );
+        $diantar->update(['waktu_pesan' => now()->subMinute()]);
+
+        $this->pesanan(
+            $meja,
+            $menu,
+            'tunai',
+            Pesanan::PAYMENT_SUDAH_BAYAR,
+            Pesanan::STATUS_DIPROSES,
+        );
+
+        $data = $this->dataMeja($meja);
+
+        $this->assertSame(2, $data['jumlah_pesanan']);
         $this->assertSame(Pesanan::STATUS_DIANTAR, $data['pesanan'][0]['status_pesanan']);
     }
 
@@ -267,7 +298,7 @@ class IotLcdFaseTest extends TestCase
             ->assertJsonPath('iotAlert.active', true)
             ->assertJsonPath('iotAlert.id', $panggilan->id);
 
-        // Kasir tidak memiliki endpoint konfirmasi; hanya pelayan yang boleh.
+
         $this->actingAs($kasir)
             ->patchJson('/kasir/panggilan/' . $panggilan->id, [
                 'status_panggilan' => 'selesai',
