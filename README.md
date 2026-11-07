@@ -26,9 +26,9 @@ Sistem Point of Sale (POS) Hybrid & IoT terintegrasi untuk UMKM Kuliner / Wisata
 ## 🛠️ Panduan Instalasi Local
 
 ### 1. Prasyarat
-- **PHP**: `>= 8.5`
+- **PHP**: `>= 8.3`
 - **Composer**: `>= 2.x`
-- **Node.js**: `>= 18.x` & **npm**
+- **Node.js**: `20.19+` atau `22.12+` & **npm**
 
 ### 2. Clone & Install Dependency
 ```bash
