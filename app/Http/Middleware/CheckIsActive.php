@@ -13,6 +13,12 @@ class CheckIsActive
         $user = $request->user();
 
         if ($user && ! $user->is_aktif) {
+
+
+            if ($user->remember_token !== null) {
+                $user->forceFill(['remember_token' => null])->save();
+            }
+
             auth()->guard('web')->logout();
 
             if ($request->hasSession()) {

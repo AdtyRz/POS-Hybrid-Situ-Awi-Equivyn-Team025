@@ -8,10 +8,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 class NoStorePesanan
 {
-    /**
-     * Halaman/API pesanan tidak boleh disimpan di cache browser, proxy,
-     * maupun mesin pencari.
-     */
+
+
+
+
     public function handle(Request $request, Closure $next): Response
     {
         $response = $next($request);

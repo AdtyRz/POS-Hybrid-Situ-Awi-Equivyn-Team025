@@ -200,7 +200,7 @@ class KasirStrukTest extends TestCase
         $this->assertStringContainsString('Cluster 2: Lesehan Atas', $html);
         $this->assertStringContainsString('Cluster 3: Kursi Atas', $html);
         $this->assertSame(1, substr_count($html, "const bagian = dokumen.createElement('section');"));
-        $this->assertStringContainsString('Semua pesanan yang dicentang digabung menjadi SATU struk.', $html);
+        $this->assertStringContainsString('Struk memuat semua pesanan yang dipilih.', $html);
 
         $saung = collect($response->viewData('saungsJson'))
             ->firstWhere('id', $meja->kode_meja);
@@ -221,7 +221,7 @@ class KasirStrukTest extends TestCase
         $this->assertNotNull($pesananSatu->fresh()->printed_at);
         $this->assertNotNull($pesananDua->fresh()->printed_at);
 
-        // Setelah dicetak, pesanan lunas harus tetap tampil agar bisa dicetak ulang.
+
         $responseUlang = $this->actingAs($kasir)->get(route('kasir.dashboard'));
         $saungUlang = collect($responseUlang->viewData('saungsJson'))
             ->firstWhere('id', $meja->kode_meja);

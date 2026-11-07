@@ -8,6 +8,7 @@ use App\Models\Menu;
 use App\Models\Pesanan;
 use App\Models\Pengaturan;
 use App\Models\SesiMeja;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -22,6 +23,17 @@ class SesiMejaTest extends TestCase
             'area' => 'Lesehan Bawah',
             'kapasitas' => 4,
             'qr_token' => 'token-lb-77-abcdefghijklmnop',
+            'status_meja' => 'kosong',
+        ]);
+    }
+
+    private function siapkanMejaLain(): MejaMakan
+    {
+        return MejaMakan::create([
+            'kode_meja' => 'LB-78',
+            'area' => 'Lesehan Bawah',
+            'kapasitas' => 4,
+            'qr_token' => 'token-lb-78-abcdefghijklmnop',
             'status_meja' => 'kosong',
         ]);
     }
@@ -145,6 +157,119 @@ class SesiMejaTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('redirect', route('emenu.meja', $meja->kode_meja))
             ->assertSessionHas('sesi_meja_' . $meja->id, $sesi->id);
+    }
+
+    public function test_pelanggan_terikat_satu_meja_ditolak_membuka_meja_lain_dari_beranda(): void
+    {
+        $meja = $this->siapkanMeja();
+        $sesi = SesiMeja::aktifUntuk($meja);
+
+        $lain = $this->siapkanMejaLain();
+        $sesiLain = SesiMeja::aktifUntuk($lain);
+
+        $this->withSession(['sesi_meja_' . $meja->id => $sesi->id])
+            ->post(route('emenu.masuk'), ['kode_unik' => $sesiLain->kode_unik])
+            ->assertRedirect(route('emenu.index'))
+            ->assertSessionHasErrors('kode_unik')
+            ->assertSessionHas('sesi_meja_' . $meja->id, $sesi->id)
+            ->assertSessionMissing('sesi_meja_' . $lain->id);
+    }
+
+    public function test_pelanggan_terikat_satu_meja_ditolak_membuka_meja_lain(): void
+    {
+        $meja = $this->siapkanMeja();
+        $sesi = SesiMeja::aktifUntuk($meja);
+
+        $lain = $this->siapkanMejaLain();
+        $sesiLain = SesiMeja::aktifUntuk($lain);
+        $pesan = 'Anda masih terhubung ke LB-77. Keluar dari sesi meja tersebut sebelum membuka meja lain.';
+
+        $this->withSession(['sesi_meja_' . $meja->id => $sesi->id])
+            ->postJson(route('emenu.buka', $lain->id), ['kode_unik' => $sesiLain->kode_unik])
+            ->assertStatus(403)
+            ->assertJsonPath('message', $pesan)
+            ->assertJsonPath('errors.kode_unik.0', $pesan)
+            ->assertSessionMissing('sesi_meja_' . $lain->id);
+
+        $this->withSession(['sesi_meja_' . $meja->id => $sesi->id])
+            ->from(route('emenu.kunci', $lain->kode_meja))
+            ->post(route('emenu.buka', $lain->id), ['kode_unik' => $sesiLain->kode_unik])
+            ->assertRedirect(route('emenu.kunci', $lain->kode_meja))
+            ->assertSessionHasErrors('kode_unik')
+            ->assertSessionMissing('sesi_meja_' . $lain->id);
+    }
+
+    public function test_pelanggan_terikat_satu_meja_ditolak_melihat_meja_lain(): void
+    {
+        $meja = $this->siapkanMeja();
+        $sesi = SesiMeja::aktifUntuk($meja);
+        $lain = $this->siapkanMejaLain();
+
+        $this->withSession(['sesi_meja_' . $meja->id => $sesi->id])
+            ->get(route('emenu.meja', $lain->kode_meja))
+            ->assertRedirect(route('emenu.index'))
+            ->assertSessionHasErrors('kode_unik');
+
+        $this->withSession(['sesi_meja_' . $meja->id => $sesi->id])
+            ->get(route('emenu.kunci', $lain->kode_meja))
+            ->assertRedirect(route('emenu.index'))
+            ->assertSessionHasErrors('kode_unik');
+    }
+
+    public function test_meja_yang_sama_tetap_bisa_dibuka_ulang_dan_memakai_form_keluar(): void
+    {
+        $meja = $this->siapkanMeja();
+        $sesi = SesiMeja::aktifUntuk($meja);
+
+        $this->withSession(['sesi_meja_' . $meja->id => $sesi->id])
+            ->postJson(route('emenu.buka', $meja->id), ['kode_unik' => $sesi->kode_unik])
+            ->assertOk()
+            ->assertJsonPath('redirect', route('emenu.meja', $meja->kode_meja));
+
+        $this->withSession(['sesi_meja_' . $meja->id => $sesi->id])
+            ->get(route('emenu.meja', $meja->kode_meja))
+            ->assertOk()
+            ->assertSee('id="formKeluar"', false)
+            ->assertSee('action="' . route('emenu.keluar') . '"', false);
+    }
+
+    public function test_panah_kembali_mengeluarkan_sesi_pelanggan_dan_kembali_ke_beranda(): void
+    {
+        $meja = $this->siapkanMeja();
+        $sesi = SesiMeja::aktifUntuk($meja);
+
+        $lain = $this->siapkanMejaLain();
+        $sesiLain = SesiMeja::aktifUntuk($lain);
+
+        $this->withSession([
+            'sesi_meja_' . $meja->id => $sesi->id,
+            'riwayat_meja_' . $meja->id => ['SW-LAMA-1'],
+            'sesi_meja_' . $lain->id => $sesiLain->id,
+        ])
+            ->post(route('emenu.keluar'))
+            ->assertRedirect(route('emenu.index'))
+            ->assertSessionMissing('sesi_meja_' . $meja->id)
+            ->assertSessionMissing('riwayat_meja_' . $meja->id)
+            ->assertSessionMissing('sesi_meja_' . $lain->id);
+
+
+        $this->post(route('emenu.masuk'), ['kode_unik' => $sesiLain->kode_unik])
+            ->assertRedirect(route('emenu.meja', $lain->kode_meja))
+            ->assertSessionHas('sesi_meja_' . $lain->id, $sesiLain->id);
+    }
+
+    public function test_keluar_pelanggan_tidak_mengeluarkan_akun_staf(): void
+    {
+        $kasir = User::factory()->create([
+            'role' => 'kasir',
+            'is_aktif' => true,
+        ]);
+
+        $this->actingAs($kasir)
+            ->post(route('emenu.keluar'))
+            ->assertRedirect(route('emenu.index'));
+
+        $this->assertAuthenticatedAs($kasir);
     }
 
     public function test_kode_enam_digit_ditampilkan_dan_dapat_dibuka(): void

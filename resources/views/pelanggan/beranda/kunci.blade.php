@@ -162,8 +162,8 @@
                     const el = this.daftarKotak()[i];
                     if (! el) return;
 
-                    // Fokus harus dipanggil langsung di dalam event input agar
-                    // keyboard ponsel tetap terbuka dan otomatis pindah kotak.
+
+
                     el.focus({ preventScroll: true });
                 },
                 bersihkanPesan() {

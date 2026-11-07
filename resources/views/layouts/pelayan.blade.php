@@ -179,7 +179,11 @@
     </script>
 
     <script>
-        window.addEventListener('realtime:panggilan.pelayan', () => {
+        window.addEventListener('realtime:panggilan.pelayan', (event) => {
+
+
+            if (event.detail?.panggilan?.status_panggilan !== 'menunggu') return;
+
             if (typeof playChime === 'function') playChime('urgent');
         });
     </script>

@@ -1,28 +1,4 @@
-/*
- * ESP32 IoT Client - Saung Situ Awi (versi ringan)
- * Board  : ESP32 DOIT DevKit V1 (30 pin)
- * LCD    : 16x2 I2C (PCF8574, alamat 0x27 atau 0x3F)
- * Touch  : TTP223 (output aktif HIGH)
- * Buzzer : active buzzer (bisa diganti passive)
- *
- * Tap singkat  : ganti layar Status -> Total -> Kode (saat sudah lunas)
- * Tahan 1.5 s  : panggil pelayan (saat sudah lunas)
- *
- * Catatan versi ringan:
- * - Hanya memanggil /api/iot/meja/{KODE_MEJA}. Respons endpoint itu sudah
- *   membawa konfigurasi LCD/buzzer, jadi tidak perlu mengunduh semua meja.
- * - JSON dibaca langsung dari stream HTTP, tanpa menyalin seluruh respons
- *   ke String.
- * - HTTPS tidak dikompilasi selama PAKAI_HTTPS = 0 (lebih kecil & ringan).
- * - Buzzer dan pesan LCD tidak memblokir loop, jadi touch tetap responsif.
- *
- * Agar bisa diakses ESP32, jalankan Laravel dengan host 0.0.0.0:
- *   php artisan serve --host=0.0.0.0 --port=8000
- * Jangan memakai 127.0.0.1 pada SERVER_URL karena itu loopback laptop.
- * Jika firewall UFW aktif, izinkan port server dari LAN, mis.:
- *   sudo ufw allow from 192.168.160.0/24 to any port 8000 proto tcp
- * Jika SERVER_URL memakai https://, ubah PAKAI_HTTPS menjadi 1.
- */
+
 
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -30,80 +6,82 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
-// ======================= KONFIGURASI =======================
-// WiFi, SERVER_URL, token, dan KODE_MEJA disimpan di secrets.h agar
-// kredensial tidak ikut ter-commit. Salin secrets.example.h bila belum ada.
+
+
+
 #if __has_include("secrets.h")
 #include "secrets.h"
 #else
 #include "secrets.example.h"
 #endif
 
-// 0 = HTTP lokal (paling ringan). 1 = HTTPS untuk produksi.
+
 #define PAKAI_HTTPS 0
 
 #if PAKAI_HTTPS
 #include <WiFiClientSecure.h>
 #endif
 
-// ======================= PIN =======================
+
 const int PIN_SDA = 21;
 const int PIN_SCL = 22;
 const int PIN_TOUCH = 27;
 const int PIN_BUZZER = 25;
 const int PIN_LED = 2;
 
-// Level idle TTP223 dideteksi otomatis saat boot, sehingga modul active HIGH
-// maupun active LOW sama-sama bekerja. Set TOUCH_AUTO_LEVEL 0 hanya bila
-// ingin memaksa level tertentu lewat TOUCH_ACTIVE_HIGH.
+
+
+
 #define TOUCH_AUTO_LEVEL 1
 #define TOUCH_ACTIVE_HIGH 1
 
-// 1 = active buzzer, 0 = passive buzzer.
+
 #define BUZZER_ACTIVE 1
-// Ubah ke LOW bila buzzer justru berbunyi saat sinyal LOW.
+
 #define BUZZER_ON_LEVEL HIGH
 #define BUZZER_FREQ 2000
 
-// Alamat I2C LCD: 0x27 atau 0x3F.
+
 const uint8_t LCD_ADDR = 0x27;
 LiquidCrystal_I2C lcd(LCD_ADDR, 16, 2);
 
-// ======================= TIMING =======================
+
 const unsigned long STATUS_INTERVAL_MS = 10000;
 const unsigned long RETRY_INTERVAL_MS = 15000;
 const unsigned long WIFI_RETRY_MS = 15000;
-// Setelah sekian lama tidak ada polling sukses, perangkat restart sendiri.
-// LCD tetap menampilkan teks terakhir selama masa reconnect.
+
+
 const unsigned long OFFLINE_RESTART_MS = 180000;
-// Setiap beberapa percobaan, reset radio WiFi (tanpa reboot) agar tidak
-// terjebak di state "connected" palsu.
+
+
 const uint8_t WIFI_RADIO_RESET_EVERY = 4;
-// Request pertama Laravel bisa lambat (cold start). Jangan terlalu pendek.
+
 const unsigned long HTTP_TIMEOUT_MS = 5000;
 const unsigned long HTTP_CONNECT_TIMEOUT_MS = 2500;
 const unsigned long LONG_PRESS_MS = 3000;
 const unsigned long TAP_MIN_MS = 50;
 
-// ======================= STATE =======================
+
 String kodeSesi = "----";
-// Kode meja yang ditampilkan di LCD. Diisi dari respons API supaya tetap
-// benar walau secrets.h memakai ID Device (mis. ESP32-LB01).
+
+
 String kodeMejaTampil = KODE_MEJA;
 String statusRingkas = "Belum ada pesan";
 String lcdMessage = "Panggil Pelayan";
 int buzzerDuration = 3;
 float totalBayar = 0;
 int jumlahPesanan = 0;
+int jumlahSelesai = 0;
+bool adaPesanan = false;
 
-// Fase LCD mengikuti data pesanan pada sesi aktif:
-// - standby  : belum ada pesanan, hanya kode meja + kode verifikasi.
-// - pembayaran: menunggu pembayaran, tampil metode yang dipilih tamu.
-// - lunas    : semua lunas, layar bergilir status/total/kode setiap 20 detik.
+
+
+
+
 String faseLcd = "standby";
 String metodePembayaran = "";
 
-// Urutan layar saat fase lunas: Status -> Total -> Kode.
+
 const int SCREEN_STATUS = 0;
 const int SCREEN_TOTAL = 1;
 const int SCREEN_KODE = 2;
@@ -112,7 +90,7 @@ int currentScreen = SCREEN_STATUS;
 const unsigned long ROTASI_LAYAR_MS = 20000;
 unsigned long lastRotasiLayar = 0;
 
-// Level pin touch saat tidak disentuh (diisi otomatis di setup).
+
 int touchIdleLevel = HIGH;
 
 bool touchActive = false;
@@ -125,39 +103,39 @@ bool pernahSuksesPolling = false;
 bool wifiTerhubungTerakhir = false;
 uint8_t percobaanWifi = 0;
 unsigned long intervalPolling = STATUS_INTERVAL_MS;
-// true = langsung polling di iterasi loop berikutnya (dipakai saat tap
-// layar error), tanpa menunggu sisa interval.
+
+
 bool segeraPolling = true;
 
-// Umpan balik non-blocking.
+
 bool buzzerAktif = false;
 unsigned long buzzerSampai = 0;
 bool ledAktif = false;
 unsigned long ledSampai = 0;
 
-// Pesan sementara di LCD (tidak menimpa layar utama selamanya).
+
 bool pesanSementara = false;
 String pesanBaris1 = "";
 String pesanBaris2 = "";
 unsigned long pesanSampai = 0;
 
-// Isi LCD terakhir agar tidak flicker saat polling.
+
 String lcdBaris1 = "";
 String lcdBaris2 = "";
 
-// Kesalahan terakhir. Selama errorAktif = true, layar ini yang ditampilkan
-// supaya masalah tidak terlihat seperti "stuck" di layar WiFi.
+
+
 bool errorAktif = false;
 String errorBaris1 = "";
 String errorBaris2 = "";
 
-// ======================= HTTP CLIENT =======================
+
 WiFiClient plainClient;
 #if PAKAI_HTTPS
 WiFiClientSecure secureClient;
 #endif
 
-// ======================= PROTOTYPES =======================
+
 void connectWiFi();
 void jagaWiFi();
 bool fetchMejaStatus();
@@ -180,7 +158,7 @@ String rapikanBaris(const String& teks);
 String labelStatus(const String& status);
 String formatRupiah(float nominal);
 
-// ======================= SETUP =======================
+
 void setup() {
   Serial.begin(115200);
   delay(200);
@@ -210,7 +188,7 @@ void setup() {
   buzzerOff();
 
 #if TOUCH_AUTO_LEVEL
-  // Jangan sentuh sensor saat boot: level awal dianggap kondisi idle.
+
   pinMode(PIN_TOUCH, INPUT);
   delay(200);
   touchIdleLevel = digitalRead(PIN_TOUCH);
@@ -242,7 +220,7 @@ void setup() {
   beep(BUZZER_FREQ, 80);
 }
 
-// ======================= LOOP =======================
+
 void loop() {
   updateBuzzer();
 
@@ -254,17 +232,17 @@ void loop() {
   handleTouch();
   jagaWiFi();
 
-  // Watchdog koneksi: setelah pernah sukses tetapi tidak ada polling sukses
-  // selama batas waktu, restart otomatis. Selama masa reconnect LCD tetap
-  // menampilkan teks terakhir, jadi tamu tidak melihat layar kosong/error.
+
+
+
   if (pernahSuksesPolling && millis() - terakhirSuksesMs >= OFFLINE_RESTART_MS) {
     Serial.println("[WATCHDOG] Server tidak terjangkau terlalu lama. Restart otomatis...");
     delay(200);
     ESP.restart();
   }
 
-  // Saat lunas, layar bergilir otomatis setiap 20 detik. Tap tetap bisa
-  // mempercepat perpindahan layar.
+
+
   if (!pesanSementara && !errorAktif && faseLcd == "lunas"
       && millis() - lastRotasiLayar >= ROTASI_LAYAR_MS) {
     lastRotasiLayar = millis();
@@ -281,10 +259,10 @@ void loop() {
   delay(5);
 }
 
-// ======================= TOUCH =======================
+
 bool readTouch() {
 #if TOUCH_AUTO_LEVEL
-  // Aktif saat level pin berbeda dari level idle hasil kalibrasi boot.
+
   return digitalRead(PIN_TOUCH) != touchIdleLevel;
 #elif TOUCH_ACTIVE_HIGH
   return digitalRead(PIN_TOUCH) == HIGH;
@@ -294,8 +272,8 @@ bool readTouch() {
 }
 
 void handleTouch() {
-  // Touch hanya aktif saat layar error (untuk retry) atau setelah semua
-  // pembayaran lunas. Di fase standby/pembayaran LCD tidak bereaksi.
+
+
   if (!errorAktif && faseLcd != "lunas") {
     touchActive = false;
     return;
@@ -328,8 +306,8 @@ void handleTouch() {
     if (!longPressDone && duration >= TAP_MIN_MS) {
       beep(BUZZER_FREQ, 40);
 
-      // Saat layar error, tap = coba hubungi server lagi (tanpa menunggu
-      // sisa interval polling).
+
+
       if (errorAktif) {
         Serial.println("[TOUCH] Tap -> coba server lagi");
         tulisLcd("Mencoba server", "Mohon tunggu", true);
@@ -346,7 +324,7 @@ void handleTouch() {
   }
 }
 
-// ======================= WIFI =======================
+
 void connectWiFi() {
   if (WiFi.status() == WL_CONNECTED) {
     return;
@@ -388,10 +366,10 @@ void connectWiFi() {
   }
 }
 
-// Reconnect tanpa memblokir loop (beda dengan connectWiFi saat boot).
-// LCD sengaja TIDAK diubah di sini: teks terakhir tetap tampil selama
-// perangkat berusaha menyambung ulang. Setelah data baru diterima, layar
-// di-render ulang oleh fetchMejaStatus().
+
+
+
+
 void jagaWiFi() {
   if (WiFi.status() == WL_CONNECTED) {
     if (!wifiTerhubungTerakhir) {
@@ -417,8 +395,8 @@ void jagaWiFi() {
   percobaanWifi++;
   segeraPolling = true;
 
-  // Setiap beberapa percobaan, reset radio untuk membuang state WiFi yang
-  // macet. Ini bukan reboot, jadi LCD tetap menampilkan teks terakhir.
+
+
   if (percobaanWifi % WIFI_RADIO_RESET_EVERY == 0) {
     Serial.printf("[WiFi] Reset radio (percobaan %u)...\n", percobaanWifi);
     WiFi.disconnect(true, false);
@@ -431,8 +409,8 @@ void jagaWiFi() {
   WiFi.begin(WIFI_SSID, WIFI_PASS);
 }
 
-// ======================= HTTP =======================
-// Gabungkan SERVER_URL + path tanpa peduli ada/tidaknya slash di akhir.
+
+
 String urlApi(const String& path) {
   String base = String(SERVER_URL);
   while (base.endsWith("/")) {
@@ -471,10 +449,10 @@ bool siapkanHttp(HTTPClient& http, const String& url) {
   return true;
 }
 
-// ======================= DATA MEJA =======================
+
 bool fetchMejaStatus() {
   if (WiFi.status() != WL_CONNECTED) {
-    // Jangan menimpa LCD. Teks terakhir tetap tampil sampai koneksi pulih.
+
     Serial.println("[HTTP] Dilewati: WiFi belum terhubung");
     return false;
   }
@@ -516,8 +494,8 @@ bool fetchMejaStatus() {
       } else {
         Serial.printf("[HTTP] Koneksi gagal (kode %d).\n", httpCode);
       }
-      // Gangguan koneksi/server bersifat sementara: LCD dibiarkan
-      // menampilkan data terakhir dan polling otomatis mengulang.
+
+
     } else if (httpCode == 401 || httpCode == 403) {
       Serial.println("[HTTP] Token IoT ditolak. Samakan dengan IOT_API_TOKEN di .env Laravel.");
       tampilkanKesalahan("Token ditolak", "Cek API token");
@@ -529,10 +507,10 @@ bool fetchMejaStatus() {
       tampilkanKesalahan("Dialihkan", "Cek APP_URL");
     } else if (httpCode == 429) {
       Serial.println("[HTTP] Rate limit. Tunggu sebentar.");
-      // Transien: biarkan layar tetap menampilkan data terakhir.
+
     } else if (httpCode >= 500) {
       Serial.println("[HTTP] Error server. Cek storage/logs/laravel.log.");
-      // Transien: biarkan layar tetap menampilkan data terakhir.
+
     } else {
       Serial.printf("[HTTP] HTTP %d. Cek server.\n", httpCode);
       tampilkanKesalahan(String("HTTP ") + httpCode, "Cek server");
@@ -540,8 +518,8 @@ bool fetchMejaStatus() {
     return false;
   }
 
-  // Respons endpoint ini kecil (hanya satu meja), jadi aman dibaca utuh.
-  // getString() juga menangani chunked encoding dengan benar.
+
+
   String payload = http.getString();
   http.end();
 
@@ -608,6 +586,8 @@ bool fetchMejaStatus() {
 
   totalBayar = data["total_bayar"].as<float>();
   jumlahPesanan = data["jumlah_pesanan"].as<int>();
+  jumlahSelesai = data["jumlah_selesai"].as<int>();
+  adaPesanan = data["ada_pesanan"] | false;
 
   const char* faseApi = data["fase"] | "standby";
   const char* metodeApi = data["metode_pembayaran"] | "";
@@ -632,7 +612,15 @@ bool fetchMejaStatus() {
   }
 
   if (jumlahPesanan <= 0) {
-    statusRingkas = "Belum ada pesan";
+
+
+    if (adaPesanan && jumlahSelesai > 0) {
+      statusRingkas = jumlahSelesai > 1
+        ? "Selesai (" + String(jumlahSelesai) + ")"
+        : "Selesai";
+    } else {
+      statusRingkas = "Belum ada pesan";
+    }
   } else {
     const char* status = data["pesanan"][0]["status_pesanan"] | "-";
     String label = labelStatus(String(status));
@@ -662,7 +650,7 @@ void panggilPelayan() {
     return;
   }
 
-  // Biasanya kode sudah segar dari polling. Kalau belum ada, ambil sekali.
+
   if (kodeSesi == "----" || kodeSesi.length() == 0) {
     fetchMejaStatus();
   }
@@ -713,7 +701,7 @@ void panggilPelayan() {
   } else if (httpCode == 403) {
     errorFeedback();
     tampilkanPesan("Sesi berubah", "Coba lagi", 1500);
-    // Paksa polling berikutnya mengambil kode sesi terbaru.
+
     segeraPolling = true;
   } else if (httpCode == 404) {
     errorFeedback();
@@ -733,7 +721,7 @@ void panggilPelayan() {
   }
 }
 
-// ======================= TAMPILAN LCD =======================
+
 String labelStatus(const String& status) {
   if (status == "menunggu") return "Menunggu";
   if (status == "menunggu_verifikasi") return "Verifikasi";
@@ -776,8 +764,8 @@ void renderLayar() {
   String baris2;
 
   if (faseLcd == "standby") {
-    // Di luar sesi/pesanan, touch tidak aktif. Kode tetap tampil agar tamu
-    // bisa membuka e-menu.
+
+
     baris1 = String("Meja : ") + kodeMejaTampil;
     baris2 = String("Kode : ") + kodeSesi;
   } else if (faseLcd == "pembayaran") {
@@ -798,8 +786,8 @@ void renderLayar() {
     baris1 = "Total Bayar";
     baris2 = formatRupiah(totalBayar);
   } else {
-    // Kode meja ikut ditampilkan supaya pelanggan tahu LCD ini milik saung
-    // mana, sekaligus kode verifikasi yang dipakai untuk membuka e-menu.
+
+
     baris1 = String("Meja : ") + kodeMejaTampil;
     baris2 = String("Kode : ") + kodeSesi;
   }
@@ -816,7 +804,7 @@ String rapikanBaris(const String& teks) {
   return hasil;
 }
 
-// Tulis hanya baris yang berubah supaya LCD tidak flicker.
+
 void tulisLcd(const String& line1, const String& line2, bool paksa) {
   String baris1 = rapikanBaris(line1);
   String baris2 = rapikanBaris(line2);
@@ -842,8 +830,8 @@ void tampilkanPesan(const String& line1, const String& line2, unsigned long dura
   tulisLcd(pesanBaris1, pesanBaris2, true);
 }
 
-// Kesalahan yang tetap tampil sampai ada polling sukses (atau tap untuk
-// mencoba ulang). Ini mencegah layar terlihat "macet" tanpa penjelasan.
+
+
 void tampilkanKesalahan(const String& line1, const String& line2) {
   errorBaris1 = line1;
   errorBaris2 = line2;
@@ -853,7 +841,7 @@ void tampilkanKesalahan(const String& line1, const String& line2) {
   Serial.printf("[LCD] ERROR: %s | %s\n", line1.c_str(), line2.c_str());
 }
 
-// ======================= BUZZER & LED =======================
+
 void beep(uint16_t frequency, uint16_t durationMs) {
 #if BUZZER_ACTIVE
   (void)frequency;
@@ -867,7 +855,7 @@ void beep(uint16_t frequency, uint16_t durationMs) {
 #endif
 }
 
-// Nyalakan buzzer tanpa memblokir loop; dimatikan oleh updateBuzzer().
+
 void beepMulai(uint16_t frequency, unsigned long durationMs) {
 #if BUZZER_ACTIVE
   (void)frequency;

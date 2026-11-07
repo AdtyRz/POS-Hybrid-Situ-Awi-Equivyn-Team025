@@ -6,6 +6,7 @@ use App\Models\Kategori;
 use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
+use App\Models\SesiMeja;
 use App\Models\User;
 use App\Services\PesananService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -328,6 +329,100 @@ class KasirMultiOrderLockTest extends TestCase
 
         $this->assertSame(Pesanan::STATUS_DIPROSES, $pesanan->fresh()->status_pesanan);
         $this->assertNull($pesanan->fresh()->void_at);
+    }
+
+    public function test_kartu_kasir_tetap_menampilkan_sesi_setelah_semua_pesanan_selesai(): void
+    {
+        $this->withoutVite();
+
+        $kasir = $this->kasir();
+        $meja = $this->meja('LB-74');
+        $menu = $this->menu(10000);
+
+        $sesi = SesiMeja::aktifUntuk($meja);
+        $sesi->update(['dibuka_pada' => now()->subMinutes(10)]);
+
+        $pesanan = $this->pesanan($meja, $menu, 2, ['nama_pelanggan' => 'Tamu Sesi']);
+        $this->lunasi($pesanan);
+        $pesanan->update(['status_pesanan' => Pesanan::STATUS_SELESAI]);
+
+        $response = $this->actingAs($kasir)->get(route('kasir.dashboard'));
+        $response->assertOk();
+
+        $saung = collect($response->viewData('saungsJson'))
+            ->firstWhere('id', $meja->kode_meja);
+
+
+
+        $this->assertSame('paid', $saung['status']);
+        $this->assertTrue($saung['sessionOccupied']);
+        $this->assertTrue($saung['allOrdersPaid']);
+        $this->assertSame(1, $saung['sessionOrderCount']);
+        $this->assertSame(0, $saung['orderCount']);
+        $this->assertSame(20000.0, (float) $saung['total']);
+        $this->assertSame($pesanan->kode_pesanan, $saung['kodePesanan']);
+        $this->assertSame('Tamu Sesi', $saung['customer']);
+        $this->assertTrue($saung['hasReceiptOrders']);
+        $this->assertSame('terisi', $meja->fresh()->status_meja);
+    }
+
+    public function test_halaman_sesi_kasir_tetap_menampilkan_pesanan_selesai(): void
+    {
+        $kasir = $this->kasir();
+        $meja = $this->meja('LB-75');
+        $menu = $this->menu();
+
+        SesiMeja::aktifUntuk($meja);
+
+        $pesanan = $this->pesanan($meja, $menu, 1, ['nama_pelanggan' => 'Tamu Selesai']);
+        $this->lunasi($pesanan);
+        $pesanan->update(['status_pesanan' => Pesanan::STATUS_SELESAI]);
+
+        $response = $this->actingAs($kasir)
+            ->get(route('kasir.session.index'))
+            ->assertOk()
+            ->assertSee('Tamu Selesai');
+
+        $daftarPesanan = $response->viewData('pesananSesi');
+        $daftarMeja = $response->viewData('meja');
+        $mejaTampil = $daftarMeja->firstWhere('id', $meja->id);
+
+        $this->assertCount(1, $daftarPesanan[$meja->id]);
+        $this->assertSame('terisi', $mejaTampil->status_meja);
+        $this->assertSame(
+            $pesanan->kode_pesanan,
+            $daftarPesanan[$meja->id]->first()->kode_pesanan,
+        );
+    }
+
+    public function test_sesi_yang_diakhiri_baru_mengosongkan_kartu_kasir(): void
+    {
+        $this->withoutVite();
+
+        $kasir = $this->kasir();
+        $meja = $this->meja('LB-76');
+        $menu = $this->menu(10000);
+
+        $sesi = SesiMeja::aktifUntuk($meja);
+        $sesi->update(['dibuka_pada' => now()->subMinutes(10)]);
+
+        $pesanan = $this->pesanan($meja, $menu, 1);
+        $this->lunasi($pesanan);
+        $pesanan->update([
+            'status_pesanan' => Pesanan::STATUS_SELESAI,
+            'waktu_pesan' => now()->subMinutes(5),
+        ]);
+
+        SesiMeja::putuskanSesi($meja);
+
+        $response = $this->actingAs($kasir)->get(route('kasir.dashboard'));
+        $saung = collect($response->viewData('saungsJson'))
+            ->firstWhere('id', $meja->kode_meja);
+
+        $this->assertSame('empty', $saung['status']);
+        $this->assertFalse($saung['sessionOccupied']);
+        $this->assertSame(0, $saung['sessionOrderCount']);
+        $this->assertSame('kosong', $meja->fresh()->status_meja);
     }
 
     public function test_total_tagihan_meja_hanya_menghitung_pesanan_aktif(): void

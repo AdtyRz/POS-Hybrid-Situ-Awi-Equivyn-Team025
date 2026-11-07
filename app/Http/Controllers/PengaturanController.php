@@ -25,6 +25,15 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PengaturanController extends Controller
 {
+
+
+
+    private const KOLOM_RAHASIA_CADANGAN = [
+        'users' => ['password', 'remember_token'],
+        'meja_makan' => ['qr_token', 'id_device'],
+        'sesi_meja' => ['kode_unik'],
+    ];
+
     public function index(): View
     {
         $profil = collect(Pengaturan::DEFAULTS)
@@ -182,7 +191,7 @@ class PengaturanController extends Controller
             ->with('sukses', 'Pengaturan sistem berhasil disimpan.');
     }
 
-    public function unggahLogo(Request $request): RedirectResponse
+    public function unggahLogo(Request $request): RedirectResponse|JsonResponse
     {
         $request->validate([
             'logo' => [
@@ -225,9 +234,21 @@ class PengaturanController extends Controller
             }
         }
 
+        $pesan = 'Logo restoran berhasil diperbarui dan akan dipakai pada struk.';
+
+        if ($request->expectsJson() || $request->header('X-Admin-Ajax') === '1') {
+            return response()
+                ->json([
+                    'success' => true,
+                    'message' => $pesan,
+                    'logo_url' => Pengaturan::logoUrl(),
+                ])
+                ->header('Cache-Control', 'no-store, private, max-age=0');
+        }
+
         return redirect()
             ->route('admin.pengaturan-sistem')
-            ->with('sukses', 'Logo restoran berhasil diperbarui dan akan dipakai pada struk.');
+            ->with('sukses', $pesan);
     }
 
     public function diagnostik(): JsonResponse
@@ -235,10 +256,10 @@ class PengaturanController extends Controller
         return response()->json($this->diagnostikData());
     }
 
-    /**
-     * Uji endpoint status meja dari halaman admin. Endpoint perangkat asli
-     * tetap memakai token IoT; route ini memakai sesi admin yang sudah login.
-     */
+
+
+
+
     public function statusMejaIot(IotStatusService $service): JsonResponse
     {
         return response()
@@ -293,10 +314,20 @@ class PengaturanController extends Controller
                 continue;
             }
 
+            $kolomRahasia = self::KOLOM_RAHASIA_CADANGAN[$nama] ?? [];
+
             $cadangan['tabel'][$nama] = DB::table($nama)
                 ->orderBy('id')
                 ->get()
-                ->map(fn ($baris) => (array) $baris)
+                ->map(function ($baris) use ($kolomRahasia) {
+                    $data = (array) $baris;
+
+                    foreach ($kolomRahasia as $kolom) {
+                        unset($data[$kolom]);
+                    }
+
+                    return $data;
+                })
                 ->all();
         }
 
@@ -307,6 +338,7 @@ class PengaturanController extends Controller
             echo $json;
         }, $namaFile, [
             'Content-Type' => 'application/json; charset=UTF-8',
+            'Cache-Control' => 'no-store, private, max-age=0',
         ]);
     }
 

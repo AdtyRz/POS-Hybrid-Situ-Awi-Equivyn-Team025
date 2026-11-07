@@ -167,7 +167,7 @@
                 <div class="flex gap-3">
                     <div class="flex flex-col items-center">
                         <span
-                            class="w-7 h-7 rounded-full {{ $tahap >= 3 ? 'bg-forest-600 text-white' : 'bg-stone-200 text-stone-400' }} flex items-center justify-center">
+                            class="w-7 h-7 rounded-full {{ $tahap >= 4 ? 'bg-forest-600 text-white' : ($tahap >= 3 ? 'bg-gold-500 text-white' : 'bg-stone-200 text-stone-400') }} flex items-center justify-center">
                             @if ($tahap >= 4)
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5"
                                     viewBox="0 0 24 24">
@@ -185,14 +185,51 @@
                             class="w-0.5 flex-1 {{ $tahap >= 4 ? 'bg-forest-600' : 'bg-stone-200' }} min-h-[28px]"></span>
                     </div>
                     <div class="pb-4">
-                        <p class="font-bold text-sm">Siap Diantarkan Pelayan</p>
+                        <div class="flex items-center gap-2">
+                            <p class="font-bold text-sm">Siap Diantarkan Pelayan</p>
+                            @if ($tahap === 3)
+                                <span
+                                    class="bg-gold-50 text-[#7a5c0f] text-[10px] font-bold rounded-full px-2.5 py-0.5">Aktif</span>
+                            @endif
+                        </div>
                         <p class="text-stone-500 text-xs">Penyajian dari meja pass bar</p>
                     </div>
                 </div>
                 <div class="flex gap-3">
                     <div class="flex flex-col items-center">
                         <span
-                            class="w-7 h-7 rounded-full {{ $tahap >= 4 ? 'bg-forest-600 text-white' : 'bg-stone-200 text-stone-400' }} flex items-center justify-center">
+                            class="w-7 h-7 rounded-full {{ $tahap >= 5 ? 'bg-forest-600 text-white' : ($tahap >= 4 ? 'bg-gold-500 text-white' : 'bg-stone-200 text-stone-400') }} flex items-center justify-center">
+                            @if ($tahap >= 5)
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            @else
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
+                                    viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="9" />
+                                    <path stroke-linecap="round" d="M12 7v5l3 2" />
+                                </svg>
+                            @endif
+                        </span>
+                        <span
+                            class="w-0.5 flex-1 {{ $tahap >= 5 ? 'bg-forest-600' : 'bg-stone-200' }} min-h-[28px]"></span>
+                    </div>
+                    <div class="pb-4">
+                        <div class="flex items-center gap-2">
+                            <p class="font-bold text-sm">Sedang Diantar ke Meja</p>
+                            @if ($tahap === 4)
+                                <span
+                                    class="bg-gold-50 text-[#7a5c0f] text-[10px] font-bold rounded-full px-2.5 py-0.5">Aktif</span>
+                            @endif
+                        </div>
+                        <p class="text-stone-500 text-xs">Pelayan sedang membawa pesanan ke saung Anda</p>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <div class="flex flex-col items-center">
+                        <span
+                            class="w-7 h-7 rounded-full {{ $tahap >= 5 ? 'bg-forest-600 text-white' : 'bg-stone-200 text-stone-400' }} flex items-center justify-center">
                             @if ($tahap >= 5)
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5"
                                     viewBox="0 0 24 24">
@@ -208,7 +245,13 @@
                         </span>
                     </div>
                     <div>
-                        <p class="font-bold text-sm">Pesanan Tiba di {{ $pesanan->meja->kode_meja }}</p>
+                        <div class="flex items-center gap-2">
+                            <p class="font-bold text-sm">Pesanan Tiba di {{ $pesanan->meja->kode_meja }}</p>
+                            @if ($tahap === 5)
+                                <span
+                                    class="bg-forest-100 text-forest-600 text-[10px] font-bold rounded-full px-2.5 py-0.5">Tiba</span>
+                            @endif
+                        </div>
                         <p class="text-stone-500 text-xs">Selamat menikmati hidangan khas Sunda!</p>
                     </div>
                 </div>
@@ -220,7 +263,6 @@
                 <span class="bg-white/15 text-[11px] font-bold rounded-full px-3 py-1">• HTTP Tersinkron</span>
             </div>
             <div class="font-mono text-[13px] mt-3 leading-relaxed text-forest-100">
-                <p>SAUNG-IOT-{{ str_replace('-', '', $pesanan->meja->kode_meja) }} // ESP32 CH-02 WIFI: -54dBm</p>
                 <p class="text-white font-bold tracking-widest">STATUS: {{ strtoupper($pesanan->status_pesanan) }}</p>
                 <p>{{ $pesanan->meja->kode_meja }} &nbsp;&nbsp; {{ now('Asia/Jakarta')->format('H:i') }} WIB</p>
             </div>
@@ -309,7 +351,7 @@
         <script>
             let checkCount = 0;
             const maxChecks = 200;
-            const qrisStatusUrl = "{{ route('emenu.qris.status', $pesanan->kode_pesanan) }}";
+            const qrisStatusUrl = @json($qrisStatusUrl);
             const qrTtl = {{ (int) ($qrisTtl ?? 300) }};
             let remaining = qrTtl;
 

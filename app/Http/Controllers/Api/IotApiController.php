@@ -39,10 +39,10 @@ class IotApiController extends Controller
             ->header('Cache-Control', 'no-store, private, max-age=0');
     }
 
-    /**
-     * Panggilan pelayan dari perangkat IoT. Perangkat wajib mengirim kode sesi
-     * yang sedang tampil di LCD. Kode sesi lama otomatis ditolak.
-     */
+
+
+
+
     public function panggilPelayan(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -131,6 +131,16 @@ class IotApiController extends Controller
             'status_panggilan' => 'ditangani',
             'waktu_selesai' => now(),
         ]);
+
+        $log->loadMissing('meja');
+
+        Realtime::emit(new PanggilanPelayan([
+            'id' => $log->id,
+            'meja_id' => $log->meja_id,
+            'meja' => $log->meja?->kode_meja,
+            'area' => $log->meja?->area,
+            'status_panggilan' => 'ditangani',
+        ]));
 
         return ApiResponse::success($log->fresh());
     }

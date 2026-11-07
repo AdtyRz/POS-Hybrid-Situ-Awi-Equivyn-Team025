@@ -26,9 +26,9 @@ Sistem Point of Sale (POS) Hybrid & IoT terintegrasi untuk UMKM Kuliner / Wisata
 ## 🛠️ Panduan Instalasi Local
 
 ### 1. Prasyarat
-- **PHP**: `>= 8.5`
+- **PHP**: `>= 8.3`
 - **Composer**: `>= 2.x`
-- **Node.js**: `>= 18.x` & **npm**
+- **Node.js**: `20.19+` atau `22.12+` & **npm**
 
 ### 2. Clone & Install Dependency
 ```bash
@@ -39,6 +39,20 @@ cd POS-Hybrid-Situ-Awi-Equivyn-Team025
 composer install
 npm install
 ```
+
+### 3. Konfigurasi, Migrasi & Seed
+
+```bash
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+```
+
+Seeder staf memakai sandi terpisah per peran melalui `.env`:
+`SEED_ADMIN_PASSWORD`, `SEED_KASIR_PASSWORD`, `SEED_PELAYAN_PASSWORD`,
+`SEED_KOKI_PASSWORD`, dan `SEED_BARISTA_PASSWORD`. Di lingkungan `local`/`testing`,
+variabel yang kosong akan diisi sandi acak unik dan ditampilkan di console saat
+seeder dijalankan. Di luar `local`/`testing`, semua variabel tersebut wajib diisi.
 
 ---
 
@@ -122,13 +136,20 @@ dapat memesan.
   berakhir — bukan lewat tombol manual. Kode baru dijamin berbeda dari kode sesi sebelumnya.
 - **Gate verifikasi** berlaku pada e-menu, `checkout`, `pelacakan`, dan **semua halaman detail
   pesanan** (`status`, `verifikasi`, `bayar-tunai`, polling QRIS). Halaman detail hanya bisa
-  dibuka bila ada bukti akses yang cocok: cookie sesi meja, parameter `kode_saung` sesi aktif,
-  atau kode pesanan yang tersimpan di riwayat browser. Pesanan juga harus dibuat pada sesi
-  aktif tersebut. Fallback `kode_saung` dan riwayat browser dipakai agar status pembayaran tetap
-  bisa dibuka setelah kasir menutup sesi atau cookie browser hilang.
+  dibuka bila ada bukti akses yang cocok: cookie sesi meja, kode pesanan yang tersimpan di
+  riwayat browser, atau URL status bertanda tangan sementara yang diterbitkan setelah
+  pembayaran terverifikasi. Pesanan juga harus dibuat pada sesi aktif tersebut. Kode saung
+  tidak pernah diterima dari query string atau header, sehingga URL yang bocor tidak bisa
+  dipakai ulang sebagai kredensial.
 - Verifikasi disimpan di session dengan key `sesi_meja_{id}`, dibandingkan dengan sesi aktif
   saat ini; begitu sesi ditutup, pelanggan otomatis diminta memasukkan kode baru. Riwayat
   pesanan tamu sebelumnya juga dihapus saat sesi baru diverifikasi.
+- **Satu browser hanya terhubung ke satu meja.** Setelah pelanggan membuka LB-01, percobaan
+  membuka meja lain (mis. LB-02) lewat PIN, QR, atau URL langsung akan ditolak dan diarahkan
+  kembali ke beranda dengan pesan kesalahan.
+- Tombol panah kembali di header e-menu menjadi tombol **keluar pelanggan** (tanpa teks
+  tambahan). Tombol ini menghapus verifikasi meja/riwayat di browser lalu membuka beranda
+  `GET /` (bukan halaman login staf) melalui `POST /keluar`.
 - Session ID dirotasi setelah kode saung benar untuk mencegah session fixation. Endpoint
   `buka` dibatasi 5 percobaan/menit, dan halaman pesanan memakai header `no-store`.
 
@@ -142,6 +163,9 @@ dapat memesan.
   Tombol **Akhiri Sesi** selalu memunculkan popup konfirmasi **Tidak** / **Ya, Akhiri Sesi**
   sebelum sesi ditutup. Sesi dengan tagihan belum lunas ditolak dan popup menampilkan pesan
   kesalahan.
+- Status meja di halaman pelayan (Saung dan Panggilan) dihitung dari isi sesi berjalan,
+  termasuk pesanan yang sudah selesai/dibayar. Meja baru kembali **Tersedia** setelah sesi
+  ditutup dan kode baru dibuat.
 
 ### Integrasi IoT
 
@@ -152,7 +176,7 @@ Endpoint API untuk perangkat IoT meja menyertakan kode sesi dan **wajib** mengir
 - `GET /api/iot/meja/{ident}` — detail satu meja (dicari via `id_device` atau `kode_meja`) + `kode_sesi`,
   `fase` (`standby`/`pembayaran`/`lunas`), `metode_pembayaran` (`tunai`/`qris`/`campuran`),
   `semua_lunas`, `pesanan[]` (kode, status pesanan/pembayaran, metode, total) pada sesi berjalan,
-  `total_bayar`, dan `jumlah_pesanan`.
+  `total_bayar`, `jumlah_pesanan`, dan `jumlah_selesai`.
 - `POST /api/iot/panggil-pelayan` — body `{"kode_meja":"LB-01","kode_sesi":"1234"}`. Kode sesi
   harus kode yang sedang aktif; kode lama ditolak.
 
@@ -201,11 +225,10 @@ Panduan wiring, library, upload, dan troubleshooting ada di
 `GET /api/v1/pesanan/{kode}` tidak lagi publik. Akses diberikan bila salah satu terpenuhi:
 
 1. Login staf aktif (admin/kasir/pelayan/koki/barista), atau
-2. Query/header `qr_token` / `X-QR-Token` milik meja, atau
-3. Query/header `kode_saung` / `X-Kode-Saung` yang cocok dengan sesi aktif.
+2. Query/header `qr_token` / `X-QR-Token` milik meja.
 
-Pesanan juga harus dibuat di dalam sesi meja yang sedang aktif. Respons tidak lagi memuat
-`qr_token`/`id_device`.
+Kode saung tidak diterima sebagai kredensial API. Pesanan juga harus dibuat di dalam sesi
+meja yang sedang aktif. Respons tidak lagi memuat `qr_token`/`id_device`.
 
 ### KDS API per Stasiun
 

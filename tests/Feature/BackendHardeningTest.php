@@ -203,7 +203,7 @@ class BackendHardeningTest extends TestCase
             ['asal' => 'kasir', 'metode' => 'tunai', 'kasir_id' => $kasir->id]
         );
 
-        // Stok baru dipotong setelah pembayaran.
+
         app(StokService::class)->potongSetelahPembayaran($pesanan, $kasir->id);
         $pesanan->update(['status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR]);
 

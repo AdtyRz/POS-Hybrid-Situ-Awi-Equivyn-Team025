@@ -9,10 +9,10 @@ use App\Models\SesiMeja;
 
 class IotStatusService
 {
-    /**
-     * Status semua meja untuk LCD/ESP32. Endpoint pemanggilnya wajib memakai
-     * token IoT sehingga kode sesi tidak pernah terbuka untuk publik.
-     */
+
+
+
+
     public function statusSemuaMeja(): array
     {
         $meja = MejaMakan::select('id', 'kode_meja', 'area', 'kapasitas', 'status_meja')
@@ -43,9 +43,9 @@ class IotStatusService
         ];
     }
 
-    /**
-     * Status satu meja berdasarkan id_device atau kode_meja.
-     */
+
+
+
     public function detailMeja(string $ident): ?array
     {
         $meja = MejaMakan::where('id_device', $ident)
@@ -65,22 +65,32 @@ class IotStatusService
             ->orderByDesc('waktu_pesan')
             ->get();
 
-        // LCD hanya menampilkan progres pesanan yang masih berjalan. Pesanan
-        // yang sudah selesai tetap dihitung untuk total tagihan sesi, tetapi
-        // tidak boleh membuat status "Diproses (2)" terus muncul setelah
-        // pelayan menyelesaikan pengantaran.
+
+
+
+
         $pesananAktif = $pesanan
             ->reject(fn (Pesanan $p) => $p->status_pesanan === Pesanan::STATUS_SELESAI)
+            ->sortBy(fn (Pesanan $p) => match ($p->status_pesanan) {
+                Pesanan::STATUS_DIANTAR => 0,
+                Pesanan::STATUS_SIAP => 1,
+                Pesanan::STATUS_DIPROSES => 2,
+                default => 3,
+            })
+            ->values();
+
+        $pesananSelesai = $pesanan
+            ->filter(fn (Pesanan $p) => $p->status_pesanan === Pesanan::STATUS_SELESAI)
             ->values();
 
         $belumBayar = $pesanan->filter(
             fn (Pesanan $p) => $p->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR
         );
 
-        // Fase LCD:
-        // - standby   : belum ada pesanan pada sesi ini, layar hanya menampilkan kode.
-        // - pembayaran: ada pesanan yang belum lunas, layar menampilkan metode bayar.
-        // - lunas     : semua pesanan sudah dibayar, layar bergilir status/total/kode.
+
+
+
+
         $fase = 'standby';
         $metodePembayaran = null;
 
@@ -111,7 +121,7 @@ class IotStatusService
                 'id' => $meja->id,
                 'kode_meja' => $meja->kode_meja,
                 'area' => $meja->area,
-                'status_meja' => $meja->status_meja,
+                'status_meja' => $pesanan->isNotEmpty() ? 'terisi' : $meja->status_meja,
                 'kode_sesi' => $sesi->kode_unik,
                 'fase' => $fase,
                 'metode_pembayaran' => $metodePembayaran,
@@ -119,6 +129,7 @@ class IotStatusService
                 'semua_lunas' => $pesanan->isNotEmpty() && $belumBayar->isEmpty(),
                 'total_bayar' => (float) $pesanan->sum('total_bayar'),
                 'jumlah_pesanan' => $pesananAktif->count(),
+                'jumlah_selesai' => $pesananSelesai->count(),
                 'pesanan' => $pesananAktif->map(fn ($p) => [
                     'kode_pesanan' => $p->kode_pesanan,
                     'status_pesanan' => $p->status_pesanan,
@@ -130,10 +141,10 @@ class IotStatusService
         ];
     }
 
-    /**
-     * Konfigurasi ringan yang dibutuhkan LCD/ESP32. Dikirim bersama detail
-     * satu meja agar perangkat tidak perlu mengunduh status semua meja.
-     */
+
+
+
+
     private function konfigurasi(): array
     {
         return [

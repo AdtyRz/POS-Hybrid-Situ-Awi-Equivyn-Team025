@@ -362,6 +362,42 @@ class PelayanDashboardTest extends TestCase
         $this->assertSame('tersedia', $table['status']);
     }
 
+    public function test_meja_dengan_pesanan_selesai_dalam_sesi_tetap_terisi(): void
+    {
+        $this->withoutVite();
+
+        $pelayan = $this->pelayan();
+        $meja = $this->meja('LB-08', 'Lesehan Bawah');
+        $menu = $this->menu('Ayam Bakar', 'dapur');
+
+        $sesi = SesiMeja::aktifUntuk($meja);
+        $pesanan = $this->pesanan($meja, $menu, Pesanan::STATUS_SELESAI);
+        $pesanan->update([
+            'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+            'waktu_pesan' => $sesi->dibuka_pada->copy()->addMinute(),
+        ]);
+
+        $halaman = $this->actingAs($pelayan)
+            ->get(route('pelayan.tab-saung'))
+            ->assertOk()
+            ->assertViewHas('terisiCount', 1)
+            ->assertViewHas('tersediaCount', 0);
+
+        $table = collect($halaman->viewData('tables'))->firstWhere('id', $meja->id);
+
+        $this->assertNotNull($table);
+        $this->assertSame('terisi', $table['status']);
+        $this->assertSame('Terisi', $table['status_label']);
+        $this->assertTrue($table['session_occupied']);
+        $this->assertSame(1, $table['order_count']);
+        $this->assertSame('Rp 25.000', $table['total_format']);
+
+        $this->actingAs($pelayan)
+            ->get(route('pelayan.notifikasi-panggilan'))
+            ->assertOk()
+            ->assertSee('Terisi');
+    }
+
     public function test_tab_saung_tidak_menghitung_sesi_lintas_hari_sebagai_meja_terisi(): void
     {
         $this->withoutVite();
@@ -424,7 +460,7 @@ class PelayanDashboardTest extends TestCase
         $this->assertDatabaseMissing('pembayaran', ['pesanan_id' => $pesanan->id]);
         $this->assertSame(6, (int) $menu->fresh()->stok_menu);
 
-        // KDS hanya membaca status menunggu/diproses/siap.
+
         $this->assertFalse(
             Pesanan::whereKey($pesanan->id)
                 ->whereIn('status_pesanan', [Pesanan::STATUS_MENUNGGU, Pesanan::STATUS_DIPROSES, Pesanan::STATUS_SIAP])
@@ -446,7 +482,9 @@ class PelayanDashboardTest extends TestCase
                 'transaction_status' => 'pending',
             ]);
             $mock->shouldReceive('qrisExpiryMinutes')->andReturn(5);
-            $mock->shouldReceive('getTransactionStatus')->once()->andReturn((object) [
+            $mock->shouldReceive('getTransactionStatus')->once()->andReturnUsing(fn ($orderId) => (object) [
+                'order_id' => $orderId,
+                'gross_amount' => '75000.00',
                 'transaction_status' => 'settlement',
                 'fraud_status' => 'accept',
                 'transaction_id' => 'trx-settle',
@@ -562,7 +600,7 @@ class PelayanDashboardTest extends TestCase
             ->assertDontSee('Selesai Diantar');
     }
 
-    public function test_pelayan_menyelesaikan_pengantaran_dan_pesanan_keluar_dari_lcd(): void
+    public function test_pelayan_menyelesaikan_pengantaran_dan_pesanan_tetap_di_sesi(): void
     {
         $this->withoutVite();
 
@@ -589,7 +627,8 @@ class PelayanDashboardTest extends TestCase
             ->assertJsonPath('pesanan.status_pesanan', Pesanan::STATUS_SELESAI);
 
         $this->assertSame(Pesanan::STATUS_SELESAI, $pesanan->fresh()->status_pesanan);
-        $this->assertSame('kosong', $meja->fresh()->status_meja);
+
+        $this->assertSame('terisi', $meja->fresh()->status_meja);
 
         $this->actingAs($pelayan)
             ->get(route('pelayan.tab-antar'))
@@ -600,6 +639,8 @@ class PelayanDashboardTest extends TestCase
 
         $this->assertSame('lunas', $lcd['data']['fase']);
         $this->assertSame(0, $lcd['data']['jumlah_pesanan']);
+        $this->assertSame(1, $lcd['data']['jumlah_selesai']);
+        $this->assertTrue($lcd['data']['ada_pesanan']);
         $this->assertCount(0, $lcd['data']['pesanan']);
         $this->assertSame(25000.0, (float) $lcd['data']['total_bayar']);
     }

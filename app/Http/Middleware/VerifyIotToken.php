@@ -8,10 +8,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 class VerifyIotToken
 {
-    /**
-     * Semua endpoint perangkat IoT wajib membawa token server yang sama.
-     * Token tidak boleh ditaruh di URL agar tidak tercatat di access log.
-     */
+
+
+
+
     public function handle(Request $request, Closure $next): Response
     {
         $tokenServer = trim((string) config('services.iot.token'));
