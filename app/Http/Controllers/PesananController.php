@@ -37,8 +37,7 @@ class PesananController extends Controller
         };
 
         $printLogo = filter_var($nilai('print_logo', '1'), FILTER_VALIDATE_BOOLEAN);
-        $logoPath = trim((string) $nilai('logo_path', ''));
-        $logoSrc = $logoPath !== '' ? asset($logoPath) : asset('asset/Logo.png');
+        $logoSrc = Pengaturan::mediaUrl((string) $nilai('logo_path', ''));
         $receiptHeader = $nilai('receipt_header', 'Saung Situ Awi - Ciwidey');
         $receiptFooter = $nilai('struk_footer', 'Hatur Nuhun Parantos Sumping');
         $restoAddress = $nilai('alamat_resto', 'Jl. Raya Situ Awi Km. 4, Ciwidey, Kabupaten Bandung');

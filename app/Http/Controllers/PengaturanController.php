@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -213,24 +214,29 @@ class PengaturanController extends Controller
 
         $berkas = $request->file('logo');
         $nama = 'logo-' . now('Asia/Jakarta')->format('YmdHis') . '-' . Str::lower(Str::random(6)) . '.' . strtolower($berkas->getClientOriginalExtension());
-        $direktori = public_path('asset/resto');
+        $pathBaru = $berkas->storeAs('logo', $nama);
 
-        if (! is_dir($direktori)) {
-            mkdir($direktori, 0755, true);
+        if (! is_string($pathBaru) || $pathBaru === '') {
+            throw ValidationException::withMessages([
+                'logo' => 'Logo gagal disimpan. Silakan coba lagi.',
+            ]);
         }
 
-        $berkas->move($direktori, $nama);
         $lama = Pengaturan::nilai('logo_path', '');
 
-        Pengaturan::simpanBanyak(['logo_path' => 'asset/resto/' . $nama]);
+        Pengaturan::simpanBanyak(['logo_path' => $pathBaru]);
         Cache::forget('realtime-version');
         Realtime::emit(new PengaturanDiperbarui(['logo_path']));
 
-        if (is_string($lama) && str_starts_with($lama, 'asset/resto/')) {
-            $berkasLama = public_path($lama);
+        if (is_string($lama) && $lama !== '' && $lama !== $pathBaru && preg_match('#^https?://#i', $lama) !== 1) {
+            if (str_starts_with($lama, 'asset/resto/')) {
+                $berkasLama = public_path($lama);
 
-            if (is_file($berkasLama) && $berkasLama !== $direktori . DIRECTORY_SEPARATOR . $nama) {
-                @unlink($berkasLama);
+                if (is_file($berkasLama)) {
+                    @unlink($berkasLama);
+                }
+            } else {
+                Storage::disk()->delete($lama);
             }
         }
 
