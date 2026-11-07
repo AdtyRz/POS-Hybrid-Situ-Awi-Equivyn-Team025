@@ -11,7 +11,7 @@
     <link href="{{ asset('fonts/fonts.css') }}" rel="stylesheet">
 @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         <script>
-            window.__CHANNELS__ = ['kasir', 'admin', 'menu'];
+            window.__CHANNELS__ = ['kasir', 'menu'];
         </script>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @else

@@ -2,7 +2,7 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -17,9 +17,9 @@ class PanggilanPelayan implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new Channel('pelayan'),
-            new Channel('kasir'),
-            new Channel('admin'),
+            new PrivateChannel('pelayan'),
+            new PrivateChannel('kasir'),
+            new PrivateChannel('admin'),
         ];
     }
 

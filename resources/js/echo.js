@@ -42,7 +42,7 @@ const emit = (name, payload) => {
 if (echo) {
     try {
         channels.forEach((channelName) => {
-            const channel = echo.channel(channelName);
+            const channel = echo.private(channelName);
             REALTIME_EVENTS.forEach((eventName) => {
                 channel.listen('.' + eventName, (payload) => emit(eventName, payload));
             });

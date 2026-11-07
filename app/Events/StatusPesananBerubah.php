@@ -2,7 +2,7 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -20,16 +20,16 @@ class StatusPesananBerubah implements ShouldBroadcastNow
         $kodeMeja = $this->pesanan['meja'] ?? '';
 
         $channels = [
-            new Channel('pesanan.' . $kode),
-            new Channel('kds.dapur'),
-            new Channel('kds.bar'),
-            new Channel('kasir'),
-            new Channel('pelayan'),
-            new Channel('admin'),
+            new PrivateChannel('pesanan.' . $kode),
+            new PrivateChannel('kds.dapur'),
+            new PrivateChannel('kds.bar'),
+            new PrivateChannel('kasir'),
+            new PrivateChannel('pelayan'),
+            new PrivateChannel('admin'),
         ];
 
         if ($kodeMeja !== '') {
-            $channels[] = new Channel('meja.' . $kodeMeja);
+            $channels[] = new PrivateChannel('meja.' . $kodeMeja);
         }
 
         return $channels;

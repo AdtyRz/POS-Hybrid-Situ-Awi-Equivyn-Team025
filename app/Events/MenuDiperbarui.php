@@ -2,7 +2,7 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -17,9 +17,9 @@ class MenuDiperbarui implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new Channel('menu'),
-            new Channel('kasir'),
-            new Channel('admin'),
+            new PrivateChannel('menu'),
+            new PrivateChannel('kasir'),
+            new PrivateChannel('admin'),
         ];
     }
 

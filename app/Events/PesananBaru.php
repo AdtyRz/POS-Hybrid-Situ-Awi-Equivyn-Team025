@@ -2,7 +2,7 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -17,18 +17,18 @@ class PesananBaru implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         $channels = [
-            new Channel('kds.dapur'),
-            new Channel('kds.bar'),
-            new Channel('kasir'),
-            new Channel('pelayan'),
-            new Channel('admin'),
-            new Channel('pesanan.' . ($this->pesanan['kode_pesanan'] ?? '')),
+            new PrivateChannel('kds.dapur'),
+            new PrivateChannel('kds.bar'),
+            new PrivateChannel('kasir'),
+            new PrivateChannel('pelayan'),
+            new PrivateChannel('admin'),
+            new PrivateChannel('pesanan.' . ($this->pesanan['kode_pesanan'] ?? '')),
         ];
 
         $kodeMeja = $this->pesanan['meja'] ?? '';
 
         if ($kodeMeja !== '') {
-            $channels[] = new Channel('meja.' . $kodeMeja);
+            $channels[] = new PrivateChannel('meja.' . $kodeMeja);
         }
 
         return $channels;
