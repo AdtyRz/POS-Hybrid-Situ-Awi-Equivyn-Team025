@@ -255,8 +255,6 @@ juga menyiarkan event realtime.
 
 ## 🤝 Komunitas & Dukungan
 
-- [Panduan Kontribusi](CONTRIBUTING.md) — alur branch, standar kode, test, dan pull request.
-- [Kode Etik](CODE_OF_CONDUCT.md) — aturan perilaku komunitas.
 - [Kebijakan Keamanan](SECURITY.md) — cara melaporkan celah keamanan secara privat.
 - [Dukungan](SUPPORT.md) — cara mendapatkan bantuan dan informasi yang perlu disertakan.
 - [FAQ](FAQ.md) — pertanyaan umum tentang instalasi, pembayaran, KDS, realtime, dan IoT.

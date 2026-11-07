@@ -30,7 +30,16 @@ Pastikan juga:
 | Pertanyaan penggunaan | GitHub Discussions bila tersedia, atau issue dengan label `question` |
 | Permintaan fitur | Buka issue dengan label `enhancement` |
 | Masalah keamanan | Ikuti [SECURITY.md](SECURITY.md), jangan buka issue publik |
-| Kontribusi kode | Baca [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Kontribusi kode | Buka pull request ke branch `feature/backend` |
+
+## Kontak Email
+
+Untuk pertanyaan yang tidak bersifat sensitif, hubungi:
+
+- [aditya.riqi1003@gmail.com](mailto:aditya.riqi1003@gmail.com)
+- [dfxyam269@gmail.com](mailto:dfxyam269@gmail.com)
+
+Jangan kirim laporan celah keamanan melalui email. Gunakan jalur privat di [SECURITY.md](SECURITY.md).
 
 ## Informasi yang Perlu Disertakan
 

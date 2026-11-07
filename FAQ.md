@@ -142,10 +142,9 @@ Jika `IOT_API_TOKEN` kosong, endpoint IoT mengembalikan `503`.
 
 ## Bagaimana cara berkontribusi atau melaporkan masalah?
 
-- Kontribusi kode: baca [CONTRIBUTING.md](CONTRIBUTING.md).
+- Kontribusi kode: buka pull request ke branch `feature/backend`.
 - Pertanyaan dan bug: baca [SUPPORT.md](SUPPORT.md).
 - Celah keamanan: ikuti [SECURITY.md](SECURITY.md) dan jangan membuka issue publik.
-- Aturan komunitas: baca [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ## Lisensi apa yang digunakan?
 
