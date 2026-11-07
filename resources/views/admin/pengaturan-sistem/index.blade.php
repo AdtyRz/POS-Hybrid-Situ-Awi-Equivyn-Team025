@@ -16,10 +16,10 @@
     testingMidtrans: false,
     pb1Enabled: true,
     serviceChargeEnabled: false,
-    midtransEnv: 'sandbox',
-    midtransMerchantId: 'G189204812',
-    midtransClientKey: 'SB-Mid-client-8XyZ90AkLmNoPqRs',
-    midtransServerKey: 'SB-Mid-server-1TuVwXyZ34567890',
+    midtransEnv: @js(config('midtrans.is_production', false) ? 'production' : 'sandbox'),
+    midtransMerchantId: @js((string) config('midtrans.merchant_id', '')),
+    midtransClientKey: @js((string) config('midtrans.client_key', '')),
+    midtransServerKey: '',
     qrisExpiry: 15,
     autoCancelExpired: true,
     buzzerDuration: 3,
@@ -748,6 +748,8 @@
                         <input 
                             type="password" 
                             x-model="midtransServerKey"
+                            placeholder="Tersimpan aman di server, tidak ditampilkan"
+                            autocomplete="new-password"
                             class="w-full bg-[#FCF9F2] border border-[#C0C9BF]/40 rounded-xl px-3.5 py-2.5 font-mono text-xs font-bold text-[#1C1C18] focus:outline-hidden focus:border-[#0B4D2B] shadow-inner">
                     </div>
                 </div>
