@@ -4,7 +4,10 @@ use App\Http\Controllers\Api\MidtransNotificationController;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Foundation\Events\DiagnosingHealth;
+use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -13,9 +16,18 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         channels: __DIR__.'/../routes/channels.php',
-        health: '/health',
+        health: '/aktif',
         then: function () {
 
+            PreventRequestsDuringMaintenance::except('/health');
+
+            Route::get('/health', function (Request $request) {
+                Event::dispatch(new DiagnosingHealth);
+
+                return $request->expectsJson()
+                    ? response()->json(['status' => 'up'])
+                    : response('OK', 200)->header('Content-Type', 'text/plain');
+            });
 
             Route::post('/midtrans/notification', [MidtransNotificationController::class, 'handle'])
                 ->name('midtrans.notification');
