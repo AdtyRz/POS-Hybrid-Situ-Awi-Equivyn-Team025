@@ -136,6 +136,16 @@ class KasirStrukTest extends TestCase
         $this->lunasi($baruDua);
         $baruDua->update(['waktu_pesan' => now()->subMinutes(5)]);
 
+        // Sesi historis ber-ID lebih besar (mis. hasil impor data) tidak boleh
+        // menggeser sesi aktif yang sedang dipakai kasir.
+        SesiMeja::create([
+            'meja_id' => $meja->id,
+            'kode_unik' => '8765',
+            'status' => 'selesai',
+            'dibuka_pada' => now()->subMinute(),
+            'ditutup_pada' => now(),
+        ]);
+
         $response = $this->actingAs($kasir)->get(route('kasir.dashboard'));
         $saung = collect($response->viewData('saungsJson'))
             ->firstWhere('id', $meja->kode_meja);

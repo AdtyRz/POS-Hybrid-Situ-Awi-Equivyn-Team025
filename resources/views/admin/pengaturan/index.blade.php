@@ -1406,6 +1406,8 @@
 
 </div>
 
+@include('partials.struk-thermal')
+
 <script>
     function pengaturanSistemApp() {
         return {
@@ -1695,51 +1697,42 @@
             },
 
             printSample() {
-                const baris = [
-                    this.receiptHeader || this.restoName,
-                    this.restoAddress,
-                    'Telp: ' + this.restoPhone,
-                    '--------------------------------',
-                    'Meja: S-04 (Saung 4)',
-                    'No: #SA-260901',
-                    '--------------------------------',
-                    '1x Nasi Liwet Kastrol      Rp 65.000',
-                    '1x Gurame Bakar Cobek      Rp 85.000',
-                    '2x Es Teh Manis             Rp 16.000',
-                    '--------------------------------',
-                    'SUBTOTAL:                 Rp 166.000',
-                    'TOTAL:                    Rp 166.000',
-                    '--------------------------------',
-                    this.receiptFooter,
-                ];
+                this.isPrintingSample = true;
 
-                const jendela = window.open('', '_blank', 'width=420,height=640');
+                const contoh = [{
+                    kode_pesanan: 'SA-260901',
+                    nama_pelanggan: 'Tamu Contoh',
+                    waktu_pesan: '09:15',
+                    metode_pembayaran: 'tunai',
+                    subtotal: 166000,
+                    total_bayar: 166000,
+                    items: [
+                        { name: 'Nasi Liwet Kastrol', qty: 1, price: 65000 },
+                        { name: 'Gurame Bakar Cobek', qty: 1, price: 85000 },
+                        { name: 'Es Teh Manis', qty: 2, price: 8000 },
+                    ],
+                }];
+
+                const jendela = window.cetakStrukThermal({
+                    paperSize: this.paperSize,
+                    logo: this.printLogo ? this.logoSrc : null,
+                    header: this.receiptHeader || this.restoName || 'Saung Situ Awi',
+                    address: this.restoAddress,
+                    phone: this.restoPhone,
+                    footer: this.receiptFooter,
+                    cashierName: 'Kasir Contoh',
+                    tableName: 'S-04 (Saung 4)',
+                    title: 'Pratinjau Struk Kasir',
+                    orders: contoh,
+                });
+
                 if (! jendela) {
+                    this.isPrintingSample = false;
                     this.showToast('Popup diblokir browser. Izinkan popup untuk mencetak.', true);
                     return;
                 }
 
-                const dokumen = jendela.document;
-                dokumen.title = 'Struk Uji Kasir';
-                const gaya = dokumen.createElement('style');
-                gaya.textContent = '@page{size:' + (this.paperSize || '80mm') + ' auto;margin:6mm 5mm}html,body{margin:0;padding:0}body{font-family:monospace;font-size:10.5px;color:#000;padding:0 2mm 4mm}.logo{display:block;margin:0 auto 8px;height:42px;max-width:52mm;width:auto;object-fit:contain}pre{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;margin:0;padding:0;font:inherit;line-height:1.45}@media screen{body{padding:16px}}';
-                dokumen.head.appendChild(gaya);
-
-                if (this.printLogo) {
-                    const logo = dokumen.createElement('img');
-                    logo.src = this.logoSrc;
-                    logo.alt = 'Logo ' + (this.restoName || 'Resto');
-                    logo.className = 'logo';
-                    dokumen.body.appendChild(logo);
-                }
-
-                const isi = dokumen.createElement('pre');
-                isi.textContent = baris.join('\\n');
-                dokumen.body.appendChild(isi);
-
-                const skrip = dokumen.createElement('script');
-                skrip.textContent = '(function(){let selesai=false;const cetak=()=>{if(selesai)return;selesai=true;window.focus();window.print();};const logo=document.querySelector("img.logo");if(logo){logo.addEventListener("load",cetak);logo.addEventListener("error",cetak);}window.addEventListener("load",cetak);setTimeout(cetak,900);})();';
-                dokumen.body.appendChild(skrip);
+                setTimeout(() => { this.isPrintingSample = false; }, 800);
             },
 
             showToast(pesan, error = false) {

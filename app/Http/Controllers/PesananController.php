@@ -96,10 +96,14 @@ class PesananController extends Controller
             ->get()
             ->groupBy('meja_id');
 
+        // Prioritaskan sesi aktif agar struk hanya memuat pesanan sesi berjalan,
+        // lalu fallback ke sesi terbaru untuk meja yang sedang kosong.
         $sesiTerakhir = SesiMeja::query()
             ->whereIn('meja_id', $mejaSemua->pluck('id'))
-            ->orderBy('id')
+            ->orderByRaw("CASE WHEN status = 'aktif' THEN 0 ELSE 1 END")
+            ->orderByDesc('id')
             ->get()
+            ->unique('meja_id')
             ->keyBy('meja_id');
 
         $tunggu = LogPanggilPelayan::where('status_panggilan', 'menunggu')

@@ -911,6 +911,8 @@
         </div>
     </div>
 
+    @include('partials.struk-thermal')
+
     <script>
         function kasirPosApp() {
             return {
@@ -1326,297 +1328,25 @@
                         return;
                     }
 
-                    const jendela = window.open('', '_blank', 'width=420,height=680');
+                    const jendela = window.cetakStrukThermal({
+                        paperSize: this.paperSize,
+                        logo: this.printLogo ? this.logoSrc : null,
+                        header: this.receiptHeader || 'SAUNG SITU AWI',
+                        address: this.restoAddress,
+                        phone: this.restoPhone,
+                        footer: this.receiptFooter,
+                        cashierName: this.cashierName,
+                        tableName: saung.name || saung.id,
+                        title: 'Struk ' + (saung.name || '') + ' (' + orders.length + ' pesanan)',
+                        orders: orders,
+                    });
+
                     if (! jendela) {
                         this.showToast('danger', 'Popup Diblokir', 'Izinkan popup browser untuk mencetak struk.');
                         return;
                     }
 
                     this.receiptModal.open = false;
-
-                    const dokumen = jendela.document;
-                    dokumen.title = 'Struk ' + (saung.name || '') + ' (' + orders.length + ' pesanan)';
-
-                    const paperSize = this.paperSize === '58mm' ? '58mm' : '80mm';
-                    const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (karakter) => ({
-                        '&': '&amp;',
-                        '<': '&lt;',
-                        '>': '&gt;',
-                        '"': '&quot;',
-                        "'": '&#039;',
-                    }[karakter]));
-
-                    const gayaHalaman = dokumen.createElement('style');
-                    gayaHalaman.id = 'page-size';
-                    gayaHalaman.textContent = `@page { size: ${paperSize} auto; margin: 0; }`;
-                    dokumen.head.appendChild(gayaHalaman);
-
-                    const gaya = dokumen.createElement('style');
-                    gaya.textContent = `
-                        * { box-sizing: border-box; }
-                        html, body { margin: 0; padding: 0; background: #fff; }
-                        body {
-                            width: ${paperSize};
-                            padding: ${paperSize === '58mm' ? '3mm 5mm 5mm' : '4mm 4mm 6mm'};
-                            color: #000;
-                            font-family: 'Courier New', Courier, monospace;
-                            font-size: ${paperSize === '58mm' ? '9px' : '10px'};
-                            line-height: 1.35;
-                            -webkit-print-color-adjust: exact;
-                            print-color-adjust: exact;
-                        }
-                        .receipt { width: 100%; }
-                        .logo {
-                            display: block;
-                            margin: 0 auto 2mm;
-                            max-width: 28mm;
-                            max-height: 14mm;
-                            object-fit: contain;
-                        }
-                        .brand {
-                            text-align: center;
-                            font-size: 13px;
-                            font-weight: 700;
-                            letter-spacing: 0.3px;
-                            text-transform: uppercase;
-                        }
-                        .address, .phone {
-                            text-align: center;
-                            font-size: 9px;
-                            line-height: 1.3;
-                        }
-                        .divider { border-top: 1px dashed #000; margin: 2mm 0; }
-                        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-                        .meta td { padding: 0.4mm 0; font-size: 9px; vertical-align: top; }
-                        .meta .label { width: 22mm; }
-                        .meta .sep { width: 3mm; }
-                        .meta .value { overflow-wrap: anywhere; word-break: break-word; }
-                        .items th {
-                            padding: 0 0 1mm;
-                            border-bottom: 1px dashed #000;
-                            font-size: 8.5px;
-                            font-weight: 700;
-                            text-align: left;
-                            text-transform: uppercase;
-                        }
-                        .items td { padding: 1mm 0 0; font-size: 9.5px; vertical-align: top; }
-                        .items .qty { width: 9mm; }
-                        .items .nama { padding-right: 2mm; overflow-wrap: anywhere; word-break: break-word; }
-                        .items .harga { width: 22mm; text-align: right; white-space: nowrap; }
-                        .items .unit { margin-top: 0.4mm; font-size: 8px; color: #333; }
-                        .items .empty { text-align: center; }
-                        .summary td { padding: 0.6mm 0; font-size: 9.5px; }
-                        .summary .nominal { text-align: right; white-space: nowrap; }
-                        .summary .total td {
-                            padding-top: 1.5mm;
-                            border-top: 1px solid #000;
-                            font-size: 11px;
-                            font-weight: 700;
-                        }
-                        .status {
-                            margin: 1mm 0;
-                            text-align: center;
-                            font-size: 11px;
-                            font-weight: 700;
-                            letter-spacing: 1px;
-                        }
-                        .payment { text-align: center; font-size: 9px; }
-                        .footer {
-                            text-align: center;
-                            font-size: 9px;
-                            line-height: 1.4;
-                            white-space: pre-line;
-                            overflow-wrap: anywhere;
-                        }
-                        .paper-58 .brand { font-size: 11px; }
-                        .paper-58 .meta .label { width: 17mm; }
-                        .paper-58 .items .qty { width: 7mm; }
-                        .paper-58 .items .harga { width: 18mm; }
-                        @media screen { body { margin: 0 auto; } }
-                    `;
-                    dokumen.head.appendChild(gaya);
-                    dokumen.body.className = paperSize === '58mm' ? 'paper-58' : 'paper-80';
-
-
-
-                    const itemMap = new Map();
-
-                    orders.forEach((order) => {
-                        (order.items || []).forEach((item) => {
-                            const harga = Number(item.price || 0);
-                            const kunci = String(item.name || 'Menu') + '|' + harga;
-                            const baris = itemMap.get(kunci) || {
-                                name: item.name || 'Menu',
-                                qty: 0,
-                                price: harga,
-                            };
-
-                            baris.qty += Number(item.qty || 0);
-                            itemMap.set(kunci, baris);
-                        });
-                    });
-
-                    const itemRows = Array.from(itemMap.values()).map((item) => {
-                        const unit = item.qty > 1
-                            ? `<div class="unit">${esc(this.formatRupiah(item.price))} / item</div>`
-                            : '';
-
-                        return `
-                            <tr>
-                                <td class="qty">${esc(item.qty)}x</td>
-                                <td class="nama">${esc(item.name)}${unit}</td>
-                                <td class="harga">${esc(this.formatNumber(item.qty * item.price))}</td>
-                            </tr>
-                        `;
-                    }).join('');
-
-                    const subtotal = orders.reduce((total, order) => {
-                        const dariOrder = Number(order.subtotal || 0)
-                            || (order.items || []).reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0);
-
-                        return total + dariOrder;
-                    }, 0);
-
-                    const total = orders.reduce((sum, order) => sum + Number(order.total_bayar || 0), 0);
-                    const namaPemesan = [...new Set(orders.map(order => order.nama_pelanggan || 'Tamu'))].join(', ');
-                    const waktuList = orders.map(order => order.waktu_pesan).filter(Boolean);
-                    const waktu = waktuList.length > 1 && waktuList[0] !== waktuList[waktuList.length - 1]
-                        ? waktuList[0] + ' s/d ' + waktuList[waktuList.length - 1]
-                        : (waktuList[0] || this.waktuSekarangWib());
-
-                    const metode = [...new Set(orders.map(order => order.metode_pembayaran).filter(Boolean))]
-                        .map((metode) => metode === 'qris' ? 'QRIS Midtrans' : (metode === 'tunai' ? 'Tunai Kasir' : metode))
-                        .join(' / ');
-
-                    const kodeOrder = orders.map(order => '#' + order.kode_pesanan).join(' / ');
-                    const metaRows = [
-                        ['No. Order', kodeOrder],
-                        ['Pemesan', namaPemesan || 'Tamu'],
-                        ['Meja', saung.name || saung.id],
-                        ['Kasir', this.cashierName],
-                        ['Waktu', waktu + ' WIB'],
-                        ['Pembayaran', metode || '-'],
-                    ].map(([label, value]) => `
-                        <tr>
-                            <td class="label">${esc(label)}</td>
-                            <td class="sep">:</td>
-                            <td class="value">${esc(value)}</td>
-                        </tr>
-                    `).join('');
-
-                    const bagian = dokumen.createElement('section');
-                    bagian.className = 'receipt';
-                    bagian.innerHTML = `
-                        ${this.printLogo ? `<img class="logo" src="${esc(this.logoSrc)}" alt="Logo">` : ''}
-                        <div class="brand">${esc((this.receiptHeader || 'SAUNG SITU AWI').toUpperCase())}</div>
-                        ${this.restoAddress ? `<div class="address">${esc(this.restoAddress)}</div>` : ''}
-
-                        ${this.restoPhone ? `<div class="phone">Telp: ${esc(this.restoPhone)}</div>` : ''}
-                        <div class="divider"></div>
-
-                        <table class="meta"><tbody>${metaRows}</tbody></table>
-                        <div class="divider"></div>
-
-                        <table class="items">
-                            <thead>
-                                <tr>
-                                    <th class="qty">Qty</th>
-
-                                    <th class="nama">Item</th>
-
-                                    <th class="harga">Jumlah</th>
-
-                                </tr>
-
-                            </thead>
-
-                            <tbody>${itemRows || '<tr><td class="empty" colspan="3">Tidak ada item</td></tr>'}</tbody>
-
-                        </table>
-
-                        <div class="divider"></div>
-
-                        <table class="summary">
-                            <tbody>
-                                <tr>
-                                    <td>Subtotal</td>
-
-                                    <td class="nominal">${esc(this.formatRupiah(subtotal))}</td>
-
-                                </tr>
-
-                                <tr class="total">
-                                    <td>TOTAL</td>
-
-                                    <td class="nominal">${esc(this.formatRupiah(total))}</td>
-
-                                </tr>
-
-                            </tbody>
-
-                        </table>
-
-                        <div class="divider"></div>
-
-                        <div class="status">LUNAS</div>
-
-                        ${metode ? `<div class="payment">Pembayaran: ${esc(metode)}</div>` : ''}
-                        <div class="divider"></div>
-
-                        ${this.receiptFooter ? `<div class="footer">${esc(this.receiptFooter)}</div>` : ''}
-                    `;
-                    dokumen.body.appendChild(bagian);
-
-                    const skrip = dokumen.createElement('script');
-                    skrip.textContent = `
-                        (function () {
-                            let selesai = false;
-                            const paperSize = ${JSON.stringify(paperSize)};
-
-                            const aturUkuranKertas = () => {
-                                const receipt = document.querySelector('.receipt');
-                                const gayaBody = getComputedStyle(document.body);
-                                const tinggiPx = (receipt ? receipt.getBoundingClientRect().height : 0)
-                                    + parseFloat(gayaBody.paddingTop || 0)
-                                    + parseFloat(gayaBody.paddingBottom || 0);
-                                const tinggiMm = Math.max(
-                                    80,
-                                    Math.ceil((tinggiPx * 25.4) / 96) + 2
-                                );
-                                const gayaHalaman = document.getElementById('page-size');
-
-                                if (gayaHalaman) {
-                                    gayaHalaman.textContent =
-                                        '@page { size: ' + paperSize + ' ' + tinggiMm + 'mm; margin: 0; }';
-                                }
-                            };
-
-                            const cetak = () => {
-                                if (selesai) return;
-                                selesai = true;
-                                aturUkuranKertas();
-                                window.focus();
-                                window.print();
-                            };
-
-                            const logo = document.querySelector('img.logo');
-
-                            if (logo) {
-                                if (logo.complete) {
-                                    setTimeout(cetak, 50);
-                                } else {
-                                    logo.addEventListener('load', cetak);
-                                    logo.addEventListener('error', cetak);
-                                }
-                            } else {
-                                setTimeout(cetak, 100);
-                            }
-
-                            window.addEventListener('load', cetak);
-                            setTimeout(cetak, 1500);
-                        })();
-                    `;
-                    dokumen.body.appendChild(skrip);
 
                     this.isPrinting = true;
                     setTimeout(() => { this.isPrinting = false; }, 1200);
