@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\MejaMakan;
 use App\Models\Pengaturan;
 use App\Models\Pesanan;
+use App\Models\RiwayatShift;
 use App\Models\SesiMeja;
 use App\Models\User;
 use App\Services\IotStatusService;
@@ -260,6 +261,162 @@ class AdminSettingsAndReportsTest extends TestCase
             ->assertDontSee('KLUSTER SAUNG / MEJA')
             ->assertSee('Filter & Pratinjau Laporan')
             ->assertSee('Unduh PDF');
+    }
+
+    public function test_laporan_shift_kerja_menampilkan_tabel_shift_bukan_tabel_transaksi(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));
+
+        $kasir = User::factory()->create(['role' => 'kasir', 'nama' => 'Kasir Shift Uji']);
+
+        RiwayatShift::create([
+            'user_id' => $kasir->id,
+            'role' => 'kasir',
+            'session_id' => 'sesi-laporan-shift',
+            'nama_shift' => 'Shift Pagi Laporan',
+            'jadwal_mulai' => '08:00',
+            'jadwal_selesai' => '12:00',
+            'mulai_pada' => now()->subHours(2),
+            'terakhir_aktivitas' => now()->subHour(),
+            'selesai_pada' => now()->subHour(),
+            'durasi_detik' => 3600,
+            'status' => 'selesai',
+        ]);
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.laporan-penjualan', ['jenis' => 'shift']))
+            ->assertOk()
+            ->assertSee('Pratinjau Laporan Shift Kerja')
+            ->assertSee('Kasir Shift Uji')
+            ->assertSee('Shift Pagi Laporan')
+            ->assertSee('TOTAL DURASI KERJA')
+            ->assertDontSee('Pratinjau Rekap Transaksi')
+            ->assertDontSee('METODE BAYAR');
+    }
+
+    public function test_laporan_penjualan_masih_mendukung_jenis_harian_lama(): void
+    {
+        $this->actingAs($this->admin())
+            ->get(route('admin.laporan-penjualan', ['jenis' => 'harian']))
+            ->assertOk()
+            ->assertSee('Pratinjau Rekap Transaksi')
+            ->assertSee('Laporan Penjualan &amp; Rekonsiliasi Midtrans vs Tunai', false);
+    }
+
+    public function test_state_laporan_penjualan_mengembalikan_transaksi_terfilter(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));
+
+        $meja = $this->meja('LB-91');
+
+        Pesanan::create([
+            'kode_pesanan' => 'AWI-STATE-01',
+            'meja_id' => $meja->id,
+            'total_bayar' => 45000,
+            'status_pesanan' => Pesanan::STATUS_SIAP,
+            'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+            'metode_pembayaran' => 'qris',
+        ]);
+
+        $response = $this->actingAs($this->admin())
+            ->getJson(route('admin.laporan-penjualan.state'))
+            ->assertOk()
+            ->assertJsonPath('jenis', 'rekonsiliasi')
+            ->assertJsonPath('transactions.0.id', '#AWI-STATE-01')
+            ->assertJsonPath('transactions.0.method', 'QRIS Midtrans')
+            ->assertJsonPath('pagination.total', 1);
+
+        $this->assertSame(45000.0, (float) $response->json('rekap_halaman.total'));
+    }
+
+    public function test_state_laporan_shift_mengembalikan_ringkasan_sesi(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));
+
+        $kasir = User::factory()->create(['role' => 'kasir']);
+
+        RiwayatShift::create([
+            'user_id' => $kasir->id,
+            'role' => 'kasir',
+            'nama_shift' => 'Shift Siang',
+            'mulai_pada' => now()->subHour(),
+            'terakhir_aktivitas' => now(),
+            'status' => 'aktif',
+        ]);
+
+        $this->actingAs($this->admin())
+            ->getJson(route('admin.laporan-penjualan.state', ['jenis' => 'shift']))
+            ->assertOk()
+            ->assertJsonPath('jenis', 'shift')
+            ->assertJsonPath('ringkasan.total', 1)
+            ->assertJsonPath('ringkasan.staf', 1)
+            ->assertJsonPath('ringkasan.aktif', 1);
+    }
+
+    public function test_cetak_laporan_shift_kerja_memakai_view_khusus_shift(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));
+
+        $kasir = User::factory()->create(['role' => 'kasir', 'nama' => 'Kasir Cetak Shift']);
+
+        RiwayatShift::create([
+            'user_id' => $kasir->id,
+            'role' => 'kasir',
+            'nama_shift' => 'Shift Malam Cetak',
+            'jadwal_mulai' => '17:00',
+            'jadwal_selesai' => '23:00',
+            'mulai_pada' => now()->subHour(),
+            'terakhir_aktivitas' => now(),
+            'selesai_pada' => now(),
+            'durasi_detik' => 1800,
+            'status' => 'selesai',
+        ]);
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.laporan-penjualan.cetak', ['jenis' => 'shift']))
+            ->assertOk()
+            ->assertSee('Laporan Shift Kerja')
+            ->assertSee('Rincian Sesi Staf')
+            ->assertSee('Kasir Cetak Shift')
+            ->assertSee('Shift Malam Cetak')
+            ->assertDontSee('Rincian Transaksi Shift');
+    }
+
+    public function test_ekspor_laporan_shift_kerja_csv_dan_xls(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));
+
+        $kasir = User::factory()->create(['role' => 'kasir', 'nama' => 'Kasir Ekspor Shift']);
+
+        RiwayatShift::create([
+            'user_id' => $kasir->id,
+            'role' => 'kasir',
+            'nama_shift' => 'Shift Ekspor',
+            'mulai_pada' => now()->subHour(),
+            'terakhir_aktivitas' => now(),
+            'selesai_pada' => now(),
+            'durasi_detik' => 1800,
+            'status' => 'selesai',
+        ]);
+
+        $csv = $this->actingAs($this->admin())
+            ->get(route('admin.laporan-penjualan.ekspor', ['format' => 'csv', 'jenis' => 'shift']))
+            ->assertOk()
+            ->streamedContent();
+
+        $this->assertStringContainsString('Laporan Shift Kerja', $csv);
+        $this->assertStringContainsString('Kasir Ekspor Shift', $csv);
+        $this->assertStringContainsString('Shift Ekspor', $csv);
+        $this->assertStringNotContainsString('Kode Pesanan', $csv);
+
+        $xls = $this->actingAs($this->admin())
+            ->get(route('admin.laporan-penjualan.ekspor', ['format' => 'xls', 'jenis' => 'shift']))
+            ->assertOk()
+            ->streamedContent();
+
+        $this->assertStringContainsString('LAPORAN SHIFT KERJA', $xls);
+        $this->assertStringContainsString('Kasir Ekspor Shift', $xls);
+        $this->assertStringContainsString('Shift Ekspor', $xls);
     }
 
     public function test_kasir_menampilkan_meja_terisi_walau_pesanan_dari_hari_sebelumnya(): void

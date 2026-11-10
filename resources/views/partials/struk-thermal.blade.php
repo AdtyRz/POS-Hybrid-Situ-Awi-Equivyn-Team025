@@ -30,11 +30,17 @@
         }
 
         const dokumen = jendela.document;
+
+        // about:blank berjalan dalam quirks mode. Tanpa doctype, tinggi body
+        // mengikuti viewport dan bisa menghasilkan halaman kedua yang kosong.
+        dokumen.open();
+        dokumen.write('<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"></head><body></body></html>');
+        dokumen.close();
         dokumen.title = opsi.title || 'Struk Kasir';
 
         const gayaHalaman = dokumen.createElement('style');
         gayaHalaman.id = 'page-size';
-        gayaHalaman.textContent = `@page { size: ${paperSize} auto; margin: 0; }`;
+        gayaHalaman.textContent = `@page { size: ${paperSize} 200mm; margin: 0; }`;
         dokumen.head.appendChild(gayaHalaman);
 
         const gaya = dokumen.createElement('style');
@@ -51,12 +57,12 @@
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
-            .receipt { width: 100%; }
+            .receipt { width: 100%; break-inside: avoid; page-break-inside: avoid; }
             .logo {
                 display: block;
                 margin: 0 auto 2mm;
-                max-width: 28mm;
-                max-height: 14mm;
+                width: 28mm;
+                height: 14mm;
                 object-fit: contain;
             }
             .brand {
@@ -124,6 +130,10 @@
                     margin: 14px auto;
                     box-shadow: 0 2px 16px rgba(0, 0, 0, 0.18);
                 }
+            }
+            @media print {
+                html, body { height: auto !important; min-height: 0 !important; margin: 0 !important; }
+                .receipt { break-after: avoid; page-break-after: avoid; }
             }
         `;
         dokumen.head.appendChild(gaya);
@@ -255,9 +265,11 @@
                     const tinggiPx = (receipt ? receipt.getBoundingClientRect().height : 0)
                         + parseFloat(gayaBody.paddingTop || 0)
                         + parseFloat(gayaBody.paddingBottom || 0);
+                    // Layout cetak bisa sedikit lebih tinggi dari ukuran layar.
+                    // Beri ruang aman agar footer tidak jatuh ke halaman kedua.
                     const tinggiMm = Math.max(
                         80,
-                        Math.ceil((tinggiPx * 25.4) / 96) + 2
+                        Math.ceil((tinggiPx * 25.4) / 96) + 6
                     );
                     const gayaHalaman = document.getElementById('page-size');
 
@@ -275,7 +287,11 @@
                     if (! autoPrint) return;
 
                     window.focus();
-                    window.print();
+                    window.requestAnimationFrame(function () {
+                        window.setTimeout(function () {
+                            window.print();
+                        }, 40);
+                    });
                 };
 
                 const logo = document.querySelector('img.logo');

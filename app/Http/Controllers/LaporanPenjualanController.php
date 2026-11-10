@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\MejaMakan;
 use App\Models\Pengaturan;
 use App\Models\Pesanan;
+use App\Models\RiwayatShift;
 use App\Services\ShiftService;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
@@ -17,6 +19,11 @@ class LaporanPenjualanController extends Controller
     public function index(Request $request): View
     {
         $filter = $this->resolveFilter($request);
+
+        if ($filter['jenis'] === 'shift') {
+            return $this->halamanShiftKerja($filter);
+        }
+
         $base = $this->baseQuery($filter);
         $ringkasan = $this->ringkasan($base);
 
@@ -59,9 +66,101 @@ class LaporanPenjualanController extends Controller
         ]));
     }
 
+    public function state(Request $request): JsonResponse
+    {
+        $filter = $this->resolveFilter($request);
+
+        if ($filter['jenis'] === 'shift') {
+            ShiftService::tutupKedaluwarsa();
+
+            $ringkasan = $this->ringkasanShift($filter);
+            $ringkasan['durasi_teks'] = ShiftService::durasiTeks($ringkasan['durasi']);
+
+            return response()
+                ->json([
+                    'jenis' => 'shift',
+                    'label_periode' => $filter['labelPeriode'],
+                    'ringkasan' => $ringkasan,
+                ])
+                ->header('Cache-Control', 'no-store, private, max-age=0');
+        }
+
+        $base = $this->baseQuery($filter);
+        $ringkasan = $this->ringkasan($base);
+        $transaksi = (clone $base)
+            ->with(['meja', 'kasir', 'detailPesanan.menu'])
+            ->withSum('detailPesanan as total_item', 'jumlah')
+            ->orderByDesc('waktu_pesan')
+            ->paginate(20)
+            ->withQueryString();
+
+        $koleksi = $transaksi->getCollection();
+
+        return response()
+            ->json([
+                'jenis' => $filter['jenis'],
+                'label_periode' => $filter['labelPeriode'],
+                'ringkasan' => $ringkasan,
+                'transactions' => $koleksi
+                    ->map(fn (Pesanan $pesanan) => $this->barisTransaksi($pesanan))
+                    ->values(),
+                'rekap_halaman' => [
+                    'total' => (float) $koleksi->sum('total_bayar'),
+                    'valid' => $koleksi->where('status_pesanan', '!=', Pesanan::STATUS_DIBATALKAN)->count(),
+                    'void' => $koleksi->where('status_pesanan', Pesanan::STATUS_DIBATALKAN)->count(),
+                ],
+                'pagination' => [
+                    'current_page' => $transaksi->currentPage(),
+                    'last_page' => $transaksi->lastPage(),
+                    'total' => $transaksi->total(),
+                    'from' => $transaksi->firstItem(),
+                    'to' => $transaksi->lastItem(),
+                ],
+            ])
+            ->header('Cache-Control', 'no-store, private, max-age=0');
+    }
+
+    private function halamanShiftKerja(array $filter): View
+    {
+        ShiftService::tutupKedaluwarsa();
+
+        $riwayatShift = $this->shiftQuery($filter)
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('admin.laporan-penjualan.index', array_merge($filter, [
+            'riwayatShift' => $riwayatShift,
+            'ringkasanShift' => $this->ringkasanShift($filter),
+            'ringkasan' => null,
+            'transaksi' => null,
+            'transaksiJson' => [],
+            'rekapHalaman' => ['total' => 0, 'valid' => 0, 'void' => 0],
+            'namaResto' => Pengaturan::nilai('nama_resto'),
+            'dicatatPada' => Carbon::now('Asia/Jakarta'),
+            'namaAdmin' => auth()->user()?->nama ?? 'Admin',
+        ]));
+    }
+
     public function cetak(Request $request): View
     {
         $filter = $this->resolveFilter($request);
+
+        if ($filter['jenis'] === 'shift') {
+            ShiftService::tutupKedaluwarsa();
+
+            return view('admin.laporan-penjualan.cetak-shift-kerja', [
+                'riwayatShift' => $this->shiftQuery($filter)->get(),
+                'ringkasanShift' => $this->ringkasanShift($filter),
+                'namaResto' => Pengaturan::nilai('nama_resto'),
+                'alamatResto' => Pengaturan::nilai('alamat_resto'),
+                'teleponResto' => Pengaturan::nilai('telepon_resto'),
+                'labelPeriode' => $filter['labelPeriode'],
+                'cari' => $filter['cari'],
+                'dicetakPada' => Carbon::now('Asia/Jakarta'),
+                'dicetakOleh' => auth()->user()?->nama ?? 'Admin',
+            ]);
+        }
+
         $base = $this->baseQuery($filter);
 
         $transaksi = (clone $base)
@@ -104,7 +203,7 @@ class LaporanPenjualanController extends Controller
         $filterShift = $filter;
         $filterShift['mulai'] = $mulaiShift;
         $filterShift['selesai'] = $selesaiShift;
-        $filterShift['jenis'] = 'harian';
+        $filterShift['jenis'] = 'rekonsiliasi';
 
         $base = $this->baseQuery($filterShift);
         $ringkasan = $this->ringkasan($base);
@@ -153,9 +252,21 @@ class LaporanPenjualanController extends Controller
     public function ekspor(Request $request, string $format): StreamedResponse
     {
         $filter = $this->resolveFilter($request);
-        $base = $this->baseQuery($filter);
-        $ringkasan = $this->ringkasan($base);
-        $filename = 'laporan-penjualan-' . $filter['mulai']->format('Ymd') . '-' . $filter['selesai']->format('Ymd') . '.' . $format;
+        $format = $format === 'csv' ? 'csv' : 'xls';
+        $shiftKerja = $filter['jenis'] === 'shift';
+        $base = null;
+        $riwayat = null;
+
+        if ($shiftKerja) {
+            ShiftService::tutupKedaluwarsa();
+            $riwayat = $this->shiftQuery($filter);
+            $ringkasan = $this->ringkasanShift($filter);
+            $filename = 'laporan-shift-kerja-' . $filter['mulai']->format('Ymd') . '-' . $filter['selesai']->format('Ymd') . '.' . $format;
+        } else {
+            $base = $this->baseQuery($filter);
+            $ringkasan = $this->ringkasan($base);
+            $filename = 'laporan-penjualan-' . $filter['mulai']->format('Ymd') . '-' . $filter['selesai']->format('Ymd') . '.' . $format;
+        }
 
         $headers = $format === 'csv'
             ? [
@@ -167,7 +278,15 @@ class LaporanPenjualanController extends Controller
                 'Content-Disposition' => 'attachment; filename="' . $filename . '"',
             ];
 
-        return response()->stream(function () use ($base, $format, $filter, $ringkasan) {
+        return response()->stream(function () use ($format, $filter, $ringkasan, $shiftKerja, $riwayat, $base) {
+            if ($shiftKerja) {
+                $format === 'csv'
+                    ? $this->streamCsvShift($riwayat, $filter, $ringkasan)
+                    : $this->streamXlsShift($riwayat, $filter, $ringkasan);
+
+                return;
+            }
+
             if ($format === 'csv') {
                 $this->streamCsv($base, $filter, $ringkasan);
                 return;
@@ -219,9 +338,15 @@ class LaporanPenjualanController extends Controller
             $cari = mb_substr($cari, 0, 80);
         }
 
-        $jenis = (string) $request->query('jenis', 'harian');
-        if (! in_array($jenis, ['harian', 'rekonsiliasi', 'void'], true)) {
-            $jenis = 'harian';
+        $jenis = (string) $request->query('jenis', 'rekonsiliasi');
+
+        // "harian" adalah nilai lama; dipertahankan agar tautan lama tetap jalan.
+        if ($jenis === 'harian') {
+            $jenis = 'rekonsiliasi';
+        }
+
+        if (! in_array($jenis, ['rekonsiliasi', 'shift', 'void'], true)) {
+            $jenis = 'rekonsiliasi';
         }
 
         return [
@@ -238,9 +363,9 @@ class LaporanPenjualanController extends Controller
                 : $mulai->format('d M Y') . ' - ' . $selesai->format('d M Y'),
             'labelArea' => $area === 'semua' ? 'Semua Area Saung' : $area,
             'labelJenis' => match ($jenis) {
-                'rekonsiliasi' => 'Rekonsiliasi Transaksi Lunas',
+                'shift' => 'Laporan Shift Kerja Staf',
                 'void' => 'Transaksi Void / Dibatalkan',
-                default => 'Laporan Penjualan Harian & Shift Kasir',
+                default => 'Laporan Penjualan & Rekonsiliasi Midtrans vs Tunai',
             },
         ];
     }
@@ -269,10 +394,7 @@ class LaporanPenjualanController extends Controller
             });
         }
 
-        if ($filter['jenis'] === 'rekonsiliasi') {
-            $query->where('status_pembayaran', Pesanan::PAYMENT_SUDAH_BAYAR)
-                ->where('status_pesanan', '!=', Pesanan::STATUS_DIBATALKAN);
-        } elseif ($filter['jenis'] === 'void') {
+        if ($filter['jenis'] === 'void') {
             $query->where('status_pesanan', Pesanan::STATUS_DIBATALKAN);
         }
 
@@ -319,6 +441,44 @@ class LaporanPenjualanController extends Controller
             'jumlah_transaksi' => $jumlahTransaksi,
             'belum_lunas' => $belumLunas,
             'void' => $void,
+        ];
+    }
+
+    private function shiftQuery(array $filter): Builder
+    {
+        $cari = $filter['cari'];
+
+        return RiwayatShift::query()
+            ->with('user')
+            ->whereIn('role', array_keys(ShiftService::ROLES))
+            ->whereBetween('mulai_pada', [
+                $filter['mulai']->copy()->utc(),
+                $filter['selesai']->copy()->utc(),
+            ])
+            ->when($cari !== '', function (Builder $query) use ($cari) {
+                $pola = '%' . mb_strtolower($cari) . '%';
+
+                $query->where(function (Builder $sub) use ($pola, $cari) {
+                    $sub->whereHas('user', fn (Builder $user) => $user->whereRaw('LOWER(nama) LIKE ?', [$pola]))
+                        ->orWhereRaw('LOWER(nama_shift) LIKE ?', [$pola]);
+                });
+            })
+            ->orderByDesc('mulai_pada');
+    }
+
+    private function ringkasanShift(array $filter): array
+    {
+        $base = $this->shiftQuery($filter);
+        $aktif = (clone $base)->whereNull('selesai_pada')->where('status', 'aktif');
+        $durasiAktif = (clone $aktif)->get()->sum(
+            fn (RiwayatShift $baris) => max(0, (int) $baris->mulai_pada->diffInSeconds(now()))
+        );
+
+        return [
+            'total' => (clone $base)->count(),
+            'staf' => (clone $base)->distinct()->count('user_id'),
+            'aktif' => (clone $aktif)->count(),
+            'durasi' => (int) (clone $base)->sum('durasi_detik') + (int) $durasiAktif,
         ];
     }
 
@@ -458,6 +618,96 @@ class LaporanPenjualanController extends Controller
             });
 
         echo '</table></body></html>';
+    }
+
+    private function streamCsvShift(Builder $query, array $filter, array $ringkasan): void
+    {
+        $out = fopen('php://output', 'w');
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, ['Laporan Shift Kerja - ' . Pengaturan::nilai('nama_resto')]);
+        fputcsv($out, ['Periode', $filter['labelPeriode']]);
+        fputcsv($out, ['Total Sesi', $ringkasan['total']]);
+        fputcsv($out, ['Staf Terlibat', $ringkasan['staf']]);
+        fputcsv($out, ['Sesi Aktif', $ringkasan['aktif']]);
+        fputcsv($out, ['Total Durasi', ShiftService::durasiTeks($ringkasan['durasi'])]);
+        fputcsv($out, []);
+        fputcsv($out, ['Staf', 'Peran', 'Shift', 'Jadwal', 'Login', 'Logout', 'Durasi', 'Status']);
+
+        $query->chunk(500, function ($daftar) use ($out) {
+            foreach ($daftar as $baris) {
+                fputcsv($out, [
+                    $this->safeCsv($baris->user?->nama ?? 'Staf'),
+                    $this->safeCsv(ShiftService::ROLES[$baris->role] ?? ucfirst((string) $baris->role)),
+                    $this->safeCsv($baris->nama_shift ?: 'Luar Shift'),
+                    $this->safeCsv($this->jadwalShift($baris)),
+                    $this->safeCsv($baris->mulai_pada->timezone('Asia/Jakarta')->format('d/m/Y H:i:s')),
+                    $this->safeCsv($baris->selesai_pada?->timezone('Asia/Jakarta')->format('d/m/Y H:i:s') ?? '-'),
+                    $this->safeCsv(ShiftService::durasiTeks($this->durasiShift($baris))),
+                    $this->safeCsv($this->statusShift($baris)),
+                ]);
+            }
+        });
+
+        fclose($out);
+    }
+
+    private function streamXlsShift(Builder $query, array $filter, array $ringkasan): void
+    {
+        echo "\xEF\xBB\xBF";
+        echo '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8">';
+        echo '<style>table{border-collapse:collapse}th{background:#0B4D2B;color:#fff;font-weight:bold;border:1px solid #08381F;padding:6px}td{border:1px solid #C0C9BF;padding:6px}tr:nth-child(even){background:#F6F3EC}</style>';
+        echo '</head><body><table>';
+        echo '<tr><th colspan="8">LAPORAN SHIFT KERJA ' . e(strtoupper((string) Pengaturan::nilai('nama_resto'))) . '</th></tr>';
+        echo '<tr><th colspan="8">PERIODE: ' . e($filter['labelPeriode']) . '</th></tr>';
+        echo '<tr><th colspan="2">TOTAL SESI: ' . $ringkasan['total'] . '</th><th colspan="2">STAF: ' . $ringkasan['staf'] . '</th><th colspan="2">AKTIF: ' . $ringkasan['aktif'] . '</th><th colspan="2">DURASI: ' . e(ShiftService::durasiTeks($ringkasan['durasi'])) . '</th></tr>';
+        echo '<tr><th>STAF</th><th>PERAN</th><th>SHIFT</th><th>JADWAL</th><th>LOGIN</th><th>LOGOUT</th><th>DURASI</th><th>STATUS</th></tr>';
+
+        $query->chunk(500, function ($daftar) {
+            foreach ($daftar as $baris) {
+                echo '<tr>';
+                echo '<td>' . e($baris->user?->nama ?? 'Staf') . '</td>';
+                echo '<td>' . e(ShiftService::ROLES[$baris->role] ?? ucfirst((string) $baris->role)) . '</td>';
+                echo '<td>' . e($baris->nama_shift ?: 'Luar Shift') . '</td>';
+                echo '<td>' . e($this->jadwalShift($baris)) . '</td>';
+                echo '<td>' . e($baris->mulai_pada->timezone('Asia/Jakarta')->format('d/m/Y H:i:s')) . '</td>';
+                echo '<td>' . e($baris->selesai_pada?->timezone('Asia/Jakarta')->format('d/m/Y H:i:s') ?? '-') . '</td>';
+                echo '<td>' . e(ShiftService::durasiTeks($this->durasiShift($baris))) . '</td>';
+                echo '<td>' . e($this->statusShift($baris)) . '</td>';
+                echo '</tr>';
+            }
+        });
+
+        echo '</table></body></html>';
+    }
+
+    private function durasiShift(RiwayatShift $baris): int
+    {
+        if ($baris->selesai_pada) {
+            return max(0, (int) $baris->durasi_detik);
+        }
+
+        return max(0, (int) $baris->mulai_pada->diffInSeconds(now()));
+    }
+
+    private function jadwalShift(RiwayatShift $baris): string
+    {
+        if (! $baris->jadwal_mulai || ! $baris->jadwal_selesai) {
+            return '-';
+        }
+
+        return substr((string) $baris->jadwal_mulai, 0, 5)
+            . ' - '
+            . substr((string) $baris->jadwal_selesai, 0, 5)
+            . ' WIB';
+    }
+
+    private function statusShift(RiwayatShift $baris): string
+    {
+        if ($baris->status === 'aktif' && $baris->selesai_pada === null) {
+            return 'Aktif';
+        }
+
+        return $baris->status === 'kedaluwarsa' ? 'Sesi berakhir' : 'Selesai';
     }
 
     private function safeCsv(string $value): string

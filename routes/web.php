@@ -72,6 +72,7 @@ Route::get('/admin/analitik-laporan/cetak-pdf', [AdminController::class, 'cetakA
 Route::get('/admin/analitik-laporan/ekspor-xlsx', [AdminController::class, 'eksporAnalitikXlsx'])->name('admin.analitik-laporan.ekspor-xlsx');
     Route::get('/admin/laporan', [LaporanPenjualanController::class, 'index'])->name('admin.laporan');
     Route::get('/admin/laporan-penjualan', [LaporanPenjualanController::class, 'index'])->name('admin.laporan-penjualan');
+    Route::get('/admin/laporan-penjualan/state', [LaporanPenjualanController::class, 'state'])->name('admin.laporan-penjualan.state');
     Route::get('/admin/laporan-penjualan/cetak', [LaporanPenjualanController::class, 'cetak'])->name('admin.laporan-penjualan.cetak');
     Route::get('/admin/laporan-penjualan/cetak-shift', [LaporanPenjualanController::class, 'cetakShift'])->name('admin.laporan-penjualan.cetak-shift');
     Route::get('/admin/laporan-penjualan/ekspor/{format}', [LaporanPenjualanController::class, 'ekspor'])

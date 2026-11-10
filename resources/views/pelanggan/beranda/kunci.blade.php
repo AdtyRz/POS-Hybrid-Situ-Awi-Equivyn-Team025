@@ -71,7 +71,7 @@
     </style>
 </head>
 
-<body class="min-h-screen bg-cream-50 text-stone-800 antialiased font-sans">
+<body class="min-h-screen bg-cream-50 text-stone-800 antialiased font-sans" data-sesi-berakhir="1">
     <div class="max-w-md mx-auto px-4 pt-8 pb-10"
         x-data="kunciApp({{ $panjangKode }}, @js($errors->has('kode_unik')), @js($errors->first('kode_unik') ?? ''))">
         <div class="text-center">

@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Laporan Penjualan & Rekonsiliasi Kasir')
+@section('title', 'Laporan Penjualan, Rekonsiliasi & Shift Kerja')
 @section('page_category', 'Laporan & Ekspor')
 
 @section('content')
@@ -25,10 +25,10 @@
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pt-1">
             <div class="flex flex-col max-w-2xl">
                 <h1 class="font-display font-bold text-3xl sm:text-4xl text-[#00341A] tracking-tight leading-tight">
-                    Laporan Penjualan, Rekonsiliasi Kasir & Ekspor Data
+                    Laporan Penjualan, Rekonsiliasi & Shift Kerja
                 </h1>
                 <p class="text-xs sm:text-sm text-[#404941] mt-2 leading-relaxed">
-                    Unduh rekap transaksi terperinci, laporan perputaran stok bahan, dan rekonsiliasi Midtrans QRIS vs Uang Tunai Kasir.
+                    Rekap penjualan terpadu dengan rekonsiliasi Midtrans QRIS vs uang tunai, plus laporan shift kerja staf yang mencatat login, logout, dan durasi.
                 </p>
             </div>
 
@@ -55,18 +55,42 @@
 
                 <button
                     type="button"
-                    @click="cetakShift()"
+                    @click="jenisLaporan === 'shift' ? cetakLaporan() : cetakShift()"
                     class="h-10 px-4 rounded-xl bg-[#F0EEE7] hover:bg-[#ded9cf] active:scale-95 text-[#404941] font-semibold text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer">
                     <svg class="w-4 h-4 text-[#404941]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                     </svg>
-                    <span>Cetak Rekap Shift</span>
+                    <span x-text="jenisLaporan === 'shift' ? 'Cetak Laporan Shift' : 'Cetak Rekap Shift'">Cetak Rekap Shift</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    @if ($jenis === 'shift')
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" data-live="laporan-shift-ringkasan">
+            <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[160px]">
+                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">TOTAL SESI SHIFT</span>
+                <span class="font-display font-bold text-3xl text-[#0B4D2B] tracking-tight leading-tight">{{ number_format($ringkasanShift['total'], 0, ',', '.') }}</span>
+                <span class="text-[10px] font-semibold text-[#707971]">Login staf pada {{ $labelPeriode }}</span>
+            </div>
+            <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[160px]">
+                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">STAF TERLIBAT</span>
+                <span class="font-display font-bold text-3xl text-[#1C1C18] tracking-tight leading-tight">{{ number_format($ringkasanShift['staf'], 0, ',', '.') }}</span>
+                <span class="text-[10px] font-semibold text-[#707971]">Orang dengan sesi tercatat</span>
+            </div>
+            <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[160px]">
+                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">SESI AKTIF</span>
+                <span class="font-display font-bold text-3xl text-[#7A5900] tracking-tight leading-tight">{{ number_format($ringkasanShift['aktif'], 0, ',', '.') }}</span>
+                <span class="text-[10px] font-semibold text-[#707971]">Belum logout saat laporan dibuka</span>
+            </div>
+            <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[160px]">
+                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">TOTAL DURASI KERJA</span>
+                <span class="font-display font-bold text-2xl text-[#00341A] tracking-tight leading-tight">{{ \App\Services\ShiftService::durasiTeks($ringkasanShift['durasi']) }}</span>
+                <span class="text-[10px] font-semibold text-[#707971]">Akumulasi seluruh sesi staf</span>
+            </div>
+        </div>
+    @else
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" data-live="laporan-ringkasan">
 
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[190px] relative overflow-hidden">
             <div class="flex items-start justify-between">
@@ -143,6 +167,8 @@
 
     </div>
 
+    @endif
+
     <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/30 flex flex-col gap-5">
 
         <div class="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-[#C0C9BF]/20">
@@ -205,8 +231,8 @@
                     <label class="font-bold text-[10px] text-[#707971] uppercase tracking-wider">TIPE REKAPITULASI</label>
                     <div class="relative">
                         <select name="jenis" x-model="jenisLaporan" class="w-full h-11 pl-10 pr-8 rounded-xl bg-[#FCF9F2] border border-gray-200 text-xs font-semibold text-[#1C1C18] shadow-2xs focus:outline-hidden focus:border-[#0B4D2B] appearance-none">
-                            <option value="harian">Laporan Penjualan Harian &amp; Shift Kasir</option>
-                            <option value="rekonsiliasi">Laporan Rekonsiliasi Midtrans vs Tunai</option>
+                            <option value="rekonsiliasi">Laporan Penjualan &amp; Rekonsiliasi Midtrans vs Tunai</option>
+                            <option value="shift">Laporan Shift Kerja Staf</option>
                             <option value="void">Laporan Transaksi Void / Dibatalkan</option>
                         </select>
                         <svg class="w-4 h-4 text-[#707971] absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -272,6 +298,146 @@
 
     </div>
 
+    @if ($jenis === 'shift')
+    <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden" data-live="laporan-shift-table">
+
+        <div class="p-5 bg-[#F6F3EC] border-b border-gray-200 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-2.5">
+                <span class="w-2.5 h-6 rounded-full bg-[#0B4D2B]"></span>
+                <div>
+                    <h2 class="font-bold text-base text-[#1C1C18]">Pratinjau Laporan Shift Kerja ({{ $labelPeriode }})</h2>
+                    <p class="text-xs text-[#707971] mt-0.5">Menampilkan {{ $riwayatShift->firstItem() ?? 0 }}-{{ $riwayatShift->lastItem() ?? 0 }} dari {{ $riwayatShift->total() }} sesi shift • {{ $labelArea }}</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <div class="relative w-44 sm:w-56">
+                    <input
+                        type="text"
+                        x-model="searchQuery"
+                        @keydown.enter.prevent="ajukanFilter()"
+                        placeholder="Cari Nama Staf / Shift..."
+                        class="w-full h-9 pl-8 pr-3 rounded-lg bg-[#FCF9F2] text-xs border border-gray-200 focus:outline-hidden focus:border-[#0B4D2B]">
+                    <svg class="w-3.5 h-3.5 text-[#707971] absolute left-2.5 top-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="8" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35" />
+                    </svg>
+                </div>
+
+                <button type="button" @click="ajukanFilter()" class="h-9 px-3 rounded-lg bg-[#F0EEE7] hover:bg-gray-200 text-[#1C1C18] text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer">
+                    <svg class="w-3 h-3 text-[#1C1C18]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h18M6 8h12M8 12h8" />
+                    </svg>
+                    <span>Filter</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-[#F0EEE7] border-b border-gray-200 text-[10px] font-bold text-[#404941] uppercase tracking-wider">
+                        <th class="py-3 px-4 min-w-[150px]">STAF</th>
+                        <th class="py-3 px-4 min-w-[110px]">PERAN</th>
+                        <th class="py-3 px-4 min-w-[140px]">SHIFT / JADWAL</th>
+                        <th class="py-3 px-4 min-w-[120px]">MULAI (LOGIN)</th>
+                        <th class="py-3 px-4 min-w-[120px]">SELESAI (LOGOUT)</th>
+                        <th class="py-3 px-4 min-w-[120px]">DURASI</th>
+                        <th class="py-3 px-4 text-center min-w-[120px]">STATUS</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse ($riwayatShift as $baris)
+                        @php
+                            $aktif = $baris->status === 'aktif' && $baris->selesai_pada === null;
+                            $durasi = $aktif
+                                ? \App\Services\ShiftService::durasiTeks((int) $baris->mulai_pada->diffInSeconds(now()))
+                                : $baris->durasiTeks();
+                        @endphp
+                        <tr class="align-top hover:bg-[#FBF8F1]/60 transition-colors">
+                            <td class="py-3 px-4">
+                                <span class="font-bold text-[#1C1C18]">{{ $baris->user?->nama ?? 'Staf' }}</span>
+                                <span class="block text-[10px] text-[#707971] mt-0.5">{{ $baris->ip_address ?: '-' }}</span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="inline-flex rounded-full bg-[#F0EEE7] px-2.5 py-0.5 text-[10px] font-bold text-[#404941]">
+                                    {{ \App\Services\ShiftService::ROLES[$baris->role] ?? ucfirst($baris->role) }}
+                                </span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="font-semibold text-[#1C1C18]">{{ $baris->nama_shift ?: 'Luar Shift' }}</span>
+                                @if ($baris->jadwal_mulai && $baris->jadwal_selesai)
+                                    <span class="block text-[10px] text-[#707971] mt-0.5">{{ substr($baris->jadwal_mulai, 0, 5) }} - {{ substr($baris->jadwal_selesai, 0, 5) }} WIB</span>
+                                @endif
+                            </td>
+                            <td class="py-3 px-4 text-[#404941]">
+                                {{ $baris->mulai_pada->timezone('Asia/Jakarta')->format('d M Y') }}
+                                <span class="block text-[10px] font-bold text-[#1C1C18]">{{ $baris->mulai_pada->timezone('Asia/Jakarta')->format('H:i:s') }} WIB</span>
+                            </td>
+                            <td class="py-3 px-4 text-[#404941]">
+                                @if ($baris->selesai_pada)
+                                    {{ $baris->selesai_pada->timezone('Asia/Jakarta')->format('d M Y') }}
+                                    <span class="block text-[10px] font-bold text-[#1C1C18]">{{ $baris->selesai_pada->timezone('Asia/Jakarta')->format('H:i:s') }} WIB</span>
+                                @else
+                                    <span class="text-[10px] font-bold text-[#7A5900]">Belum logout</span>
+                                @endif
+                            </td>
+                            <td class="py-3 px-4 font-semibold text-[#1C1C18]">{{ $durasi }}</td>
+                            <td class="py-3 px-4 text-center">
+                                @if ($aktif)
+                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-[#B1F1C2] px-2.5 py-0.5 text-[10px] font-bold text-[#00341A]">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-[#00341A] animate-pulse"></span>
+                                        Aktif
+                                    </span>
+                                @elseif ($baris->status === 'kedaluwarsa')
+                                    <span class="inline-flex rounded-full bg-[#FFDEA1] px-2.5 py-0.5 text-[10px] font-bold text-[#7A5900]">Sesi berakhir</span>
+                                @else
+                                    <span class="inline-flex rounded-full bg-[#F0EEE7] px-2.5 py-0.5 text-[10px] font-bold text-[#404941]">Selesai</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="py-10 px-4 text-center text-xs font-semibold text-[#707971]">
+                                Belum ada riwayat shift pada filter yang dipilih.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <div class="p-4 bg-[#F6F3EC] border-t border-gray-200 flex flex-wrap items-center justify-between gap-4 text-xs font-semibold text-[#707971]">
+            <span>Menampilkan {{ $riwayatShift->firstItem() ?? 0 }}-{{ $riwayatShift->lastItem() ?? 0 }} dari {{ $riwayatShift->total() }} sesi shift pada {{ $labelPeriode }}</span>
+
+            @php
+                $halamanAktif = $riwayatShift->currentPage();
+                $halamanAkhir = max(1, $riwayatShift->lastPage());
+                $nomorHalaman = collect([1, $halamanAktif - 1, $halamanAktif, $halamanAktif + 1, $halamanAkhir])
+                    ->filter(fn ($nomor) => $nomor >= 1 && $nomor <= $halamanAkhir)
+                    ->unique()
+                    ->sort()
+                    ->values();
+                $nomorSebelumnya = null;
+            @endphp
+
+            <div class="flex items-center gap-1">
+                @foreach ($nomorHalaman as $nomor)
+                    @if ($nomorSebelumnya !== null && $nomor - $nomorSebelumnya > 1)
+                        <span class="px-1 text-gray-400">...</span>
+                    @endif
+                    @if ($nomor === $halamanAktif)
+                        <span class="w-8 h-8 rounded-lg bg-[#0B4D2B] text-white font-bold flex items-center justify-center">{{ $nomor }}</span>
+                    @else
+                        <a href="{{ $riwayatShift->url($nomor) }}" class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-[#1C1C18] hover:bg-gray-100 flex items-center justify-center font-bold transition-colors">{{ $nomor }}</a>
+                    @endif
+                    @php $nomorSebelumnya = $nomor; @endphp
+                @endforeach
+            </div>
+        </div>
+
+    </div>
+    @else
     <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
 
         <div class="p-5 bg-[#F6F3EC] border-b border-gray-200 flex flex-wrap items-center justify-between gap-4">
@@ -393,7 +559,7 @@
                         </tr>
                     </template>
                 </tbody>
-                <tfoot>
+                <tfoot data-live="laporan-tfoot">
                     <tr class="bg-[#F0EEE7] border-t-2 border-gray-300 font-bold text-xs text-[#1C1C18]">
                         <td colspan="5" class="py-3.5 px-4 text-right">
                             Total Halaman Ini ({{ $rekapHalaman['valid'] }} Valid + {{ $rekapHalaman['void'] }} Void):
@@ -408,7 +574,7 @@
             </table>
         </div>
 
-        <div class="p-4 bg-[#F6F3EC] border-t border-gray-200 flex flex-wrap items-center justify-between gap-4 text-xs font-semibold text-[#707971]">
+        <div class="p-4 bg-[#F6F3EC] border-t border-gray-200 flex flex-wrap items-center justify-between gap-4 text-xs font-semibold text-[#707971]" data-live="laporan-pagination">
             <span>Menampilkan {{ $transaksi->firstItem() ?? 0 }}-{{ $transaksi->lastItem() ?? 0 }} dari {{ $transaksi->total() }} transaksi pada {{ $labelPeriode }}</span>
 
             @php
@@ -438,8 +604,10 @@
         </div>
 
     </div>
+    @endif
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+    @if ($jenis !== 'shift')
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch" data-live="laporan-rekonsiliasi">
 
         <div class="lg:col-span-8 bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/30 flex flex-col justify-between gap-5">
             <div>
@@ -520,6 +688,7 @@
         </div>
 
     </div>
+    @endif
 
     <div
         x-cloak
@@ -554,12 +723,61 @@
             transactions: @json($transaksiJson),
             cetakUrl: @js(route('admin.laporan-penjualan.cetak')),
             cetakShiftUrl: @js(route('admin.laporan-penjualan.cetak-shift')),
+            stateUrl: @js(route('admin.laporan-penjualan.state')),
             eksporUrl: @js(route('admin.laporan-penjualan.ekspor', ['format' => '__FORMAT__'])),
             flashSuccess: @js(session('sukses')),
 
             init() {
                 if (this.flashSuccess) {
                     this.showToast(this.flashSuccess);
+                }
+
+                this._refreshTimer = null;
+                this._refreshInFlight = false;
+                this._refreshQueued = false;
+
+                window.addEventListener('realtime', () => {
+                    clearTimeout(this._refreshTimer);
+                    this._refreshTimer = setTimeout(() => this.refreshTransaksi(), 300);
+                });
+            },
+
+            async refreshTransaksi() {
+                if (this.jenisLaporan === 'shift') return;
+
+                if (this._refreshInFlight) {
+                    this._refreshQueued = true;
+                    return;
+                }
+
+                this._refreshInFlight = true;
+
+                try {
+                    const response = await fetch(this.stateUrl + '?' + this.parameter().toString(), {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        cache: 'no-store',
+                        credentials: 'same-origin',
+                    });
+
+                    if (! response.ok) return;
+
+                    const data = await response.json();
+
+                    if (Array.isArray(data.transactions)) {
+                        this.transactions = data.transactions;
+                    }
+                } catch (error) {
+
+                } finally {
+                    this._refreshInFlight = false;
+
+                    if (this._refreshQueued) {
+                        this._refreshQueued = false;
+                        this.refreshTransaksi();
+                    }
                 }
             },
 

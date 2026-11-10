@@ -4,9 +4,18 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="realtime-version-url" content="{{ route('realtime.version') }}">
+    <meta name="realtime-version" content="{{ \App\Support\Realtime::version() }}">
     <title>Session Meja</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+        <script>
+            window.__CHANNELS__ = ['kasir'];
+        </script>
+        @vite('resources/js/reverb.js')
+    @endif
 </head>
 
 <body class="min-h-screen bg-[#FBF8F1] p-4" x-data="sessionPage()">
@@ -39,6 +48,7 @@
         <p class="text-stone-500 text-sm mb-6">Kelola sesi meja aktif. Selesaikan sesi untuk menutup sesi pelanggan dan
             membuat kode unik baru.</p>
 
+        <div data-live="kasir-session-list">
         @foreach ($meja as $m)
             @php($daftarPesanan = $pesananSesi[$m->id] ?? collect())
             <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 mb-4">
@@ -100,6 +110,7 @@
                 @endif
             </div>
         @endforeach
+        </div>
 
         <p class="text-center text-stone-400 text-xs mt-8">© 2026 Saung Situ Awi Ciwidey</p>
     </div>

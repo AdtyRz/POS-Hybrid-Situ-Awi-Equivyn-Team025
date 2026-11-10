@@ -36,7 +36,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4" data-live="admin-shift-stats">
         @foreach ($ringkasanRole as $data)
             <div class="rounded-2xl border border-[#C0C9BF]/30 bg-white p-5 shadow-xs">
                 <div class="flex items-start justify-between gap-3">
@@ -91,7 +91,7 @@
         </form>
     </div>
 
-    <div class="overflow-hidden rounded-2xl border border-[#C0C9BF]/30 bg-white shadow-xs">
+    <div class="overflow-hidden rounded-2xl border border-[#C0C9BF]/30 bg-white shadow-xs" data-live="admin-shift-table">
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#C0C9BF]/20 px-5 py-4">
             <div>
                 <h2 class="text-sm font-bold text-[#1C1C18]">Log Login &amp; Logout</h2>

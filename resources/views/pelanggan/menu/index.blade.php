@@ -95,6 +95,21 @@
 
 <body class="bg-[#FBF8F1] antialiased selection:bg-gold-500 selection:text-forest-900 min-h-screen">
     <div x-data="pelangganApp()" x-init="initApp()" @keydown.escape.window="closeMenu()" x-cloak class="min-h-screen flex flex-col justify-between">
+        <script type="application/json" id="pelanggan-menu-state" data-live="pelanggan-menu-state">@json(['menu' => $menuJson, 'kategori' => $kategoriJson, 'punyaRiwayat' => $punyaRiwayat])</script>
+        <div x-show="!sesiAktif" x-transition class="fixed inset-0 z-[60] bg-forest-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl border border-forest-100">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-gold-50 text-gold-600 flex items-center justify-center">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </div>
+                <h2 class="mt-4 font-display text-xl font-bold text-forest-900">Sesi Meja Telah Berakhir</h2>
+                <p class="mt-2 text-xs leading-relaxed text-charcoal-500">Meja ini sudah ditutup oleh kasir atau pelayan. Masukkan kembali kode meja untuk membuka sesi baru.</p>
+                <a href="{{ route('emenu.kunci', $meja->kode_meja) }}" class="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-forest-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-forest-800 active:scale-95">
+                    Masukkan Kode Meja
+                </a>
+            </div>
+        </div>
         <div x-show="toast.visible" x-transition:enter="transition ease-out duration-300 transform"
             x-transition:enter-start="-translate-y-12 opacity-0" x-transition:enter-end="translate-y-0 opacity-100"
             x-transition:leave="transition ease-in duration-200 transform" x-transition:leave-start="opacity-100"
@@ -202,7 +217,7 @@
                         <span>Terhubung</span>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2" data-live="pelanggan-menu-header-actions">
                     @if (! empty($punyaRiwayat))
                     <a href="{{ route('emenu.pelacakan', $meja->id) }}"
                         class="inline-flex items-center gap-1.5 px-2.5 lg:px-4 py-1.5 rounded-full bg-gold-500 hover:bg-gold-400 text-forest-900 text-[10px] sm:text-xs font-bold border border-gold-600/20 shadow-2xs transition active:scale-95"
@@ -442,6 +457,7 @@
                 categories: @json($kategoriJson),
                 menuItems: @json($menuJson),
                 cartItems: [],
+                sesiAktif: true,
                 initApp() {
                     this.updateClock();
                     setInterval(() => this.updateClock(), 1000);
@@ -450,6 +466,74 @@
                     }
                     if (this.namaPelangganError) {
                         this.showToast('info', 'Nama Pemesan Diperlukan', this.namaPelangganError);
+                    }
+
+                    window.addEventListener('live:updated', (event) => this.terapkanLiveState(event));
+                },
+                terapkanLiveState(event) {
+                    const doc = event.detail?.document;
+
+                    if (!doc) return;
+
+                    if (doc.querySelector('[data-sesi-berakhir]')) {
+                        this.sesiAktif = false;
+                        return;
+                    }
+
+                    const mentah = doc.getElementById('pelanggan-menu-state')?.textContent;
+
+                    if (!mentah) return;
+
+                    try {
+                        const state = JSON.parse(mentah);
+
+                        if (Array.isArray(state.menu)) {
+                            const petaMenu = new Map(state.menu.map((item) => [String(item.id), item]));
+
+                            this.menuItems = state.menu;
+                            this.cartItems = this.cartItems.map((item) => {
+                                const menu = petaMenu.get(String(item.id));
+
+                                if (!menu) return null;
+
+                                const stok = Math.max(0, Number(menu.stock) || 0);
+                                const qty = Math.min(item.qty, stok);
+
+                                if (qty <= 0) return null;
+
+                                return {
+                                    ...item,
+                                    name: menu.name,
+                                    price: menu.price,
+                                    stock: stok,
+                                    image: menu.image,
+                                    qty: qty,
+                                };
+                            }).filter(Boolean);
+
+                            if (this.selectedMenu) {
+                                const segar = petaMenu.get(String(this.selectedMenu.id));
+                                this.selectedMenu = segar ?? null;
+
+                                if (segar) {
+                                    this.detailQty = Math.min(Math.max(1, this.detailQty), Math.max(1, Number(segar.stock) || 0));
+                                }
+                            }
+
+                            if (this.cartItems.length === 0 && this.step === 2) {
+                                this.goToStep(1);
+                            }
+                        }
+
+                        if (Array.isArray(state.kategori)) {
+                            this.categories = state.kategori;
+
+                            if (! this.categories.some((kategori) => kategori.id === this.activeCategory)) {
+                                this.activeCategory = 'semua';
+                            }
+                        }
+                    } catch (error) {
+
                     }
                 },
                 updateClock() {
@@ -697,8 +781,13 @@
         }
     </script>
     <script>
+        window.addEventListener('realtime:sesi.berubah', (event) => {
+            const status = event.detail?.status;
 
-        window.addEventListener('realtime:sesi.berubah', () => window.realtimeReload(400));
+            if (status && status !== 'dibuka') {
+                window.refreshLiveRegions?.({ immediate: true });
+            }
+        });
     </script>
 </body>
 

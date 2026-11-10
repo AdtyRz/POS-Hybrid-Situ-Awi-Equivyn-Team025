@@ -54,6 +54,23 @@ class EmenuPelacakanTest extends TestCase
         return [$meja, $menu];
     }
 
+    public function test_menu_pelanggan_memuat_state_live_dan_marker_sesi_berakhir(): void
+    {
+        [$meja] = $this->siapkanMejaDanMenu();
+
+        $this->withSession($this->sesiTerverifikasi($meja))
+            ->get(route('emenu.meja', $meja->id))
+            ->assertOk()
+            ->assertSee('id="pelanggan-menu-state"', false)
+            ->assertSee('data-live="pelanggan-menu-state"', false)
+            ->assertSee('data-live="pelanggan-menu-header-actions"', false)
+            ->assertSee("realtime:sesi.berubah", false);
+
+        $this->get(route('emenu.kunci', $meja->kode_meja))
+            ->assertOk()
+            ->assertSee('data-sesi-berakhir="1"', false);
+    }
+
     public function test_checkout_menyimpan_riwayat_tanpa_memotong_stok(): void
     {
         [$meja, $menu] = $this->siapkanMejaDanMenu();

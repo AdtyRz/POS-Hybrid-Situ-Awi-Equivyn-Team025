@@ -43,6 +43,7 @@ class Realtime
                 'meja_makan',
                 'pengaturan',
                 'users',
+                'riwayat_shift',
             ];
 
             $gabungan = collect($tabel)

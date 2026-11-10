@@ -78,6 +78,7 @@
             <div class="flex items-start justify-between gap-3 mt-1">
                 <div>
                     <p class="font-bold text-lg leading-snug">Meja {{ $pesanan->meja->kode_meja }}</p>
+                    <p class="text-stone-500 text-xs mt-0.5">Kode: <span class="font-mono font-bold text-stone-700">{{ $pesanan->kode_pesanan }}</span></p>
                     @if ($pesanan->nama_pelanggan)
                         <p class="text-stone-500 text-xs mt-0.5">Pemesan: <span
                                 class="font-bold text-stone-700">{{ $pesanan->nama_pelanggan }}</span></p>

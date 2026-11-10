@@ -190,6 +190,38 @@ class AdminRealtimeNoRefreshTest extends TestCase
             ->assertJsonPath('message', 'Pengaturan sistem berhasil disimpan.');
     }
 
+    public function test_halaman_riwayat_shift_dan_laporan_shift_punya_region_live(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)
+            ->get(route('admin.riwayat-shift'))
+            ->assertOk()
+            ->assertSee('data-live="admin-shift-stats"', false)
+            ->assertSee('data-live="admin-shift-table"', false);
+
+        $this->actingAs($admin)
+            ->get(route('admin.laporan-penjualan', ['jenis' => 'shift']))
+            ->assertOk()
+            ->assertSee('data-live="laporan-shift-ringkasan"', false)
+            ->assertSee('data-live="laporan-shift-table"', false);
+    }
+
+    public function test_halaman_session_kasir_punya_region_live_dan_channel_realtime(): void
+    {
+        $kasir = User::factory()->create([
+            'role' => 'kasir',
+            'is_aktif' => true,
+        ]);
+
+        $this->actingAs($kasir)
+            ->get(route('kasir.session.index'))
+            ->assertOk()
+            ->assertSee('data-live="kasir-session-list"', false)
+            ->assertSee("window.__CHANNELS__ = ['kasir'];", false)
+            ->assertSee('realtime-version-url', false);
+    }
+
     public function test_unggah_logo_admin_ajax_mengembalikan_json_dan_url_baru(): void
     {
         Storage::fake('public');
