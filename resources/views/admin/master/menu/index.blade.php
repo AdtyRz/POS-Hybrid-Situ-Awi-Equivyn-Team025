@@ -226,7 +226,7 @@
             </div>
             <div class="flex flex-col">
                 <div class="flex items-center gap-2">
-                    <span class="font-bold text-xs text-[#1C1C18]">Sinkronisasi Realtime Reverb Aktif</span>
+                    <span class="font-bold text-xs text-[#1C1C18]">Sinkronisasi Realtime Aktif</span>
                     <span class="w-2 h-2 rounded-full bg-[#0B4D2B] animate-pulse"></span>
                 </div>
                 <p class="text-xs text-[#404941] mt-0.5 leading-snug">

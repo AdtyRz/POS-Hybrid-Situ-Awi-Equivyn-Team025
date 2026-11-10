@@ -300,7 +300,7 @@
                         </div>
                         <div>
                             <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider block">JARINGAN SERVER</span>
-                            <span class="text-base font-bold text-[#1C1C18]">{{ parse_url(config('app.url'), PHP_URL_HOST) ?: 'localhost' }}</span>
+                            <span class="text-base font-bold text-[#1C1C18]">{{ request()->getHost() ?: 'localhost' }}</span>
                         </div>
                     </div>
 
