@@ -413,7 +413,7 @@
                     Distribusi penyelesaian tagihan tamu berdasarkan jumlah transaksi
                 </p>
 
-                <div class="relative flex min-h-44 min-w-44 shrink-0 items-center justify-center my-6">
+                <div class="relative mx-auto my-5 flex aspect-square w-full max-w-[288px] items-center justify-center">
                     @php
                         $totalKanal = $qrisHariIni + $tunaiHariIni;
                         $bagianQris = $totalKanal > 0 ? round($qrisHariIni / $totalKanal * 377) : 0;
@@ -421,7 +421,7 @@
                         $persenQris = $totalKanal > 0 ? round($qrisHariIni / $totalKanal * 100) : 0;
                         $persenTunai = $totalKanal > 0 ? 100 - $persenQris : 0;
                     @endphp
-                    <svg viewBox="0 0 160 160" class="block h-44 w-44 shrink-0 -rotate-90">
+                    <svg viewBox="0 0 160 160" class="block h-full w-full -rotate-90">
                         <circle cx="80" cy="80" r="60" stroke="#EBE8E1" stroke-width="20" fill="none" />
                         <circle cx="80" cy="80" r="60" stroke="#0B4D2B" stroke-width="20" fill="none"
                                 stroke-dasharray="{{ $bagianQris }} 377" stroke-dashoffset="0" />
@@ -430,8 +430,8 @@
                     </svg>
 
                     <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span class="font-display font-bold text-3xl text-[#1C1C18]">{{ $persenQris }}%</span>
-                        <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">NON-TUNAI</span>
+                        <span class="font-display font-bold text-4xl text-[#1C1C18]">{{ $persenQris }}%</span>
+                        <span class="text-[11px] font-bold text-[#707971] uppercase tracking-wider">NON-TUNAI</span>
                     </div>
                 </div>
             </div>
