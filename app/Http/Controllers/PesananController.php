@@ -24,35 +24,7 @@ class PesananController extends Controller
     {
         $data = $this->bangunDataKasir($request->query('meja'));
 
-
-
-
-        $pengaturan = Pengaturan::query()->pluck('nilai', 'kunci');
-        $nilai = function (string $kunci, mixed $default = null) use ($pengaturan): mixed {
-            $hasil = $pengaturan[$kunci] ?? null;
-
-            return $hasil !== null
-                ? $hasil
-                : ($default ?? Pengaturan::DEFAULTS[$kunci] ?? null);
-        };
-
-        $printLogo = filter_var($nilai('print_logo', '1'), FILTER_VALIDATE_BOOLEAN);
-        $logoSrc = Pengaturan::mediaUrl((string) $nilai('logo_path', ''));
-        $receiptHeader = $nilai('receipt_header', 'Saung Situ Awi - Ciwidey');
-        $receiptFooter = $nilai('struk_footer', 'Hatur Nuhun Parantos Sumping');
-        $restoAddress = $nilai('alamat_resto', 'Jl. Raya Situ Awi Km. 4, Ciwidey, Kabupaten Bandung');
-        $restoPhone = $nilai('telepon_resto', '0812-3456-7890');
-        $paperSize = $nilai('paper_size', '80mm') === '58mm' ? '58mm' : '80mm';
-
-        return view('kasir.dashboard.index', array_merge($data, compact(
-            'printLogo',
-            'logoSrc',
-            'receiptHeader',
-            'receiptFooter',
-            'restoAddress',
-            'restoPhone',
-            'paperSize',
-        )));
+        return view('kasir.dashboard.index', array_merge($data, $this->pengaturanStruk()));
     }
 
 
@@ -68,8 +40,38 @@ class PesananController extends Controller
                 'iotAlert' => $data['iotAlertJson'],
                 'selectedSaungId' => $data['selectedSaungId'],
                 'serverTime' => now('Asia/Jakarta')->format('H:i:s'),
+                'struk' => $this->pengaturanStruk(),
             ])
             ->header('Cache-Control', 'no-store, max-age=0');
+    }
+
+
+
+
+    /**
+     * Pengaturan struk dipakai saat render awal dan saat polling realtime,
+     * supaya perubahan admin langsung terpakai tanpa reload halaman kasir.
+     */
+    private function pengaturanStruk(): array
+    {
+        $pengaturan = Pengaturan::query()->pluck('nilai', 'kunci');
+        $nilai = function (string $kunci, mixed $default = null) use ($pengaturan): mixed {
+            $hasil = $pengaturan[$kunci] ?? null;
+
+            return $hasil !== null
+                ? $hasil
+                : ($default ?? Pengaturan::DEFAULTS[$kunci] ?? null);
+        };
+
+        return [
+            'printLogo' => filter_var($nilai('print_logo', '1'), FILTER_VALIDATE_BOOLEAN),
+            'logoSrc' => Pengaturan::mediaUrl((string) $nilai('logo_path', '')),
+            'receiptHeader' => $nilai('receipt_header', 'Saung Situ Awi - Ciwidey'),
+            'receiptFooter' => $nilai('struk_footer', 'Hatur Nuhun Parantos Sumping'),
+            'restoAddress' => $nilai('alamat_resto', 'Jl. Raya Situ Awi Km. 4, Ciwidey, Kabupaten Bandung'),
+            'restoPhone' => $nilai('telepon_resto', '0812-3456-7890'),
+            'paperSize' => $nilai('paper_size', '80mm') === '58mm' ? '58mm' : '80mm',
+        ];
     }
 
 

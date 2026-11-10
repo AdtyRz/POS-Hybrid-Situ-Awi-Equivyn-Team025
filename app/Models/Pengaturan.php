@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class Pengaturan extends Model
@@ -68,14 +67,21 @@ class Pengaturan extends Model
 
     public static function simpanBanyak(array $data): void
     {
-        DB::transaction(function () use ($data) {
-            foreach ($data as $kunci => $nilai) {
-                static::query()->updateOrCreate(
-                    ['kunci' => $kunci],
-                    ['nilai' => is_null($nilai) ? null : (string) $nilai]
-                );
-            }
-        });
+        if ($data === []) {
+            return;
+        }
+
+        $baris = [];
+
+        foreach ($data as $kunci => $nilai) {
+            $baris[] = [
+                'kunci' => $kunci,
+                'nilai' => is_null($nilai) ? null : (string) $nilai,
+            ];
+        }
+
+        // Satu query upsert agar simpan pengaturan tetap cepat di DB remote.
+        static::query()->upsert($baris, ['kunci'], ['nilai']);
     }
 
     public static function logoUrl(): string

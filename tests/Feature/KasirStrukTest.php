@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Kategori;
 use App\Models\MejaMakan;
 use App\Models\Menu;
+use App\Models\Pengaturan;
 use App\Models\Pesanan;
 use App\Models\SesiMeja;
 use App\Models\User;
@@ -156,6 +157,38 @@ class KasirStrukTest extends TestCase
         );
         $this->assertNotContains($sesiLama->kode_pesanan, $saung['receiptOrderIds']->all());
         $this->assertSame(30000.0, $saung['receiptTotal']);
+    }
+
+    public function test_state_kasir_memuat_pengaturan_struk_terbaru_untuk_realtime(): void
+    {
+        $kasir = $this->kasir();
+        $this->meja('LB-92');
+
+        Pengaturan::simpanBanyak([
+            'paper_size' => '58mm',
+            'receipt_header' => 'Header Baru',
+            'struk_footer' => 'Footer Baru',
+            'print_logo' => '0',
+        ]);
+
+        $this->actingAs($kasir)
+            ->getJson(route('kasir.state'))
+            ->assertOk()
+            ->assertJsonPath('struk.paperSize', '58mm')
+            ->assertJsonPath('struk.receiptHeader', 'Header Baru')
+            ->assertJsonPath('struk.receiptFooter', 'Footer Baru')
+            ->assertJsonPath('struk.printLogo', false);
+
+        Pengaturan::simpanBanyak([
+            'paper_size' => '80mm',
+            'print_logo' => '1',
+        ]);
+
+        $this->actingAs($kasir)
+            ->getJson(route('kasir.state'))
+            ->assertOk()
+            ->assertJsonPath('struk.paperSize', '80mm')
+            ->assertJsonPath('struk.printLogo', true);
     }
 
     public function test_menandai_struk_hanya_mengubah_pesanan_lunas_dan_idempoten(): void

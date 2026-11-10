@@ -981,6 +981,10 @@
 
 
                     setInterval(() => this.refreshKasirState(), 8000);
+
+                    document.addEventListener('visibilitychange', () => {
+                        if (! document.hidden) this.refreshKasirState();
+                    });
                 },
 
                 updateClock() {
@@ -1119,8 +1123,25 @@
                     this.cashReceived = 0;
                 },
 
+                terapkanPengaturanStruk(struk) {
+                    if (!struk) return;
+
+                    this.printLogo = struk.printLogo === true || struk.printLogo === 1 || struk.printLogo === '1';
+                    this.logoSrc = struk.logoSrc || this.logoSrc;
+                    this.receiptHeader = struk.receiptHeader ?? this.receiptHeader;
+                    this.receiptFooter = struk.receiptFooter ?? this.receiptFooter;
+                    this.restoAddress = struk.restoAddress ?? this.restoAddress;
+                    this.restoPhone = struk.restoPhone ?? this.restoPhone;
+                    this.paperSize = struk.paperSize === '58mm' ? '58mm' : '80mm';
+                },
+
                 async refreshKasirState() {
-                    if (this._stateLoading || document.hidden) return;
+                    if (this._stateLoading) {
+                        this._stateQueued = true;
+                        return;
+                    }
+
+                    if (document.hidden) return;
 
                     this._stateLoading = true;
                     const kodeTerpilih = this.currentSaung?.kodePesanan || null;
@@ -1148,6 +1169,7 @@
 
                         this.saungs = data.saungs;
                         this.iotAlert = data.iotAlert || this.iotAlert;
+                        this.terapkanPengaturanStruk(data.struk);
 
                         if (!this.saungs.some(saung => saung.id === this.selectedSaungId)) {
                             this.selectedSaungId = this.saungs[0]?.id || null;
@@ -1178,6 +1200,11 @@
 
                     } finally {
                         this._stateLoading = false;
+
+                        if (this._stateQueued) {
+                            this._stateQueued = false;
+                            this.refreshKasirState();
+                        }
                     }
                 },
 
