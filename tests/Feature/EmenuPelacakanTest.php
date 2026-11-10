@@ -71,6 +71,17 @@ class EmenuPelacakanTest extends TestCase
             ->assertSee('data-sesi-berakhir="1"', false);
     }
 
+    public function test_menu_pelanggan_tidak_memakai_foto_dari_url_luar(): void
+    {
+        [$meja] = $this->siapkanMejaDanMenu();
+
+        $this->withSession($this->sesiTerverifikasi($meja))
+            ->get(route('emenu.meja', $meja->id))
+            ->assertOk()
+            ->assertDontSee('images.unsplash.com', false)
+            ->assertDontSee('images.pexels.com', false);
+    }
+
     public function test_checkout_menyimpan_riwayat_tanpa_memotong_stok(): void
     {
         [$meja, $menu] = $this->siapkanMejaDanMenu();

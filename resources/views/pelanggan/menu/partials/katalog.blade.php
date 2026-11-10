@@ -190,8 +190,7 @@
                                      :alt="item.name"
                                      class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                      :class="item.isSoldOut ? 'grayscale contrast-75' : ''"
-                                     loading="lazy"
-                                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80';">
+                                     loading="lazy">
 
                                 <div class="absolute top-2 left-2 lg:top-3 lg:left-3">
                                     <span class="inline-flex items-center gap-1 px-2 py-0.5 lg:px-2.5 lg:py-1 rounded-md text-[10px] font-bold shadow-sm"
@@ -315,8 +314,7 @@
                             <div class="flex gap-3 py-3 first:pt-0">
                                 <img :src="item.image"
                                      :alt="item.name"
-                                     class="h-12 w-12 shrink-0 rounded-xl border border-forest-100 object-cover"
-                                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80';">
+                                     class="h-12 w-12 shrink-0 rounded-xl border border-forest-100 object-cover">
                                 <div class="min-w-0 flex-1">
                                     <div class="flex items-start justify-between gap-2">
                                         <p class="truncate text-xs font-bold text-forest-900" x-text="item.name"></p>

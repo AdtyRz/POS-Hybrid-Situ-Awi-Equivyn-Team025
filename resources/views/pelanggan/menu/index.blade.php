@@ -316,8 +316,7 @@
                         <div class="relative aspect-[16/10] w-full overflow-hidden bg-forest-100/50">
                             <img :src="selectedMenu.image"
                                  :alt="selectedMenu.name"
-                                 class="w-full h-full object-cover"
-                                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80';">
+                                 class="w-full h-full object-cover">
                             <button type="button" @click="closeMenu()"
                                 class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 text-forest-900 shadow-md flex items-center justify-center hover:bg-white transition active:scale-95"
                                 aria-label="Tutup detail menu">

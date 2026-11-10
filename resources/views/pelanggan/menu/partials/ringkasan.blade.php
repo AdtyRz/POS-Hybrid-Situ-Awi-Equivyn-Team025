@@ -115,8 +115,7 @@
                             <div class="flex items-start gap-3">
                                 <img :src="item.image"
                                      :alt="item.name"
-                                     class="w-16 h-16 lg:w-20 lg:h-20 rounded-xl object-cover shrink-0 border border-forest-100"
-                                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80';">
+                                     class="w-16 h-16 lg:w-20 lg:h-20 rounded-xl object-cover shrink-0 border border-forest-100">
 
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-start justify-between gap-2">
