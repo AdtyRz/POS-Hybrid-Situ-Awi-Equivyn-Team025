@@ -37,7 +37,7 @@
         </script>
     @endif
     <link href="{{ asset('fonts/fonts.css') }}" rel="stylesheet">
-<script defer src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script defer src="{{ asset('vendor/html5-qrcode.min.js') }}"></script>
 </head>
 
 <body class="min-h-screen bg-cream-50 text-stone-800 antialiased font-sans">
@@ -111,6 +111,8 @@
             </div>
             <div id="areaKamera" class="hidden mt-4">
                 <div id="pembaca" class="rounded-2xl overflow-hidden"></div>
+                <p id="pesanKamera" class="hidden mt-2 bg-white/10 text-amber-200 text-xs font-bold rounded-xl px-3 py-2"
+                    aria-live="polite"></p>
                 <button type="button" onclick="tutupKamera()"
                     class="w-full mt-2 bg-white/10 text-white text-sm font-bold rounded-full py-2">Tutup Kamera</button>
             </div>
@@ -151,9 +153,37 @@
             return '';
         }
 
+        function tampilPesanKamera(teks) {
+            var el = document.getElementById('pesanKamera');
+            if (!el) return;
+            el.textContent = teks || '';
+            el.classList.toggle('hidden', !teks);
+        }
+
         function bukaKamera() {
             document.getElementById('areaKamera').classList.remove('hidden');
             document.getElementById('tombolKamera').classList.add('hidden');
+            tampilPesanKamera('');
+
+            if (!window.isSecureContext) {
+                tampilPesanKamera('Kamera hanya bisa dibuka lewat HTTPS atau localhost. Akses halaman ini memakai alamat https://...');
+                return;
+            }
+
+            if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+                tampilPesanKamera('Browser ini tidak mendukung akses kamera. Gunakan Chrome atau Safari versi terbaru.');
+                return;
+            }
+
+            if (typeof Html5Qrcode === 'undefined') {
+                tampilPesanKamera('Pemindai QR belum termuat. Muat ulang halaman lalu coba lagi.');
+                return;
+            }
+
+            if (pemindai) {
+                return;
+            }
+
             pemindai = new Html5Qrcode('pembaca');
             pemindai.start({
                 facingMode: 'environment'
@@ -166,16 +196,37 @@
                     tutupKamera();
                     window.location.href = tujuan;
                 }
+            }).catch(function(err) {
+                pemindai = null;
+                var pesan = String((err && (err.message || err.name)) || '');
+                if (/NotAllowed|Permission|denied/i.test(pesan)) {
+                    tampilPesanKamera('Izin kamera ditolak. Aktifkan izin kamera di pengaturan browser lalu coba lagi.');
+                } else if (/NotFound|DevicesNotFound|device/i.test(pesan)) {
+                    tampilPesanKamera('Kamera tidak ditemukan. Pastikan perangkat memiliki kamera.');
+                } else {
+                    tampilPesanKamera('Kamera gagal dibuka. Pastikan halaman diakses lewat HTTPS dan izin kamera diberikan.');
+                }
             });
         }
 
         function tutupKamera() {
-            if (pemindai) {
-                pemindai.stop().catch(function() {});
-                pemindai = null;
+            var aktif = pemindai;
+            pemindai = null;
+
+            if (aktif) {
+                try {
+                    var proses = aktif.stop();
+                    if (proses && typeof proses.catch === 'function') {
+                        proses.catch(function() {});
+                    }
+                } catch (err) {
+                    // Kamera mungkin belum sempat aktif; tidak perlu menghentikan halaman.
+                }
             }
+
             document.getElementById('areaKamera').classList.add('hidden');
             document.getElementById('tombolKamera').classList.remove('hidden');
+            tampilPesanKamera('');
         }
 
     </script>
