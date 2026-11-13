@@ -110,6 +110,34 @@
                 </a>
             </div>
         </div>
+        <div x-show="konflikPerangkat" x-cloak x-transition
+            class="fixed inset-0 z-[65] bg-forest-900/75 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl border border-forest-100">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-gold-50 text-gold-600 flex items-center justify-center">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <h2 class="mt-4 font-display text-xl font-bold text-forest-900">Sesi Dipakai di Perangkat Lain</h2>
+                <p class="mt-2 text-xs leading-relaxed text-charcoal-500">
+                    Sesi meja ini sedang dibuka di
+                    <span class="font-bold text-forest-900" x-text="konflikPerangkat?.label_aktif || 'perangkat lain'"></span>.
+                    Tekan <span class="font-bold">Ok</span> untuk keluar dan memasukkan kode meja kembali, atau
+                    <span class="font-bold">Batal</span> untuk tetap memakai sesi ini.
+                </p>
+                <div class="mt-5 space-y-2">
+                    <button type="button" @click="responPerangkat('terima')" :disabled="memprosesKonflik"
+                        class="w-full rounded-xl bg-forest-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-forest-600 active:scale-95 disabled:cursor-wait disabled:opacity-70">
+                        Ok
+                    </button>
+                    <button type="button" @click="responPerangkat('tolak')" :disabled="memprosesKonflik"
+                        class="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm font-bold text-stone-600 transition hover:bg-stone-50 active:scale-95 disabled:cursor-wait disabled:opacity-70">
+                        Batal
+                    </button>
+                </div>
+            </div>
+        </div>
         <div x-show="toast.visible" x-transition:enter="transition ease-out duration-300 transform"
             x-transition:enter-start="-translate-y-12 opacity-0" x-transition:enter-end="translate-y-0 opacity-100"
             x-transition:leave="transition ease-in duration-200 transform" x-transition:leave-start="opacity-100"
@@ -441,6 +469,10 @@
                 selectedMenu: null,
                 detailQty: 1,
                 paymentMethod: 'qris',
+                mengirim: false,
+                checkoutKey: (window.crypto && typeof window.crypto.randomUUID === 'function')
+                    ? window.crypto.randomUUID()
+                    : 'ck-' + Date.now() + '-' + Math.random().toString(36).slice(2),
                 namaPelanggan: @json($namaPelanggan ?? ''),
                 namaPelangganInput: @json(old('nama_pelanggan', $namaPelanggan ?? '')),
                 namaPelangganError: @json($errors->first('nama_pelanggan') ?? ''),
@@ -457,9 +489,16 @@
                 menuItems: @json($menuJson),
                 cartItems: [],
                 sesiAktif: true,
+                konflikPerangkat: null,
+                memprosesKonflik: false,
+                perangkatStatusUrl: @json(route('emenu.perangkat.status', $meja->kode_meja)),
+                perangkatResponUrl: @json(route('emenu.perangkat.respon', $meja->kode_meja)),
+                kunciUrl: @json(route('emenu.kunci', $meja->kode_meja)),
                 initApp() {
                     this.updateClock();
                     setInterval(() => this.updateClock(), 1000);
+                    setInterval(() => this.cekPerangkat(), 4000);
+                    this.cekPerangkat();
                     if (this.serverError) {
                         this.showToast('info', 'Pesanan Belum Diproses', this.serverError);
                     }
@@ -542,6 +581,87 @@
                         minute: '2-digit',
                         hour12: false,
                     }).format(new Date()) + ' WIB';
+                },
+                async cekPerangkat() {
+                    if (! this.sesiAktif) {
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(this.perangkatStatusUrl, {
+                            headers: {
+                                'Accept': 'application/json'
+                            },
+                            credentials: 'same-origin'
+                        });
+
+                        if (! response.ok) {
+                            return;
+                        }
+
+                        const data = await response.json();
+
+                        if (data.redirect) {
+                            window.location.href = data.redirect;
+                            return;
+                        }
+
+                        if (data.peran === 'lain' && data.sesi_aktif) {
+                            window.location.href = this.kunciUrl;
+                            return;
+                        }
+
+                        const status = data.takeover ? data.takeover.status : null;
+
+                        if (data.peran === 'aktif' && status === 'menunggu') {
+                            this.konflikPerangkat = data.takeover;
+                        } else if (status !== 'menunggu') {
+                            this.konflikPerangkat = null;
+                        }
+                    } catch (error) {
+                        // Jaringan sedang bermasalah; polling berikutnya akan mencoba lagi.
+                    }
+                },
+                async responPerangkat(keputusan) {
+                    if (this.memprosesKonflik) {
+                        return;
+                    }
+
+                    this.memprosesKonflik = true;
+                    const csrf = document.querySelector('meta[name="csrf-token"]').content;
+
+                    try {
+                        const response = await fetch(this.perangkatResponUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrf
+                            },
+                            credentials: 'same-origin',
+                            body: JSON.stringify({
+                                keputusan: keputusan
+                            })
+                        });
+                        const data = await response.json().catch(() => ({}));
+
+                        if (data.redirect) {
+                            window.location.href = data.redirect;
+                            return;
+                        }
+
+                        if (keputusan === 'terima') {
+                            window.location.href = this.kunciUrl;
+                            return;
+                        }
+
+                        this.konflikPerangkat = null;
+                        this.showToast('info', 'Permintaan Dibatalkan', 'Sesi tetap aktif di perangkat ini.');
+                    } catch (error) {
+                        this.showToast('info', 'Koneksi Gagal', 'Periksa jaringan lalu jawab kembali.');
+                    } finally {
+                        this.memprosesKonflik = false;
+                    }
                 },
                 get filteredMenuItems() {
                     return this.menuItems.filter(item => {
@@ -712,6 +832,9 @@
                     document.getElementById('formPanggil').submit();
                 },
                 kirimBon() {
+                    if (this.mengirim) {
+                        return;
+                    }
                     if (this.cartItems.length === 0) {
                         this.showToast('info', 'Pilih Menu Dulu', 'Pilih minimal 1 menu sebelum membayar.');
                         return;
@@ -743,6 +866,7 @@
                         return;
                     }
                     const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    this.mengirim = true;
                     const form = document.createElement('form');
                     form.method = 'POST';
                     form.action = this.checkoutUrl;
@@ -755,6 +879,7 @@
                     };
                     tambah('_token', token);
                     tambah('metode', this.paymentMethod === 'cash' ? 'tunai' : 'qris');
+                    tambah('idempotency_key', this.checkoutKey);
                     tambah('nama_pelanggan', nama);
                     this.cartItems.forEach(item => {
                         tambah(`jumlah[${item.id}]`, item.qty);
@@ -762,6 +887,9 @@
                     });
                     document.body.appendChild(form);
                     form.submit();
+                    window.setTimeout(() => {
+                        this.mengirim = false;
+                    }, 15000);
                 },
                 showToast(type, title, message) {
                     clearTimeout(this.toast.timeout);

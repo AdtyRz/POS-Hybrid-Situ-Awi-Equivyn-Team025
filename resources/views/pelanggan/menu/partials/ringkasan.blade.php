@@ -287,8 +287,9 @@
                     <div class="hidden lg:block pt-1">
                         <button type="button"
                                 @click="kirimBon()"
-                                class="flex w-full items-center justify-center gap-2 rounded-xl bg-gold-500 px-4 py-3 text-sm font-bold text-forest-900 shadow-md transition hover:bg-gold-400 active:scale-[0.98]">
-                            <span>Lanjut ke Pembayaran</span>
+                                :disabled="mengirim"
+                                class="flex w-full items-center justify-center gap-2 rounded-xl bg-gold-500 px-4 py-3 text-sm font-bold text-forest-900 shadow-md transition hover:bg-gold-400 active:scale-[0.98] disabled:cursor-wait disabled:opacity-70">
+                            <span x-text="mengirim ? 'Memproses...' : 'Lanjut ke Pembayaran'">Lanjut ke Pembayaran</span>
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
                             </svg>
@@ -316,8 +317,9 @@
 
             <button type="button"
                     @click="kirimBon()"
-                    class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-forest-700 hover:bg-forest-800 text-white font-bold text-xs sm:text-sm shadow-md transition active:scale-95">
-                <span>Lanjut ke Pembayaran</span>
+                    :disabled="mengirim"
+                    class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-forest-700 hover:bg-forest-800 text-white font-bold text-xs sm:text-sm shadow-md transition active:scale-95 disabled:cursor-wait disabled:opacity-70">
+                <span x-text="mengirim ? 'Memproses...' : 'Lanjut ke Pembayaran'">Lanjut ke Pembayaran</span>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
                 </svg>
