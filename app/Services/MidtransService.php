@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Pengaturan;
 use App\Models\Pesanan;
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Support\Facades\Cache;
 use Midtrans\Config;
 use Midtrans\CoreApi;
 use Midtrans\Transaction;
@@ -27,6 +29,19 @@ class MidtransService
     public function createQrisCharge(Pesanan $pesanan, bool $renewIfExpired = false): ?array
     {
         try {
+            return Cache::lock('midtrans-qris:' . $pesanan->kode_pesanan, 30)
+                ->block(8, fn () => $this->createQrisChargeTerkunci($pesanan));
+        } catch (LockTimeoutException $e) {
+            return null;
+        } catch (\Exception $e) {
+            report($e);
+            return null;
+        }
+    }
+
+    private function createQrisChargeTerkunci(Pesanan $pesanan): ?array
+    {
+        try {
             $status = $this->getTransactionStatus($pesanan->kode_pesanan);
             $trx = strtolower($status->transaction_status ?? '');
 
@@ -44,6 +59,17 @@ class MidtransService
                     'transaction_id' => $status->transaction_id ?? null,
                     'qr_url' => $qrUrl,
                     'transaction_status' => 'pending',
+                    'expiry_time' => $status->expiry_time ?? null,
+                ];
+            }
+
+
+            if (in_array($trx, ['settlement', 'capture'], true)) {
+                return [
+                    'order_id' => $pesanan->kode_pesanan,
+                    'transaction_id' => $status->transaction_id ?? null,
+                    'qr_url' => null,
+                    'transaction_status' => $trx,
                     'expiry_time' => $status->expiry_time ?? null,
                 ];
             }

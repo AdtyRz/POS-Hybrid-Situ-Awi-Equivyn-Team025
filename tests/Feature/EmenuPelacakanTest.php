@@ -664,4 +664,80 @@ class EmenuPelacakanTest extends TestCase
             ->assertDontSee('Kode Pesanan:')
             ->assertSee('const qrTtl = 1020;', false);
     }
+
+    public function test_checkout_dengan_kunci_idempotensi_sama_tidak_membuat_pesanan_ganda(): void
+    {
+        [$meja, $menu] = $this->siapkanMejaDanMenu();
+        $sesi = $this->sesiTerverifikasi($meja);
+
+        $muatan = [
+            'jumlah' => [$menu->id => 2],
+            'catatan' => [$menu->id => 'pedas'],
+            'metode' => 'tunai',
+            'nama_pelanggan' => 'Budi Santoso',
+            'idempotency_key' => 'checkout-uji-ganda-001',
+        ];
+
+        $this->withSession($sesi)
+            ->post(route('emenu.checkout', $meja->id), $muatan)
+            ->assertRedirect(route('emenu.bayar-tunai', Pesanan::firstOrFail()->kode_pesanan));
+
+        $this->withSession($sesi)
+            ->post(route('emenu.checkout', $meja->id), $muatan)
+            ->assertRedirect(route('emenu.bayar-tunai', Pesanan::firstOrFail()->kode_pesanan));
+
+        $this->assertSame(1, Pesanan::count());
+        $this->assertSame(1, Pesanan::firstOrFail()->detailPesanan()->count());
+        $this->assertSame(10, $menu->fresh()->stok_menu);
+        $this->assertCount(1, session('riwayat_meja_' . $meja->id, []));
+    }
+
+    public function test_checkout_qris_dengan_kunci_idempotensi_sama_hanya_membuat_satu_tagihan(): void
+    {
+        [$meja, $menu] = $this->siapkanMejaDanMenu();
+        $sesi = $this->sesiTerverifikasi($meja);
+
+        $muatan = [
+            'jumlah' => [$menu->id => 1],
+            'metode' => 'qris',
+            'nama_pelanggan' => 'Budi Santoso',
+            'idempotency_key' => 'checkout-qris-uji-ganda-001',
+        ];
+
+        $this->withSession($sesi)
+            ->post(route('emenu.checkout', $meja->id), $muatan)
+            ->assertRedirect(route('emenu.verifikasi', Pesanan::firstOrFail()->kode_pesanan));
+
+        $this->withSession($sesi)
+            ->post(route('emenu.checkout', $meja->id), $muatan)
+            ->assertRedirect(route('emenu.verifikasi', Pesanan::firstOrFail()->kode_pesanan));
+
+        $pesanan = Pesanan::sole();
+
+        $this->assertSame('qris', $pesanan->metode_pembayaran);
+        $this->assertSame(1, $pesanan->detailPesanan()->count());
+        $this->assertCount(1, session('riwayat_meja_' . $meja->id, []));
+    }
+
+    public function test_checkout_dengan_kunci_idempotensi_berbeda_membuat_pesanan_baru(): void
+    {
+        [$meja, $menu] = $this->siapkanMejaDanMenu();
+        $sesi = $this->sesiTerverifikasi($meja);
+
+        $muatan = [
+            'jumlah' => [$menu->id => 1],
+            'metode' => 'tunai',
+            'nama_pelanggan' => 'Budi Santoso',
+        ];
+
+        $this->withSession($sesi)
+            ->post(route('emenu.checkout', $meja->id), $muatan + ['idempotency_key' => 'checkout-uji-a'])
+            ->assertRedirect();
+
+        $this->withSession($sesi)
+            ->post(route('emenu.checkout', $meja->id), $muatan + ['idempotency_key' => 'checkout-uji-b'])
+            ->assertRedirect();
+
+        $this->assertSame(2, Pesanan::count());
+    }
 }

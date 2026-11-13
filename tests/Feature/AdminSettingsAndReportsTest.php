@@ -312,6 +312,7 @@ class AdminSettingsAndReportsTest extends TestCase
         Pesanan::create([
             'kode_pesanan' => 'AWI-STATE-01',
             'meja_id' => $meja->id,
+            'waktu_pesan' => now(),
             'total_bayar' => 45000,
             'status_pesanan' => Pesanan::STATUS_SIAP,
             'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
