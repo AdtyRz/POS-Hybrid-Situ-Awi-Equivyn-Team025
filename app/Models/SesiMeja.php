@@ -18,6 +18,8 @@ class SesiMeja extends Model
         return [
             'dibuka_pada' => 'datetime',
             'ditutup_pada' => 'datetime',
+            'perangkat_aktif_pada' => 'datetime',
+            'takeover_diminta_pada' => 'datetime',
         ];
     }
 

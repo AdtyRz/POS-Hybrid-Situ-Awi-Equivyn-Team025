@@ -8,6 +8,7 @@ use App\Models\Menu;
 use App\Models\Pesanan;
 use App\Models\SesiMeja;
 use App\Models\StokMutasi;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -28,91 +29,142 @@ class PesananService
 
     public function buat(MejaMakan $meja, array $jumlahPerMenu, array $catatanPerMenu = [], array $opsi = []): Pesanan
     {
-        return DB::transaction(function () use ($meja, $jumlahPerMenu, $catatanPerMenu, $opsi) {
-            $dipilih = collect($jumlahPerMenu)
-                ->filter(fn ($jumlah, $menuId) => is_numeric($menuId) && (int) $jumlah > 0)
-                ->map(fn ($jumlah) => (int) $jumlah);
+        $idempotencyKey = $this->normalisasiKunciIdempotensi($opsi['idempotency_key'] ?? null);
 
-            if ($dipilih->isEmpty()) {
-                throw new RuntimeException('Minimal 1 item harus dipesan.');
+        if ($idempotencyKey !== null) {
+            $pesananLama = Pesanan::where('idempotency_key', $idempotencyKey)->first();
+
+            if ($pesananLama) {
+                return $this->pesananDariPermintaanGanda($pesananLama, $meja);
             }
+        }
 
-            $daftarMenu = Menu::whereIn('id', $dipilih->keys())
-                ->lockForUpdate()
-                ->get()
-                ->keyBy('id');
+        try {
+            return DB::transaction(function () use ($meja, $jumlahPerMenu, $catatanPerMenu, $opsi, $idempotencyKey) {
+                $dipilih = collect($jumlahPerMenu)
+                    ->filter(fn ($jumlah, $menuId) => is_numeric($menuId) && (int) $jumlah > 0)
+                    ->map(fn ($jumlah) => (int) $jumlah);
 
-            $subtotal = 0;
-
-            foreach ($dipilih as $menuId => $jumlah) {
-                $menu = $daftarMenu->get($menuId);
-
-                if (! $menu) {
-                    throw new RuntimeException('Menu yang dipilih tidak ditemukan.');
+                if ($dipilih->isEmpty()) {
+                    throw new RuntimeException('Minimal 1 item harus dipesan.');
                 }
 
-                if (! $menu->is_aktif) {
-                    throw new RuntimeException('Menu '.$menu->nama_menu.' sedang tidak tersedia.');
+                $daftarMenu = Menu::whereIn('id', $dipilih->keys())
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id');
+
+                $subtotal = 0;
+
+                foreach ($dipilih as $menuId => $jumlah) {
+                    $menu = $daftarMenu->get($menuId);
+
+                    if (! $menu) {
+                        throw new RuntimeException('Menu yang dipilih tidak ditemukan.');
+                    }
+
+                    if (! $menu->is_aktif) {
+                        throw new RuntimeException('Menu '.$menu->nama_menu.' sedang tidak tersedia.');
+                    }
+
+                    if ($menu->stok_menu < $jumlah) {
+                        throw new RuntimeException(
+                            'Stok '.$menu->nama_menu.' tersisa '.max(0, (int) $menu->stok_menu).' porsi.'
+                        );
+                    }
+
+                    $subtotal += (float) $menu->harga * $jumlah;
                 }
 
-                if ($menu->stok_menu < $jumlah) {
-                    throw new RuntimeException(
-                        'Stok '.$menu->nama_menu.' tersisa '.max(0, (int) $menu->stok_menu).' porsi.'
-                    );
+
+                $totalBayar = $subtotal;
+
+                $asal = $opsi['asal'] ?? 'api';
+                $metode = $opsi['metode'] ?? null;
+
+                if ($metode !== null && ! in_array($metode, ['tunai', 'qris'], true)) {
+                    throw new RuntimeException('Metode pembayaran tidak valid.');
                 }
 
-                $subtotal += (float) $menu->harga * $jumlah;
-            }
+                if ($metode === null && $asal !== 'api') {
+                    $metode = 'tunai';
+                }
 
+                [$statusPesanan, $statusPembayaran] = $this->statusAwal($asal, $metode);
 
-            $totalBayar = $subtotal;
+                $kodePesanan = $this->generateKodePesanan($meja);
 
-            $asal = $opsi['asal'] ?? 'api';
-            $metode = $opsi['metode'] ?? null;
-
-            if ($metode !== null && ! in_array($metode, ['tunai', 'qris'], true)) {
-                throw new RuntimeException('Metode pembayaran tidak valid.');
-            }
-
-            if ($metode === null && $asal !== 'api') {
-                $metode = 'tunai';
-            }
-
-            [$statusPesanan, $statusPembayaran] = $this->statusAwal($asal, $metode);
-
-            $kodePesanan = $this->generateKodePesanan($meja);
-
-            $pesanan = Pesanan::create([
-                'kode_pesanan' => $kodePesanan,
-                'kode_pembayaran' => $kodePesanan,
-                'meja_id' => $meja->id,
-                'kasir_id' => $opsi['kasir_id'] ?? null,
-                'nama_pelanggan' => $opsi['nama_pelanggan'] ?? null,
-                'total_bayar' => $totalBayar,
-                'metode_pembayaran' => $metode,
-                'status_pesanan' => $statusPesanan,
-                'status_pembayaran' => $statusPembayaran,
-                'catatan' => $opsi['catatan'] ?? null,
-            ]);
-
-            foreach ($dipilih as $menuId => $jumlah) {
-                $menu = $daftarMenu->get($menuId);
-
-                DetailPesanan::create([
-                    'pesanan_id' => $pesanan->id,
-                    'menu_id' => $menu->id,
-                    'jumlah' => $jumlah,
-                    'harga_satuan' => $menu->harga,
-                    'subtotal' => (float) $menu->harga * $jumlah,
-                    'status_item' => 'menunggu',
-                    'catatan' => $catatanPerMenu[$menuId] ?? null,
+                $pesanan = Pesanan::create([
+                    'kode_pesanan' => $kodePesanan,
+                    'kode_pembayaran' => $kodePesanan,
+                    'meja_id' => $meja->id,
+                    'kasir_id' => $opsi['kasir_id'] ?? null,
+                    'nama_pelanggan' => $opsi['nama_pelanggan'] ?? null,
+                    'total_bayar' => $totalBayar,
+                    'metode_pembayaran' => $metode,
+                    'status_pesanan' => $statusPesanan,
+                    'status_pembayaran' => $statusPembayaran,
+                    'catatan' => $opsi['catatan'] ?? null,
+                    'idempotency_key' => $idempotencyKey,
                 ]);
+
+                foreach ($dipilih as $menuId => $jumlah) {
+                    $menu = $daftarMenu->get($menuId);
+
+                    DetailPesanan::create([
+                        'pesanan_id' => $pesanan->id,
+                        'menu_id' => $menu->id,
+                        'jumlah' => $jumlah,
+                        'harga_satuan' => $menu->harga,
+                        'subtotal' => (float) $menu->harga * $jumlah,
+                        'status_item' => 'menunggu',
+                        'catatan' => $catatanPerMenu[$menuId] ?? null,
+                    ]);
+                }
+
+                $meja->update(['status_meja' => 'terisi']);
+
+                return $pesanan->load(['detailPesanan', 'meja']);
+            });
+        } catch (QueryException $exception) {
+            if ($idempotencyKey !== null && $this->galatKunciGanda($exception)) {
+                $pesananLama = Pesanan::where('idempotency_key', $idempotencyKey)->first();
+
+                if ($pesananLama) {
+                    return $this->pesananDariPermintaanGanda($pesananLama, $meja);
+                }
             }
 
-            $meja->update(['status_meja' => 'terisi']);
+            throw $exception;
+        }
+    }
 
-            return $pesanan->load(['detailPesanan', 'meja']);
-        });
+    private function normalisasiKunciIdempotensi(mixed $kunci): ?string
+    {
+        $kunci = trim((string) $kunci);
+
+        if ($kunci === '') {
+            return null;
+        }
+
+        return Str::length($kunci) > 64 ? hash('sha256', $kunci) : $kunci;
+    }
+
+    private function pesananDariPermintaanGanda(Pesanan $pesanan, MejaMakan $meja): Pesanan
+    {
+        if ((int) $pesanan->meja_id !== (int) $meja->id) {
+            throw new RuntimeException('Permintaan pesanan ganda terdeteksi. Muat ulang halaman lalu coba lagi.');
+        }
+
+        return $pesanan->load(['detailPesanan', 'meja']);
+    }
+
+    private function galatKunciGanda(QueryException $exception): bool
+    {
+        $kode = (string) ($exception->errorInfo[0] ?? $exception->getCode());
+
+        return in_array($kode, ['23000', '23505'], true)
+            || str_contains(strtolower($exception->getMessage()), 'unique');
     }
 
 

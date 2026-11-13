@@ -28,6 +28,18 @@ Route::middleware('pesanan.no-store')->group(function () {
     Route::post('/meja/{meja}/buka', [EMenuController::class, 'buka'])
         ->middleware('throttle:5,1,pin')
         ->name('emenu.buka');
+    Route::post('/meja/{meja}/perangkat/minta', [EMenuController::class, 'mintaAmbilAlih'])
+        ->middleware('throttle:20,1')
+        ->name('emenu.perangkat.minta');
+    Route::get('/meja/{meja}/perangkat/status', [EMenuController::class, 'statusPerangkat'])
+        ->middleware('throttle:120,1')
+        ->name('emenu.perangkat.status');
+    Route::post('/meja/{meja}/perangkat/respon', [EMenuController::class, 'responAmbilAlih'])
+        ->middleware('throttle:30,1')
+        ->name('emenu.perangkat.respon');
+    Route::post('/meja/{meja}/perangkat/batal', [EMenuController::class, 'batalAmbilAlih'])
+        ->middleware('throttle:30,1')
+        ->name('emenu.perangkat.batal');
     Route::get('/meja/{meja}/pelacakan', [EMenuController::class, 'pelacakan'])
         ->middleware('throttle:30,1')
         ->name('emenu.pelacakan');

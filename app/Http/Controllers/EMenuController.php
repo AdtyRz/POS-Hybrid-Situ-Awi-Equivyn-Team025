@@ -16,6 +16,7 @@ use App\Models\SesiMeja;
 use App\Services\MidtransService;
 use App\Services\PesananService;
 use App\Support\AksesPesanan;
+use App\Support\PerangkatPelanggan;
 use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -63,6 +64,15 @@ class EMenuController extends Controller
 
         if ($mejaTerbuka && (int) $mejaTerbuka->id !== (int) $sesi->meja_id) {
             return $this->kodeKunciDitolak($this->pesanMejaLain($mejaTerbuka));
+        }
+
+        $perangkat = PerangkatPelanggan::id($request);
+
+        if ($this->perangkatLainAktif($sesiAktif, $perangkat)) {
+            $this->catatIzinAmbilAlih($request, $sesiAktif);
+
+            return redirect()->route('emenu.index')
+                ->with('konflik_perangkat', $this->payloadKonflik($sesiAktif, $sesi->meja));
         }
 
         $this->tandaiSesiTerverifikasi($request, $sesi->meja, $sesiAktif);
@@ -124,6 +134,26 @@ class EMenuController extends Controller
             ]);
         }
 
+        $perangkat = PerangkatPelanggan::id($request);
+
+        if ($this->perangkatLainAktif($sesi, $perangkat)) {
+            $this->catatIzinAmbilAlih($request, $sesi);
+            $konflik = $this->payloadKonflik($sesi, $mejaMakan);
+            $pesan = 'Sesi meja ini sedang dipakai di perangkat lain.';
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $pesan,
+                    'konflik' => $konflik,
+                    'errors' => ['kode_unik' => [$pesan]],
+                ], 409);
+            }
+
+            return redirect()->route('emenu.kunci', $mejaMakan->kode_meja)
+                ->with('konflik_perangkat', $konflik)
+                ->withErrors(['kode_unik' => $pesan]);
+        }
+
         $this->tandaiSesiTerverifikasi($request, $mejaMakan, $sesi);
 
         $tujuan = route('emenu.meja', $mejaMakan->kode_meja);
@@ -145,8 +175,24 @@ class EMenuController extends Controller
 
     public function keluar(Request $request): RedirectResponse
     {
+        $perangkat = PerangkatPelanggan::id($request);
+
         foreach (array_keys($request->session()->all()) as $kunci) {
-            if (preg_match('/^(sesi_meja|riwayat_meja)_\d+$/', (string) $kunci)) {
+            $kunci = (string) $kunci;
+
+            if (preg_match('/^sesi_meja_(\d+)$/', $kunci, $cocok)) {
+                $meja = MejaMakan::find((int) $cocok[1]);
+
+                if ($meja) {
+                    $sesi = SesiMeja::aktifUntuk($meja);
+
+                    if (PerangkatPelanggan::cocok($sesi, $perangkat)) {
+                        $this->lepasPerangkat($sesi);
+                    }
+                }
+            }
+
+            if (preg_match('/^(sesi_meja|riwayat_meja|izin_ambil_alih)_\d+$/', $kunci)) {
                 $request->session()->forget($kunci);
             }
         }
@@ -164,7 +210,12 @@ class EMenuController extends Controller
         }
 
         if (! $this->sesiTerverifikasi($mejaMakan)) {
-            return $this->kunciRedirect($mejaMakan);
+            $sesiAktif = SesiMeja::aktifUntuk($mejaMakan);
+            $pesan = $this->perangkatLainAktif($sesiAktif, PerangkatPelanggan::id($request))
+                ? 'Sesi meja ini sedang dipakai di perangkat lain.'
+                : 'Sesi meja sudah berakhir. Masukkan kembali kode saung untuk membuka pesanan.';
+
+            return $this->kunciRedirect($mejaMakan, $pesan);
         }
 
         $sesi = SesiMeja::aktifUntuk($mejaMakan);
@@ -231,6 +282,7 @@ class EMenuController extends Controller
             'catatan.*' => ['nullable', 'string', 'max:255'],
             'metode' => ['required', 'in:tunai,qris'],
             'nama_pelanggan' => [$namaTersimpan !== '' ? 'nullable' : 'required', 'string', 'max:100'],
+            'idempotency_key' => ['nullable', 'string', 'max:64'],
         ], [
             'nama_pelanggan.required' => 'Nama pemesan wajib diisi sebelum melanjutkan.',
             'nama_pelanggan.max' => 'Nama pemesan maksimal 100 karakter.',
@@ -251,28 +303,36 @@ class EMenuController extends Controller
                 $mejaMakan,
                 $dipilih->all(),
                 $data['catatan'] ?? [],
-                ['asal' => 'emenu', 'metode' => $data['metode'], 'nama_pelanggan' => $namaPelanggan],
+                [
+                    'asal' => 'emenu',
+                    'metode' => $data['metode'],
+                    'nama_pelanggan' => $namaPelanggan,
+                    'idempotency_key' => $data['idempotency_key'] ?? null,
+                ],
             );
         } catch (\RuntimeException $exception) {
             return back()->withErrors(['jumlah' => $exception->getMessage()])->withInput();
         }
 
-        if ($namaTersimpan === '') {
-            $sesi->update(['nama_pelanggan' => $namaPelanggan]);
+        $pesananBaru = $pesanan->wasRecentlyCreated;
+
+        if ($pesananBaru) {
+            if ($namaTersimpan === '') {
+                $sesi->update(['nama_pelanggan' => $namaPelanggan]);
+            }
+
+            $request->session()->push('riwayat_meja_' . $mejaMakan->id, $pesanan->kode_pesanan);
+
+            Realtime::emit(new PesananBaru([
+                'kode_pesanan' => $pesanan->kode_pesanan,
+                'meja' => $mejaMakan->kode_meja,
+                'meja_id' => $mejaMakan->id,
+                'status_pesanan' => $pesanan->status_pesanan,
+                'status_pembayaran' => $pesanan->status_pembayaran,
+                'metode_pembayaran' => $pesanan->metode_pembayaran,
+                'total_bayar' => (float) $pesanan->total_bayar,
+            ]));
         }
-
-        $request->session()->push('riwayat_meja_' . $mejaMakan->id, $pesanan->kode_pesanan);
-
-
-        Realtime::emit(new PesananBaru([
-            'kode_pesanan' => $pesanan->kode_pesanan,
-            'meja' => $mejaMakan->kode_meja,
-            'meja_id' => $mejaMakan->id,
-            'status_pesanan' => $pesanan->status_pesanan,
-            'status_pembayaran' => $pesanan->status_pembayaran,
-            'metode_pembayaran' => $pesanan->metode_pembayaran,
-            'total_bayar' => (float) $pesanan->total_bayar,
-        ]));
 
 
         if ($data['metode'] === 'qris') {
@@ -569,6 +629,264 @@ class EMenuController extends Controller
         return back()->with('panggilan_terkirim', true);
     }
 
+    public function mintaAmbilAlih(Request $request, string $meja): JsonResponse
+    {
+        $mejaMakan = $this->cariMeja($meja);
+        $sesi = SesiMeja::aktifUntuk($mejaMakan);
+        $perangkat = PerangkatPelanggan::id($request);
+        $izin = $request->session()->get('izin_ambil_alih_' . $mejaMakan->id);
+
+        if (! is_array($izin)
+            || (int) ($izin['sesi_id'] ?? 0) !== (int) $sesi->id
+            || now()->timestamp - (int) ($izin['waktu'] ?? 0) > 600) {
+            return response()->json([
+                'message' => 'Sesi tidak valid. Masukkan kembali kode meja lalu coba lagi.',
+            ], 403);
+        }
+
+        if (! $this->perangkatLainAktif($sesi, $perangkat)) {
+            $this->klaimPerangkat($request, $sesi);
+            $request->session()->put('sesi_meja_' . $mejaMakan->id, $sesi->id);
+            $request->session()->forget('izin_ambil_alih_' . $mejaMakan->id);
+
+            return response()->json([
+                'status' => 'disetujui',
+                'redirect' => route('emenu.meja', $mejaMakan->kode_meja),
+            ]);
+        }
+
+        if ($sesi->takeover_status === 'menunggu'
+            && filled($sesi->takeover_perangkat_id)
+            && ! hash_equals((string) $sesi->takeover_perangkat_id, $perangkat)
+            && ! $this->takeoverKedaluwarsa($sesi)) {
+            return response()->json([
+                'message' => 'Permintaan perangkat lain sedang diproses. Coba lagi sebentar.',
+            ], 409);
+        }
+
+        $sesi->forceFill([
+            'takeover_status' => 'menunggu',
+            'takeover_perangkat_id' => $perangkat,
+            'takeover_perangkat_label' => PerangkatPelanggan::label($request),
+            'takeover_diminta_pada' => now(),
+        ])->save();
+
+        return response()->json([
+            'status' => 'menunggu',
+            'label_aktif' => $sesi->perangkat_label ?: 'perangkat lain',
+        ]);
+    }
+
+    public function statusPerangkat(Request $request, string $meja): JsonResponse
+    {
+        $mejaMakan = $this->cariMeja($meja);
+        $sesi = SesiMeja::aktifUntuk($mejaMakan);
+        $perangkat = PerangkatPelanggan::id($request);
+
+        if ($this->takeoverKedaluwarsa($sesi)) {
+            $sesi->forceFill(['takeover_status' => 'kedaluwarsa'])->save();
+        }
+
+        $aktif = PerangkatPelanggan::cocok($sesi, $perangkat);
+        $pemohon = filled($sesi->takeover_perangkat_id)
+            && hash_equals((string) $sesi->takeover_perangkat_id, $perangkat);
+
+        $redirect = null;
+
+        if ($aktif) {
+            $this->sentuhPerangkat($sesi);
+
+            $kunciSesi = 'sesi_meja_' . $mejaMakan->id;
+
+            if ((int) $request->session()->get($kunciSesi) !== (int) $sesi->id) {
+                $request->session()->put($kunciSesi, $sesi->id);
+                $request->session()->forget('izin_ambil_alih_' . $mejaMakan->id);
+                $redirect = route('emenu.meja', $mejaMakan->kode_meja);
+            }
+        }
+
+        return response()->json([
+            'peran' => $aktif ? 'aktif' : ($pemohon ? 'pemohon' : 'lain'),
+            'sesi_aktif' => $sesi->status === 'aktif',
+            'kode_meja' => $mejaMakan->kode_meja,
+            'takeover' => filled($sesi->takeover_status) ? [
+                'status' => $sesi->takeover_status,
+                'label_aktif' => $sesi->perangkat_label ?: 'perangkat lain',
+                'label_pemohon' => $sesi->takeover_perangkat_label ?: 'perangkat lain',
+                'diminta_pada' => $sesi->takeover_diminta_pada?->toIso8601String(),
+            ] : null,
+            'redirect' => $redirect,
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    }
+
+    public function responAmbilAlih(Request $request, string $meja): JsonResponse
+    {
+        $data = $request->validate([
+            'keputusan' => ['required', 'in:terima,tolak'],
+        ]);
+
+        $mejaMakan = $this->cariMeja($meja);
+        $sesi = SesiMeja::aktifUntuk($mejaMakan);
+        $perangkat = PerangkatPelanggan::id($request);
+
+        if (! PerangkatPelanggan::cocok($sesi, $perangkat)) {
+            return response()->json([
+                'message' => 'Hanya perangkat yang sedang aktif yang dapat menjawab.',
+            ], 403);
+        }
+
+        if ($sesi->takeover_status !== 'menunggu' || $this->takeoverKedaluwarsa($sesi)) {
+            if ($sesi->takeover_status === 'menunggu') {
+                $sesi->forceFill(['takeover_status' => 'kedaluwarsa'])->save();
+            }
+
+            return response()->json([
+                'message' => 'Permintaan sudah tidak berlaku.',
+            ], 409);
+        }
+
+        if ($data['keputusan'] === 'terima') {
+            if (blank($sesi->takeover_perangkat_id)) {
+                return response()->json([
+                    'message' => 'Perangkat peminta tidak ditemukan. Coba lagi.',
+                ], 409);
+            }
+
+            $sesi->forceFill([
+                'perangkat_id' => $sesi->takeover_perangkat_id,
+                'perangkat_label' => $sesi->takeover_perangkat_label,
+                'perangkat_aktif_pada' => now(),
+                'takeover_status' => 'disetujui',
+            ])->save();
+
+            $this->lupakanSesiPelanggan($request, $mejaMakan);
+
+            return response()->json([
+                'status' => 'disetujui',
+                'redirect' => route('emenu.kunci', $mejaMakan->kode_meja),
+            ]);
+        }
+
+        $sesi->forceFill(['takeover_status' => 'ditolak'])->save();
+
+        return response()->json(['status' => 'ditolak']);
+    }
+
+    public function batalAmbilAlih(Request $request, string $meja): JsonResponse
+    {
+        $mejaMakan = $this->cariMeja($meja);
+        $sesi = SesiMeja::aktifUntuk($mejaMakan);
+        $perangkat = PerangkatPelanggan::id($request);
+
+        if ($sesi->takeover_status === 'menunggu'
+            && filled($sesi->takeover_perangkat_id)
+            && hash_equals((string) $sesi->takeover_perangkat_id, $perangkat)) {
+            $sesi->forceFill([
+                'takeover_status' => null,
+                'takeover_perangkat_id' => null,
+                'takeover_perangkat_label' => null,
+                'takeover_diminta_pada' => null,
+            ])->save();
+        }
+
+        return response()->json(['status' => 'dibatalkan']);
+    }
+
+    private function payloadKonflik(SesiMeja $sesi, MejaMakan $meja): array
+    {
+        return [
+            'meja_id' => $meja->id,
+            'kode_meja' => $meja->kode_meja,
+            'label' => $sesi->perangkat_label ?: 'perangkat lain',
+            'minta_url' => route('emenu.perangkat.minta', $meja->kode_meja),
+            'status_url' => route('emenu.perangkat.status', $meja->kode_meja),
+            'batal_url' => route('emenu.perangkat.batal', $meja->kode_meja),
+        ];
+    }
+
+    private function catatIzinAmbilAlih(Request $request, SesiMeja $sesi): void
+    {
+        $request->session()->put('izin_ambil_alih_' . $sesi->meja_id, [
+            'sesi_id' => $sesi->id,
+            'waktu' => now()->timestamp,
+        ]);
+    }
+
+    private function perangkatLainAktif(SesiMeja $sesi, string $perangkat): bool
+    {
+        if (blank($sesi->perangkat_id)) {
+            return false;
+        }
+
+        if (hash_equals((string) $sesi->perangkat_id, $perangkat)) {
+            return false;
+        }
+
+        if ($this->perangkatKedaluwarsa($sesi)) {
+            $this->lepasPerangkat($sesi);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function perangkatKedaluwarsa(SesiMeja $sesi): bool
+    {
+        return $sesi->perangkat_aktif_pada === null
+            || $sesi->perangkat_aktif_pada->lt(now()->subMinutes(5));
+    }
+
+    private function takeoverKedaluwarsa(SesiMeja $sesi): bool
+    {
+        return $sesi->takeover_status === 'menunggu'
+            && $sesi->takeover_diminta_pada !== null
+            && $sesi->takeover_diminta_pada->lt(now()->subSeconds(60));
+    }
+
+    private function klaimPerangkat(Request $request, SesiMeja $sesi): void
+    {
+        $sesi->forceFill([
+            'perangkat_id' => PerangkatPelanggan::id($request),
+            'perangkat_label' => PerangkatPelanggan::label($request),
+            'perangkat_aktif_pada' => now(),
+            'takeover_status' => null,
+            'takeover_perangkat_id' => null,
+            'takeover_perangkat_label' => null,
+            'takeover_diminta_pada' => null,
+        ])->save();
+    }
+
+    private function sentuhPerangkat(SesiMeja $sesi): void
+    {
+        if ($sesi->perangkat_aktif_pada === null
+            || $sesi->perangkat_aktif_pada->lt(now()->subSeconds(30))) {
+            $sesi->forceFill(['perangkat_aktif_pada' => now()])->save();
+        }
+    }
+
+    private function lepasPerangkat(SesiMeja $sesi): void
+    {
+        $sesi->forceFill([
+            'perangkat_id' => null,
+            'perangkat_label' => null,
+            'perangkat_aktif_pada' => null,
+            'takeover_status' => null,
+            'takeover_perangkat_id' => null,
+            'takeover_perangkat_label' => null,
+            'takeover_diminta_pada' => null,
+        ])->save();
+    }
+
+    private function lupakanSesiPelanggan(Request $request, MejaMakan $meja): void
+    {
+        $request->session()->forget([
+            'sesi_meja_' . $meja->id,
+            'riwayat_meja_' . $meja->id,
+            'izin_ambil_alih_' . $meja->id,
+        ]);
+    }
+
     private function kodeKunciDitolak(?string $pesan = null): RedirectResponse
     {
         return redirect()->route('emenu.index')
@@ -637,6 +955,9 @@ class EMenuController extends Controller
 
         $request->session()->regenerate();
         $request->session()->put($kunciSesi, $sesi->id);
+        $request->session()->forget('izin_ambil_alih_' . $meja->id);
+
+        $this->klaimPerangkat($request, $sesi);
     }
 
     private function cariMeja(string $meja): MejaMakan
@@ -662,7 +983,25 @@ class EMenuController extends Controller
 
         $aktif = SesiMeja::aktifUntuk($meja);
 
-        return (int) $sesiId === $aktif->id;
+        if ((int) $sesiId !== $aktif->id) {
+            return false;
+        }
+
+        $perangkat = PerangkatPelanggan::id(request());
+
+        if (blank($aktif->perangkat_id)) {
+            $this->klaimPerangkat(request(), $aktif);
+
+            return true;
+        }
+
+        if (PerangkatPelanggan::cocok($aktif, $perangkat)) {
+            $this->sentuhPerangkat($aktif);
+
+            return true;
+        }
+
+        return false;
     }
 
     private function pesananBolehDiakses(Request $request, Pesanan $pesanan): bool
