@@ -151,8 +151,28 @@ class PesananAccessSecurityTest extends TestCase
         $this->assertSame(0, LogPanggilPelayan::count());
 
         $this->withSession(['sesi_meja_' . $meja->id => $sesi->id])
+            ->from(route('emenu.perangkat.status', $meja->kode_meja))
             ->post(route('emenu.panggil', $meja->id))
-            ->assertRedirect();
+            ->assertRedirect(route('emenu.meja', $meja->kode_meja));
+
+        $this->assertSame(1, LogPanggilPelayan::count());
+    }
+
+    public function test_polling_status_perangkat_tidak_menghabiskan_throttle_panggil(): void
+    {
+        $meja = $this->buatMeja();
+        $sesi = $this->sesi($meja);
+        $sesiTamu = ['sesi_meja_' . $meja->id => $sesi->id];
+
+        for ($i = 0; $i < 12; $i++) {
+            $this->withSession($sesiTamu)
+                ->getJson(route('emenu.perangkat.status', $meja->kode_meja))
+                ->assertOk();
+        }
+
+        $this->withSession($sesiTamu)
+            ->post(route('emenu.panggil', $meja->id))
+            ->assertRedirect(route('emenu.meja', $meja->kode_meja));
 
         $this->assertSame(1, LogPanggilPelayan::count());
     }

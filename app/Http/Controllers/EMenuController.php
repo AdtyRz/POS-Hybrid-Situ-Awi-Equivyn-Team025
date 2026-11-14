@@ -634,7 +634,9 @@ class EMenuController extends Controller
             'status_panggilan' => 'menunggu',
         ]));
 
-        return back()->with('panggilan_terkirim', true);
+        return redirect()
+            ->route('emenu.meja', $mejaMakan->kode_meja)
+            ->with('panggilan_terkirim', true);
     }
 
     public function mintaAmbilAlih(Request $request, string $meja): JsonResponse

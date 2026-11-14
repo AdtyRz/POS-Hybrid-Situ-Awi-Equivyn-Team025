@@ -590,7 +590,8 @@
                     try {
                         const response = await fetch(this.perangkatStatusUrl, {
                             headers: {
-                                'Accept': 'application/json'
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
                             },
                             credentials: 'same-origin'
                         });
