@@ -631,7 +631,7 @@ class LaporanPenjualanController extends Controller
         fputcsv($out, ['Sesi Aktif', $ringkasan['aktif']]);
         fputcsv($out, ['Total Durasi', ShiftService::durasiTeks($ringkasan['durasi'])]);
         fputcsv($out, []);
-        fputcsv($out, ['Staf', 'Peran', 'Shift', 'Jadwal', 'Login', 'Logout', 'Durasi', 'Status']);
+        fputcsv($out, ['Staf', 'Peran', 'Shift', 'Jadwal', 'Kehadiran', 'Login', 'Logout', 'Durasi', 'Status']);
 
         $query->chunk(500, function ($daftar) use ($out) {
             foreach ($daftar as $baris) {
@@ -640,6 +640,7 @@ class LaporanPenjualanController extends Controller
                     $this->safeCsv(ShiftService::ROLES[$baris->role] ?? ucfirst((string) $baris->role)),
                     $this->safeCsv($baris->nama_shift ?: 'Luar Shift'),
                     $this->safeCsv($this->jadwalShift($baris)),
+                    $this->safeCsv($this->kehadiranShift($baris)),
                     $this->safeCsv($baris->mulai_pada->timezone('Asia/Jakarta')->format('d/m/Y H:i:s')),
                     $this->safeCsv($baris->selesai_pada?->timezone('Asia/Jakarta')->format('d/m/Y H:i:s') ?? '-'),
                     $this->safeCsv(ShiftService::durasiTeks($this->durasiShift($baris))),
@@ -657,10 +658,10 @@ class LaporanPenjualanController extends Controller
         echo '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8">';
         echo '<style>table{border-collapse:collapse}th{background:#0B4D2B;color:#fff;font-weight:bold;border:1px solid #08381F;padding:6px}td{border:1px solid #C0C9BF;padding:6px}tr:nth-child(even){background:#F6F3EC}</style>';
         echo '</head><body><table>';
-        echo '<tr><th colspan="8">LAPORAN SHIFT KERJA ' . e(strtoupper((string) Pengaturan::nilai('nama_resto'))) . '</th></tr>';
-        echo '<tr><th colspan="8">PERIODE: ' . e($filter['labelPeriode']) . '</th></tr>';
-        echo '<tr><th colspan="2">TOTAL SESI: ' . $ringkasan['total'] . '</th><th colspan="2">STAF: ' . $ringkasan['staf'] . '</th><th colspan="2">AKTIF: ' . $ringkasan['aktif'] . '</th><th colspan="2">DURASI: ' . e(ShiftService::durasiTeks($ringkasan['durasi'])) . '</th></tr>';
-        echo '<tr><th>STAF</th><th>PERAN</th><th>SHIFT</th><th>JADWAL</th><th>LOGIN</th><th>LOGOUT</th><th>DURASI</th><th>STATUS</th></tr>';
+        echo '<tr><th colspan="9">LAPORAN SHIFT KERJA ' . e(strtoupper((string) Pengaturan::nilai('nama_resto'))) . '</th></tr>';
+        echo '<tr><th colspan="9">PERIODE: ' . e($filter['labelPeriode']) . '</th></tr>';
+        echo '<tr><th colspan="2">TOTAL SESI: ' . $ringkasan['total'] . '</th><th colspan="2">STAF: ' . $ringkasan['staf'] . '</th><th colspan="2">AKTIF: ' . $ringkasan['aktif'] . '</th><th colspan="3">DURASI: ' . e(ShiftService::durasiTeks($ringkasan['durasi'])) . '</th></tr>';
+        echo '<tr><th>STAF</th><th>PERAN</th><th>SHIFT</th><th>JADWAL</th><th>KEHADIRAN</th><th>LOGIN</th><th>LOGOUT</th><th>DURASI</th><th>STATUS</th></tr>';
 
         $query->chunk(500, function ($daftar) {
             foreach ($daftar as $baris) {
@@ -669,6 +670,7 @@ class LaporanPenjualanController extends Controller
                 echo '<td>' . e(ShiftService::ROLES[$baris->role] ?? ucfirst((string) $baris->role)) . '</td>';
                 echo '<td>' . e($baris->nama_shift ?: 'Luar Shift') . '</td>';
                 echo '<td>' . e($this->jadwalShift($baris)) . '</td>';
+                echo '<td>' . e($this->kehadiranShift($baris)) . '</td>';
                 echo '<td>' . e($baris->mulai_pada->timezone('Asia/Jakarta')->format('d/m/Y H:i:s')) . '</td>';
                 echo '<td>' . e($baris->selesai_pada?->timezone('Asia/Jakarta')->format('d/m/Y H:i:s') ?? '-') . '</td>';
                 echo '<td>' . e(ShiftService::durasiTeks($this->durasiShift($baris))) . '</td>';
@@ -708,6 +710,11 @@ class LaporanPenjualanController extends Controller
         }
 
         return $baris->status === 'kedaluwarsa' ? 'Sesi berakhir' : 'Selesai';
+    }
+
+    private function kehadiranShift(RiwayatShift $baris): string
+    {
+        return $baris->statusKehadiran();
     }
 
     private function safeCsv(string $value): string

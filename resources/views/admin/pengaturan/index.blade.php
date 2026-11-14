@@ -928,6 +928,61 @@
                     </div>
                 </div>
 
+                <div class="p-4 rounded-xl bg-white border border-[#C0C9BF]/20 shadow-2xs space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-9 h-9 rounded-lg bg-[#E5E2DB] text-[#0B4D2B] flex items-center justify-center shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold text-[#1C1C18]">Toleransi Keterlambatan Shift</h3>
+                                <p class="text-xs text-[#404941] leading-relaxed mt-1">
+                                    Staf yang login dalam batas toleransi setelah jam mulai shift tetap dianggap tepat waktu. Akses shift juga dibuka lebih awal sebesar nilai toleransi.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="shrink-0 rounded-lg bg-[#F6F3EC] px-3 py-2 text-right">
+                            <span class="block text-[9px] font-bold uppercase tracking-wider text-[#707971]">Jam Operasional</span>
+                            <strong class="block text-xs font-bold text-[#00341A]" x-text="jamOperasionalTeks">{{ $jamOperasional['label'] ?? 'Belum ada shift aktif' }}</strong>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_150px] gap-3">
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">Nilai Toleransi</label>
+                            <input
+                                type="number"
+                                x-model.number="shiftToleranceValue"
+                                min="0"
+                                :max="shiftToleranceUnit === 'jam' ? 4 : 240"
+                                :step="shiftToleranceUnit === 'jam' ? 0.25 : 1"
+                                class="w-full bg-[#FCF9F2] border border-[#C0C9BF]/40 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#1C1C18] focus:outline-hidden focus:border-[#0B4D2B] shadow-inner">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">Satuan</label>
+                            <select
+                                :value="shiftToleranceUnit"
+                                @change="ubahSatuanToleransi($event.target.value)"
+                                class="w-full bg-[#FCF9F2] border border-[#C0C9BF]/40 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#1C1C18] focus:outline-hidden focus:border-[#0B4D2B] shadow-inner">
+                                <option value="menit">Menit</option>
+                                <option value="jam">Jam</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-[#707971]">
+                        <span class="inline-flex items-center gap-1.5 font-semibold text-[#00341A]">
+                            <span class="w-1.5 h-1.5 rounded-full bg-[#00341A]"></span>
+                            <span x-text="'Setara ' + toleransiMenitTeks">Setara 15 menit</span>
+                        </span>
+                        <span x-text="'Akses shift dibuka ' + toleransiMenitTeks + ' sebelum jam mulai.'">Akses shift dibuka 15 menit sebelum jam mulai.</span>
+                        <span x-text="'Keterlambatan dihitung setelah jam mulai + ' + toleransiMenitTeks + '.'">Keterlambatan dihitung setelah jam mulai + 15 menit.</span>
+                    </div>
+                </div>
+
                 <div class="space-y-3">
                     <template x-for="shift in shiftSlots" :key="shift.nomor">
                         <div class="bg-white rounded-xl p-4 sm:p-5 border border-[#C0C9BF]/20 shadow-2xs space-y-4" :class="{ 'opacity-60': !shift.aktif }">
@@ -969,11 +1024,13 @@
                                 </div>
                             </div>
 
-                            <div class="flex items-center gap-2 text-[10px] text-[#707971]">
+                            <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-[#707971]">
                                 <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 <span x-text="shift.mulai > shift.selesai ? 'Shift melewati tengah malam (contoh 22:00 - 02:00).' : 'Jam mulai dan selesai dalam hari yang sama.'">Jam mulai dan selesai dalam hari yang sama.</span>
+                                <span class="text-[#C0C9BF]">•</span>
+                                <span class="font-semibold text-[#00341A]" x-text="'Toleransi ' + toleransiMenitTeks">Toleransi 15 menit</span>
                             </div>
                         </div>
                     </template>
@@ -1310,6 +1367,17 @@
                             Jadwal shift berlaku untuk seluruh aktor operasional. Admin tidak dibatasi jam shift.
                         </p>
 
+                        <div class="space-y-2 text-[10px]">
+                            <div class="flex items-center justify-between gap-3 rounded-lg bg-white border border-[#C0C9BF]/20 px-3 py-2">
+                                <span class="font-bold uppercase tracking-wider text-[#707971]">Jam Operasional</span>
+                                <span class="font-mono font-bold text-[#00341A]" x-text="jamOperasionalTeks">{{ $jamOperasional['label'] ?? 'Belum ada shift aktif' }}</span>
+                            </div>
+                            <div class="flex items-center justify-between gap-3 rounded-lg bg-white border border-[#C0C9BF]/20 px-3 py-2">
+                                <span class="font-bold uppercase tracking-wider text-[#707971]">Toleransi Terlambat</span>
+                                <span class="font-bold text-[#00341A]" x-text="toleransiMenitTeks">15 menit</span>
+                            </div>
+                        </div>
+
                         <div class="space-y-2">
                             @foreach (\App\Services\ShiftService::ROLES as $label)
                                 <div class="flex items-center justify-between rounded-lg bg-white border border-[#C0C9BF]/20 px-3 py-2 text-xs">
@@ -1452,6 +1520,9 @@
             backupCloud: false,
             shiftRestriction: @js($shiftRestriction),
             shiftSlots: @js($shiftSlots),
+            shiftToleransiAwal: Number(@js($shiftToleransi ?? 15)),
+            shiftToleranceValue: Number(@js($shiftToleransi ?? 15)),
+            shiftToleranceUnit: 'menit',
             profil: @js($profil),
             diagnostik: @js($diagnostik),
             midtrans: @js($midtrans),
@@ -1478,6 +1549,11 @@
                 this.sessionAutoClose = this.keBool(p.session_auto_close);
                 this.backupCloud = this.keBool(p.backup_cloud);
 
+                if (this.shiftToleransiAwal >= 60 && this.shiftToleransiAwal % 60 === 0) {
+                    this.shiftToleranceUnit = 'jam';
+                    this.shiftToleranceValue = this.shiftToleransiAwal / 60;
+                }
+
                 if (this.flashSuccess) {
                     this.showToast(this.flashSuccess);
                 }
@@ -1500,6 +1576,50 @@
 
             keBool(nilai) {
                 return nilai === true || nilai === 1 || nilai === '1' || nilai === 'true';
+            },
+
+            get toleransiMenitSaatIni() {
+                const nilai = Number(this.shiftToleranceValue) || 0;
+                const menit = this.shiftToleranceUnit === 'jam' ? nilai * 60 : nilai;
+
+                return Math.max(0, Math.min(240, Math.round(menit)));
+            },
+
+            get toleransiMenitTeks() {
+                const menit = this.toleransiMenitSaatIni;
+                const jam = Math.floor(menit / 60);
+                const sisa = menit % 60;
+
+                if (jam > 0 && sisa > 0) return jam + ' jam ' + sisa + ' menit';
+                if (jam > 0) return jam + ' jam';
+
+                return menit + ' menit';
+            },
+
+            get jamOperasionalTeks() {
+                const aktif = (this.shiftSlots || []).filter((shift) => shift.aktif);
+
+                if (aktif.length === 0) return 'Belum ada shift aktif';
+
+                const keMenit = (teks) => {
+                    const [jam, menit] = String(teks || '00:00').split(':').map(Number);
+                    return (Number(jam) || 0) * 60 + (Number(menit) || 0);
+                };
+                const keTeks = (menit) => String(Math.floor(menit / 60)).padStart(2, '0') + ':' + String(menit % 60).padStart(2, '0');
+
+                const mulai = Math.min(...aktif.map((shift) => keMenit(shift.mulai)));
+                const selesai = Math.max(...aktif.map((shift) => keMenit(shift.selesai)));
+                const lintasHari = selesai <= mulai;
+
+                return keTeks(mulai) + ' - ' + keTeks(selesai) + ' WIB' + (lintasHari ? ' (lintas hari)' : '');
+            },
+
+            ubahSatuanToleransi(unit) {
+                const menit = this.toleransiMenitSaatIni;
+                this.shiftToleranceUnit = unit === 'jam' ? 'jam' : 'menit';
+                this.shiftToleranceValue = this.shiftToleranceUnit === 'jam'
+                    ? Number((menit / 60).toFixed(2))
+                    : menit;
             },
 
             get ringkasanLayanan() {
@@ -1545,6 +1665,7 @@
                     backup_cloud: this.backupCloud,
                     midtrans_auto_cancel: this.autoCancelExpired,
                     shift_restriction_enabled: this.shiftRestriction,
+                    shift_toleransi_menit: this.toleransiMenitSaatIni,
                 };
 
                 (this.shiftSlots || []).forEach((shift, index) => {
