@@ -74,6 +74,7 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'timezone' => env('DB_TIMEZONE', '+00:00'),
             'options' => [
                 PDO::ATTR_EMULATE_PREPARES => true,
             ],

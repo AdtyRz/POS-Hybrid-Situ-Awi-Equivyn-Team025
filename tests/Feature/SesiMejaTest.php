@@ -53,6 +53,30 @@ class SesiMejaTest extends TestCase
             ->assertSee('Akses E-Menu');
     }
 
+    public function test_kunjungan_pertama_scan_qr_tidak_menampilkan_pesan_sesi_berakhir(): void
+    {
+        $meja = $this->siapkanMeja();
+
+        $this->followingRedirects()
+            ->get(route('emenu.meja', $meja->id))
+            ->assertOk()
+            ->assertDontSee('Sesi meja sudah berakhir');
+    }
+
+    public function test_sesi_yang_sudah_diganti_tetap_menampilkan_pesan_sesi_berakhir(): void
+    {
+        $meja = $this->siapkanMeja();
+        $sesiLama = SesiMeja::aktifUntuk($meja);
+
+        SesiMeja::putuskanSesi($meja);
+
+        $this->withSession(['sesi_meja_' . $meja->id => $sesiLama->id])
+            ->followingRedirects()
+            ->get(route('emenu.meja', $meja->id))
+            ->assertOk()
+            ->assertSee('Sesi meja sudah berakhir');
+    }
+
     public function test_beranda_memakai_form_kode_kunci_login(): void
     {
         $this->get(route('emenu.index'))
@@ -270,6 +294,71 @@ class SesiMejaTest extends TestCase
             ->assertRedirect(route('emenu.index'));
 
         $this->assertAuthenticatedAs($kasir);
+    }
+
+    public function test_kasir_mengakhiri_sesi_dan_mendapat_pesan_sukses(): void
+    {
+        $kasir = User::factory()->create([
+            'role' => 'kasir',
+            'is_aktif' => true,
+        ]);
+        $meja = $this->siapkanMeja();
+        $kodeLama = SesiMeja::aktifUntuk($meja)->kode_unik;
+
+        $this->actingAs($kasir)
+            ->from(route('kasir.session.index'))
+            ->patch(route('kasir.session.tutup', $meja->kode_meja))
+            ->assertRedirect(route('kasir.session.index'))
+            ->assertSessionHas('sukses');
+
+        $this->assertNotSame($kodeLama, SesiMeja::aktifUntuk($meja)->kode_unik);
+    }
+
+    public function test_kasir_melihat_penolakan_mengakhiri_sesi_dengan_pesanan_belum_lunas(): void
+    {
+        $kasir = User::factory()->create([
+            'role' => 'kasir',
+            'is_aktif' => true,
+        ]);
+        $meja = $this->siapkanMeja();
+        $sesi = SesiMeja::aktifUntuk($meja);
+
+        $kategori = Kategori::create(['nama_kategori' => 'Makanan Kasir', 'target_kds' => 'dapur']);
+        $menu = Menu::create([
+            'kategori_id' => $kategori->id,
+            'nama_menu' => 'Nasi Kasir',
+            'slug' => 'nasi-kasir',
+            'harga' => 12000,
+            'stok_menu' => 10,
+            'is_aktif' => true,
+        ]);
+
+        $pesanan = Pesanan::create([
+            'kode_pesanan' => 'SW-KASIR-SESI-01',
+            'meja_id' => $meja->id,
+            'total_bayar' => 12000,
+            'metode_pembayaran' => 'tunai',
+            'status_pesanan' => Pesanan::STATUS_MENUNGGU,
+            'status_pembayaran' => Pesanan::PAYMENT_BELUM_BAYAR,
+            'waktu_pesan' => now(),
+        ]);
+        $pesanan->detailPesanan()->create([
+            'menu_id' => $menu->id,
+            'jumlah' => 1,
+            'harga_satuan' => 12000,
+            'subtotal' => 12000,
+        ]);
+
+        $this->actingAs($kasir)
+            ->from(route('kasir.session.index'))
+            ->patch(route('kasir.session.tutup', $meja->kode_meja))
+            ->assertRedirect(route('kasir.session.index'))
+            ->assertSessionHas(
+                'error',
+                'Sesi belum dapat diakhiri karena masih ada 1 pesanan yang belum dibayar.'
+            );
+
+        $this->assertSame('aktif', $sesi->fresh()->status);
     }
 
     public function test_kode_enam_digit_ditampilkan_dan_dapat_dibuka(): void

@@ -211,9 +211,16 @@ class EMenuController extends Controller
 
         if (! $this->sesiTerverifikasi($mejaMakan)) {
             $sesiAktif = SesiMeja::aktifUntuk($mejaMakan);
-            $pesan = $this->perangkatLainAktif($sesiAktif, PerangkatPelanggan::id($request))
-                ? 'Sesi meja ini sedang dipakai di perangkat lain.'
-                : 'Sesi meja sudah berakhir. Masukkan kembali kode saung untuk membuka pesanan.';
+            $kunciSesi = 'sesi_meja_' . $mejaMakan->id;
+            $pernahTerverifikasi = $request->session()->has($kunciSesi);
+
+            if ($this->perangkatLainAktif($sesiAktif, PerangkatPelanggan::id($request))) {
+                $pesan = 'Sesi meja ini sedang dipakai di perangkat lain.';
+            } elseif ($pernahTerverifikasi) {
+                $pesan = 'Sesi meja sudah berakhir. Masukkan kembali kode saung untuk membuka pesanan.';
+            } else {
+                $pesan = null;
+            }
 
             return $this->kunciRedirect($mejaMakan, $pesan);
         }
@@ -615,6 +622,7 @@ class EMenuController extends Controller
         $panggilan = LogPanggilPelayan::create([
             'meja_id' => $mejaMakan->id,
             'status_panggilan' => 'menunggu',
+            'waktu_panggil' => now(),
         ]);
 
 

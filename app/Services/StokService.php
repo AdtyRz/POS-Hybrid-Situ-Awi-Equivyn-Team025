@@ -73,6 +73,7 @@ class StokService
                     'stok_akhir' => $stokAkhir,
                     'keterangan' => 'Stok dipotong setelah pembayaran ' . $terkunci->kode_pesanan,
                     'created_by' => $penggunaId ?? auth()->id(),
+                    'created_at' => now(),
                 ]);
             }
 

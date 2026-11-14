@@ -362,6 +362,27 @@ class PelayanDashboardTest extends TestCase
         $this->assertSame('tersedia', $table['status']);
     }
 
+    public function test_pelayan_melihat_tombol_akhiri_sesi_untuk_sesi_aktif_tanpa_pesanan(): void
+    {
+        $this->withoutVite();
+
+        $pelayan = $this->pelayan();
+        $meja = $this->meja('LB-07', 'Lesehan Bawah');
+        SesiMeja::aktifUntuk($meja);
+
+        $response = $this->actingAs($pelayan)
+            ->get(route('pelayan.tab-saung'))
+            ->assertOk()
+            ->assertSee('Akhiri Sesi');
+
+        $table = collect($response->viewData('tables'))->firstWhere('id', $meja->id);
+
+        $this->assertNotNull($table);
+        $this->assertTrue($table['session_active']);
+        $this->assertFalse($table['session_occupied']);
+        $this->assertNotEmpty($table['session_code']);
+    }
+
     public function test_meja_dengan_pesanan_selesai_dalam_sesi_tetap_terisi(): void
     {
         $this->withoutVite();

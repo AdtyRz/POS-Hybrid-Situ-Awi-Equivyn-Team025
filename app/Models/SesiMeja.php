@@ -86,7 +86,7 @@ class SesiMeja extends Model
 
     public static function tutupSesiLintasHari(): int
     {
-        $awalHari = now('Asia/Jakarta')->startOfDay();
+        $awalHari = now('Asia/Jakarta')->startOfDay()->utc();
 
         $sesiBasi = static::query()
             ->where('status', 'aktif')
@@ -105,7 +105,7 @@ class SesiMeja extends Model
     private static function perluDitutupOtomatis(self $sesi): bool
     {
         $lintasHari = $sesi->dibuka_pada !== null
-            && $sesi->dibuka_pada->lt(now('Asia/Jakarta')->startOfDay());
+            && $sesi->dibuka_pada->lt(now('Asia/Jakarta')->startOfDay()->utc());
 
         if (! $lintasHari && ! filter_var(Pengaturan::nilai('session_auto_close'), FILTER_VALIDATE_BOOLEAN)) {
             return false;

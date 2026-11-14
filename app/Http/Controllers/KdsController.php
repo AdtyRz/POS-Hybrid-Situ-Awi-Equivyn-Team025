@@ -104,10 +104,10 @@ class KdsController extends Controller
             if ($status === 'siap') {
                 $waktuSelesai = $baris->max('updated_at');
                 $detik = $waktuSelesai
-                    ? max(0, (int) $pesanan->waktu_pesan->diffInSeconds($waktuSelesai))
+                    ? max(0, $waktuSelesai->getTimestamp() - $pesanan->waktu_pesan->getTimestamp())
                     : 0;
             } else {
-                $detik = (int) now()->diffInSeconds($pesanan->waktu_pesan);
+                $detik = max(0, now()->getTimestamp() - $pesanan->waktu_pesan->getTimestamp());
             }
 
             return [
@@ -169,7 +169,7 @@ class KdsController extends Controller
             if (! $waktuSelesai) {
                 return null;
             }
-            return max(0, (int) $pesanan->waktu_pesan->diffInSeconds($waktuSelesai));
+            return max(0, $waktuSelesai->getTimestamp() - $pesanan->waktu_pesan->getTimestamp());
         })->filter(fn ($d) => $d !== null && $d > 0)->values();
 
         $rataRataMasakMenit = $durasiMasakList->isNotEmpty()

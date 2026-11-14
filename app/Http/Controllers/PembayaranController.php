@@ -165,6 +165,7 @@ class PembayaranController extends Controller
                     'kembalian' => $kembalian,
                     'transaction_id' => $data['metode_pembayaran'] === 'qris' ? $transactionId : null,
                     'order_id' => $data['metode_pembayaran'] === 'qris' ? $terkunci->kode_pesanan : null,
+                    'waktu_bayar' => now(),
                 ]);
 
 

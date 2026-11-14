@@ -83,6 +83,7 @@ class PembayaranApiController extends Controller
                     'kembalian' => $data['metode_pembayaran'] === 'qris' ? 0 : $dibayar - $tagihan,
                     'transaction_id' => $data['metode_pembayaran'] === 'qris' ? $transactionId : null,
                     'order_id' => $data['metode_pembayaran'] === 'qris' ? $terkunci->kode_pesanan : null,
+                    'waktu_bayar' => now(),
                 ]);
 
                 $terkunci->update([

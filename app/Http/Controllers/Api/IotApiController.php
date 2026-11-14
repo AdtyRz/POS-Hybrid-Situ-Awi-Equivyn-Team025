@@ -92,6 +92,7 @@ class IotApiController extends Controller
         $log = LogPanggilPelayan::create([
             'meja_id' => $meja->id,
             'status_panggilan' => 'menunggu',
+            'waktu_panggil' => now(),
         ]);
 
         Realtime::emit(new PanggilanPelayan([

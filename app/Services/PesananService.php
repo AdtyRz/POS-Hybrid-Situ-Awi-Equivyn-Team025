@@ -106,6 +106,7 @@ class PesananService
                     'status_pembayaran' => $statusPembayaran,
                     'catatan' => $opsi['catatan'] ?? null,
                     'idempotency_key' => $idempotencyKey,
+                    'waktu_pesan' => now(),
                 ]);
 
                 foreach ($dipilih as $menuId => $jumlah) {
@@ -206,6 +207,7 @@ class PesananService
                     'kembalian' => 0,
                     'transaction_id' => $transactionId,
                     'order_id' => $metode === 'qris' ? $terkunci->kode_pesanan : null,
+                    'waktu_bayar' => now(),
                 ]);
             }
 
@@ -267,6 +269,7 @@ class PesananService
                         'stok_akhir' => (int) $menu->fresh()->stok_menu,
                         'keterangan' => $alasan,
                         'created_by' => $userId,
+                        'created_at' => now(),
                     ]);
                 }
             }
