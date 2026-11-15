@@ -1,15 +1,139 @@
-# 🛒 POS Hybrid Situ Awi — Equivyn Team 025
+<p align="center">
+  <img src="public/asset/Logo.png" alt="Logo Saung Situ Awi" width="260">
+</p>
 
-Sistem Point of Sale (POS) Hybrid & IoT terintegrasi untuk UMKM Kuliner / Wisata Situ Awi. Proyek ini dikembangkan menggunakan arsitektur MVC modern berbasis Laravel untuk mengelola transaksi, inventaris, katalog, dan laporan secara real-time.
+# 🛒 Saung Situ Awi — POS Hybrid & IoT
+
+**Equivyn Team 025 · SMK Budi Bakti Ciwidey · UKK RPL 2026/2027**
+
+Sistem Point of Sale (POS) hybrid dan IoT untuk resto/saung lesehan **Saung Situ Awi, Ciwidey**. Satu alur data dari tamu memindai QR meja, dapur/bar memasak, pelayan mengantar, kasir menagih, sampai pemilik melihat laporan — tanpa rekap manual.
+
+[![PHP](https://img.shields.io/badge/PHP-8.3%2B-777BB4?logo=php&logoColor=white)](https://www.php.net/)
+[![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)](https://laravel.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-4169E1?logo=postgresql&logoColor=white)](https://supabase.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Tests](https://img.shields.io/badge/tests-192%20passing-brightgreen)](docs/08-evidence/test-summary.txt)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Version](https://img.shields.io/badge/version-v1.0.0--rc-orange)](docs/01-release/RELEASE_NOTES_v1.0.0-rc.md)
 
 ---
 
-## 🚀 Tech Stack
+## 📖 Daftar Isi
 
-- **Backend**: Laravel 13 (PHP 8.3+)
-- **Frontend**: Blade Templates, Tailwind CSS, Vite
-- **Database**: PostgreSQL (Supabase)
-- **Engine & Server**: PDO / Eloquent ORM, Artisan CLI
+- [Latar Belakang](#-latar-belakang)
+- [Sekilas Produk](#-sekilas-produk)
+- [Matriks Teknologi](#-matriks-teknologi)
+- [Akun Uji Coba](#-akun-uji-coba)
+- [Tim Pengembang](#-tim-pengembang)
+- [Dokumentasi](#-dokumentasi)
+- [Panduan Instalasi Lokal](#️-panduan-instalasi-local)
+- [Realtime](#-realtime-laravel-reverb--laravel-echo)
+- [Alur Sesi Meja](#-alur-sesi-meja-kode-unik)
+- [Pengujian & Kualitas](#-pengujian--kualitas)
+- [Deployment & Fallback](#-deployment--fallback)
+- [Lisensi](#-lisensi)
+
+---
+
+## 🧭 Latar Belakang
+
+Resto Saung Situ Awi melayani tamu di 11 saung lesehan yang tersebar di tiga area. Sebelumnya, pesanan dicatat manual, diteruskan ke dapur/bar secara lisan, dan omzet direkap ulang di buku/Excel pada akhir hari. Akibatnya:
+
+- pesanan mudah salah saji atau tertukar antar-saung;
+- tamu menunggu lama karena tidak tahu status pesanan;
+- kasir sulit memastikan meja mana yang belum membayar;
+- pemilik tidak bisa melihat omzet dan stok saat resto masih ramai;
+- tidak ada jejak audit saat stok atau pembayaran tidak cocok.
+
+Aplikasi ini menjawab masalah tersebut dengan **satu sumber data**: pesanan dibuat sekali, diteruskan ke stasiun yang benar, dibayar sekali, dan langsung menjadi laporan. Tamu tidak perlu mengunduh aplikasi — cukup memindai QR meja dan memasukkan kode sesi yang tampil di LCD.
+
+---
+
+## 🎯 Sekilas Produk
+
+| Aspek | Keterangan |
+|---|---|
+| Pengguna | Tamu, kasir, pelayan, koki, barista, admin/owner |
+| Perangkat | Browser HP/tablet/laptop + LCD ESP32 (opsional) |
+| Alur inti | Scan QR → kode sesi → pilih menu → checkout → KDS → antar → bayar → laporan |
+| Pembayaran | Tunai di kasir dan QRIS Midtrans (webhook terverifikasi) |
+| Realtime | Laravel Reverb + fallback polling |
+| Keamanan | RBAC 5 role, sesi meja, QR token, signature webhook, rate limit |
+| Database | PostgreSQL 3NF (Supabase untuk cloud, PostgreSQL lokal untuk demo/offline) |
+| Status rilis | `v1.0.0-rc` — 192 test, 1.105 assertion, 0 failure |
+
+---
+
+## 🚀 Matriks Teknologi
+
+| Lapisan | Teknologi | Dipakai untuk |
+|---|---|---|
+| Backend | **Laravel 13**, PHP 8.3+ | MVC, routing, validasi, queue, event |
+| Frontend | **Blade**, Tailwind CSS, Alpine.js, Vite | UI tamu/kasir/KDS/pelayan/admin |
+| Database | **PostgreSQL** (Supabase) | Data transaksi, laporan, constraint, row lock |
+| ORM | Eloquent + Query Builder | Query binding, relasi, transaksi |
+| Realtime | **Laravel Reverb** + Echo | KDS, kasir, pelayan, admin, pelacakan tamu |
+| Pembayaran | **Midtrans QRIS** + tunai | Charge QRIS, webhook signature SHA-512 |
+| IoT | **ESP32**, LCD I2C, buzzer, tombol sentuh | Kode sesi, fase pembayaran, panggil pelayan |
+| Testing | PHPUnit / Pest-style Laravel test | 192 test, 1.105 assertion |
+| Deployment | Nginx/Apache, Supervisor, Cloudflare Tunnel, LAN | Staging publik + fallback offline |
+| Dokumen | Markdown, PDF, DOCX, OpenAPI 3.0.3, Postman v2.1 | Manual, API, presentasi, defensa |
+
+---
+
+## 🔑 Akun Uji Coba
+
+Semua akun staf dibuat oleh `database/seeders/SituAwiSeeder.php`. Sandi **tidak** ditulis di kode; nilainya diambil dari environment `SEED_*_PASSWORD`.
+
+| Peran | Email | Halaman utama | Sandi |
+|---|---|---|---|
+| Admin / Owner | `admin@situawi.com` | `/admin/dashboard` | dari `SEED_ADMIN_PASSWORD` |
+| Kasir | `kasir@situawi.com` | `/kasir/dashboard` | dari `SEED_KASIR_PASSWORD` |
+| Pelayan | `pelayan@situawi.com` | `/pelayan/tab-antar` | dari `SEED_PELAYAN_PASSWORD` |
+| Koki | `koki@situawi.com` | `/kds/dapur` | dari `SEED_KOKI_PASSWORD` |
+| Barista | `barista@situawi.com` | `/kds/bar` | dari `SEED_BARISTA_PASSWORD` |
+| Tamu | — | `/` (scan QR / kode meja) | kode sesi dari LCD |
+
+> **Demo lokal:** untuk latihan di laptop, sandi seragam `Demo#Saung2026` dipakai pada database demo terisolasi (`saung_demo`, port 5433). **Jangan pernah memakai sandi demo di staging/produksi.** Detail: [`docs/06-rehearsal/DEMO_ENVIRONMENT.md`](docs/06-rehearsal/DEMO_ENVIRONMENT.md).
+
+Di lingkungan `local`/`testing`, seeder membuat sandi acak per peran bila `SEED_*` kosong dan menampilkannya di console. Di luar `local`/`testing`, seeder **menolak jalan** bila `SEED_*` belum diisi.
+
+---
+
+## 👥 Tim Pengembang
+
+| Nama | Peran | Tanggung jawab utama |
+|---|---|---|
+| **Dzakwan Fadlurohman Hisyam** | Frontend / UI-UX / IoT | Blade, Tailwind, alur tamu, tampilan kasir/KDS/pelayan, ESP32 + LCD |
+| **Aditya Riqi** | Backend / Database / Security / QA | Skema 3NF, service transaksi, API, RBAC, webhook, test suite |
+
+**Pembimbing:** Nurdiansyah Permana, S.Pd.  
+**Mitra:** Rodiansyah Ariwibowo — Owner Saung Situ Awi  
+**Sekolah:** SMK Budi Bakti Ciwidey
+
+Pembagian kerja tercatat di commit log dan di [`docs/07-defense/INDIVIDUAL_CHECKLIST.md`](docs/07-defense/INDIVIDUAL_CHECKLIST.md).
+
+---
+
+## 📚 Dokumentasi
+
+| Dokumen | Isi |
+|---|---|
+| [Release Notes v1.0.0-rc](docs/01-release/RELEASE_NOTES_v1.0.0-rc.md) | Ringkasan rilis, fitur, risiko yang diketahui |
+| [Bug Closure Log](docs/01-release/BUG_CLOSURE_LOG.md) | Tiket cacat yang ditutup |
+| [Code Freeze Checklist](docs/01-release/CODE_FREEZE_CHECKLIST.md) | Kriteria pembekuan kode |
+| [Deployment Guide](docs/02-deployment/DEPLOYMENT_GUIDE.md) | Staging publik, Nginx, Supervisor, queue, Reverb |
+| [Offline / LAN Fallback](docs/02-deployment/OFFLINE_LAN_FALLBACK.md) | Kontinjensi demo tanpa internet |
+| [User Manual](docs/03-manual/USER_MANUAL.pdf) | Panduan bergambar untuk tamu, kasir, pelayan, admin |
+| [Technical Docs](docs/03-manual/TECHNICAL_DOCS.pdf) | Arsitektur, ERD, dependensi, keamanan |
+| [API Reference](docs/04-api/API_REFERENCE.md) | 12 endpoint API + webhook, contoh request/response |
+| [OpenAPI 3.0.3](docs/04-api/openapi.yaml) | Spesifikasi mesin-terbaca |
+| [Postman Collection](docs/04-api/api_collection.json) | Koleksi siap impor |
+| [Pitch Deck](docs/05-presentation/Saung-Situ-Awi_Sprint-4_Pitch-Deck.pdf) | 10 slide, 7 menit |
+| [Demo Script](docs/06-rehearsal/DEMO_SCRIPT.md) | Naskah demo 8 menit |
+| [Backup Video](docs/06-rehearsal/BACKUP_DEMO_v1.0.0-rc.mp4) | Fallback demo 3 menit |
+| [Question Bank](docs/07-defense/QUESTION_BANK.md) | 10 pertanyaan wajib + 12 tambahan |
+| [Live Debug Drills](docs/07-defense/LIVE_DEBUG_DRILLS.md) | 6 drill sabotase ≤ 5 menit |
 
 ---
 
@@ -254,6 +378,56 @@ WebSocket memakai Reverb (`php artisan reverb:start`). Bila Reverb tidak berjala
 polling `/realtime/version` tetap menyegarkan halaman setiap 4 detik (kasir juga memakai state
 refresh 8 detik dan QRIS polling 3 detik). API create/update/payment dan panggilan IoT sekarang
 juga menyiarkan event realtime.
+
+---
+
+## 🧪 Pengujian & Kualitas
+
+```bash
+# Seluruh test (SQLite in-memory)
+php artisan test --compact
+
+# Contoh test kritis
+php artisan test --filter=test_pembayaran_kedua_ditolak_dan_stok_tidak_menjadi_negatif
+php artisan test --filter=test_api_kds_memfilter_antrean_sesuai_stasiun_dan_menolak_target_lain
+php artisan test --filter=test_webhook_midtrans_menolak_signature_tidak_valid
+```
+
+| Area | Yang diuji |
+|---|---|
+| Autentikasi & RBAC | Login, shift, akun nonaktif, 401/403, role 5 peran |
+| Sesi meja | Kode benar/salah, sesi lama, satu browser satu meja |
+| Pesanan | QR token, stok, harga server, detail pesanan |
+| Pembayaran | Tunai, QRIS, double payment, stok tidak negatif |
+| KDS | Pemisahan dapur/bar, transisi status, runner |
+| Pelayan | Panggilan, antar, selesai, akhir sesi |
+| Admin | Laporan, ekspor, pengaturan, upload logo/foto |
+| Keamanan | IDOR, XSS, upload, signature webhook, rate limit |
+| Realtime | Event ke channel privat yang benar |
+
+**Hasil rilis:** `192 test`, `1.105 assertion`, `0 failure` — bukti di [`docs/08-evidence/test-summary.txt`](docs/08-evidence/test-summary.txt) dan [`phpunit-junit.xml`](docs/08-evidence/phpunit-junit.xml).
+
+---
+
+## 🚀 Deployment & Fallback
+
+| Lingkungan | Alamat | Catatan |
+|---|---|---|
+| Staging publik | `https://syndication-discount-sufficient-evaluated.trycloudflare.com` | Cloudflare Quick Tunnel; URL sementara |
+| LAN fallback | `http://192.168.94.171:8020` | Server produksi lokal di jaringan sekolah |
+| Health check | `/aktif` | HTTP 200, ±0,02 s (LAN) |
+| Demo terisolasi | `http://127.0.0.1:8031` | PostgreSQL `saung_demo` port 5433 |
+
+Panduan lengkap: [`DEPLOYMENT_GUIDE.md`](docs/02-deployment/DEPLOYMENT_GUIDE.md) dan [`OFFLINE_LAN_FALLBACK.md`](docs/02-deployment/OFFLINE_LAN_FALLBACK.md).
+
+> **Risiko yang diketahui:** URL staging memakai Quick Tunnel sementara, CSP belum diaktifkan, dan `X-Powered-By` masih terbuka di sebagian konfigurasi. Semua tercatat di release notes; tidak diklaim selesai.
+
+---
+
+## 📄 Lisensi
+
+Proyek ini dilisensikan under **MIT License** — lihat [`LICENSE`](LICENSE).  
+© 2026 Equivyn Team 025.
 
 ---
 
