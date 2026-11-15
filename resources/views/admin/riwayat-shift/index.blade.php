@@ -44,6 +44,7 @@
                         <p class="text-[10px] font-bold uppercase tracking-wider text-[#707971]">{{ $data['label'] }}</p>
                         <p class="mt-2 font-display text-3xl font-bold text-[#1C1C18]">{{ $data['jumlah'] }}</p>
                         <p class="text-[11px] text-[#707971]">shift hari ini</p>
+                        <p class="mt-1 text-[10px] font-bold {{ $data['terlambat'] > 0 ? 'text-[#7A5900]' : 'text-[#707971]' }}">{{ $data['terlambat'] }} terlambat</p>
                     </div>
                     <span class="inline-flex items-center gap-1.5 rounded-full {{ $data['aktif'] > 0 ? 'bg-[#B1F1C2] text-[#00341A]' : 'bg-[#F0EEE7] text-[#707971]' }} px-2.5 py-1 text-[10px] font-bold">
                         <span class="w-1.5 h-1.5 rounded-full {{ $data['aktif'] > 0 ? 'bg-[#00341A] animate-pulse' : 'bg-[#707971]' }}"></span>
@@ -107,6 +108,7 @@
                         <th class="px-5 py-3">Staf</th>
                         <th class="px-4 py-3">Peran</th>
                         <th class="px-4 py-3">Shift</th>
+                        <th class="px-4 py-3">Kehadiran</th>
                         <th class="px-4 py-3">Login</th>
                         <th class="px-4 py-3">Logout</th>
                         <th class="px-4 py-3">Durasi</th>
@@ -120,6 +122,7 @@
                             $durasi = $aktif
                                 ? \App\Services\ShiftService::durasiTeks((int) $baris->mulai_pada->diffInSeconds(now()))
                                 : $baris->durasiTeks();
+                            $kehadiran = $baris->keterlambatan();
                         @endphp
                         <tr class="align-top hover:bg-[#FCF9F2]">
                             <td class="px-5 py-4">
@@ -135,6 +138,17 @@
                                 <p class="font-semibold text-[#1C1C18]">{{ $baris->nama_shift ?: 'Luar Shift' }}</p>
                                 @if ($baris->jadwal_mulai && $baris->jadwal_selesai)
                                     <p class="mt-0.5 text-[10px] text-[#707971]">{{ substr($baris->jadwal_mulai, 0, 5) }} - {{ substr($baris->jadwal_selesai, 0, 5) }} WIB</p>
+                                @endif
+                            </td>
+                            <td class="px-4 py-4">
+                                @if ($kehadiran['kelas'] === 'luar')
+                                    <span class="inline-flex rounded-full bg-[#F0EEE7] px-2.5 py-1 text-[10px] font-bold text-[#707971]">Luar shift</span>
+                                @elseif ($kehadiran['terlambat'])
+                                    <span class="inline-flex rounded-full bg-[#FFDEA1] px-2.5 py-1 text-[10px] font-bold text-[#7A5900]">{{ $kehadiran['label'] }}</span>
+                                @elseif ($kehadiran['dalam_toleransi'])
+                                    <span class="inline-flex rounded-full bg-[#E8F0E9] px-2.5 py-1 text-[10px] font-bold text-[#0B4D2B]" title="Masih dalam toleransi keterlambatan">Tepat waktu</span>
+                                @else
+                                    <span class="inline-flex rounded-full bg-[#B1F1C2] px-2.5 py-1 text-[10px] font-bold text-[#00341A]">Tepat waktu</span>
                                 @endif
                             </td>
                             <td class="px-4 py-4 text-[#404941]">
@@ -165,7 +179,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-5 py-12 text-center">
+                            <td colspan="8" class="px-5 py-12 text-center">
                                 <p class="font-bold text-[#1C1C18]">Belum ada riwayat shift</p>
                                 <p class="mt-1 text-[11px] text-[#707971]">Riwayat akan muncul setelah staf login.</p>
                             </td>
@@ -192,7 +206,7 @@
                     </span>
                 </div>
                 <p class="mt-2 font-mono text-lg font-bold text-[#0B4D2B]">{{ $shift['mulai'] }} - {{ $shift['selesai'] }}</p>
-                <p class="mt-1 text-[10px] text-[#707971]">Waktu Indonesia Barat</p>
+                <p class="mt-1 text-[10px] text-[#707971]">Waktu Indonesia Barat • Toleransi {{ \App\Services\ShiftService::toleransiMenit() }} menit</p>
             </div>
         @endforeach
     </div>

@@ -40,6 +40,7 @@ class Pengaturan extends Model
         'backup_cloud' => '0',
         'midtrans_auto_cancel' => '0',
         'shift_restriction_enabled' => '0',
+        'shift_toleransi_menit' => 15,
         'shift_1_nama' => 'Shift Pagi',
         'shift_1_mulai' => '08:00',
         'shift_1_selesai' => '12:00',

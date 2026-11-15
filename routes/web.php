@@ -20,57 +20,57 @@ Route::post('/masuk', [EMenuController::class, 'masuk'])
 
 Route::middleware('pesanan.no-store')->group(function () {
     Route::get('/meja/{meja}', [EMenuController::class, 'aplikasi'])
-        ->middleware('throttle:120,1')
+        ->middleware('throttle:120,1,meja')
         ->name('emenu.meja');
     Route::get('/meja/{meja}/kunci', [EMenuController::class, 'kunci'])
-        ->middleware('throttle:60,1')
+        ->middleware('throttle:60,1,kunci')
         ->name('emenu.kunci');
     Route::post('/meja/{meja}/buka', [EMenuController::class, 'buka'])
         ->middleware('throttle:5,1,pin')
         ->name('emenu.buka');
     Route::post('/meja/{meja}/perangkat/minta', [EMenuController::class, 'mintaAmbilAlih'])
-        ->middleware('throttle:20,1')
+        ->middleware('throttle:20,1,minta')
         ->name('emenu.perangkat.minta');
     Route::get('/meja/{meja}/perangkat/status', [EMenuController::class, 'statusPerangkat'])
-        ->middleware('throttle:120,1')
+        ->middleware('throttle:120,1,perangkat')
         ->name('emenu.perangkat.status');
     Route::post('/meja/{meja}/perangkat/respon', [EMenuController::class, 'responAmbilAlih'])
-        ->middleware('throttle:30,1')
+        ->middleware('throttle:30,1,respon')
         ->name('emenu.perangkat.respon');
     Route::post('/meja/{meja}/perangkat/batal', [EMenuController::class, 'batalAmbilAlih'])
-        ->middleware('throttle:30,1')
+        ->middleware('throttle:30,1,batal')
         ->name('emenu.perangkat.batal');
     Route::get('/meja/{meja}/pelacakan', [EMenuController::class, 'pelacakan'])
-        ->middleware('throttle:30,1')
+        ->middleware('throttle:30,1,lacak')
         ->name('emenu.pelacakan');
     Route::post('/meja/{meja}/panggil', [EMenuController::class, 'panggil'])
-        ->middleware('throttle:10,1')
+        ->middleware('throttle:10,1,panggil')
         ->name('emenu.panggil');
     Route::post('/keluar', [EMenuController::class, 'keluar'])
-        ->middleware('throttle:30,1')
+        ->middleware('throttle:30,1,keluar')
         ->name('emenu.keluar');
     Route::post('/meja/{meja}/checkout', [EMenuController::class, 'checkout'])
-        ->middleware('throttle:20,1')
+        ->middleware('throttle:20,1,checkout')
         ->name('emenu.checkout');
     Route::get('/qris/status/{kode_pesanan}', [EMenuController::class, 'qrisStatus'])
-        ->middleware('throttle:60,1')
+        ->middleware('throttle:60,1,qris')
         ->name('emenu.qris.status');
     Route::get('/status/{kode_pesanan}', [EMenuController::class, 'status'])
-        ->middleware('throttle:30,1')
+        ->middleware('throttle:30,1,pesanan')
         ->name('emenu.status');
     Route::get('/verifikasi/{kode_pesanan}', [EMenuController::class, 'verifikasi'])
-        ->middleware('throttle:60,1')
+        ->middleware('throttle:60,1,verifikasi')
         ->name('emenu.verifikasi');
     Route::get('/bayar-tunai/{kode_pesanan}', [EMenuController::class, 'bayarTunai'])
-        ->middleware('throttle:30,1')
+        ->middleware('throttle:30,1,bayar')
         ->name('emenu.bayar-tunai');
     Route::get('/bayar-tunai/{kode_pesanan}/status', [EMenuController::class, 'tunaiStatus'])
-        ->middleware('throttle:600,1')
+        ->middleware('throttle:600,1,tunai')
         ->name('emenu.bayar-tunai.status');
 });
 
 Route::get('/realtime/version', [RealtimeController::class, 'version'])
-    ->middleware('throttle:120,1')
+    ->middleware('throttle:120,1,realtime')
     ->name('realtime.version');
 
 Route::middleware(['auth', 'aktif'])->group(function () {

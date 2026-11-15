@@ -73,29 +73,141 @@ class ShiftService
         );
     }
 
+    public static function toleransiMenit(): int
+    {
+        return max(0, min(240, (int) Pengaturan::nilai('shift_toleransi_menit', 15)));
+    }
+
+    /**
+     * Rentang jam operasional yang dipakai seluruh shift aktif.
+     */
+    public static function jamOperasional(): ?array
+    {
+        $shiftAktif = array_values(array_filter(
+            self::daftarShift(),
+            fn (array $shift) => $shift['aktif']
+        ));
+
+        if ($shiftAktif === []) {
+            return null;
+        }
+
+        $mulai = min(array_map(
+            fn (array $shift) => self::menitDariJam($shift['mulai']),
+            $shiftAktif
+        ));
+        $selesai = max(array_map(
+            fn (array $shift) => self::menitDariJam($shift['selesai']),
+            $shiftAktif
+        ));
+
+        return [
+            'mulai' => self::teksJam($mulai),
+            'selesai' => self::teksJam($selesai),
+            'lintas_hari' => $selesai <= $mulai,
+            'label' => self::teksJam($mulai).' - '.self::teksJam($selesai).' WIB',
+            'toleransi_menit' => self::toleransiMenit(),
+        ];
+    }
+
+    /**
+     * Hitung keterlambatan login terhadap jadwal shift.
+     *
+     * @return array{menit:int,terlambat:bool,dalam_toleransi:bool,label:string,kelas:string}
+     */
+    public static function keterlambatan(
+        ?string $jadwalMulai,
+        ?string $jadwalSelesai,
+        ?Carbon $mulaiPada,
+        ?int $toleransiMenit = null
+    ): array {
+        $toleransi = max(0, min(240, $toleransiMenit ?? self::toleransiMenit()));
+
+        if (blank($jadwalMulai) || ! $mulaiPada) {
+            return [
+                'menit' => 0,
+                'terlambat' => false,
+                'dalam_toleransi' => false,
+                'label' => 'Luar Shift',
+                'kelas' => 'luar',
+            ];
+        }
+
+        $zona = 'Asia/Jakarta';
+        $login = $mulaiPada->copy()->timezone($zona);
+        $jamMulai = self::menitDariJam($jadwalMulai);
+        $jamSelesai = $jadwalSelesai ? self::menitDariJam($jadwalSelesai) : null;
+        $loginMenit = ((int) $login->format('H')) * 60 + (int) $login->format('i');
+
+        $jadwal = $login->copy()->startOfDay()->addMinutes($jamMulai);
+
+        // Login setelah tengah malam untuk shift yang dimulai sebelum tengah malam.
+        if ($jamSelesai !== null && $jamSelesai <= $jamMulai && $loginMenit < $jamSelesai) {
+            $jadwal->subDay();
+        }
+
+        $selisih = (int) $jadwal->diffInMinutes($login, false);
+        $menit = max(0, $selisih);
+        $terlambat = $selisih > $toleransi;
+        $label = $terlambat ? 'Terlambat '.self::durasiTeks($menit * 60) : 'Tepat waktu';
+
+        return [
+            'menit' => $menit,
+            'terlambat' => $terlambat,
+            'dalam_toleransi' => ! $terlambat && $menit > 0,
+            'label' => $label,
+            'kelas' => $terlambat ? 'terlambat' : 'tepat',
+        ];
+    }
+
     public static function shiftAktif(?Carbon $waktu = null): ?array
     {
-        $waktu ??= now('Asia/Jakarta');
-        $jam = $waktu->format('H:i');
+        $waktu = ($waktu ?? now('Asia/Jakarta'))->copy()->timezone('Asia/Jakarta');
+        $toleransi = self::toleransiMenit();
+        $hariIni = $waktu->copy()->startOfDay();
 
         foreach (self::daftarShift() as $shift) {
             if (! $shift['aktif']) {
                 continue;
             }
 
-            $mulai = $shift['mulai'];
-            $selesai = $shift['selesai'];
+            $mulaiMenit = self::menitDariJam($shift['mulai']);
+            $selesaiMenit = self::menitDariJam($shift['selesai']);
+            $lintasHari = $selesaiMenit <= $mulaiMenit;
 
-            $cocok = $mulai < $selesai
-                ? ($jam >= $mulai && $jam < $selesai)
-                : ($jam >= $mulai || $jam < $selesai);
+            // Periksa kemunculan shift kemarin, hari ini, dan besok agar shift
+            // lintas tengah malam serta toleransi sebelum jam mulai tetap akurat.
+            foreach ([-1, 0, 1] as $geserHari) {
+                $mulai = $hariIni->copy()->addDays($geserHari)->addMinutes($mulaiMenit);
+                $selesai = $hariIni->copy()->addDays($geserHari)->addMinutes($selesaiMenit);
 
-            if ($cocok) {
-                return $shift;
+                if ($lintasHari) {
+                    $selesai->addDay();
+                }
+
+                $mulaiAkses = $mulai->copy()->subMinutes($toleransi);
+
+                if ($waktu->greaterThanOrEqualTo($mulaiAkses) && $waktu->lessThan($selesai)) {
+                    return $shift;
+                }
             }
         }
 
         return null;
+    }
+
+    private static function menitDariJam(string $jam): int
+    {
+        [$jamBagian, $menitBagian] = array_pad(explode(':', substr($jam, 0, 5)), 2, '0');
+
+        return max(0, min(1439, ((int) $jamBagian) * 60 + (int) $menitBagian));
+    }
+
+    private static function teksJam(int $menit): string
+    {
+        $menit = (($menit % 1440) + 1440) % 1440;
+
+        return sprintf('%02d:%02d', intdiv($menit, 60), $menit % 60);
     }
 
     public static function ringkasan(?Carbon $waktu = null): array
@@ -164,6 +276,7 @@ class ShiftService
         }
 
         $aktif = self::shiftAktif();
+        $toleransi = self::toleransiMenit();
 
         $riwayat = RiwayatShift::create([
             'user_id' => $user->id,
@@ -172,6 +285,7 @@ class ShiftService
             'nama_shift' => $aktif['nama'] ?? 'Luar Shift',
             'jadwal_mulai' => $aktif['mulai'] ?? null,
             'jadwal_selesai' => $aktif['selesai'] ?? null,
+            'toleransi_menit' => $aktif ? $toleransi : 0,
             'mulai_pada' => now(),
             'terakhir_aktivitas' => now(),
             'status' => 'aktif',
@@ -307,10 +421,21 @@ class ShiftService
                 ->where('role', $role)
                 ->whereBetween('mulai_pada', [$mulaiHari, $selesaiHari]);
 
+            $baris = (clone $query)->get(['jadwal_mulai', 'jadwal_selesai', 'mulai_pada', 'toleransi_menit']);
+            $terlambat = $baris->filter(
+                fn (RiwayatShift $riwayat) => self::keterlambatan(
+                    $riwayat->jadwal_mulai,
+                    $riwayat->jadwal_selesai,
+                    $riwayat->mulai_pada,
+                    (int) $riwayat->toleransi_menit
+                )['terlambat']
+            )->count();
+
             return [$role => [
                 'label' => $label,
                 'jumlah' => (clone $query)->count(),
                 'aktif' => (clone $query)->whereNull('selesai_pada')->count(),
+                'terlambat' => $terlambat,
                 'durasi' => (int) (clone $query)->sum('durasi_detik'),
             ]];
         });

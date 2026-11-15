@@ -295,4 +295,41 @@ class KdsTargetSeparationTest extends TestCase
             ->assertOk()
             ->assertSee($pesanan->kode_pesanan);
     }
+
+    public function test_state_kds_menghitung_timer_dari_waktu_pesan(): void
+    {
+        [$pesanan] = $this->pesananDuaStasiun();
+        $pesanan->forceFill(['waktu_pesan' => now()->subMinutes(3)])->save();
+
+        $koki = User::factory()->create(['role' => 'koki']);
+
+        $response = $this->actingAs($koki)
+            ->getJson(route('kds.dapur.state'))
+            ->assertOk();
+
+        $ticket = collect($response->json('tickets'))->firstWhere('dbId', $pesanan->id);
+
+        $this->assertNotNull($ticket);
+        $this->assertGreaterThanOrEqual(170, $ticket['seconds']);
+        $this->assertLessThanOrEqual(190, $ticket['seconds']);
+        $this->assertFalse($ticket['isOverdue']);
+    }
+
+    public function test_state_kds_tidak_menghasilkan_timer_negatif_untuk_timestamp_masa_depan(): void
+    {
+        [$pesanan] = $this->pesananDuaStasiun();
+        $pesanan->forceFill(['waktu_pesan' => now()->addHours(7)])->save();
+
+        $koki = User::factory()->create(['role' => 'koki']);
+
+        $response = $this->actingAs($koki)
+            ->getJson(route('kds.dapur.state'))
+            ->assertOk();
+
+        $ticket = collect($response->json('tickets'))->firstWhere('dbId', $pesanan->id);
+
+        $this->assertNotNull($ticket);
+        $this->assertSame(0, $ticket['seconds']);
+        $this->assertFalse($ticket['isOverdue']);
+    }
 }

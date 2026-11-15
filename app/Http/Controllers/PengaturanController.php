@@ -88,12 +88,18 @@ class PengaturanController extends Controller
             'mejaTerdaftar' => $daftarMeja->count(),
             'shiftSlots' => ShiftService::daftarShift(),
             'shiftRestriction' => ShiftService::pembatasanAktif(),
+            'shiftToleransi' => ShiftService::toleransiMenit(),
+            'jamOperasional' => ShiftService::jamOperasional(),
         ]);
     }
 
     public function simpan(Request $request): RedirectResponse
     {
         $shiftTersimpan = ShiftService::daftarShift();
+
+        if (! $request->exists('shift_toleransi_menit')) {
+            $request->merge(['shift_toleransi_menit' => ShiftService::toleransiMenit()]);
+        }
 
         foreach ([1, 2, 3] as $nomor) {
             $shift = $shiftTersimpan[$nomor - 1];
@@ -149,6 +155,7 @@ class PengaturanController extends Controller
             'backup_cloud' => ['nullable', 'boolean'],
             'midtrans_auto_cancel' => ['nullable', 'boolean'],
             'shift_restriction_enabled' => ['nullable', 'boolean'],
+            'shift_toleransi_menit' => ['required', 'integer', 'min:0', 'max:240'],
             'shift_1_nama' => ['required', 'string', 'max:40'],
             'shift_1_mulai' => ['required', 'date_format:H:i'],
             'shift_1_selesai' => ['required', 'date_format:H:i'],
@@ -163,6 +170,8 @@ class PengaturanController extends Controller
             'shift_3_aktif' => ['nullable', 'boolean'],
         ], [
             'lcd_message.max' => 'Pesan tampilan LCD maksimal 16 karakter.',
+            'shift_toleransi_menit.max' => 'Toleransi keterlambatan maksimal 240 menit (4 jam).',
+            'shift_toleransi_menit.min' => 'Toleransi keterlambatan tidak boleh negatif.',
         ]);
 
         foreach ([1, 2, 3] as $nomor) {

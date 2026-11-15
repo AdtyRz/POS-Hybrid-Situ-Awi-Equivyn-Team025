@@ -60,6 +60,143 @@ class ShiftManagementTest extends TestCase
         $this->assertFalse(filter_var(Pengaturan::nilai('shift_3_aktif'), FILTER_VALIDATE_BOOLEAN));
     }
 
+    public function test_admin_dapat_menyimpan_toleransi_keterlambatan_shift(): void
+    {
+        $response = $this->actingAs($this->admin())
+            ->postJson(route('admin.pengaturan-sistem.simpan'), [
+                'nama_resto' => 'Saung Situ Awi',
+                'qris_expiry_minutes' => 10,
+                'session_expiry_minutes' => 120,
+                'shift_toleransi_menit' => 45,
+            ]);
+
+        $response->assertRedirect(route('admin.pengaturan-sistem'));
+        $response->assertSessionHasNoErrors();
+
+        $this->assertSame('45', Pengaturan::nilai('shift_toleransi_menit'));
+        $this->assertSame(45, ShiftService::toleransiMenit());
+    }
+
+    public function test_toleransi_keterlambatan_shift_divalidasi(): void
+    {
+        $payload = [
+            'nama_resto' => 'Saung Situ Awi',
+            'qris_expiry_minutes' => 10,
+            'session_expiry_minutes' => 120,
+        ];
+
+        $this->actingAs($this->admin())
+            ->postJson(route('admin.pengaturan-sistem.simpan'), $payload + ['shift_toleransi_menit' => -1])
+            ->assertJsonValidationErrors('shift_toleransi_menit');
+
+        $this->actingAs($this->admin())
+            ->postJson(route('admin.pengaturan-sistem.simpan'), $payload + ['shift_toleransi_menit' => 241])
+            ->assertJsonValidationErrors('shift_toleransi_menit');
+
+        $this->assertSame('15', (string) Pengaturan::nilai('shift_toleransi_menit'));
+    }
+
+    public function test_staf_dapat_login_dalam_toleransi_sebelum_shift(): void
+    {
+        $this->travelTo(Carbon::parse('2026-10-29 07:50:00', 'Asia/Jakarta'));
+
+        Pengaturan::simpanBanyak([
+            'shift_restriction_enabled' => '1',
+            'shift_toleransi_menit' => '15',
+            'shift_1_aktif' => '1',
+            'shift_1_mulai' => '08:00',
+            'shift_1_selesai' => '12:00',
+            'shift_2_aktif' => '0',
+            'shift_3_aktif' => '0',
+        ]);
+
+        $kasir = $this->staf('kasir');
+
+        $this->post(route('login'), [
+            'email' => $kasir->email,
+            'password' => 'password',
+        ])->assertRedirect(route('dashboard'));
+
+        $this->assertAuthenticatedAs($kasir);
+
+        $riwayat = RiwayatShift::firstOrFail();
+
+        $this->assertSame('Shift Pagi', $riwayat->nama_shift);
+        $this->assertSame(15, $riwayat->toleransi_menit);
+        $this->assertFalse($riwayat->terlambat());
+        $this->assertSame('Tepat waktu', $riwayat->statusKehadiran());
+    }
+
+    public function test_status_kehadiran_memakai_batas_toleransi(): void
+    {
+        $tepatWaktu = ShiftService::keterlambatan(
+            '08:00',
+            '12:00',
+            Carbon::parse('2026-10-29 08:15:00', 'Asia/Jakarta'),
+            15
+        );
+
+        $this->assertFalse($tepatWaktu['terlambat']);
+        $this->assertTrue($tepatWaktu['dalam_toleransi']);
+        $this->assertSame('Tepat waktu', $tepatWaktu['label']);
+
+        $terlambat = ShiftService::keterlambatan(
+            '08:00',
+            '12:00',
+            Carbon::parse('2026-10-29 08:16:00', 'Asia/Jakarta'),
+            15
+        );
+
+        $this->assertTrue($terlambat['terlambat']);
+        $this->assertSame(16, $terlambat['menit']);
+        $this->assertSame('Terlambat 16 menit', $terlambat['label']);
+    }
+
+    public function test_shift_lintas_tengah_malam_memakai_toleransi_dan_hitungan_terlambat(): void
+    {
+        Pengaturan::simpanBanyak([
+            'shift_toleransi_menit' => '15',
+            'shift_1_nama' => 'Shift Malam',
+            'shift_1_mulai' => '22:00',
+            'shift_1_selesai' => '02:00',
+            'shift_1_aktif' => '1',
+            'shift_2_aktif' => '0',
+            'shift_3_aktif' => '0',
+        ]);
+
+        $this->travelTo(Carbon::parse('2026-10-29 21:44:00', 'Asia/Jakarta'));
+        $this->assertNull(ShiftService::shiftAktif());
+
+        $this->travelTo(Carbon::parse('2026-10-29 21:45:00', 'Asia/Jakarta'));
+        $this->assertSame('Shift Malam', ShiftService::shiftAktif()['nama']);
+
+        $this->travelTo(Carbon::parse('2026-10-30 01:59:00', 'Asia/Jakarta'));
+        $this->assertSame('Shift Malam', ShiftService::shiftAktif()['nama']);
+
+        $this->travelTo(Carbon::parse('2026-10-30 02:00:00', 'Asia/Jakarta'));
+        $this->assertNull(ShiftService::shiftAktif());
+
+        $hasil = ShiftService::keterlambatan(
+            '22:00',
+            '02:00',
+            Carbon::parse('2026-10-30 00:10:00', 'Asia/Jakarta'),
+            15
+        );
+
+        $this->assertTrue($hasil['terlambat']);
+        $this->assertSame(130, $hasil['menit']);
+    }
+
+    public function test_jam_operasional_mengikuti_shift_aktif(): void
+    {
+        $jam = ShiftService::jamOperasional();
+
+        $this->assertSame('08:00', $jam['mulai']);
+        $this->assertSame('23:59', $jam['selesai']);
+        $this->assertFalse($jam['lintas_hari']);
+        $this->assertSame(15, $jam['toleransi_menit']);
+    }
+
     public function test_login_dan_logout_mencatat_riwayat_shift(): void
     {
         $this->travelTo(Carbon::parse('2026-10-29 09:15:00', 'Asia/Jakarta'));

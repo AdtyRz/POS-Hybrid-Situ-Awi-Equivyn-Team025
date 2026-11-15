@@ -48,6 +48,24 @@
         <p class="text-stone-500 text-sm mb-6">Kelola sesi meja aktif. Selesaikan sesi untuk menutup sesi pelanggan dan
             membuat kode unik baru.</p>
 
+        @if (session('error'))
+        <div class="bg-[#FEF2F2] border border-[#FCA5A5] text-[#991B1B] rounded-xl px-4 py-3 text-xs font-semibold flex items-center gap-2 mb-4">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            </svg>
+            <span>{{ session('error') }}</span>
+        </div>
+        @endif
+
+        @if (session('sukses'))
+        <div class="bg-[#ECFDF5] border border-[#6EE7B7] text-[#065F46] rounded-xl px-4 py-3 text-xs font-semibold flex items-center gap-2 mb-4">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span>{{ session('sukses') }}</span>
+        </div>
+        @endif
+
         <div data-live="kasir-session-list">
         @foreach ($meja as $m)
             @php($daftarPesanan = $pesananSesi[$m->id] ?? collect())

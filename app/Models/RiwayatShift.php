@@ -19,6 +19,7 @@ class RiwayatShift extends Model
             'terakhir_aktivitas' => 'datetime',
             'selesai_pada' => 'datetime',
             'durasi_detik' => 'integer',
+            'toleransi_menit' => 'integer',
         ];
     }
 
@@ -30,5 +31,28 @@ class RiwayatShift extends Model
     public function durasiTeks(): string
     {
         return ShiftService::durasiTeks($this->durasi_detik);
+    }
+
+    /**
+     * @return array{menit:int,terlambat:bool,dalam_toleransi:bool,label:string,kelas:string}
+     */
+    public function keterlambatan(): array
+    {
+        return ShiftService::keterlambatan(
+            $this->jadwal_mulai,
+            $this->jadwal_selesai,
+            $this->mulai_pada,
+            $this->toleransi_menit === null ? null : (int) $this->toleransi_menit
+        );
+    }
+
+    public function statusKehadiran(): string
+    {
+        return $this->keterlambatan()['label'];
+    }
+
+    public function terlambat(): bool
+    {
+        return $this->keterlambatan()['terlambat'];
     }
 }

@@ -527,7 +527,7 @@ class PelayanController extends Controller
             Pesanan::query()->where('status_pesanan', Pesanan::STATUS_SELESAI)
         )->whereDate('updated_at', $hariIni)->count();
         $avgDetik = $panggilanSelesai->count() > 0
-            ? (int) round($panggilanSelesai->avg(fn ($log) => $log->waktu_panggil->diffInSeconds($log->waktu_selesai)))
+            ? (int) round($panggilanSelesai->avg(fn ($log) => max(0, $log->waktu_selesai->getTimestamp() - $log->waktu_panggil->getTimestamp())))
             : 0;
 
         return [

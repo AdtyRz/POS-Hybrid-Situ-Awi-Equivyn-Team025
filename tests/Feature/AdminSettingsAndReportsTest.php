@@ -164,6 +164,8 @@ class AdminSettingsAndReportsTest extends TestCase
             ->assertSee('Menit tanpa transaksi')
             ->assertSee('5. Shift &amp; Jam Operasional', false)
             ->assertSee('Jadwal Shift Operasional')
+            ->assertSee('Toleransi Keterlambatan Shift')
+            ->assertSee('Jam Operasional')
             ->assertSee('Batasi Akses Staf ke Jam Shift');
     }
 

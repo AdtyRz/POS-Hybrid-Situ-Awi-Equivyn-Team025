@@ -138,6 +138,7 @@
                             $jadwal = $baris->jadwal_mulai && $baris->jadwal_selesai
                                 ? substr((string) $baris->jadwal_mulai, 0, 5) . ' - ' . substr((string) $baris->jadwal_selesai, 0, 5) . ' WIB'
                                 : '-';
+                            $kehadiran = $baris->keterlambatan();
                         @endphp
                         <tr>
                             <td>
@@ -145,7 +146,12 @@
                                 <span class="muted">{{ $baris->ip_address ?: '-' }}</span>
                             </td>
                             <td>{{ \App\Services\ShiftService::ROLES[$baris->role] ?? ucfirst((string) $baris->role) }}</td>
-                            <td>{{ $baris->nama_shift ?: 'Luar Shift' }}</td>
+                            <td>
+                                {{ $baris->nama_shift ?: 'Luar Shift' }}
+                                @if ($kehadiran['kelas'] !== 'luar')
+                                    <br><span class="muted">{{ $kehadiran['label'] }}</span>
+                                @endif
+                            </td>
                             <td>{{ $jadwal }}</td>
                             <td>{{ $baris->mulai_pada->timezone('Asia/Jakarta')->format('d/m/Y H:i:s') }} WIB</td>
                             <td>

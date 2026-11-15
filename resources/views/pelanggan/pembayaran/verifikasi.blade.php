@@ -183,7 +183,8 @@
             checkCount++;
             fetch(qrisStatusUrl, {
                     headers: {
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
                 })
                 .then(response => response.json())
@@ -216,7 +217,8 @@
         window.addEventListener('realtime:status.berubah', () => {
             fetch(qrisStatusUrl, {
                     headers: {
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
                 })
                 .then(response => response.json())

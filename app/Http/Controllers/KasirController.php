@@ -80,7 +80,7 @@ class KasirController extends Controller
             'selesai',
         ));
 
-        return back();
+        return back()->with('sukses', 'Sesi meja '.$mejaMakan->kode_meja.' berhasil diakhiri. Kode unik baru sudah dibuat.');
     }
 
 

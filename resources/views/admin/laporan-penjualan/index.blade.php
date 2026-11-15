@@ -353,6 +353,7 @@
                             $durasi = $aktif
                                 ? \App\Services\ShiftService::durasiTeks((int) $baris->mulai_pada->diffInSeconds(now()))
                                 : $baris->durasiTeks();
+                            $kehadiran = $baris->keterlambatan();
                         @endphp
                         <tr class="align-top hover:bg-[#FBF8F1]/60 transition-colors">
                             <td class="py-3 px-4">
@@ -368,6 +369,9 @@
                                 <span class="font-semibold text-[#1C1C18]">{{ $baris->nama_shift ?: 'Luar Shift' }}</span>
                                 @if ($baris->jadwal_mulai && $baris->jadwal_selesai)
                                     <span class="block text-[10px] text-[#707971] mt-0.5">{{ substr($baris->jadwal_mulai, 0, 5) }} - {{ substr($baris->jadwal_selesai, 0, 5) }} WIB</span>
+                                @endif
+                                @if ($kehadiran['kelas'] !== 'luar')
+                                    <span class="mt-1 inline-flex rounded-full {{ $kehadiran['terlambat'] ? 'bg-[#FFDEA1] text-[#7A5900]' : 'bg-[#E8F0E9] text-[#0B4D2B]' }} px-2 py-0.5 text-[9px] font-bold">{{ $kehadiran['label'] }}</span>
                                 @endif
                             </td>
                             <td class="py-3 px-4 text-[#404941]">
