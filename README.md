@@ -12,9 +12,9 @@ Sistem Point of Sale (POS) hybrid dan IoT untuk resto/saung lesehan **Saung Situ
 [![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)](https://laravel.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-4169E1?logo=postgresql&logoColor=white)](https://supabase.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![Tests](https://img.shields.io/badge/tests-192%20passing-brightgreen)](docs/08-evidence/test-summary.txt)
+![Tests](https://img.shields.io/badge/tests-192%20passing-brightgreen)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v1.0.0--rc-orange)](docs/01-release/RELEASE_NOTES_v1.0.0-rc.md)
+![Version](https://img.shields.io/badge/version-v1.0.0--rc-orange)
 
 ---
 
@@ -94,7 +94,7 @@ Semua akun staf dibuat oleh `database/seeders/SituAwiSeeder.php`. Sandi **tidak*
 | Barista | `barista@situawi.com` | `/kds/bar` | dari `SEED_BARISTA_PASSWORD` |
 | Tamu | — | `/` (scan QR / kode meja) | kode sesi dari LCD |
 
-> **Demo lokal:** untuk latihan di laptop, sandi seragam `Demo#Saung2026` dipakai pada database demo terisolasi (`saung_demo`, port 5433). **Jangan pernah memakai sandi demo di staging/produksi.** Detail: [`docs/06-rehearsal/DEMO_ENVIRONMENT.md`](docs/06-rehearsal/DEMO_ENVIRONMENT.md).
+> **Demo lokal:** untuk latihan di laptop, sandi seragam `Demo#Saung2026` dipakai pada database demo terisolasi (`saung_demo`, port 5433). **Jangan pernah memakai sandi demo di staging/produksi.** Detail lingkungan demo tersedia di paket dokumentasi UKK.
 
 Di lingkungan `local`/`testing`, seeder membuat sandi acak per peran bila `SEED_*` kosong dan menampilkannya di console. Di luar `local`/`testing`, seeder **menolak jalan** bila `SEED_*` belum diisi.
 
@@ -111,29 +111,13 @@ Di lingkungan `local`/`testing`, seeder membuat sandi acak per peran bila `SEED_
 **Mitra:** Rodiansyah Ariwibowo — Owner Saung Situ Awi  
 **Sekolah:** SMK Budi Bakti Ciwidey
 
-Pembagian kerja tercatat di commit log dan di [`docs/07-defense/INDIVIDUAL_CHECKLIST.md`](docs/07-defense/INDIVIDUAL_CHECKLIST.md).
+Pembagian kerja tercatat di commit log.
 
 ---
 
 ## 📚 Dokumentasi
 
-| Dokumen | Isi |
-|---|---|
-| [Release Notes v1.0.0-rc](docs/01-release/RELEASE_NOTES_v1.0.0-rc.md) | Ringkasan rilis, fitur, risiko yang diketahui |
-| [Bug Closure Log](docs/01-release/BUG_CLOSURE_LOG.md) | Tiket cacat yang ditutup |
-| [Code Freeze Checklist](docs/01-release/CODE_FREEZE_CHECKLIST.md) | Kriteria pembekuan kode |
-| [Deployment Guide](docs/02-deployment/DEPLOYMENT_GUIDE.md) | Staging publik, Nginx, Supervisor, queue, Reverb |
-| [Offline / LAN Fallback](docs/02-deployment/OFFLINE_LAN_FALLBACK.md) | Kontinjensi demo tanpa internet |
-| [User Manual](docs/03-manual/USER_MANUAL.pdf) | Panduan bergambar untuk tamu, kasir, pelayan, admin |
-| [Technical Docs](docs/03-manual/TECHNICAL_DOCS.pdf) | Arsitektur, ERD, dependensi, keamanan |
-| [API Reference](docs/04-api/API_REFERENCE.md) | 12 endpoint API + webhook, contoh request/response |
-| [OpenAPI 3.0.3](docs/04-api/openapi.yaml) | Spesifikasi mesin-terbaca |
-| [Postman Collection](docs/04-api/api_collection.json) | Koleksi siap impor |
-| [Pitch Deck](docs/05-presentation/Saung-Situ-Awi_Sprint-4_Pitch-Deck.pdf) | 10 slide, 7 menit |
-| [Demo Script](docs/06-rehearsal/DEMO_SCRIPT.md) | Naskah demo 8 menit |
-| [Backup Video](docs/06-rehearsal/BACKUP_DEMO_v1.0.0-rc.mp4) | Fallback demo 3 menit |
-| [Question Bank](docs/07-defense/QUESTION_BANK.md) | 10 pertanyaan wajib + 12 tambahan |
-| [Live Debug Drills](docs/07-defense/LIVE_DEBUG_DRILLS.md) | 6 drill sabotase ≤ 5 menit |
+Dokumen lengkap (user manual, technical docs, API reference, slide, demo script, dan bank soal) tersedia di paket dokumentasi UKK Sprint 4. README ini sengaja dibuat mandiri agar repo GitHub hanya berisi kode, logo, dan README.
 
 ---
 
@@ -405,7 +389,7 @@ php artisan test --filter=test_webhook_midtrans_menolak_signature_tidak_valid
 | Keamanan | IDOR, XSS, upload, signature webhook, rate limit |
 | Realtime | Event ke channel privat yang benar |
 
-**Hasil rilis:** `192 test`, `1.105 assertion`, `0 failure` — bukti di [`docs/08-evidence/test-summary.txt`](docs/08-evidence/test-summary.txt) dan [`phpunit-junit.xml`](docs/08-evidence/phpunit-junit.xml).
+**Hasil rilis:** `192 test`, `1.105 assertion`, `0 failure` — bukti tersedia di paket dokumentasi UKK.
 
 ---
 
@@ -418,7 +402,7 @@ php artisan test --filter=test_webhook_midtrans_menolak_signature_tidak_valid
 | Health check | `/aktif` | HTTP 200, ±0,02 s (LAN) |
 | Demo terisolasi | `http://127.0.0.1:8031` | PostgreSQL `saung_demo` port 5433 |
 
-Panduan lengkap: [`DEPLOYMENT_GUIDE.md`](docs/02-deployment/DEPLOYMENT_GUIDE.md) dan [`OFFLINE_LAN_FALLBACK.md`](docs/02-deployment/OFFLINE_LAN_FALLBACK.md).
+Panduan lengkap tersedia di paket dokumentasi UKK.
 
 > **Risiko yang diketahui:** URL staging memakai Quick Tunnel sementara, CSP belum diaktifkan, dan `X-Powered-By` masih terbuka di sebagian konfigurasi. Semua tercatat di release notes; tidak diklaim selesai.
 
