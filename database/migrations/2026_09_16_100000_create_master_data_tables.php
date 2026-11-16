@@ -78,7 +78,7 @@ return new class extends Migration
             });
         } elseif (! Schema::hasColumn('menu', 'is_aktif')) {
             Schema::table('menu', function (Blueprint $table) {
-                $table->boolean('is_aktif')->default(true)->after('stok_menu');
+                $table->boolean('is_aktif')->default(true)->after('stok_menu');//SKKNI 5
             });
         }
 
