@@ -307,6 +307,31 @@
                     <p class="text-stone-500 text-xs mt-3">Pembayaran QRIS diproses otomatis melalui Midtrans.</p>
                 @endif
             </div>
+        @elseif ($pesanan->metode_pembayaran === 'transfer' && $pesanan->status_pembayaran === 'sudah_bayar')
+            <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 mt-3">
+                <h2 class="font-bold">Pembayaran Transfer</h2>
+                <div class="bg-forest-100/60 rounded-2xl p-4 mt-3 text-center">
+                    <p class="font-bold text-forest-900">Pembayaran Transfer Dikonfirmasi</p>
+                    <p class="text-forest-600 text-xs mt-1">Pembayaran sudah dikonfirmasi kasir. Pesanan otomatis diteruskan ke dapur.</p>
+                </div>
+            </div>
+        @elseif ($pesanan->metode_pembayaran === 'transfer' && $pesanan->status_pembayaran !== 'sudah_bayar' && $pesanan->status_pesanan !== 'dibatalkan')
+            <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 mt-3">
+                <h2 class="font-bold">Pembayaran Transfer</h2>
+                <div class="bg-cream-50 rounded-2xl p-4 mt-3 text-center">
+                    <p class="font-extrabold text-2xl text-forest-900">
+                        Rp{{ number_format($pesanan->total_bayar, 0, ',', '.') }}</p>
+                    <div class="mt-3 bg-white rounded-xl border border-forest-100 p-3 text-left">
+                        <p class="text-[10px] uppercase tracking-wider text-stone-500 font-bold">Tujuan Transfer</p>
+                        <p class="font-bold text-forest-900 mt-1">{{ \App\Models\Pengaturan::nilai('transfer_bank_nama', 'BCA') }}</p>
+                        <p class="font-mono text-xl font-extrabold tracking-wider text-forest-900">{{ \App\Models\Pengaturan::nilai('transfer_rekening', '1234567890') }}</p>
+                        <p class="text-xs text-stone-500 mt-0.5">a.n. {{ \App\Models\Pengaturan::nilai('transfer_atas_nama', 'Saung Situ Awi') }}</p>
+                    </div>
+                    <p class="text-stone-500 text-xs mt-3">Transfer sesuai total tagihan, lalu tunjukkan bukti transfer ke kasir utama dengan menyebutkan kode meja <span
+                            class="font-mono font-bold text-stone-700">{{ $pesanan->meja->kode_meja }}</span> dan nama
+                        <span class="font-bold text-stone-700">{{ $pesanan->nama_pelanggan ?: 'pemesan' }}</span>.</p>
+                </div>
+            </div>
         @elseif ($pesanan->status_pembayaran !== 'sudah_bayar' && $pesanan->status_pesanan !== 'dibatalkan')
             <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 mt-3">
                 <h2 class="font-bold">Pembayaran Tunai</h2>

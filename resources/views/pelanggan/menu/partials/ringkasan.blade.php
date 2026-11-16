@@ -241,6 +241,27 @@
                         </div>
                     </div>
                 </label>
+
+                <label class="block p-3 rounded-xl border transition cursor-pointer"
+                       :class="paymentMethod === 'transfer'
+                           ? 'border-forest-600 bg-gold-50/40 ring-1 ring-forest-600/30'
+                           : 'border-forest-100 bg-white hover:bg-cream-50'">
+                    <div class="flex items-start gap-3">
+                        <div class="pt-0.5">
+                            <input type="radio"
+                                   name="payment_method"
+                                   value="transfer"
+                                   x-model="paymentMethod"
+                                   class="w-4 h-4 text-forest-600 focus:ring-forest-600">
+                        </div>
+                        <div class="space-y-1 flex-1">
+                            <div class="text-xs sm:text-sm font-bold text-forest-900">Transfer Bank</div>
+                            <p class="text-[11px] text-charcoal-500 leading-relaxed">
+                                Bayar via transfer bank, lalu tunjukkan bukti transfer ke kasir untuk verifikasi.
+                            </p>
+                        </div>
+                    </div>
+                </label>
             </div>
         </div>
 
@@ -280,7 +301,7 @@
                         </div>
                         <div class="mt-3 flex items-center justify-between border-t border-white/10 pt-2.5 text-[10px]">
                             <span class="text-cream-100/60">Metode pembayaran</span>
-                            <span class="font-bold text-gold-300" x-text="paymentMethod === 'cash' ? 'Tunai di kasir' : 'QRIS Midtrans'"></span>
+                            <span class="font-bold text-gold-300" x-text="paymentMethod === 'cash' ? 'Tunai di kasir' : (paymentMethod === 'transfer' ? 'Transfer bank' : 'QRIS Midtrans')"></span>
                         </div>
                     </div>
 

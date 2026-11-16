@@ -524,6 +524,7 @@ class LaporanPenjualanController extends Controller
         return match ($pesanan->metode_pembayaran) {
             'qris' => 'QRIS Midtrans',
             'tunai' => 'Tunai Kasir',
+            'transfer' => 'Transfer Bank',
             default => $pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR ? 'Tunai Kasir' : '-',
         };
     }
@@ -543,7 +544,9 @@ class LaporanPenjualanController extends Controller
         }
 
         if ($pesanan->status_pembayaran === Pesanan::PAYMENT_PENDING_PEMBAYARAN) {
-            return $pesanan->metode_pembayaran === 'tunai' ? 'Menunggu Tunai' : 'Menunggu QRIS';
+            return $pesanan->metode_pembayaran === 'tunai'
+                ? 'Menunggu Tunai'
+                : ($pesanan->metode_pembayaran === 'transfer' ? 'Menunggu Transfer' : 'Menunggu QRIS');
         }
 
         return $pesanan->metode_pembayaran === 'qris' ? 'Belum Bayar QRIS' : 'Belum Bayar';

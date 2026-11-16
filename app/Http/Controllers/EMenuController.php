@@ -287,7 +287,7 @@ class EMenuController extends Controller
             'jumlah.*' => ['integer', 'min:0', 'max:99'],
             'catatan' => ['nullable', 'array'],
             'catatan.*' => ['nullable', 'string', 'max:255'],
-            'metode' => ['required', 'in:tunai,qris'],
+            'metode' => ['required', 'in:tunai,qris,transfer'],
             'nama_pelanggan' => [$namaTersimpan !== '' ? 'nullable' : 'required', 'string', 'max:100'],
             'idempotency_key' => ['nullable', 'string', 'max:64'],
         ], [
@@ -345,6 +345,9 @@ class EMenuController extends Controller
         if ($data['metode'] === 'qris') {
 
             return redirect()->route('emenu.verifikasi', $pesanan->kode_pesanan);
+        } elseif ($data['metode'] === 'transfer') {
+
+            return redirect()->route('emenu.status', $pesanan->kode_pesanan);
         } else {
 
             return redirect()->route('emenu.bayar-tunai', $pesanan->kode_pesanan);

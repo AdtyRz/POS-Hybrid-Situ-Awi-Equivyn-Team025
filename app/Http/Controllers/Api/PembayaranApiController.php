@@ -31,6 +31,10 @@ class PembayaranApiController extends Controller
             return ApiResponse::conflict('Pesanan sudah dibatalkan');
         }
 
+        if ($pesanan->metode_pembayaran === 'transfer') {
+            return ApiResponse::conflict('Pesanan transfer dikonfirmasi melalui kasir');
+        }
+
         $tagihan = (float) $pesanan->total_bayar;
         $dibayar = (float) $data['jumlah_bayar'];
 

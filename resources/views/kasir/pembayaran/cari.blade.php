@@ -96,25 +96,50 @@
             </div>
 
             @if($pesanan->status_pembayaran === 'pending_pembayaran' || $pesanan->status_pembayaran === 'belum_bayar')
-                <form method="POST" action="{{ route('kasir.pembayaran.store') }}" class="mt-6 space-y-4">
-                    @csrf
-                    <input type="hidden" name="kode_pesanan" value="{{ $pesanan->kode_pesanan }}">
-                    <input type="hidden" name="metode_pembayaran" value="tunai">
+                @if($pesanan->metode_pembayaran === 'transfer')
+                    <div class="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                        <p class="font-bold text-amber-900">Konfirmasi Transfer</p>
+                        <p class="text-xs text-amber-800 mt-1">Pastikan dana sudah masuk ke rekening berikut sebelum mengonfirmasi pembayaran.</p>
 
-                    <div>
-                        <label class="block text-sm font-medium text-stone-600 mb-1">Jumlah Bayar (Rp)</label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400">Rp</span>
-                            <input type="number" name="jumlah_bayar" min="0" step="500" value="{{ $pesanan->total_bayar }}" required
-                                   class="w-full pl-8 pr-4 py-3 rounded-xl border border-stone-200 focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 outline-none text-lg font-mono"
-                                   placeholder="0">
+                        <div class="mt-3 bg-white rounded-lg border border-amber-100 p-3">
+                            <p class="text-xs text-stone-500">Bank</p>
+                            <p class="font-bold text-forest-900">{{ \App\Models\Pengaturan::nilai('transfer_bank_nama', 'BCA') }}</p>
+                            <p class="font-mono text-lg font-extrabold tracking-wider text-forest-900 mt-1">{{ \App\Models\Pengaturan::nilai('transfer_rekening', '1234567890') }}</p>
+                            <p class="text-xs text-stone-500 mt-1">a.n. {{ \App\Models\Pengaturan::nilai('transfer_atas_nama', 'Saung Situ Awi') }}</p>
                         </div>
-                    </div>
 
-                    <button type="submit" class="w-full bg-forest-900 hover:bg-[#042616] text-white font-bold py-4 rounded-xl text-lg shadow-sm transition">
-                        Proses Pembayaran Tunai
-                    </button>
-                </form>
+                        <form method="POST" action="{{ route('kasir.pembayaran.store') }}" class="mt-4 space-y-3">
+                            @csrf
+                            <input type="hidden" name="kode_pesanan" value="{{ $pesanan->kode_pesanan }}">
+                            <input type="hidden" name="metode_pembayaran" value="transfer">
+                            <input type="hidden" name="jumlah_bayar" value="{{ $pesanan->total_bayar }}">
+
+                            <button type="submit" class="w-full bg-forest-900 hover:bg-[#042616] text-white font-bold py-4 rounded-xl text-lg shadow-sm transition">
+                                Konfirmasi Transfer Lunas
+                            </button>
+                        </form>
+                    </div>
+                @else
+                    <form method="POST" action="{{ route('kasir.pembayaran.store') }}" class="mt-6 space-y-4">
+                        @csrf
+                        <input type="hidden" name="kode_pesanan" value="{{ $pesanan->kode_pesanan }}">
+                        <input type="hidden" name="metode_pembayaran" value="tunai">
+
+                        <div>
+                            <label class="block text-sm font-medium text-stone-600 mb-1">Jumlah Bayar (Rp)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400">Rp</span>
+                                <input type="number" name="jumlah_bayar" min="0" step="500" value="{{ $pesanan->total_bayar }}" required
+                                       class="w-full pl-8 pr-4 py-3 rounded-xl border border-stone-200 focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 outline-none text-lg font-mono"
+                                       placeholder="0">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-forest-900 hover:bg-[#042616] text-white font-bold py-4 rounded-xl text-lg shadow-sm transition">
+                            Proses Pembayaran Tunai
+                        </button>
+                    </form>
+                @endif
             @elseif($pesanan->status_pembayaran === 'sudah_bayar')
                 <div class="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-center">
                     <p class="font-bold">Pesanan sudah dibayar</p>

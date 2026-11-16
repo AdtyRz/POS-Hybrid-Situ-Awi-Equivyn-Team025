@@ -98,7 +98,7 @@ class PembayaranController extends Controller
     {
         $data = $request->validate([
             'kode_pesanan' => ['required', 'exists:pesanan,kode_pesanan'],
-            'metode_pembayaran' => ['required', 'in:tunai,qris'],
+            'metode_pembayaran' => ['required', 'in:tunai,qris,transfer'],
             'jumlah_bayar' => ['required', 'numeric', 'min:0'],
             'selesaikan_sesi' => ['nullable', 'boolean'],
         ]);
@@ -113,7 +113,15 @@ class PembayaranController extends Controller
             return back()->withErrors(['kode_pesanan' => 'Pesanan ini sudah dibatalkan.']);
         }
 
-        if ($data['jumlah_bayar'] < (float) $pesanan->total_bayar) {
+        if ($pesanan->metode_pembayaran === 'transfer' && $data['metode_pembayaran'] !== 'transfer') {
+            return back()->withErrors(['metode_pembayaran' => 'Pesanan ini harus dikonfirmasi melalui transfer.'])->withInput();
+        }
+
+        if ($pesanan->metode_pembayaran !== 'transfer' && $data['metode_pembayaran'] === 'transfer') {
+            return back()->withErrors(['metode_pembayaran' => 'Pesanan ini bukan pesanan transfer.'])->withInput();
+        }
+
+        if ($data['metode_pembayaran'] !== 'transfer' && $data['jumlah_bayar'] < (float) $pesanan->total_bayar) {
             return back()->withErrors(['jumlah_bayar' => 'Uang yang dibayar kurang dari total tagihan.'])->withInput();
         }
 
@@ -136,10 +144,10 @@ class PembayaranController extends Controller
             ? trim((string) data_get($statusMidtrans, 'transaction_id'))
             : null;
 
-        $jumlahBayar = $data['metode_pembayaran'] === 'qris'
+        $jumlahBayar = in_array($data['metode_pembayaran'], ['qris', 'transfer'], true)
             ? (float) $pesanan->total_bayar
             : (float) $data['jumlah_bayar'];
-        $kembalian = $data['metode_pembayaran'] === 'qris'
+        $kembalian = in_array($data['metode_pembayaran'], ['qris', 'transfer'], true)
             ? 0
             : $jumlahBayar - (float) $pesanan->total_bayar;
 
@@ -213,7 +221,9 @@ class PembayaranController extends Controller
 
         return redirect()
             ->route('kasir.dashboard', $pesanan->meja ? ['meja' => $pesanan->meja->kode_meja] : [])
-            ->with('sukses', 'Pembayaran lunas. Cetak struk dapat dilakukan dari tombol Cetak Struk.');
+            ->with('sukses', $data['metode_pembayaran'] === 'transfer'
+                ? 'Pembayaran transfer berhasil dikonfirmasi. Cetak struk dapat dilakukan dari tombol Cetak Struk.'
+                : 'Pembayaran lunas. Cetak struk dapat dilakukan dari tombol Cetak Struk.');
     }
 
 

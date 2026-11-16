@@ -258,7 +258,10 @@ class PesananController extends Controller
                     ? 'paid'
                     : ($pesananSesi->contains(
                         fn ($pesanan) => $pesanan->status_pembayaran === Pesanan::PAYMENT_PENDING_VERIFIKASI
-                    ) ? 'waiting_qris' : 'waiting_cash');
+                    ) ? 'waiting_qris' : ($pesananSesi->contains(
+                        fn ($pesanan) => $pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR
+                            && $pesanan->metode_pembayaran === 'transfer'
+                    ) ? 'waiting_transfer' : 'waiting_cash'));
                 $dasar['paymentType'] = $metodeSesi->count() > 1
                     ? 'campuran'
                     : $metodeSesi->first();
@@ -335,12 +338,13 @@ class PesananController extends Controller
         $statusPriority = [
             'waiting_qris' => 1,
             'waiting_cash' => 2,
-            'preparing' => 3,
-            'ready' => 4,
-            'delivering' => 5,
-            'completed' => 6,
-            'cancelled' => 7,
-            'empty' => 8,
+            'waiting_transfer' => 3,
+            'preparing' => 4,
+            'ready' => 5,
+            'delivering' => 6,
+            'completed' => 7,
+            'cancelled' => 8,
+            'empty' => 9,
         ];
 
         $pertama = $saungsJson->sortBy(fn ($s) => $statusPriority[$s['status']] ?? 99)->first();
@@ -406,9 +410,9 @@ class PesananController extends Controller
     private function statusKasirPesanan(Pesanan $pesanan): string
     {
         $statusMap = [
-            Pesanan::STATUS_MENUNGGU => 'waiting_cash',
-            Pesanan::STATUS_MENUNGGU_VERIFIKASI => 'waiting_qris',
-            Pesanan::STATUS_MENUNGGU_PEMBAYARAN => 'waiting_cash',
+            Pesanan::STATUS_MENUNGGU => $pesanan->metode_pembayaran === 'transfer' ? 'waiting_transfer' : 'waiting_cash',
+            Pesanan::STATUS_MENUNGGU_VERIFIKASI => $pesanan->metode_pembayaran === 'transfer' ? 'waiting_transfer' : 'waiting_qris',
+            Pesanan::STATUS_MENUNGGU_PEMBAYARAN => $pesanan->metode_pembayaran === 'transfer' ? 'waiting_transfer' : 'waiting_cash',
             Pesanan::STATUS_DIPROSES => 'preparing',
             Pesanan::STATUS_SIAP => 'ready',
             Pesanan::STATUS_DIANTAR => 'delivering',
@@ -435,6 +439,7 @@ class PesananController extends Controller
     {
         return $orders->reverse()->first(fn ($order) => $order['status'] === 'waiting_cash')
             ?? $orders->reverse()->first(fn ($order) => $order['status'] === 'waiting_qris')
+            ?? $orders->reverse()->first(fn ($order) => $order['status'] === 'waiting_transfer')
             ?? $orders->reverse()->first(fn ($order) => $order['status'] !== 'paid')
             ?? $orders->last();
     }
@@ -447,6 +452,10 @@ class PesananController extends Controller
 
         if ($orders->contains(fn ($order) => $order['status'] === 'waiting_qris')) {
             return 'waiting_qris';
+        }
+
+        if ($orders->contains(fn ($order) => $order['status'] === 'waiting_transfer')) {
+            return 'waiting_transfer';
         }
 
 

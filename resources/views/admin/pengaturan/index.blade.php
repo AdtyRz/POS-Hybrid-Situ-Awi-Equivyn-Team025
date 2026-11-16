@@ -759,6 +759,45 @@
                     </div>
                 </div>
 
+                <div class="bg-white rounded-xl p-4 sm:p-5 border border-[#C0C9BF]/20 space-y-4 shadow-2xs">
+                    <div>
+                        <h3 class="text-sm font-bold text-[#1C1C18]">Rekening Transfer Manual</h3>
+                        <p class="text-xs text-[#707971] mt-1">Data ini tampil di halaman status pesanan pelanggan saat metode pembayaran transfer dipilih.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-semibold text-[#1C1C18]">Nama Bank</label>
+                            <input
+                                type="text"
+                                x-model="transferBank"
+                                maxlength="40"
+                                placeholder="BCA"
+                                class="w-full bg-[#FCF9F2] border border-[#C0C9BF]/40 rounded-xl px-3.5 py-2.5 text-sm font-bold text-[#1C1C18] focus:outline-hidden focus:border-[#0B4D2B] shadow-inner">
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-semibold text-[#1C1C18]">No. Rekening / VA</label>
+                            <input
+                                type="text"
+                                x-model="transferRekening"
+                                maxlength="40"
+                                placeholder="1234567890"
+                                class="w-full bg-[#FCF9F2] border border-[#C0C9BF]/40 rounded-xl px-3.5 py-2.5 font-mono text-sm font-bold text-[#1C1C18] focus:outline-hidden focus:border-[#0B4D2B] shadow-inner">
+                        </div>
+
+                        <div class="space-y-1.5 sm:col-span-2">
+                            <label class="text-xs font-semibold text-[#1C1C18]">Atas Nama</label>
+                            <input
+                                type="text"
+                                x-model="transferAtasNama"
+                                maxlength="80"
+                                placeholder="Saung Situ Awi"
+                                class="w-full bg-[#FCF9F2] border border-[#C0C9BF]/40 rounded-xl px-3.5 py-2.5 text-sm font-bold text-[#1C1C18] focus:outline-hidden focus:border-[#0B4D2B] shadow-inner">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="pt-2 flex justify-end">
                     <button
                         type="button"
@@ -1494,6 +1533,9 @@
             midtransServerKey: @js($midtrans['server_key_terpasang'] ? 'Tersimpan di .env' : 'Belum diatur'),
             midtransSiap: @js($midtrans['siap']),
             qrisExpiry: Number(@js($profil['qris_expiry_minutes'] ?? 5)),
+            transferBank: @js($profil['transfer_bank_nama'] ?? 'BCA'),
+            transferRekening: @js($profil['transfer_rekening'] ?? '1234567890'),
+            transferAtasNama: @js($profil['transfer_atas_nama'] ?? 'Saung Situ Awi'),
             autoCancelExpired: false,
             buzzerDuration: Number(@js($profil['buzzer_duration'] ?? 3)),
             antiSpamCooldown: Number(@js($profil['anti_spam_cooldown'] ?? 5)),
@@ -1664,6 +1706,9 @@
                     backup_retention: Number(this.backupRetention),
                     backup_cloud: this.backupCloud,
                     midtrans_auto_cancel: this.autoCancelExpired,
+                    transfer_bank_nama: this.transferBank,
+                    transfer_rekening: this.transferRekening,
+                    transfer_atas_nama: this.transferAtasNama,
                     shift_restriction_enabled: this.shiftRestriction,
                     shift_toleransi_menit: this.toleransiMenitSaatIni,
                 };

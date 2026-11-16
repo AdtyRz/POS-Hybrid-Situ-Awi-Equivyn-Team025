@@ -313,11 +313,11 @@
                             <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase"
                                   :class="{
                                       'bg-[#E0B24E]/20 text-[#C9982F] border border-[#E0B24E]/30': currentSaung.status === 'waiting_cash',
-                                      'bg-[#E0B24E]/20 text-[#8A5A00] border border-[#E0B24E]/40': currentSaung.status === 'waiting_qris',
+                                      'bg-[#E0B24E]/20 text-[#8A5A00] border border-[#E0B24E]/40': currentSaung.status === 'waiting_qris' || currentSaung.status === 'waiting_transfer',
                                       'bg-[#ECFDF5] text-[#065F46] border border-[#6EE7B7]': currentSaung.status === 'paid',
                                       'bg-[#EAE4D3] text-[#6B6A63]': currentSaung.status === 'empty'
                                   }"
-                                  x-text="currentSaung.status === 'empty' ? 'Kosong' : (currentSaung.status === 'paid' ? 'Lunas' : (currentSaung.status === 'waiting_qris' ? 'QRIS' : 'Aktif'))">
+                                  x-text="currentSaung.status === 'empty' ? 'Kosong' : (currentSaung.status === 'paid' ? 'Lunas' : (currentSaung.status === 'waiting_qris' ? 'QRIS' : (currentSaung.status === 'waiting_transfer' ? 'Transfer' : 'Aktif')))">
                             </span>
                         </div>
 
@@ -369,20 +369,22 @@
                                 <div class="mt-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1.5"
                                      :class="currentSaung.status === 'waiting_cash'
                                          ? 'bg-[#FBF3DD] border-[#E0B24E]/40 text-[#C9982F]'
-                                         : (currentSaung.status === 'waiting_qris'
+                                         : (currentSaung.status === 'waiting_qris' || currentSaung.status === 'waiting_transfer'
                                              ? 'bg-[#FFF7E0] border-[#E0B24E]/50 text-[#8A5A00]'
                                              : (currentSaung.status === 'paid'
                                                  ? 'bg-[#ECFDF5] border-[#6EE7B7] text-[#065F46]'
                                                  : 'bg-[#E8F0E9] border-[#A7C4AB] text-[#0B4D2B]'))">
                                     <span class="w-2 h-2 rounded-full"
-                                          :class="currentSaung.status === 'waiting_cash' || currentSaung.status === 'waiting_qris' ? 'bg-[#E0B24E] animate-pulse' : (currentSaung.status === 'paid' ? 'bg-[#059669]' : 'bg-[#0B4D2B]')"></span>
+                                          :class="currentSaung.status === 'waiting_cash' || currentSaung.status === 'waiting_qris' || currentSaung.status === 'waiting_transfer' ? 'bg-[#E0B24E] animate-pulse' : (currentSaung.status === 'paid' ? 'bg-[#059669]' : 'bg-[#0B4D2B]')"></span>
                                     <span x-text="currentSaung.status === 'waiting_cash'
                                         ? 'WAITING_CASH (Opsi Bayar Tunai di Kasir)'
                                         : (currentSaung.status === 'waiting_qris'
                                             ? 'MENUNGGU PEMBAYARAN QRIS'
-                                            : (currentSaung.status === 'paid'
-                                                ? 'SUDAH LUNAS (Transaksi Terverifikasi)'
-                                                : 'PESANAN SEDANG DIPROSES'))"></span>
+                                            : (currentSaung.status === 'waiting_transfer'
+                                                ? 'MENUNGGU KONFIRMASI TRANSFER'
+                                                : (currentSaung.status === 'paid'
+                                                    ? 'SUDAH LUNAS (Transaksi Terverifikasi)'
+                                                    : 'PESANAN SEDANG DIPROSES')))"></span>
                                 </div>
                             </div>
                         </template>
@@ -598,6 +600,21 @@
                         </div>
                     </template>
 
+                    <template x-if="currentSaung.status === 'waiting_transfer'">
+                        <div class="space-y-2 pt-1 border-t border-[#C8C2B3]/30">
+                            <div class="bg-[#FFF7E0] border border-[#E0B24E]/50 rounded-lg p-3 space-y-1">
+                                <div class="flex items-center justify-between text-[10px] font-extrabold uppercase tracking-wide text-[#7A5C0F]">
+                                    <span>Tujuan Transfer</span>
+                                    <span x-text="'Total ' + formatRupiah(currentSaung.total)"></span>
+                                </div>
+                                <p class="text-sm font-bold text-[#00341A]">{{ \App\Models\Pengaturan::nilai('transfer_bank_nama', 'BCA') }}</p>
+                                <p class="font-mono text-lg font-extrabold tracking-wider text-[#00341A]">{{ \App\Models\Pengaturan::nilai('transfer_rekening', '1234567890') }}</p>
+                                <p class="text-[11px] text-[#6B6A63]">a.n. {{ \App\Models\Pengaturan::nilai('transfer_atas_nama', 'Saung Situ Awi') }}</p>
+                            </div>
+                            <p class="text-[10px] text-[#6B6A63]">Pastikan bukti transfer sudah diterima sebelum menekan konfirmasi.</p>
+                        </div>
+                    </template>
+
                     <div class="space-y-2 pt-1">
 
                         <template x-if="currentSaung.status === 'paid'">
@@ -608,7 +625,7 @@
                                     </svg>
                                     <span>TRANSAKSI SELESAI — SUDAH LUNAS</span>
                                 </div>
-                                <p class="text-[11px] text-[#047857]" x-text="'Metode: ' + (currentSaung.paymentType === 'qris' ? 'QRIS Midtrans' : (currentSaung.paymentType === 'campuran' ? 'Campuran' : 'Tunai Kasir'))"></p>
+                                <p class="text-[11px] text-[#047857]" x-text="'Metode: ' + (currentSaung.paymentType === 'qris' ? 'QRIS Midtrans' : (currentSaung.paymentType === 'transfer' ? 'Transfer Bank' : (currentSaung.paymentType === 'campuran' ? 'Campuran' : 'Tunai Kasir')))"></p>
                                 <p class="text-[11px] text-[#6B6A63]"
                                    x-text="currentTable && currentTable.orderCount === 0
                                        ? 'Semua pesanan sesi ini sudah selesai. Tekan Akhiri Sesi Meja untuk menutup sesi.'
@@ -618,12 +635,18 @@
 
                         <button type="button"
                                 @click="confirmPayment()"
-                                :disabled="currentSaung.status === 'empty' || currentSaung.status === 'paid' || (currentSaung.status === 'waiting_cash' && cashReceived < currentSaung.total)"
+                                :disabled="!['waiting_cash', 'waiting_transfer'].includes(currentSaung.status) || (currentSaung.status === 'waiting_cash' && cashReceived < currentSaung.total)"
                                 class="w-full py-3.5 px-4 rounded-xl bg-[#0B4D2B] hover:bg-[#0A4A28] disabled:bg-gray-400 disabled:cursor-not-allowed text-[#FBF3DD] font-extrabold text-xs tracking-wider uppercase flex items-center justify-center gap-2 shadow-sm transition active:scale-98 min-h-[48px]">
                             <svg class="w-4 h-4 text-[#FBF3DD]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
                             </svg>
-                            <span x-text="currentSaung.status === 'paid' ? 'SUDAH LUNAS' : 'KONFIRMASI LUNAS (ENTER)'"></span>
+                            <span x-text="currentSaung.status === 'paid'
+                                ? 'SUDAH LUNAS'
+                                : (currentSaung.status === 'waiting_transfer'
+                                    ? 'KONFIRMASI TRANSFER'
+                                    : (currentSaung.status === 'waiting_cash'
+                                        ? 'KONFIRMASI LUNAS (ENTER)'
+                                        : 'BELUM DAPAT DIKONFIRMASI'))"></span>
                         </button>
 
                         <div class="grid grid-cols-2 gap-2">
@@ -666,8 +689,8 @@
     <form id="formBayar" method="POST" action="{{ route('kasir.pembayaran.store') }}" class="hidden">
         @csrf
         <input type="hidden" name="kode_pesanan" :value="currentSaung.kodePesanan">
-        <input type="hidden" name="metode_pembayaran" value="tunai">
-        <input type="hidden" name="jumlah_bayar" :value="cashReceived">
+        <input type="hidden" name="metode_pembayaran" :value="currentSaung.status === 'waiting_transfer' ? 'transfer' : 'tunai'">
+        <input type="hidden" name="jumlah_bayar" :value="currentSaung.status === 'waiting_transfer' ? currentSaung.total : cashReceived">
     </form>
     <form id="formSelesaikanSesi" method="POST" :action="sesiTutupTemplate.replace('__MEJA__', currentSaung.id)" class="hidden">
         @csrf
@@ -1382,9 +1405,9 @@
                 },
 
                 confirmPayment() {
-                    if (! this.currentSaung || this.currentSaung.status !== 'waiting_cash') return;
+                    if (! this.currentSaung || ! ['waiting_cash', 'waiting_transfer'].includes(this.currentSaung.status)) return;
 
-                    if (Number(this.cashReceived) < Number(this.currentSaung.total)) {
+                    if (this.currentSaung.status === 'waiting_cash' && Number(this.cashReceived) < Number(this.currentSaung.total)) {
                         this.showToast('danger', 'Uang Kurang', 'Uang diterima belum mencukupi total tagihan.');
                         return;
                     }
@@ -1513,7 +1536,7 @@
 
                     const isInputActive = e.target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
 
-                    if (e.key === 'Enter' && this.currentSaung.status === 'waiting_cash') {
+                    if (e.key === 'Enter' && ['waiting_cash', 'waiting_transfer'].includes(this.currentSaung.status)) {
                         e.preventDefault();
                         this.confirmPayment();
                         return;
