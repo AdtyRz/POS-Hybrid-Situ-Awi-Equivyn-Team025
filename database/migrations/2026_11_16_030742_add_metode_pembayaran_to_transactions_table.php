@@ -42,7 +42,7 @@ return new class extends Migration
         ");
 
         foreach ($checks as $check) {
-            DB::statement("ALTER TABLE \"{$tabel}\" DROP CONSTRAINT \"{$check->conname}\");
+            DB::statement("ALTER TABLE \"{$tabel}\" DROP CONSTRAINT \"{$check->conname}\"");
         }
 
         $daftar = implode(', ', array_map(fn ($v) => "'{$v}'", $nilai));

@@ -338,6 +338,11 @@ class LaporanPenjualanController extends Controller
             $cari = mb_substr($cari, 0, 80);
         }
 
+        $metode = (string) $request->query('metode', 'semua');
+        if (! in_array($metode, ['semua', 'tunai', 'qris', 'transfer'], true)) {
+            $metode = 'semua';
+        }
+
         $jenis = (string) $request->query('jenis', 'rekonsiliasi');
 
         // "harian" adalah nilai lama; dipertahankan agar tautan lama tetap jalan.
@@ -356,12 +361,19 @@ class LaporanPenjualanController extends Controller
             'selesaiQuery' => $selesai->toDateString(),
             'area' => $area,
             'cari' => $cari,
+            'metode' => $metode,
             'jenis' => $jenis,
             'daftarArea' => $daftarArea,
             'labelPeriode' => $mulai->isSameDay($selesai)
                 ? $mulai->format('d M Y')
                 : $mulai->format('d M Y') . ' - ' . $selesai->format('d M Y'),
             'labelArea' => $area === 'semua' ? 'Semua Area Saung' : $area,
+            'labelMetode' => match ($metode) {
+                'tunai' => 'Tunai',
+                'qris' => 'QRIS',
+                'transfer' => 'Transfer',
+                default => 'Semua Metode',
+            },
             'labelJenis' => match ($jenis) {
                 'shift' => 'Laporan Shift Kerja Staf',
                 'void' => 'Transaksi Void / Dibatalkan',
@@ -376,7 +388,19 @@ class LaporanPenjualanController extends Controller
         $selesaiUtc = $filter['selesai']->copy()->utc();
 
         $query = Pesanan::query()
-            ->whereBetween('waktu_pesan', [$mulaiUtc, $selesaiUtc]);
+            ->whereBetween('waktu_pesan', [$mulaiUtc, $selesaiUtc])
+            ->when($filter['metode'] !== 'semua', function (Builder $query) use ($filter) {
+                if ($filter['metode'] === 'tunai') {
+                    $query->where(function (Builder $sub) {
+                        $sub->where('metode_pembayaran', 'tunai')
+                            ->orWhereNull('metode_pembayaran');
+                    });
+
+                    return;
+                }
+
+                $query->where('metode_pembayaran', $filter['metode']);
+            });
 
         if ($filter['area'] !== 'semua') {
             $query->whereHas('meja', fn (Builder $meja) => $meja->where('area', $filter['area']));
@@ -559,6 +583,7 @@ class LaporanPenjualanController extends Controller
         fputcsv($out, ['Laporan Penjualan - ' . Pengaturan::nilai('nama_resto')]);
         fputcsv($out, ['Periode', $filter['labelPeriode']]);
         fputcsv($out, ['Area', $filter['labelArea']]);
+        fputcsv($out, ['Metode', $filter['labelMetode']]);
         fputcsv($out, ['Omzet Lunas', $ringkasan['omzet']]);
         fputcsv($out, ['Transaksi Lunas', $ringkasan['jumlah_lunas']]);
         fputcsv($out, ['QRIS Midtrans', $ringkasan['omzet_qris']]);
@@ -596,7 +621,7 @@ class LaporanPenjualanController extends Controller
         echo '<style>table{border-collapse:collapse}th{background:#0B4D2B;color:#fff;font-weight:bold;border:1px solid #08381F;padding:6px}td{border:1px solid #C0C9BF;padding:6px}tr:nth-child(even){background:#F6F3EC}</style>';
         echo '</head><body><table>';
         echo '<tr><th colspan="9">LAPORAN PENJUALAN ' . e(strtoupper((string) Pengaturan::nilai('nama_resto'))) . '</th></tr>';
-        echo '<tr><th colspan="9">PERIODE: ' . e($filter['labelPeriode']) . ' &middot; AREA: ' . e($filter['labelArea']) . '</th></tr>';
+        echo '<tr><th colspan="9">PERIODE: ' . e($filter['labelPeriode']) . ' &middot; AREA: ' . e($filter['labelArea']) . ' &middot; METODE: ' . e($filter['labelMetode']) . '</th></tr>';
         echo '<tr><th colspan="2">OMZET LUNAS: Rp ' . number_format($ringkasan['omzet'], 0, ',', '.') . '</th><th colspan="2">TRANSAKSI LUNAS: ' . $ringkasan['jumlah_lunas'] . '</th><th colspan="2">QRIS: Rp ' . number_format($ringkasan['omzet_qris'], 0, ',', '.') . '</th><th colspan="3">TUNAI: Rp ' . number_format($ringkasan['omzet_tunai'], 0, ',', '.') . '</th></tr>';
         echo '<tr><th>TANGGAL</th><th>KODE</th><th>MEJA</th><th>AREA</th><th>KASIR</th><th>METODE</th><th>STATUS</th><th>ITEM</th><th>TOTAL BAYAR (Rp)</th></tr>';
 

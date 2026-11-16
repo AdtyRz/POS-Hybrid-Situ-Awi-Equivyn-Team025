@@ -197,7 +197,7 @@
             <input type="hidden" name="end" x-model="endDate">
             <input type="hidden" name="q" :value="searchQuery">
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
                 <div class="flex flex-col gap-1.5">
                     <label class="font-bold text-[10px] text-[#707971] uppercase tracking-wider">RENTANG PERIODE</label>
                     <div class="relative" @click.outside="dateOpen = false">
@@ -243,6 +243,26 @@
                         </svg>
                     </div>
                 </div>
+
+                @if ($jenis !== 'shift')
+                <div class="flex flex-col gap-1.5">
+                    <label class="font-bold text-[10px] text-[#707971] uppercase tracking-wider">METODE PEMBAYARAN</label>
+                    <div class="relative">
+                        <select name="metode" x-model="metodePembayaran" class="w-full h-11 pl-10 pr-8 rounded-xl bg-[#FCF9F2] border border-gray-200 text-xs font-semibold text-[#1C1C18] shadow-2xs focus:outline-hidden focus:border-[#0B4D2B] appearance-none">
+                            <option value="semua">Semua Metode</option>
+                            <option value="tunai">Tunai</option>
+                            <option value="qris">QRIS</option>
+                            <option value="transfer">Transfer</option>
+                        </select>
+                        <svg class="w-4 h-4 text-[#707971] absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        <svg class="w-3.5 h-3.5 text-[#707971] absolute right-3 top-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                </div>
+                @endif
 
                 <div class="flex flex-col gap-1.5">
                     <label class="font-bold text-[10px] text-[#707971] uppercase tracking-wider">FORMAT EKSPOR</label>
@@ -449,7 +469,7 @@
                 <span class="w-2.5 h-6 rounded-full bg-[#EFC05A]"></span>
                 <div>
                     <h2 class="font-bold text-base text-[#1C1C18]">Pratinjau Rekap Transaksi ({{ $labelPeriode }})</h2>
-                    <p class="text-xs text-[#707971] mt-0.5">Menampilkan {{ $transaksi->firstItem() ?? 0 }}-{{ $transaksi->lastItem() ?? 0 }} dari {{ $transaksi->total() }} transaksi • Area: {{ $labelArea }}</p>
+                    <p class="text-xs text-[#707971] mt-0.5">Menampilkan {{ $transaksi->firstItem() ?? 0 }}-{{ $transaksi->lastItem() ?? 0 }} dari {{ $transaksi->total() }} transaksi • Area: {{ $labelArea }} • Metode: {{ $labelMetode }}</p>
                 </div>
             </div>
 
@@ -716,6 +736,7 @@
             exportFormat: 'pdf',
             searchQuery: @js($cari),
             jenisLaporan: @js($jenis),
+            metodePembayaran: @js($metode),
             startDate: @js($mulaiQuery),
             endDate: @js($selesaiQuery),
             draftStart: @js($mulaiQuery),
@@ -817,6 +838,7 @@
                     start: this.startDate,
                     end: this.endDate,
                     jenis: this.jenisLaporan,
+                    metode: this.metodePembayaran,
                 });
 
                 if (this.searchQuery.trim() !== '') {

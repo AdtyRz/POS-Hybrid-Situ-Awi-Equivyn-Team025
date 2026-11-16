@@ -332,6 +332,40 @@ class AdminSettingsAndReportsTest extends TestCase
         $this->assertSame(45000.0, (float) $response->json('rekap_halaman.total'));
     }
 
+    public function test_state_laporan_penjualan_dapat_difilter_berdasarkan_metode_pembayaran(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));
+
+        $meja = $this->meja('LB-92');
+
+        foreach ([
+            ['AWI-FILTER-TUNAI', 'tunai', 'Tunai Kasir'],
+            ['AWI-FILTER-QRIS', 'qris', 'QRIS Midtrans'],
+            ['AWI-FILTER-TRANSFER', 'transfer', 'Transfer Bank'],
+        ] as [$kode, $metode, $label]) {
+            Pesanan::create([
+                'kode_pesanan' => $kode,
+                'meja_id' => $meja->id,
+                'waktu_pesan' => now(),
+                'total_bayar' => 30000,
+                'status_pesanan' => Pesanan::STATUS_SIAP,
+                'status_pembayaran' => Pesanan::PAYMENT_SUDAH_BAYAR,
+                'metode_pembayaran' => $metode,
+            ]);
+
+            $this->actingAs($this->admin())
+                ->getJson(route('admin.laporan-penjualan.state', ['metode' => $metode]))
+                ->assertOk()
+                ->assertJsonPath('pagination.total', 1)
+                ->assertJsonPath('transactions.0.method', $label);
+        }
+
+        $this->actingAs($this->admin())
+            ->getJson(route('admin.laporan-penjualan.state', ['metode' => 'semua']))
+            ->assertOk()
+            ->assertJsonPath('pagination.total', 3);
+    }
+
     public function test_state_laporan_shift_mengembalikan_ringkasan_sesi(): void
     {
         $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));

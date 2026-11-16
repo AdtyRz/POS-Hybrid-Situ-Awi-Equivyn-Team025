@@ -46,6 +46,7 @@
         <div class="header-right">
             <strong>Periode:</strong> {{ $labelPeriode }}<br>
             <strong>Area:</strong> {{ $labelArea }}<br>
+            <strong>Metode:</strong> {{ $labelMetode }}<br>
             <strong>Dicetak:</strong> {{ $dicetakPada->format('d M Y H:i') }} WIB<br>
             <strong>Oleh:</strong> {{ $dicetakOleh }}
         </div>
