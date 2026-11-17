@@ -166,7 +166,37 @@ class AdminSettingsAndReportsTest extends TestCase
             ->assertSee('Jadwal Shift Operasional')
             ->assertSee('Toleransi Keterlambatan Shift')
             ->assertSee('Jam Operasional')
-            ->assertSee('Batasi Akses Staf ke Jam Shift');
+            ->assertSee('Batasi Akses Staf ke Jam Shift')
+            ->assertSee('Rekening Transfer Bank Manual')
+            ->assertSee('Nomor Rekening');
+    }
+
+    public function test_admin_dapat_menyimpan_rekening_transfer_bank(): void
+    {
+        $response = $this->actingAs($this->admin())->postJson(route('admin.pengaturan-sistem.simpan'), [
+            'nama_resto' => 'Saung Situ Awi',
+            'qris_expiry_minutes' => 5,
+            'session_expiry_minutes' => 120,
+            'transfer_bank' => 'BCA',
+            'transfer_nomor_rekening' => '123-456.789',
+            'transfer_atas_nama' => 'Saung Situ Awi',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('admin.pengaturan-sistem'));
+        $this->assertSame('BCA', Pengaturan::nilai('transfer_bank'));
+        $this->assertSame('123-456.789', Pengaturan::nilai('transfer_nomor_rekening'));
+        $this->assertSame('Saung Situ Awi', Pengaturan::nilai('transfer_atas_nama'));
+    }
+
+    public function test_nomor_rekening_transfer_harus_berisi_angka_saja(): void
+    {
+        $this->actingAs($this->admin())->postJson(route('admin.pengaturan-sistem.simpan'), [
+            'nama_resto' => 'Saung Situ Awi',
+            'qris_expiry_minutes' => 5,
+            'session_expiry_minutes' => 120,
+            'transfer_nomor_rekening' => 'rekening-utama',
+        ])->assertJsonValidationErrors('transfer_nomor_rekening');
     }
 
     public function test_admin_dapat_mengubah_batas_waktu_qris(): void
