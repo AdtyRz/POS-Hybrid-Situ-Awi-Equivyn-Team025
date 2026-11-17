@@ -113,11 +113,7 @@
 
                 <div x-show="sisaTunggu > 0" x-cloak x-transition role="status" aria-live="polite"
                     class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-center">
-                    <p class="text-[11px] font-bold text-amber-800">Terlalu banyak percobaan kode.</p>
-                    <p class="mt-1 text-xs font-semibold text-amber-700">
-                        Coba lagi dalam
-                        <span class="font-mono text-sm font-extrabold" x-text="labelTunggu"></span>
-                    </p>
+                    <p class="text-[11px] font-bold text-amber-800">Terlalu banyak percobaan kode</p>
                 </div>
 
                 <p x-show="pesanError" x-cloak x-text="pesanError" aria-live="polite"

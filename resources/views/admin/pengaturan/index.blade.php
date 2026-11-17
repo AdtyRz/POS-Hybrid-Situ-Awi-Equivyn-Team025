@@ -13,11 +13,6 @@
                 <span>/</span>
                 <span class="text-[#0B4D2B]">Pengaturan Sistem</span>
             </div>
-
-            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E5E2DB] text-[10px] font-bold text-[#0B4D2B]">
-                <span class="w-1.5 h-1.5 rounded-full bg-[#00341A] animate-pulse"></span>
-                <span class="tracking-wide uppercase">SISTEM KONSOL v2.4.1 • POSTGRESQL &amp; REVERB</span>
-            </div>
         </div>
 
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pt-1">
@@ -101,10 +96,6 @@
                 <span class="font-display font-bold text-xl sm:text-2xl text-[#00341A] tracking-tight leading-tight whitespace-nowrap">
                     HTTP REST
                 </span>
-                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#B1F1C2] text-[#00210E] text-[10px] font-bold whitespace-nowrap shrink-0">
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#00341A]"></span>
-                    <span>AKTIF</span>
-                </span>
             </div>
 
             <div class="flex items-center justify-between text-xs mt-2 gap-2">
@@ -162,7 +153,6 @@
                 <span class="font-display font-bold text-xl sm:text-2xl text-[#00341A] tracking-tight leading-tight whitespace-nowrap">
                     Midtrans QRIS
                 </span>
-                <span class="text-[10px] font-bold text-[#7A5900] bg-[#FFDEA1] px-2 py-0.5 rounded uppercase whitespace-nowrap shrink-0" x-text="midtransEnv">Sandbox</span>
             </div>
 
             <div class="flex items-center justify-between text-xs mt-2 gap-2">
@@ -170,7 +160,6 @@
                     <svg class="w-3.5 h-3.5 text-[#00341A] shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                     <span class="truncate" x-text="midtransSiap ? 'Kredensial Lengkap' : 'Belum Lengkap'">Kredensial Lengkap</span>
                 </span>
-                <span class="font-mono text-[10px] font-bold text-[#707971] whitespace-nowrap shrink-0">{{ $midtrans['client_key'] }}</span>
             </div>
         </div>
 
@@ -672,33 +661,6 @@
                             <h2 class="text-xl font-bold text-[#1C1C18]">Integrasi Pembayaran Digital &amp; Gateway Midtrans</h2>
                             <span class="text-[10px] font-bold text-[#707971] tracking-wider uppercase block">QRIS DYNAMIC &amp; NOTIFIKASI PEMBAYARAN</span>
                         </div>
-                    </div>
-                    <span class="text-[10px] font-bold text-[#7A5900] bg-[#FFDEA1] px-3 py-1 rounded-full uppercase" x-text="midtransEnv">SANDBOX</span>
-                </div>
-
-                <div class="bg-white rounded-xl p-4 sm:p-5 border border-[#C0C9BF]/20 space-y-3 shadow-2xs">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="text-xs font-bold text-[#1C1C18]">Mode Lingkungan Pembayaran (Environment)</h3>
-                            <p class="text-xs text-[#707971]">Mode aktif dibaca dari konfigurasi server (.env). Perubahan environment dilakukan saat deployment.</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-[#F0EEE7] p-1 rounded-xl grid grid-cols-2 gap-1 max-w-sm">
-                        <button
-                            type="button"
-                            @click="infoMidtransEnv()"
-                            :class="midtransEnv === 'sandbox' ? 'bg-white text-[#0B4D2B] shadow-xs font-bold' : 'text-[#707971] hover:text-[#1C1C18] font-medium'"
-                            class="py-2 text-xs rounded-lg transition-all text-center cursor-pointer">
-                            Sandbox (Simulasi)
-                        </button>
-                        <button
-                            type="button"
-                            @click="infoMidtransEnv()"
-                            :class="midtransEnv === 'production' ? 'bg-[#00341A] text-white shadow-xs font-bold' : 'text-[#707971] hover:text-[#1C1C18] font-medium'"
-                            class="py-2 text-xs rounded-lg transition-all text-center cursor-pointer">
-                            Production (Live QRIS)
-                        </button>
                     </div>
                 </div>
 
@@ -1335,10 +1297,6 @@
                         </div>
 
                         <div class="bg-white rounded-xl p-4 border border-[#C0C9BF]/20 space-y-2 text-xs shadow-2xs">
-                            <div class="flex items-center justify-between">
-                                <span class="text-[#707971]">Mode Aktif:</span>
-                                <span class="font-bold text-[#7A5900] uppercase" x-text="midtransEnv">SANDBOX</span>
-                            </div>
                             <div class="flex items-center justify-between">
                                 <span class="text-[#707971]">Metode:</span>
                                 <span class="font-bold text-[#1C1C18]">QRIS Midtrans</span>
