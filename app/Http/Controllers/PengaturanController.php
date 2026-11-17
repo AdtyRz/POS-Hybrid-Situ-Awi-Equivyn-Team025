@@ -422,9 +422,9 @@ class PengaturanController extends Controller
                 'perangkat_terpasang' => $daftarMeja->whereNotNull('id_device')->count(),
                 'sesi_aktif' => $sesiAktif,
                 'panggilan_aktif' => $panggilanAktif,
-                'polling_detik' => 30,
-                'timeout_detik' => 8,
-                'endpoint' => url('/api/iot/status-meja'),
+                'polling_detik' => 10,
+                'timeout_detik' => 5,
+                'endpoint' => url('/api/iot/meja/{kode_meja}'),
                 'transport' => 'WiFi + HTTP REST',
             ],
             'printer' => [

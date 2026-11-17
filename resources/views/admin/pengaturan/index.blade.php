@@ -110,7 +110,7 @@
             <div class="flex items-center justify-between text-xs mt-2 gap-2">
                 <span class="text-[#404941] text-[10px] font-bold flex items-center gap-1.5 whitespace-nowrap">
                     <span class="w-2 h-2 rounded-full bg-[#0B4D2B] animate-pulse"></span>
-                    Polling: 30 dtk
+                    Polling: 10 dtk
                 </span>
                 <span class="font-mono text-[10px] font-bold text-[#707971] whitespace-nowrap shrink-0">{{ $mejaTerdaftar }} Meja</span>
             </div>
@@ -307,11 +307,11 @@
                     <div class="flex items-center gap-2.5">
                         <div class="bg-[#FCF9F2] rounded-lg px-3 py-1.5 border border-[#C0C9BF]/30">
                             <span class="text-[9px] font-bold text-[#707971] uppercase tracking-wider block">ENDPOINT HTTP</span>
-                            <span class="font-mono text-xs font-bold text-[#1C1C18]">/api/iot/status-meja</span>
+                            <span class="font-mono text-xs font-bold text-[#1C1C18]">/api/iot/meja/{kode_meja}</span>
                         </div>
                         <div class="bg-[#FCF9F2] rounded-lg px-3 py-1.5 border border-[#C0C9BF]/30">
                             <span class="text-[9px] font-bold text-[#707971] uppercase tracking-wider block">INTERVAL POLLING</span>
-                            <span class="font-mono text-xs font-bold text-[#00341A]">30 Detik</span>
+                            <span class="font-mono text-xs font-bold text-[#00341A]">10 Detik</span>
                         </div>
                     </div>
                 </div>
@@ -342,7 +342,7 @@
                                     max="10"
                                     x-model="buzzerDuration"
                                     class="w-20 bg-[#FCF9F2] border border-[#C0C9BF]/40 rounded-xl px-3 py-2 text-center font-bold text-[#1C1C18] text-sm focus:outline-hidden focus:border-[#0B4D2B] shadow-inner">
-                                <span class="text-xs font-semibold text-[#707971]">Detik (2 - 4s)</span>
+                                <span class="text-xs font-semibold text-[#707971]">Detik (1 - 10s)</span>
                             </div>
                         </div>
 
@@ -1202,7 +1202,7 @@
                             </div>
                             <div class="flex items-center justify-between">
                                 <span class="text-[#707971]">Endpoint Status:</span>
-                                <span class="font-mono font-bold text-[#1C1C18]">/api/iot/status-meja</span>
+                                <span class="font-mono font-bold text-[#1C1C18]">/api/iot/meja/{kode_meja}</span>
                             </div>
                         </div>
                     </div>
