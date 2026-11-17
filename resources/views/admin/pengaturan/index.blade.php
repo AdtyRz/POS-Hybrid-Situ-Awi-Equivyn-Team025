@@ -678,40 +678,6 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl p-4 sm:p-5 border border-[#C0C9BF]/20 space-y-4 shadow-2xs">
-                    <h3 class="text-sm font-bold text-[#1C1C18]">Kredensial API Merchant Midtrans</h3>
-                    <p class="text-xs text-[#707971]">Kredensial dibaca dari <span class="font-mono">.env</span> server dan tidak dapat diubah dari halaman ini.</p>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="space-y-1.5">
-                            <label class="text-xs font-semibold text-[#1C1C18]">Merchant ID</label>
-                            <input
-                                type="text"
-                                readonly
-                                x-model="midtransMerchantId"
-                                class="w-full bg-[#F0EEE7] border border-[#C0C9BF]/40 rounded-xl px-3.5 py-2.5 font-mono text-xs font-bold text-[#1C1C18] cursor-not-allowed shadow-inner">
-                        </div>
-
-                        <div class="space-y-1.5">
-                            <label class="text-xs font-semibold text-[#1C1C18]">Client Key</label>
-                            <input
-                                type="text"
-                                readonly
-                                x-model="midtransClientKey"
-                                class="w-full bg-[#F0EEE7] border border-[#C0C9BF]/40 rounded-xl px-3.5 py-2.5 font-mono text-xs font-bold text-[#1C1C18] cursor-not-allowed shadow-inner">
-                        </div>
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <label class="text-xs font-semibold text-[#1C1C18]">Server Key (Rahasia)</label>
-                        <input
-                            type="password"
-                            readonly
-                            x-model="midtransServerKey"
-                            class="w-full bg-[#F0EEE7] border border-[#C0C9BF]/40 rounded-xl px-3.5 py-2.5 font-mono text-xs font-bold text-[#1C1C18] cursor-not-allowed shadow-inner">
-                    </div>
-                </div>
-
                 <div class="bg-white rounded-xl p-4 sm:p-5 border border-[#C0C9BF]/20 space-y-2.5 shadow-2xs">
                     <label class="text-xs font-bold text-[#1C1C18]">URL Webhook Notifikasi Transaksi (Notification URL)</label>
                     <p class="text-xs text-[#404941]">
@@ -1537,9 +1503,6 @@
             testingMidtrans: false,
             serviceChargeEnabled: false,
             midtransEnv: @js(strtolower($midtrans['mode'])),
-            midtransMerchantId: @js($midtrans['merchant_id']),
-            midtransClientKey: @js($midtrans['client_key']),
-            midtransServerKey: @js($midtrans['server_key_terpasang'] ? 'Tersimpan di .env' : 'Belum diatur'),
             midtransSiap: @js($midtrans['siap']),
             qrisExpiry: Number(@js($profil['qris_expiry_minutes'] ?? 5)),
             autoCancelExpired: false,
@@ -1576,7 +1539,6 @@
             shiftToleranceUnit: 'menit',
             profil: @js($profil),
             diagnostik: @js($diagnostik),
-            midtrans: @js($midtrans),
             toast: { show: false, message: '', error: false },
             simpanUrl: @js(route('admin.pengaturan-sistem.simpan')),
             diagnostikUrl: @js(route('admin.pengaturan-sistem.diagnostik')),
