@@ -832,7 +832,8 @@ class PelayanController extends Controller
                 ],
                 'qris' => [
                     'qr_url' => $qris['qr_url'],
-                    'expires_in' => $midtrans->qrisExpiryMinutes() * 60,
+                    'expires_in' => $qris['expires_in'] ?? ($midtrans->qrisExpiryMinutes() * 60),
+                    'expires_at' => $qris['expires_at'] ?? null,
                 ],
             ], 201)->header('Cache-Control', 'no-store, max-age=0');
         }
@@ -912,7 +913,8 @@ class PelayanController extends Controller
                     'status_pesanan' => $pesanan->status_pesanan,
                     'status_pembayaran' => $pesanan->status_pembayaran,
                     'qr_url' => $qris['qr_url'] ?? null,
-                    'expires_in' => $midtrans->qrisExpiryMinutes() * 60,
+                    'expires_in' => $qris['expires_in'] ?? ($midtrans->qrisExpiryMinutes() * 60),
+                    'expires_at' => $qris['expires_at'] ?? null,
                 ])->header('Cache-Control', 'no-store, max-age=0');
             }
         }

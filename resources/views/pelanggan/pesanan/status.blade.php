@@ -290,9 +290,18 @@
                             <img src="{{ $qris['qr_url'] }}" alt="QRIS {{ $pesanan->kode_pesanan }}"
                                 class="w-56 h-56 mx-auto object-contain" data-qris-image>
                         </div>
-                        <p class="text-stone-400 text-xs mt-3">QR berlaku <span id="countdown"
-                                class="font-mono font-bold text-stone-600">--:--</span>. Diperbarui otomatis bila
-                            kedaluwarsa.</p>
+                        <div class="mt-4 rounded-2xl border border-gold-500/30 bg-gold-50 px-4 py-3">
+                            <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a6d1f]">
+                                Batas waktu scan &amp; bayar
+                            </p>
+                            <p id="countdown"
+                                class="mt-1 font-mono text-4xl font-bold leading-none tracking-tight tabular-nums text-forest-900">
+                                --:--</p>
+                            <p class="mt-2 text-[11px] text-[#8a6d1f]">
+                                Berlaku sampai <span id="countdownJam" class="font-bold">--:--</span> WIB.
+                                QR diperbarui otomatis bila waktu habis.
+                            </p>
+                        </div>
                         <p id="statusTeks" class="text-forest-600 text-xs font-semibold mt-2">Menunggu pembayaran...
                         </p>
                     </div>
@@ -354,23 +363,46 @@
             const maxChecks = 200;
             const qrisStatusUrl = @json($qrisStatusUrl);
             const qrTtl = {{ (int) ($qrisTtl ?? 300) }};
-            let remaining = qrTtl;
+            let qrisDeadline = null;
+
+            function aturBatasQris(detik) {
+                const sisa = Number(detik);
+                qrisDeadline = Number.isFinite(sisa) && sisa > 0 ? Date.now() + sisa * 1000 : null;
+            }
 
             function tickCountdown() {
                 const el = document.getElementById('countdown');
+                const jam = document.getElementById('countdownJam');
                 if (!el) return;
-                if (remaining <= 0) {
-                    el.textContent = '00:00';
-                    const s = document.getElementById('statusTeks');
-                    if (s) s.textContent = 'Memperbarui QR Code...';
+
+                if (qrisDeadline === null) {
+                    el.textContent = '--:--';
+                    if (jam) jam.textContent = '--:--';
                     return;
                 }
+
+                const remaining = Math.max(0, Math.ceil((qrisDeadline - Date.now()) / 1000));
                 const m = String(Math.floor(remaining / 60)).padStart(2, '0');
                 const sec = String(remaining % 60).padStart(2, '0');
                 el.textContent = m + ':' + sec;
-                remaining--;
-                setTimeout(tickCountdown, 1000);
+                el.style.color = remaining <= 60 ? '#BA1A1A' : '';
+
+                if (jam) {
+                    jam.textContent = new Date(qrisDeadline).toLocaleTimeString('en-GB', {
+                        timeZone: 'Asia/Jakarta',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    });
+                }
+
+                if (remaining <= 0) {
+                    const s = document.getElementById('statusTeks');
+                    if (s) s.textContent = 'Waktu habis. Menyiapkan QR baru...';
+                }
             }
+
+            aturBatasQris(qrTtl);
+            setInterval(tickCountdown, 1000);
 
             function checkPaymentStatus() {
                 checkCount++;
@@ -390,10 +422,13 @@
                             return;
                         }
                         if (data.dibatalkan) {
+                            qrisDeadline = null;
                             const s = document.getElementById('statusTeks');
                             if (s) s.textContent = data.message || 'Pesanan dibatalkan.';
                             const c = document.getElementById('countdown');
                             if (c) c.textContent = '--:--';
+                            const j = document.getElementById('countdownJam');
+                            if (j) j.textContent = '--:--';
                             return;
                         }
                         if (data.expired && data.qr_url) {
@@ -401,7 +436,8 @@
                             if (img) img.src = data.qr_url;
                             const s = document.getElementById('statusTeks');
                             if (s) s.textContent = 'Menunggu pembayaran...';
-                            remaining = Number(data.expires_in) > 0 ? Number(data.expires_in) : qrTtl;
+                            aturBatasQris(Number(data.expires_in) > 0 ? Number(data.expires_in) : qrTtl);
+                            tickCountdown();
                         }
                         if (checkCount < maxChecks) {
                             setTimeout(checkPaymentStatus, 3000);

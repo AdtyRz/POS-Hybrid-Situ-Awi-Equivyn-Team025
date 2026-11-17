@@ -458,9 +458,20 @@
                                 <img :src="qrisPayOrder.qr_url" alt="QRIS pembayaran"
                                      class="w-60 h-60 object-contain" x-show="qrisPayOrder.qr_url">
                                 <p class="text-[10px] text-[#404941] text-center">Minta tamu memindai QR ini dengan aplikasi bank/e-wallet.</p>
-                                <p class="text-xs font-bold text-[#7A5900]">
-                                    Berlaku <span x-text="formatCountdown(qrisPayCountdown)">5:00</span>
-                                </p>
+                                <div class="w-full rounded-xl border border-[#E7D3A0] bg-[#FBF3DD] px-3 py-2.5 text-center">
+                                    <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-[#7A5900]">
+                                        Batas waktu scan &amp; bayar
+                                    </p>
+                                    <p class="font-mono text-3xl font-bold leading-none tracking-tight tabular-nums"
+                                       :style="qrisPayCountdown <= 60 ? 'color:#BA1A1A' : 'color:#00341A'"
+                                       x-text="formatCountdown(qrisPayCountdown)">5:00</p>
+                                    <p class="mt-1 text-[10px] text-[#7A5900]">
+                                        Berlaku sampai <span class="font-bold" x-text="formatJamQris()">--:--</span> WIB
+                                    </p>
+                                    <p x-show="qrisPayCountdown <= 0" class="mt-1 text-[10px] font-bold text-[#BA1A1A]">
+                                        Waktu habis. Menyiapkan QR baru...
+                                    </p>
+                                </div>
                             </div>
 
                             <p class="text-[11px] font-mono text-[#404941] text-center" x-text="'Kode: ' + qrisPayOrder.kode_pesanan">Kode: -</p>
@@ -664,6 +675,7 @@
             qrisPayOrder: null,
             qrisPayStatus: 'pending',
             qrisPayCountdown: 0,
+            qrisPayDeadline: 0,
             qrisPayBusy: false,
             qrisPayKonfirmasiBatal: false,
             qrisPayTimer: null,
@@ -961,11 +973,19 @@
                 this.qrisPayStatus = 'pending';
                 this.qrisPayKonfirmasiBatal = false;
                 this.qrisPayBusy = false;
-                this.qrisPayCountdown = Math.max(30, Number(payload.qris?.expires_in) || 300);
+                this.aturBatasQrisPay(payload.qris?.expires_in);
                 this.showQrisPayModal = true;
 
                 this.mulaiHitungQris();
                 this.mulaiPollingQris();
+            },
+
+            aturBatasQrisPay(detik) {
+                const sisa = Number(detik);
+                const aman = Number.isFinite(sisa) && sisa > 0 ? sisa : 300;
+
+                this.qrisPayDeadline = Date.now() + aman * 1000;
+                this.qrisPayCountdown = aman;
             },
 
             mulaiHitungQris() {
@@ -978,7 +998,7 @@
                         return;
                     }
 
-                    this.qrisPayCountdown = Math.max(0, this.qrisPayCountdown - 1);
+                    this.qrisPayCountdown = Math.max(0, Math.ceil((this.qrisPayDeadline - Date.now()) / 1000));
                 }, 1000);
             },
 
@@ -1029,7 +1049,7 @@
 
                     if (payload.expired && payload.qr_url) {
                         this.qrisPayOrder.qr_url = payload.qr_url;
-                        this.qrisPayCountdown = Math.max(30, Number(payload.expires_in) || 300);
+                        this.aturBatasQrisPay(payload.expires_in);
                         this.triggerToast('QR kedaluwarsa. QR baru sudah dibuat.');
                     }
                 } catch (error) {
@@ -1079,6 +1099,7 @@
             selesaikanQris(status) {
                 this.qrisPayStatus = status;
                 this.qrisPayKonfirmasiBatal = false;
+                this.qrisPayDeadline = 0;
                 this.bersihkanTimerQris();
             },
 
@@ -1090,6 +1111,7 @@
                 this.qrisPayOrder = null;
                 this.qrisPayStatus = 'pending';
                 this.qrisPayKonfirmasiBatal = false;
+                this.qrisPayDeadline = 0;
             },
 
             formatCountdown(seconds) {
@@ -1098,6 +1120,16 @@
                 const sisa = total % 60;
 
                 return menit + ':' + String(sisa).padStart(2, '0');
+            },
+
+            formatJamQris() {
+                if (!this.qrisPayDeadline) return '--:--';
+
+                return new Date(this.qrisPayDeadline).toLocaleTimeString('en-GB', {
+                    timeZone: 'Asia/Jakarta',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                });
             },
 
             async respondCall(panggilanId, state) {

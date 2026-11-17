@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\MejaMakan;
 use App\Models\Pesanan;
+use App\Models\SesiMeja;
 use App\Services\MidtransService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -30,7 +31,7 @@ class QrisExpiryTest extends TestCase
             'status_pesanan' => Pesanan::STATUS_MENUNGGU_VERIFIKASI,
             'status_pembayaran' => Pesanan::PAYMENT_PENDING_VERIFIKASI,
             'metode_pembayaran' => 'qris',
-            'waktu_pesan' => now()->subMinute(),
+            'waktu_pesan' => now(),
         ]);
     }
 
@@ -104,5 +105,57 @@ class QrisExpiryTest extends TestCase
 
         \App\Models\Pengaturan::simpanBanyak(['qris_expiry_minutes' => 90]);
         $this->assertSame(3600, $service->qrisExpiryMinutes() * 60);
+    }
+
+    public function test_halaman_verifikasi_menampilkan_hitung_mundur_batas_scan_dan_bayar(): void
+    {
+        Carbon::setTestNow('2026-11-17 10:00:00');
+
+        $pesanan = $this->pesananQris();
+        $sesi = SesiMeja::aktifUntuk($pesanan->meja);
+
+        $this->partialMock(MidtransService::class, function ($mock) {
+            $mock->shouldReceive('createQrisCharge')
+                ->once()
+                ->andReturn([
+                    'qr_url' => 'https://example.test/qris.png',
+                    'expires_in' => 240,
+                    'expires_at' => now()->addMinutes(4)->toIso8601String(),
+                ]);
+        });
+
+        $this->withSession(['sesi_meja_' . $pesanan->meja_id => $sesi->id])
+            ->get(route('emenu.verifikasi', $pesanan->kode_pesanan))
+            ->assertOk()
+            ->assertSee('Batas waktu scan', false)
+            ->assertSee('countdownJam', false)
+            ->assertSee('Berlaku sampai', false)
+            ->assertSee('const qrTtl = 240;', false);
+    }
+
+    public function test_halaman_status_menampilkan_hitung_mundur_batas_scan_dan_bayar(): void
+    {
+        Carbon::setTestNow('2026-11-17 10:00:00');
+
+        $pesanan = $this->pesananQris();
+        $sesi = SesiMeja::aktifUntuk($pesanan->meja);
+
+        $this->partialMock(MidtransService::class, function ($mock) {
+            $mock->shouldReceive('createQrisCharge')
+                ->once()
+                ->andReturn([
+                    'qr_url' => 'https://example.test/qris.png',
+                    'expires_in' => 240,
+                    'expires_at' => now()->addMinutes(4)->toIso8601String(),
+                ]);
+        });
+
+        $this->withSession(['sesi_meja_' . $pesanan->meja_id => $sesi->id])
+            ->get(route('emenu.status', $pesanan->kode_pesanan))
+            ->assertOk()
+            ->assertSee('Batas waktu scan', false)
+            ->assertSee('countdownJam', false)
+            ->assertSee('Berlaku sampai', false)
+            ->assertSee('const qrTtl = 240;', false);
     }
 }
