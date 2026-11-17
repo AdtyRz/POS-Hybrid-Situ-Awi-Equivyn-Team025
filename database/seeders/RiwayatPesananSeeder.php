@@ -762,36 +762,15 @@ class RiwayatPesananSeeder extends Seeder
 
     private function targetHarian(Carbon $hari): int
     {
-        $dasarMingguan = match ((int) $hari->dayOfWeek) {
-            0 => 21, // Minggu
-            1 => 10, // Senin
-            2 => 12, // Selasa
-            3 => 13, // Rabu
-            4 => 14, // Kamis
-            5 => 18, // Jumat
-            6 => 25, // Sabtu
-        };
+        // Pola ramai-sepi bergantian untuk 7 hari terakhir supaya grafik
+        // mingguan naik-turun, bukan membentuk satu bukit datar.
+        // Indeks 0 = kemarin (H-1), indeks 6 = H-7. Hari ini tidak diisi
+        // karena transaksi hari berjalan masih bertambah.
+        $selesai = Carbon::now(self::ZONA)->subDay()->startOfDay();
+        $mundur = (int) round($hari->copy()->startOfDay()->diffInDays($selesai));
+        $pola = [10, 33, 36, 17, 38, 11, 16];
 
-        $musim = match ((int) $hari->month) {
-            2 => 0.85,
-            6, 7, 12 => 1.2,
-            default => 1.0,
-        };
-
-        // Hash tanggal membuat target stabil setiap kali seeder dijalankan ulang.
-        $hash = crc32($hari->toDateString());
-        $faktor = 0.65 + (($hash % 1000) / 1000) * 0.9;
-        $undian = ((int) floor($hash / 1000) % 1000) / 1000;
-
-        if ($undian < 0.06) {
-            $faktor *= 1.8;
-        } elseif ($undian < 0.16) {
-            $faktor *= 1.35;
-        } elseif ($undian < 0.30) {
-            $faktor *= 0.65;
-        }
-
-        return max(0, min(45, (int) round($dasarMingguan * $musim * $faktor)));
+        return max(0, $pola[$mundur] ?? 0);
     }
 
     /**
