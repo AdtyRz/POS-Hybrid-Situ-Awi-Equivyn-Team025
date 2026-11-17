@@ -305,6 +305,106 @@ class AdminSettingsAndReportsTest extends TestCase
             ->assertSee('Laporan Penjualan &amp; Rekonsiliasi Midtrans vs Tunai', false);
     }
 
+    public function test_laporan_penjualan_dapat_difilter_metode_dan_status_pembayaran(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));
+
+        $meja = $this->meja('LB-92');
+        $buatPesanan = function (string $kode, string $metode, string $statusBayar, string $statusPesanan = Pesanan::STATUS_SELESAI) use ($meja): void {
+            Pesanan::create([
+                'kode_pesanan' => $kode,
+                'meja_id' => $meja->id,
+                'waktu_pesan' => now(),
+                'total_bayar' => 20000,
+                'metode_pembayaran' => $metode,
+                'status_pesanan' => $statusPesanan,
+                'status_pembayaran' => $statusBayar,
+            ]);
+        };
+
+        $buatPesanan('AWI-QRIS-LUNAS', 'qris', Pesanan::PAYMENT_SUDAH_BAYAR);
+        $buatPesanan('AWI-TUNAI-LUNAS', 'tunai', Pesanan::PAYMENT_SUDAH_BAYAR);
+        $buatPesanan('AWI-QRIS-BELUM', 'qris', Pesanan::PAYMENT_BELUM_BAYAR);
+        $buatPesanan('AWI-TUNAI-BELUM', 'tunai', Pesanan::PAYMENT_PENDING_PEMBAYARAN);
+        $buatPesanan('AWI-TRANSFER-BELUM', 'transfer', Pesanan::PAYMENT_PENDING_VERIFIKASI);
+        $buatPesanan('AWI-BATAL-QRIS', 'qris', Pesanan::PAYMENT_BELUM_BAYAR, Pesanan::STATUS_DIBATALKAN);
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.laporan-penjualan', [
+                'start' => '2026-11-10',
+                'end' => '2026-11-10',
+                'metode' => 'qris',
+                'status' => 'belum_bayar',
+            ]))
+            ->assertOk()
+            ->assertSee('AWI-QRIS-BELUM')
+            ->assertSee('Belum Bayar QRIS')
+            ->assertDontSee('AWI-QRIS-LUNAS')
+            ->assertDontSee('AWI-TUNAI-BELUM')
+            ->assertDontSee('AWI-TRANSFER-BELUM')
+            ->assertDontSee('AWI-BATAL-QRIS');
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.laporan-penjualan', [
+                'start' => '2026-11-10',
+                'end' => '2026-11-10',
+                'metode' => 'transfer',
+                'status' => 'belum_bayar',
+            ]))
+            ->assertOk()
+            ->assertSee('AWI-TRANSFER-BELUM')
+            ->assertSee('Belum Bayar Transfer')
+            ->assertDontSee('AWI-QRIS-BELUM');
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.laporan-penjualan', [
+                'start' => '2026-11-10',
+                'end' => '2026-11-10',
+                'status' => 'lunas',
+            ]))
+            ->assertOk()
+            ->assertSee('AWI-QRIS-LUNAS')
+            ->assertSee('AWI-TUNAI-LUNAS')
+            ->assertDontSee('AWI-QRIS-BELUM')
+            ->assertDontSee('AWI-BATAL-QRIS');
+    }
+
+    public function test_state_laporan_penjualan_menghormati_filter_metode_dan_status(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));
+
+        $meja = $this->meja('LB-93');
+
+        foreach ([
+            ['AWI-STATE-QRIS-LUNAS', 'qris', Pesanan::PAYMENT_SUDAH_BAYAR],
+            ['AWI-STATE-TRANSFER-BELUM', 'transfer', Pesanan::PAYMENT_PENDING_VERIFIKASI],
+        ] as [$kode, $metode, $statusBayar]) {
+            Pesanan::create([
+                'kode_pesanan' => $kode,
+                'meja_id' => $meja->id,
+                'waktu_pesan' => now(),
+                'total_bayar' => 20000,
+                'metode_pembayaran' => $metode,
+                'status_pesanan' => Pesanan::STATUS_SELESAI,
+                'status_pembayaran' => $statusBayar,
+            ]);
+        }
+
+        $this->actingAs($this->admin())
+            ->getJson(route('admin.laporan-penjualan.state', [
+                'start' => '2026-11-10',
+                'end' => '2026-11-10',
+                'metode' => 'transfer',
+                'status' => 'belum_bayar',
+            ]))
+            ->assertOk()
+            ->assertJsonPath('jenis', 'rekonsiliasi')
+            ->assertJsonPath('transactions.0.id', '#AWI-STATE-TRANSFER-BELUM')
+            ->assertJsonPath('pagination.total', 1)
+            ->assertJsonPath('ringkasan.belum_lunas', 1)
+            ->assertJsonPath('ringkasan.omzet', 0);
+    }
+
     public function test_state_laporan_penjualan_mengembalikan_transaksi_terfilter(): void
     {
         $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));

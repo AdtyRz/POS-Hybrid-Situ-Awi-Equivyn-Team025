@@ -75,6 +75,8 @@
 
         <div class="meta">
             <span>Area: <strong>{{ $labelArea }}</strong></span>
+            <span>Metode: <strong>{{ $labelMetode }}</strong></span>
+            <span>Status: <strong>{{ $labelStatus }}</strong></span>
             <span>Transaksi: <strong>{{ number_format($ringkasan['jumlah_transaksi'], 0, ',', '.') }}</strong></span>
             <span>Lunas: <strong>{{ number_format($ringkasan['jumlah_lunas'], 0, ',', '.') }}</strong></span>
             <span>Dicetak: <strong>{{ $dicetakPada->format('d/m/Y H:i') }} WIB</strong></span>
@@ -129,16 +131,19 @@
                         @php
                             $dibatalkan = $pesanan->status_pesanan === \App\Models\Pesanan::STATUS_DIBATALKAN;
                             $lunas = $pesanan->status_pembayaran === \App\Models\Pesanan::PAYMENT_SUDAH_BAYAR && ! $dibatalkan;
-                            $qris = $pesanan->metode_pembayaran === 'qris';
                             $labelMetode = $dibatalkan
                                 ? 'VOID Kasir'
-                                : ($qris ? 'QRIS Midtrans' : ($pesanan->metode_pembayaran === 'tunai' || $lunas ? 'Tunai Kasir' : '-'));
+                                : match ($pesanan->metode_pembayaran) {
+                                    'qris' => 'QRIS Midtrans',
+                                    'transfer' => 'Transfer Bank',
+                                    default => 'Tunai Kasir',
+                                };
                             $labelStatus = match (true) {
                                 $dibatalkan => 'Dibatalkan',
                                 $lunas => 'Lunas',
-                                $pesanan->status_pembayaran === \App\Models\Pesanan::PAYMENT_PENDING_VERIFIKASI => 'Verifikasi',
-                                $pesanan->status_pembayaran === \App\Models\Pesanan::PAYMENT_PENDING_PEMBAYARAN => $pesanan->metode_pembayaran === 'tunai' ? 'Menunggu Tunai' : 'Menunggu QRIS',
-                                default => 'Belum Bayar',
+                                $pesanan->metode_pembayaran === 'qris' => 'Belum Bayar QRIS',
+                                $pesanan->metode_pembayaran === 'transfer' => 'Belum Bayar Transfer',
+                                default => 'Belum Bayar Tunai',
                             };
                             $namaItem = $pesanan->detailPesanan->take(2)->map(fn ($detail) => $detail->menu?->nama_menu ?? 'Menu')->implode(', ');
                             $jumlahItem = (int) ($pesanan->total_item ?? $pesanan->detailPesanan->sum('jumlah'));

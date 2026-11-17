@@ -228,6 +228,8 @@ class LaporanPenjualanController extends Controller
             'tanggalShift' => $mulaiShift->copy()->locale('id')->translatedFormat('l, d F Y'),
             'area' => $filter['area'],
             'labelArea' => $filter['labelArea'],
+            'labelMetode' => $filter['labelMetode'],
+            'labelStatus' => $filter['labelStatus'],
             'cari' => $filter['cari'],
             'dicetakPada' => Carbon::now($zona),
             'dicetakOleh' => auth()->user()?->nama ?? 'Admin',
@@ -349,6 +351,18 @@ class LaporanPenjualanController extends Controller
             $jenis = 'rekonsiliasi';
         }
 
+        $metode = (string) $request->query('metode', 'semua');
+
+        if (! in_array($metode, ['semua', 'tunai', 'qris', 'transfer'], true)) {
+            $metode = 'semua';
+        }
+
+        $status = (string) $request->query('status', 'semua');
+
+        if (! in_array($status, ['semua', 'lunas', 'dibatalkan', 'belum_bayar'], true)) {
+            $status = 'semua';
+        }
+
         return [
             'mulai' => $mulai,
             'selesai' => $selesai,
@@ -357,11 +371,25 @@ class LaporanPenjualanController extends Controller
             'area' => $area,
             'cari' => $cari,
             'jenis' => $jenis,
+            'metode' => $metode,
+            'status' => $status,
             'daftarArea' => $daftarArea,
             'labelPeriode' => $mulai->isSameDay($selesai)
                 ? $mulai->format('d M Y')
                 : $mulai->format('d M Y') . ' - ' . $selesai->format('d M Y'),
             'labelArea' => $area === 'semua' ? 'Semua Area Saung' : $area,
+            'labelMetode' => match ($metode) {
+                'tunai' => 'Tunai',
+                'qris' => 'QRIS',
+                'transfer' => 'Transfer',
+                default => 'Semua Metode',
+            },
+            'labelStatus' => match ($status) {
+                'lunas' => 'Lunas',
+                'dibatalkan' => 'Dibatalkan',
+                'belum_bayar' => 'Belum Bayar',
+                default => 'Semua Status',
+            },
             'labelJenis' => match ($jenis) {
                 'shift' => 'Laporan Shift Kerja Staf',
                 'void' => 'Transaksi Void / Dibatalkan',
@@ -396,6 +424,25 @@ class LaporanPenjualanController extends Controller
 
         if ($filter['jenis'] === 'void') {
             $query->where('status_pesanan', Pesanan::STATUS_DIBATALKAN);
+        }
+
+        if ($filter['metode'] === 'tunai') {
+            $query->where(function (Builder $sub) {
+                $sub->where('metode_pembayaran', 'tunai')
+                    ->orWhereNull('metode_pembayaran');
+            });
+        } elseif ($filter['metode'] !== 'semua') {
+            $query->where('metode_pembayaran', $filter['metode']);
+        }
+
+        if ($filter['status'] === 'lunas') {
+            $query->where('status_pesanan', '!=', Pesanan::STATUS_DIBATALKAN)
+                ->where('status_pembayaran', Pesanan::PAYMENT_SUDAH_BAYAR);
+        } elseif ($filter['status'] === 'dibatalkan') {
+            $query->where('status_pesanan', Pesanan::STATUS_DIBATALKAN);
+        } elseif ($filter['status'] === 'belum_bayar') {
+            $query->where('status_pesanan', '!=', Pesanan::STATUS_DIBATALKAN)
+                ->where('status_pembayaran', '!=', Pesanan::PAYMENT_SUDAH_BAYAR);
         }
 
         return $query;
@@ -523,8 +570,9 @@ class LaporanPenjualanController extends Controller
 
         return match ($pesanan->metode_pembayaran) {
             'qris' => 'QRIS Midtrans',
+            'transfer' => 'Transfer Bank',
             'tunai' => 'Tunai Kasir',
-            default => $pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR ? 'Tunai Kasir' : '-',
+            default => 'Tunai Kasir',
         };
     }
 
@@ -538,15 +586,13 @@ class LaporanPenjualanController extends Controller
             return 'Lunas';
         }
 
-        if ($pesanan->status_pembayaran === Pesanan::PAYMENT_PENDING_VERIFIKASI) {
-            return $pesanan->metode_pembayaran === 'qris' ? 'Menunggu QRIS' : 'Verifikasi';
-        }
+        $metode = match ($pesanan->metode_pembayaran) {
+            'qris' => 'QRIS',
+            'transfer' => 'Transfer',
+            default => 'Tunai',
+        };
 
-        if ($pesanan->status_pembayaran === Pesanan::PAYMENT_PENDING_PEMBAYARAN) {
-            return $pesanan->metode_pembayaran === 'tunai' ? 'Menunggu Tunai' : 'Menunggu QRIS';
-        }
-
-        return $pesanan->metode_pembayaran === 'qris' ? 'Belum Bayar QRIS' : 'Belum Bayar';
+        return 'Belum Bayar ' . $metode;
     }
 
     private function streamCsv(Builder $base, array $filter, array $ringkasan): void
@@ -556,6 +602,8 @@ class LaporanPenjualanController extends Controller
         fputcsv($out, ['Laporan Penjualan - ' . Pengaturan::nilai('nama_resto')]);
         fputcsv($out, ['Periode', $filter['labelPeriode']]);
         fputcsv($out, ['Area', $filter['labelArea']]);
+        fputcsv($out, ['Metode', $filter['labelMetode']]);
+        fputcsv($out, ['Status', $filter['labelStatus']]);
         fputcsv($out, ['Omzet Lunas', $ringkasan['omzet']]);
         fputcsv($out, ['Transaksi Lunas', $ringkasan['jumlah_lunas']]);
         fputcsv($out, ['QRIS Midtrans', $ringkasan['omzet_qris']]);
@@ -594,6 +642,7 @@ class LaporanPenjualanController extends Controller
         echo '</head><body><table>';
         echo '<tr><th colspan="9">LAPORAN PENJUALAN ' . e(strtoupper((string) Pengaturan::nilai('nama_resto'))) . '</th></tr>';
         echo '<tr><th colspan="9">PERIODE: ' . e($filter['labelPeriode']) . ' &middot; AREA: ' . e($filter['labelArea']) . '</th></tr>';
+        echo '<tr><th colspan="9">METODE: ' . e($filter['labelMetode']) . ' &middot; STATUS: ' . e($filter['labelStatus']) . '</th></tr>';
         echo '<tr><th colspan="2">OMZET LUNAS: Rp ' . number_format($ringkasan['omzet'], 0, ',', '.') . '</th><th colspan="2">TRANSAKSI LUNAS: ' . $ringkasan['jumlah_lunas'] . '</th><th colspan="2">QRIS: Rp ' . number_format($ringkasan['omzet_qris'], 0, ',', '.') . '</th><th colspan="3">TUNAI: Rp ' . number_format($ringkasan['omzet_tunai'], 0, ',', '.') . '</th></tr>';
         echo '<tr><th>TANGGAL</th><th>KODE</th><th>MEJA</th><th>AREA</th><th>KASIR</th><th>METODE</th><th>STATUS</th><th>ITEM</th><th>TOTAL BAYAR (Rp)</th></tr>';
 
