@@ -150,7 +150,7 @@ class IotStatusService
         return [
             'buzzer_duration' => max(1, (int) Pengaturan::nilai('buzzer_duration', 3)),
             'lcd_message' => mb_substr((string) Pengaturan::nilai('lcd_message', 'Panggil Pelayan'), 0, 16),
-            'polling_detik' => 10,
+            'polling_detik' => max(5, min(120, (int) Pengaturan::nilai('iot_polling_detik', 10))),
         ];
     }
 }

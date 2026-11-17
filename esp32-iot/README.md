@@ -205,7 +205,7 @@ Kontrol dan fase layar:
 - **Buzzer**: berbunyi saat tap, saat panggilan berhasil, dan saat gagal. Durasi saat panggilan berhasil mengikuti pengaturan **Durasi Buzzer Feedback** di admin.
 - **LED**: menyala saat panggilan berhasil.
 
-Data diperbarui otomatis setiap 10 detik. Konfigurasi pesan LCD dan durasi buzzer ikut diambil pada request yang sama, jadi tidak ada request konfigurasi terpisah.
+Data diperbarui otomatis mengikuti **Interval Polling Perangkat ESP32** di pengaturan sistem (default 10 detik, rentang 5–120 detik). Perangkat membaca nilai `polling_detik` dari respons yang sama, jadi perubahan interval tidak perlu men-flash ulang firmware. Konfigurasi pesan LCD dan durasi buzzer juga ikut diambil pada request tersebut, sehingga tidak ada request konfigurasi terpisah.
 
 **Koneksi ulang otomatis.** Bila WiFi terputus, perangkat mencoba menyambung ulang setiap 15 detik tanpa perlu disentuh; setiap 4 percobaan radio WiFi di-reset ringan (tanpa reboot). Selama reconnect, LCD tetap menampilkan teks terakhir agar tamu tidak melihat layar kosong atau pesan error. Bila server tidak terjangkau selama 180 detik setelah setidaknya satu polling sukses, ESP32 restart otomatis. Watchdog ini sengaja tidak aktif sebelum polling sukses pertama supaya perangkat yang menyala saat server mati tidak reboot berulang.
 

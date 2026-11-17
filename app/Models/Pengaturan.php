@@ -19,6 +19,7 @@ class Pengaturan extends Model
         'struk_footer' => 'Hatur Nuhun Parantos Sumping',
         'qris_expiry_minutes' => 5,
         'buzzer_duration' => 3,
+        'iot_polling_detik' => 10,
         'anti_spam_cooldown' => 5,
         'lcd_message' => 'Panggil Pelayan',
         'encryption_level' => '4 Digit',
