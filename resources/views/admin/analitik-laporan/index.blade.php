@@ -4,42 +4,21 @@
 @section('page_category', 'Dasbor Analitik')
 
 @section('content')
-<div class="flex flex-col gap-8 pb-12" x-data="{
-    dateFilter: '{{ $periode }}',
-    start: '{{ $startDate }}',
-    end: '{{ $endDate }}',
-    toast: { show: false, message: '' },
-    applyPeriode(periode) {
-        if (periode === 'kustom') {
-            this.dateFilter = 'kustom';
-            return;
+<div class="flex flex-col gap-8 pb-12">
+    @php
+        $tautanEkspor = ['periode' => $periode];
+
+        if ($periode === 'kustom') {
+            $tautanEkspor['start'] = $startDate;
+            $tautanEkspor['end'] = $endDate;
         }
 
-        window.location.href = '{{ route('admin.analitik-laporan') }}?periode=' + periode;
-    },
-    applyCustom() {
-        if (!this.start || !this.end) {
-            this.showToast('Pilih tanggal mulai dan tanggal akhir terlebih dahulu.');
-            return;
-        }
-
-        window.location.href = '{{ route('admin.analitik-laporan') }}?periode=kustom&start=' + this.start + '&end=' + this.end;
-    },
-    exportUrl(path) {
-        let url = path + '?periode=' + this.dateFilter;
-
-        if (this.dateFilter === 'kustom') {
-            url += '&start=' + this.start + '&end=' + this.end;
-        }
-
-        return url;
-    },
-    showToast(msg) {
-        this.toast.message = msg;
-        this.toast.show = true;
-        setTimeout(() => this.toast.show = false, 3000);
-    }
-}">
+        $tautanKustom = route('admin.analitik-laporan', [
+            'periode' => 'kustom',
+            'start' => $startDate,
+            'end' => $endDate,
+        ]);
+    @endphp
 
     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-2">
         <div class="flex flex-col gap-2">
@@ -62,39 +41,43 @@
 
         <div class="flex flex-wrap items-center gap-3 sm:gap-4">
             <div class="bg-[#F0EEE7] p-1 rounded-xl shadow-inner flex items-center gap-1">
-                <button
-                    type="button"
-                    @click="applyPeriode('hari_ini')"
-                    :class="dateFilter === 'hari_ini' ? 'bg-white text-[#00341A] shadow-xs font-bold' : 'text-[#404941] font-semibold hover:text-black'"
-                    class="px-3.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer">
+                <a href="{{ route('admin.analitik-laporan', ['periode' => 'hari_ini']) }}"
+                    @class([
+                        'px-3.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer',
+                        'bg-white text-[#00341A] shadow-xs font-bold' => $periode === 'hari_ini',
+                        'text-[#404941] font-semibold hover:text-black' => $periode !== 'hari_ini',
+                    ])>
                     Hari Ini
-                </button>
-                <button
-                    type="button"
-                    @click="applyPeriode('mingguan')"
-                    :class="dateFilter === 'mingguan' ? 'bg-white text-[#00341A] shadow-xs font-bold' : 'text-[#404941] font-semibold hover:text-black'"
-                    class="px-3.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer">
+                </a>
+                <a href="{{ route('admin.analitik-laporan', ['periode' => 'mingguan']) }}"
+                    @class([
+                        'px-3.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer',
+                        'bg-white text-[#00341A] shadow-xs font-bold' => $periode === 'mingguan',
+                        'text-[#404941] font-semibold hover:text-black' => $periode !== 'mingguan',
+                    ])>
                     Mingguan
-                </button>
-                <button
-                    type="button"
-                    @click="applyPeriode('bulanan')"
-                    :class="dateFilter === 'bulanan' ? 'bg-white text-[#00341A] shadow-xs font-bold' : 'text-[#404941] font-semibold hover:text-black'"
-                    class="px-3.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer">
+                </a>
+                <a href="{{ route('admin.analitik-laporan', ['periode' => 'bulanan']) }}"
+                    @class([
+                        'px-3.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer',
+                        'bg-white text-[#00341A] shadow-xs font-bold' => $periode === 'bulanan',
+                        'text-[#404941] font-semibold hover:text-black' => $periode !== 'bulanan',
+                    ])>
                     Bulanan
-                </button>
-                <button
-                    type="button"
-                    @click="applyPeriode('kustom')"
-                    :class="dateFilter === 'kustom' ? 'bg-white text-[#00341A] shadow-xs font-bold' : 'text-[#404941] font-semibold hover:text-black'"
-                    class="px-3.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer">
+                </a>
+                <a href="{{ $tautanKustom }}"
+                    @class([
+                        'px-3.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer',
+                        'bg-white text-[#00341A] shadow-xs font-bold' => $periode === 'kustom',
+                        'text-[#404941] font-semibold hover:text-black' => $periode !== 'kustom',
+                    ])>
                     Kustom
-                </button>
+                </a>
             </div>
 
             <div class="flex items-center gap-2">
                 <a
-                    :href="exportUrl('{{ route('admin.analitik-laporan.cetak-pdf') }}')"
+                    href="{{ route('admin.analitik-laporan.cetak-pdf', $tautanEkspor) }}"
                     target="_blank"
                     class="h-10 px-4 rounded-xl bg-[#FECE66]/25 hover:bg-[#FECE66]/40 active:scale-95 text-[#765600] font-semibold text-xs flex items-center gap-2 transition-all cursor-pointer">
                     <svg class="w-4 h-4 text-[#765600]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -104,7 +87,7 @@
                 </a>
 
                 <a
-                    :href="exportUrl('{{ route('admin.analitik-laporan.ekspor-xlsx') }}')"
+                    href="{{ route('admin.analitik-laporan.ekspor-xlsx', $tautanEkspor) }}"
                     class="h-10 px-4 rounded-xl bg-[#0B4D2B] hover:bg-[#08381F] active:scale-95 text-white font-semibold text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer">
                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -115,20 +98,23 @@
         </div>
     </div>
 
-    <div x-cloak x-show="dateFilter === 'kustom'"
+    @if ($periode === 'kustom')
+    <form method="GET" action="{{ route('admin.analitik-laporan') }}"
         class="flex flex-wrap items-center gap-2 -mt-4 p-2.5 bg-white rounded-2xl border border-[#C0C9BF]/40 shadow-xs">
+        <input type="hidden" name="periode" value="kustom">
         <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider px-1">Rentang Kustom</span>
-        <input type="date" x-model="start" :max="end"
+        <input type="date" name="start" value="{{ $startDate }}" required
             class="h-9 px-3 rounded-xl border border-gray-200 text-xs text-[#1C1C18] focus:outline-hidden focus:border-[#0B4D2B]">
         <span class="text-[10px] font-semibold text-[#707971]">s/d</span>
-        <input type="date" x-model="end" :min="start"
+        <input type="date" name="end" value="{{ $endDate }}" required
             class="h-9 px-3 rounded-xl border border-gray-200 text-xs text-[#1C1C18] focus:outline-hidden focus:border-[#0B4D2B]">
-        <button type="button" @click="applyCustom()"
+        <button type="submit"
             class="h-9 px-4 rounded-xl bg-[#0B4D2B] hover:bg-[#08381F] active:scale-95 text-white font-semibold text-xs transition-all cursor-pointer">
             Terapkan
         </button>
         <span class="text-[10px] text-[#707971]">Menampilkan: {{ $labelPeriode }}</span>
-    </div>
+    </form>
+    @endif
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" data-live="statistik" data-periode="{{ $periode }}">
 
@@ -241,7 +227,7 @@
                         Fluktuasi Penjualan
                     </h2>
                     <p class="text-xs text-[#707971] mt-0.5">
-                        Pantauan volume pesanan & nilai kotor (7 hari terakhir)
+                        Pantauan volume pesanan & nilai kotor ({{ $labelGrafik }})
                     </p>
                 </div>
 
@@ -279,6 +265,15 @@
                         $indeksPuncak = 0;
                     }
                     $titikPuncak = $koordinat[$indeksPuncak];
+                    $radiusTitik = $countGrafik > 14 ? 3.5 : 5;
+                    $radiusPuncak = $countGrafik > 14 ? 5 : 6;
+
+                    $langkahLabel = max(1, (int) ceil($countGrafik / 7));
+                    $labelSumbuX = [];
+                    for ($i = 0; $i < $countGrafik; $i += $langkahLabel) {
+                        $labelSumbuX[$i] = true;
+                    }
+                    $labelSumbuX[$countGrafik - 1] = true;
                 @endphp
 
                 <div class="relative" x-data="{
@@ -351,8 +346,8 @@
                                  stroke="#0B4D2B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
 
                         @foreach ($koordinat as $i => $p)
-                            <circle cx="{{ round($p[0], 1) }}" cy="{{ round($p[1], 1) }}" r="5"
-                                fill="#0B4D2B" stroke="#FCF9F2" stroke-width="2.5"
+                            <circle cx="{{ round($p[0], 1) }}" cy="{{ round($p[1], 1) }}" r="{{ $radiusTitik }}"
+                                fill="#0B4D2B" stroke="#FCF9F2" stroke-width="{{ $countGrafik > 14 ? 1.5 : 2.5 }}"
                                 class="cursor-pointer transition-all"
                                 @mouseenter="showPoint({{ $i }})" />
                         @endforeach
@@ -360,7 +355,7 @@
                         <circle x-cloak x-show="showTooltip" :cx="pointX" :cy="pointY" r="7"
                             fill="#7A5900" stroke="#FCF9F2" stroke-width="3" class="pointer-events-none" />
 
-                        <circle cx="{{ round($titikPuncak[0], 1) }}" cy="{{ round($titikPuncak[1], 1) }}" r="6" fill="#7A5900" stroke="#FCF9F2" stroke-width="3" />
+                        <circle cx="{{ round($titikPuncak[0], 1) }}" cy="{{ round($titikPuncak[1], 1) }}" r="{{ $radiusPuncak }}" fill="#7A5900" stroke="#FCF9F2" stroke-width="3" />
                     </svg>
 
                     <div x-cloak x-show="showTooltip" x-transition class="absolute z-10 -translate-x-1/2 -translate-y-full pointer-events-none"
@@ -373,9 +368,12 @@
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between text-[10px] font-bold text-[#707971] px-2 pt-2 border-t border-[#EBE8E1]">
-                    @foreach ($grafik as $hari)
-                    <span>{{ $hari['label'] }}</span>
+                <div class="relative mt-3 h-7 border-t border-[#EBE8E1] text-[10px] font-bold text-[#707971]">
+                    @foreach ($grafik as $i => $hari)
+                        @if (isset($labelSumbuX[$i]))
+                            <span class="absolute top-3 -translate-x-1/2 whitespace-nowrap"
+                                style="left: {{ round(($koordinat[$i][0] / 800) * 100, 2) }}%">{{ $hari['label'] }}</span>
+                        @endif
                     @endforeach
                 </div>
             </div>
@@ -572,20 +570,6 @@
             </div>
         </div>
 
-    </div>
-
-    <div
-        x-cloak
-        x-show="toast.show"
-        x-transition:enter="transition ease-out duration-300"
-        x-transition:enter-start="opacity-0 translate-y-4"
-        x-transition:enter-end="opacity-100 translate-y-0"
-        x-transition:leave="transition ease-in duration-200"
-        x-transition:leave-start="opacity-100 translate-y-0"
-        x-transition:leave-end="opacity-0 translate-y-4"
-        class="fixed bottom-8 right-8 z-50 bg-[#00341A] text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 border border-[#FECE66]/30 text-sm font-semibold">
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-        <span x-text="toast.message"></span>
     </div>
 
 </div>

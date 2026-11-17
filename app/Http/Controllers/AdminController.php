@@ -19,6 +19,7 @@ use App\Support\Realtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -94,7 +95,110 @@ class AdminController extends Controller
         );
     }
 
-    public function dashboard(Request $request): View
+    /**
+     * @return array<int, array{label:string, total:float, jumlah:int}>
+     */
+    private function grafikPeriode(Carbon $start, Carbon $end): array
+    {
+        if ($start->isSameDay($end)) {
+            return $this->grafikPerJam($start);
+        }
+
+        return $this->grafikPerHari($start, $end);
+    }
+
+    /**
+     * @return array<int, array{label:string, total:float, jumlah:int}>
+     */
+    private function grafikPerHari(Carbon $start, Carbon $end): array
+    {
+        return array_map(
+            fn (array $hari) => [
+                'label' => $hari['label'],
+                'total' => $hari['total'],
+                'jumlah' => $hari['jumlah'],
+            ],
+            $this->ringkasanHarian($start, $end)
+        );
+    }
+
+    /**
+     * @return array<int, array{tanggal:string, label:string, label_lengkap:string, total:float, jumlah:int, qris:int, tunai:int}>
+     */
+    private function ringkasanHarian(Carbon $start, Carbon $end): array
+    {
+        $zona = "(waktu_pesan AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta')";
+        $data = $this->scopeTanggalLokal(
+            Pesanan::query()->selectRaw(
+                "{$zona}::date as tanggal,
+                COALESCE(SUM(CASE WHEN status_pembayaran = 'sudah_bayar' THEN total_bayar ELSE 0 END), 0) as total,
+                SUM(CASE WHEN status_pesanan <> 'dibatalkan' THEN 1 ELSE 0 END) as jumlah,
+                SUM(CASE WHEN status_pesanan <> 'dibatalkan' AND status_pembayaran = 'sudah_bayar' AND metode_pembayaran = 'qris' THEN 1 ELSE 0 END) as qris,
+                SUM(CASE WHEN status_pesanan <> 'dibatalkan' AND status_pembayaran = 'sudah_bayar' AND (metode_pembayaran = 'tunai' OR metode_pembayaran IS NULL) THEN 1 ELSE 0 END) as tunai"
+            ),
+            $start->toDateString(),
+            $end->toDateString()
+        )
+            ->groupByRaw("{$zona}::date")
+            ->get()
+            ->keyBy(fn ($baris) => Carbon::parse($baris->tanggal)->toDateString());
+
+        $ringkasan = [];
+        $hari = $start->copy()->startOfDay();
+
+        while ($hari->lessThanOrEqualTo($end)) {
+            $baris = $data->get($hari->toDateString());
+            $ringkasan[] = [
+                'tanggal' => $hari->toDateString(),
+                'label' => $hari->format('d M'),
+                'label_lengkap' => $hari->format('d M Y'),
+                'total' => (float) ($baris?->total ?? 0),
+                'jumlah' => (int) ($baris?->jumlah ?? 0),
+                'qris' => (int) ($baris?->qris ?? 0),
+                'tunai' => (int) ($baris?->tunai ?? 0),
+            ];
+            $hari->addDay();
+        }
+
+        return $ringkasan;
+    }
+
+    /**
+     * @return array<int, array{label:string, total:float, jumlah:int}>
+     */
+    private function grafikPerJam(Carbon $hari): array
+    {
+        $tanggal = $hari->toDateString();
+        $zona = "(waktu_pesan AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta')";
+        $data = $this->scopeTanggalLokal(
+            Pesanan::query()->selectRaw(
+                "to_char({$zona}, 'HH24') as jam,
+                COALESCE(SUM(CASE WHEN status_pembayaran = 'sudah_bayar' THEN total_bayar ELSE 0 END), 0) as total,
+                SUM(CASE WHEN status_pesanan <> 'dibatalkan' THEN 1 ELSE 0 END) as jumlah"
+            ),
+            $tanggal,
+            $tanggal
+        )
+            ->groupByRaw("to_char({$zona}, 'HH24')")
+            ->get()
+            ->keyBy(fn ($baris) => (string) $baris->jam);
+
+        $grafik = [];
+
+        for ($jam = 8; $jam <= 22; $jam++) {
+            $kunci = str_pad((string) $jam, 2, '0', STR_PAD_LEFT);
+            $baris = $data->get($kunci);
+            $grafik[] = [
+                'label' => $kunci . ':00',
+                'total' => (float) ($baris?->total ?? 0),
+                'jumlah' => (int) ($baris?->jumlah ?? 0),
+            ];
+        }
+
+        return $grafik;
+    }
+
+    public function dashboard(Request $request): Response
     {
         [$periode, $start, $end, $labelPeriode] = $this->resolveAnalitikPeriode($request);
 
@@ -186,22 +290,14 @@ class AdminController extends Controller
             ->limit(5)
             ->get();
 
-        $grafik = [];
-        $hariIniLokal = Carbon::now('Asia/Jakarta')->startOfDay();
-        for ($i = 6; $i >= 0; $i--) {
-            $tanggal = $hariIniLokal->copy()->subDays($i);
-            $total = (float) $this->scopeTanggalLokal(Pesanan::query(), $tanggal->toDateString(), $tanggal->toDateString())
-                ->where('status_pembayaran', 'sudah_bayar')
-                ->sum('total_bayar');
-            $jumlahPesanan = $this->scopeTanggalLokal(Pesanan::query(), $tanggal->toDateString(), $tanggal->toDateString())
-                ->whereNotIn('status_pesanan', ['dibatalkan'])
-                ->count();
-            $grafik[] = [
-                'label' => $tanggal->format('d M'),
-                'total' => $total,
-                'jumlah' => $jumlahPesanan,
-            ];
-        }
+        $grafik = $this->grafikPeriode($start, $end);
+        $labelGrafik = match (true) {
+            $start->isSameDay($end) && $periode === 'hari_ini' => 'hari ini (per jam)',
+            $start->isSameDay($end) => $start->format('d M Y') . ' (per jam)',
+            $periode === 'mingguan' => '7 hari terakhir',
+            $periode === 'bulanan' => '30 hari terakhir',
+            default => $labelPeriode,
+        };
 
         $logAudit = $this->scopeTanggalLokal(
             Pesanan::with(['meja', 'kasir', 'detailPesanan.menu']),
@@ -237,13 +333,16 @@ class AdminController extends Controller
                 ];
             });
 
-        return view('admin.analitik-laporan.index', compact(
+        return response()->view('admin.analitik-laporan.index', compact(
             'pendapatan', 'pendapatanKemarin', 'pesananHariIni', 'pesananTotal',
             'mejaTerisi', 'mejaTotal', 'stokMenipis', 'grafik',
             'rataMenit', 'qrisHariIni', 'tunaiHariIni', 'omzetQris', 'omzetTunai', 'terlaris',
             'putaran', 'menuMakananTersedia', 'menuMinumanTersedia', 'menuTersediaTotal', 'sesiAktif', 'logAudit',
-            'periode', 'labelPeriode', 'startDate', 'endDate'
-        ));
+            'periode', 'labelPeriode', 'startDate', 'endDate', 'labelGrafik'
+        ), 200, [
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+        ]);
     }
 
     public function cetakAnalitikPdf(Request $request): View
@@ -251,27 +350,40 @@ class AdminController extends Controller
         [$periode, $start, $end] = $this->resolveAnalitikPeriode($request);
         $hariIni = Carbon::now('Asia/Jakarta');
 
-        $pendapatan = $this->scopeTanggalLokal(Pesanan::query(), $start->toDateString(), $end->toDateString())->where('status_pembayaran', 'sudah_bayar')->sum('total_bayar');
-        $pesananHariIni = $this->scopeTanggalLokal(Pesanan::query(), $start->toDateString(), $end->toDateString())->whereNotIn('status_pesanan', ['dibatalkan'])->count();
-        $qrisHariIni = $this->scopeTanggalLokal(Pesanan::query(), $start->toDateString(), $end->toDateString())->where('metode_pembayaran', 'qris')->whereNotIn('status_pesanan', ['dibatalkan'])->count();
-        $tunaiHariIni = $this->scopeTanggalLokal(Pesanan::query(), $start->toDateString(), $end->toDateString())->where(function ($q) { $q->where('metode_pembayaran', 'tunai')->orWhereNull('metode_pembayaran'); })->whereNotIn('status_pesanan', ['dibatalkan'])->count();
+        $ringkasan = $this->ringkasanHarian($start, $end);
+        $jumlahHari = count($ringkasan);
+        $pendapatan = array_sum(array_column($ringkasan, 'total'));
+        $pesananHariIni = array_sum(array_column($ringkasan, 'jumlah'));
+        $qrisHariIni = array_sum(array_column($ringkasan, 'qris'));
+        $tunaiHariIni = array_sum(array_column($ringkasan, 'tunai'));
+
         $terlaris = DetailPesanan::selectRaw('menu_id, SUM(jumlah) as porsi, SUM(subtotal) as omzet')
-            ->whereHas('pesanan', function ($q) use ($start, $end) { $this->scopeTanggalLokal($q, $start->toDateString(), $end->toDateString())->whereNotIn('status_pesanan', ['dibatalkan']); })
+            ->whereHas('pesanan', function ($q) use ($start, $end) {
+                $this->scopeTanggalLokal($q, $start->toDateString(), $end->toDateString())->whereNotIn('status_pesanan', ['dibatalkan']);
+            })
             ->with('menu')
             ->groupBy('menu_id')
             ->orderByDesc('porsi')
             ->limit(5)
             ->get();
-        $logAudit = $this->scopeTanggalLokal(Pesanan::with(['meja', 'kasir']), $start->toDateString(), $end->toDateString())->whereNotIn('status_pesanan', ['dibatalkan'])->orderByDesc('waktu_pesan')->limit(15)->get();
+
+        $logAudit = $this->scopeTanggalLokal(Pesanan::with(['meja', 'kasir']), $start->toDateString(), $end->toDateString())
+            ->whereNotIn('status_pesanan', ['dibatalkan'])
+            ->orderByDesc('waktu_pesan')
+            ->limit(15)
+            ->get();
 
         $labelPeriode = match ($periode) {
-            'mingguan' => '7 Hari Terakhir (' . $start->format('d M') . ' - ' . $end->format('d M Y') . ')',
-            'bulanan' => '30 Hari Terakhir (' . $start->format('d M Y') . ')',
-            'kustom' => 'Kustom (' . $start->format('d M Y') . ' - ' . $end->format('d M Y') . ')',
-            default => 'Harian (' . $hariIni->format('d M Y') . ')',
+            'mingguan' => 'Mingguan',
+            'bulanan' => 'Bulanan',
+            'kustom' => 'Kustom',
+            default => 'Harian',
         };
 
-        return view('admin.analitik-laporan.cetak', compact('hariIni', 'pendapatan', 'pesananHariIni', 'qrisHariIni', 'tunaiHariIni', 'terlaris', 'logAudit', 'labelPeriode', 'start', 'end'));
+        return view('admin.analitik-laporan.cetak', compact(
+            'hariIni', 'pendapatan', 'pesananHariIni', 'qrisHariIni', 'tunaiHariIni',
+            'terlaris', 'logAudit', 'labelPeriode', 'start', 'end', 'ringkasan', 'jumlahHari'
+        ));
     }
 
     public function eksporAnalitikXlsx(Request $request): StreamedResponse

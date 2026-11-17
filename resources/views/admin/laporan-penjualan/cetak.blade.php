@@ -46,6 +46,8 @@
         <div class="header-right">
             <strong>Periode:</strong> {{ $labelPeriode }}<br>
             <strong>Area:</strong> {{ $labelArea }}<br>
+            <strong>Metode:</strong> {{ $labelMetode }}<br>
+            <strong>Status:</strong> {{ $labelStatus }}<br>
             <strong>Dicetak:</strong> {{ $dicetakPada->format('d M Y H:i') }} WIB<br>
             <strong>Oleh:</strong> {{ $dicetakOleh }}
         </div>
@@ -96,16 +98,19 @@
                 @php
                     $dibatalkan = $pesanan->status_pesanan === \App\Models\Pesanan::STATUS_DIBATALKAN;
                     $lunas = $pesanan->status_pembayaran === \App\Models\Pesanan::PAYMENT_SUDAH_BAYAR && ! $dibatalkan;
-                    $qris = $pesanan->metode_pembayaran === 'qris';
                     $labelMetode = $dibatalkan
                         ? 'VOID Kasir'
-                        : ($qris ? 'QRIS Midtrans' : ($pesanan->metode_pembayaran === 'tunai' || $lunas ? 'Tunai Kasir' : '-'));
+                        : match ($pesanan->metode_pembayaran) {
+                            'qris' => 'QRIS Midtrans',
+                            'transfer' => 'Transfer Bank',
+                            default => 'Tunai Kasir',
+                        };
                     $labelStatus = match (true) {
                         $dibatalkan => 'Dibatalkan',
                         $lunas => 'Lunas',
-                        $pesanan->status_pembayaran === \App\Models\Pesanan::PAYMENT_PENDING_VERIFIKASI => 'Verifikasi',
-                        $pesanan->status_pembayaran === \App\Models\Pesanan::PAYMENT_PENDING_PEMBAYARAN => 'Menunggu QRIS',
-                        default => 'Belum Bayar',
+                        $pesanan->metode_pembayaran === 'qris' => 'Belum Bayar QRIS',
+                        $pesanan->metode_pembayaran === 'transfer' => 'Belum Bayar Transfer',
+                        default => 'Belum Bayar Tunai',
                     };
                     $namaItem = $pesanan->detailPesanan->take(2)->map(fn ($detail) => $detail->menu?->nama_menu ?? 'Menu')->implode(', ');
                     $jumlahItem = (int) ($pesanan->total_item ?? $pesanan->detailPesanan->sum('jumlah'));

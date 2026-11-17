@@ -154,6 +154,9 @@ class PengaturanController extends Controller
             'backup_retention' => ['nullable', 'integer', 'min:1', 'max:90'],
             'backup_cloud' => ['nullable', 'boolean'],
             'midtrans_auto_cancel' => ['nullable', 'boolean'],
+            'transfer_bank' => ['nullable', 'string', 'max:60'],
+            'transfer_nomor_rekening' => ['nullable', 'string', 'max:40', 'regex:/^[0-9\s.\-]+$/'],
+            'transfer_atas_nama' => ['nullable', 'string', 'max:100'],
             'shift_restriction_enabled' => ['nullable', 'boolean'],
             'shift_toleransi_menit' => ['required', 'integer', 'min:0', 'max:240'],
             'shift_1_nama' => ['required', 'string', 'max:40'],
@@ -170,6 +173,7 @@ class PengaturanController extends Controller
             'shift_3_aktif' => ['nullable', 'boolean'],
         ], [
             'lcd_message.max' => 'Pesan tampilan LCD maksimal 16 karakter.',
+            'transfer_nomor_rekening.regex' => 'Nomor rekening hanya boleh berisi angka, spasi, titik, atau tanda hubung.',
             'shift_toleransi_menit.max' => 'Toleransi keterlambatan maksimal 240 menit (4 jam).',
             'shift_toleransi_menit.min' => 'Toleransi keterlambatan tidak boleh negatif.',
         ]);

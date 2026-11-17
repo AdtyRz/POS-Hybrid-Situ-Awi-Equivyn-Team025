@@ -233,7 +233,7 @@
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
             </svg>
-            <span>3. Pembayaran Midtrans QRIS</span>
+            <span>3. Pembayaran &amp; Transfer</span>
         </button>
 
         <button
@@ -678,40 +678,6 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl p-4 sm:p-5 border border-[#C0C9BF]/20 space-y-4 shadow-2xs">
-                    <h3 class="text-sm font-bold text-[#1C1C18]">Kredensial API Merchant Midtrans</h3>
-                    <p class="text-xs text-[#707971]">Kredensial dibaca dari <span class="font-mono">.env</span> server dan tidak dapat diubah dari halaman ini.</p>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="space-y-1.5">
-                            <label class="text-xs font-semibold text-[#1C1C18]">Merchant ID</label>
-                            <input
-                                type="text"
-                                readonly
-                                x-model="midtransMerchantId"
-                                class="w-full bg-[#F0EEE7] border border-[#C0C9BF]/40 rounded-xl px-3.5 py-2.5 font-mono text-xs font-bold text-[#1C1C18] cursor-not-allowed shadow-inner">
-                        </div>
-
-                        <div class="space-y-1.5">
-                            <label class="text-xs font-semibold text-[#1C1C18]">Client Key</label>
-                            <input
-                                type="text"
-                                readonly
-                                x-model="midtransClientKey"
-                                class="w-full bg-[#F0EEE7] border border-[#C0C9BF]/40 rounded-xl px-3.5 py-2.5 font-mono text-xs font-bold text-[#1C1C18] cursor-not-allowed shadow-inner">
-                        </div>
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <label class="text-xs font-semibold text-[#1C1C18]">Server Key (Rahasia)</label>
-                        <input
-                            type="password"
-                            readonly
-                            x-model="midtransServerKey"
-                            class="w-full bg-[#F0EEE7] border border-[#C0C9BF]/40 rounded-xl px-3.5 py-2.5 font-mono text-xs font-bold text-[#1C1C18] cursor-not-allowed shadow-inner">
-                    </div>
-                </div>
-
                 <div class="bg-white rounded-xl p-4 sm:p-5 border border-[#C0C9BF]/20 space-y-2.5 shadow-2xs">
                     <label class="text-xs font-bold text-[#1C1C18]">URL Webhook Notifikasi Transaksi (Notification URL)</label>
                     <p class="text-xs text-[#404941]">
@@ -756,6 +722,54 @@
                             <input type="checkbox" x-model="autoCancelExpired" class="rounded text-[#0B4D2B] focus:ring-0 w-4 h-4">
                             <span>Aktifkan Pembatalan Otomatis</span>
                         </label>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-4 sm:p-5 border border-[#C0C9BF]/20 space-y-4 shadow-2xs">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <h3 class="text-sm font-bold text-[#1C1C18]">Rekening Transfer Bank Manual</h3>
+                            <p class="text-xs text-[#707971] mt-1">Isi rekening tujuan agar tamu dan kasir punya panduan transfer yang jelas.</p>
+                        </div>
+                        <span class="text-[10px] font-bold text-[#0B4D2B] bg-[#B1F1C2]/50 px-2.5 py-1 rounded-full uppercase whitespace-nowrap">Transfer</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-semibold text-[#1C1C18]">Nama Bank</label>
+                            <input
+                                type="text"
+                                maxlength="60"
+                                x-model="transferBank"
+                                placeholder="Contoh: BCA"
+                                class="w-full bg-[#FCF9F2] border border-[#C0C9BF]/40 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#1C1C18] focus:outline-hidden focus:border-[#0B4D2B] shadow-inner">
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-semibold text-[#1C1C18]">Nomor Rekening</label>
+                            <input
+                                type="text"
+                                maxlength="40"
+                                inputmode="numeric"
+                                x-model="transferRekening"
+                                placeholder="Contoh: 1234567890"
+                                class="w-full bg-[#FCF9F2] border border-[#C0C9BF]/40 rounded-xl px-3.5 py-2.5 font-mono text-xs font-bold text-[#1C1C18] focus:outline-hidden focus:border-[#0B4D2B] shadow-inner">
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-[#1C1C18]">Atas Nama</label>
+                        <input
+                            type="text"
+                            maxlength="100"
+                            x-model="transferAtasNama"
+                            placeholder="Contoh: Saung Situ Awi"
+                            class="w-full bg-[#FCF9F2] border border-[#C0C9BF]/40 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#1C1C18] focus:outline-hidden focus:border-[#0B4D2B] shadow-inner">
+                    </div>
+
+                    <div class="bg-[#FCF9F2] border border-dashed border-[#C0C9BF]/60 rounded-xl p-3 text-xs text-[#404941]">
+                        <span class="text-[#707971]">Pratinjau: </span>
+                        <span class="font-bold text-[#00341A]" x-text="(transferBank || 'Bank') + ' • ' + (transferRekening || 'Nomor rekening belum diisi') + ' • a.n. ' + (transferAtasNama || '-')"></span>
                     </div>
                 </div>
 
@@ -1489,12 +1503,12 @@
             testingMidtrans: false,
             serviceChargeEnabled: false,
             midtransEnv: @js(strtolower($midtrans['mode'])),
-            midtransMerchantId: @js($midtrans['merchant_id']),
-            midtransClientKey: @js($midtrans['client_key']),
-            midtransServerKey: @js($midtrans['server_key_terpasang'] ? 'Tersimpan di .env' : 'Belum diatur'),
             midtransSiap: @js($midtrans['siap']),
             qrisExpiry: Number(@js($profil['qris_expiry_minutes'] ?? 5)),
             autoCancelExpired: false,
+            transferBank: @js($profil['transfer_bank'] ?? ''),
+            transferRekening: @js($profil['transfer_nomor_rekening'] ?? ''),
+            transferAtasNama: @js($profil['transfer_atas_nama'] ?? ''),
             buzzerDuration: Number(@js($profil['buzzer_duration'] ?? 3)),
             antiSpamCooldown: Number(@js($profil['anti_spam_cooldown'] ?? 5)),
             lcdMessage: @js($profil['lcd_message'] ?? 'Panggil Pelayan'),
@@ -1525,7 +1539,6 @@
             shiftToleranceUnit: 'menit',
             profil: @js($profil),
             diagnostik: @js($diagnostik),
-            midtrans: @js($midtrans),
             toast: { show: false, message: '', error: false },
             simpanUrl: @js(route('admin.pengaturan-sistem.simpan')),
             diagnostikUrl: @js(route('admin.pengaturan-sistem.diagnostik')),
@@ -1664,6 +1677,9 @@
                     backup_retention: Number(this.backupRetention),
                     backup_cloud: this.backupCloud,
                     midtrans_auto_cancel: this.autoCancelExpired,
+                    transfer_bank: this.transferBank,
+                    transfer_nomor_rekening: this.transferRekening,
+                    transfer_atas_nama: this.transferAtasNama,
                     shift_restriction_enabled: this.shiftRestriction,
                     shift_toleransi_menit: this.toleransiMenitSaatIni,
                 };
