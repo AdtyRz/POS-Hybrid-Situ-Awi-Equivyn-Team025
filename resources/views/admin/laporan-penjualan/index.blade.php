@@ -230,7 +230,7 @@
                 <div class="flex flex-col gap-1.5">
                     <label class="font-bold text-[10px] text-[#707971] uppercase tracking-wider">TIPE REKAPITULASI</label>
                     <div class="relative">
-                        <select name="jenis" x-model="jenisLaporan" class="w-full h-11 pl-10 pr-8 rounded-xl bg-[#FCF9F2] border border-gray-200 text-xs font-semibold text-[#1C1C18] shadow-2xs focus:outline-hidden focus:border-[#0B4D2B] appearance-none">
+                        <select name="jenis" x-model="jenisLaporan" @change="ajukanFilter()" class="w-full h-11 pl-10 pr-8 rounded-xl bg-[#FCF9F2] border border-gray-200 text-xs font-semibold text-[#1C1C18] shadow-2xs focus:outline-hidden focus:border-[#0B4D2B] appearance-none">
                             <option value="rekonsiliasi">Laporan Penjualan &amp; Rekonsiliasi Midtrans vs Tunai</option>
                             <option value="shift">Laporan Shift Kerja Staf</option>
                             <option value="void">Laporan Transaksi Void / Dibatalkan</option>
@@ -873,6 +873,7 @@
                 this.startDate = this.draftStart;
                 this.endDate = this.draftEnd;
                 this.dateOpen = false;
+                this.ajukanFilter();
             }
         };
     }
