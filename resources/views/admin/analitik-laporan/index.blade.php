@@ -241,7 +241,7 @@
                         Fluktuasi Penjualan
                     </h2>
                     <p class="text-xs text-[#707971] mt-0.5">
-                        Pantauan volume pesanan & nilai kotor (7 hari terakhir)
+                        Pantauan volume pesanan & nilai kotor ({{ $labelGrafik }})
                     </p>
                 </div>
 
@@ -267,27 +267,27 @@
                         $koordinat[] = [30 + $i * $jarakX, 320 - ($hari['total'] / $nilaiMaks) * 240];
                     }
                     $garis = 'M ' . round($koordinat[0][0], 1) . ' ' . round($koordinat[0][1], 1);
-                    for ($i = 1; $i < count($koordinat); $i++) {
-                        $garis .= ' L ' . round($koordinat[$i][0], 1) . ' ' . round($koordinat[$i][1], 1);
+                    for ($i = 0; $i < count($koordinat) - 1; $i++) {
+                        $p0 = $koordinat[max(0, $i - 1)];
+                        $p1 = $koordinat[$i];
+                        $p2 = $koordinat[$i + 1];
+                        $p3 = $koordinat[min(count($koordinat) - 1, $i + 2)];
+                        $garis .= ' C ' . round($p1[0] + ($p2[0] - $p0[0]) / 6, 1) . ' ' . round($p1[1] + ($p2[1] - $p0[1]) / 6, 1) . ', ' . round($p2[0] - ($p3[0] - $p1[0]) / 6, 1) . ' ' . round($p2[1] - ($p3[1] - $p1[1]) / 6, 1) . ', ' . round($p2[0], 1) . ' ' . round($p2[1], 1);
                     }
                     $indeksPuncak = array_search(max(array_column($grafik, 'total')), array_column($grafik, 'total'));
                     if ($indeksPuncak === false) {
                         $indeksPuncak = 0;
                     }
                     $titikPuncak = $koordinat[$indeksPuncak];
-                    $perubahanHarian = [];
-                    foreach ($grafik as $i => $hari) {
-                        if ($i === 0) {
-                            $perubahanHarian[] = null;
+                    $radiusTitik = $countGrafik > 14 ? 3.5 : 5;
+                    $radiusPuncak = $countGrafik > 14 ? 5 : 6;
 
-                            continue;
-                        }
-
-                        $sebelumnya = $grafik[$i - 1]['total'];
-                        $perubahanHarian[] = $sebelumnya > 0
-                            ? (($hari['total'] - $sebelumnya) / $sebelumnya) * 100
-                            : null;
+                    $langkahLabel = max(1, (int) ceil($countGrafik / 7));
+                    $labelSumbuX = [];
+                    for ($i = 0; $i < $countGrafik; $i += $langkahLabel) {
+                        $labelSumbuX[$i] = true;
                     }
+                    $labelSumbuX[$countGrafik - 1] = true;
                 @endphp
 
                 <div class="relative" x-data="{
@@ -360,8 +360,8 @@
                                  stroke="#0B4D2B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
 
                         @foreach ($koordinat as $i => $p)
-                            <circle cx="{{ round($p[0], 1) }}" cy="{{ round($p[1], 1) }}" r="5"
-                                fill="#0B4D2B" stroke="#FCF9F2" stroke-width="2.5"
+                            <circle cx="{{ round($p[0], 1) }}" cy="{{ round($p[1], 1) }}" r="{{ $radiusTitik }}"
+                                fill="#0B4D2B" stroke="#FCF9F2" stroke-width="{{ $countGrafik > 14 ? 1.5 : 2.5 }}"
                                 class="cursor-pointer transition-all"
                                 @mouseenter="showPoint({{ $i }})" />
                         @endforeach
@@ -369,7 +369,7 @@
                         <circle x-cloak x-show="showTooltip" :cx="pointX" :cy="pointY" r="7"
                             fill="#7A5900" stroke="#FCF9F2" stroke-width="3" class="pointer-events-none" />
 
-                        <circle cx="{{ round($titikPuncak[0], 1) }}" cy="{{ round($titikPuncak[1], 1) }}" r="6" fill="#7A5900" stroke="#FCF9F2" stroke-width="3" />
+                        <circle cx="{{ round($titikPuncak[0], 1) }}" cy="{{ round($titikPuncak[1], 1) }}" r="{{ $radiusPuncak }}" fill="#7A5900" stroke="#FCF9F2" stroke-width="3" />
                     </svg>
 
                     <div x-cloak x-show="showTooltip" x-transition class="absolute z-10 -translate-x-1/2 -translate-y-full pointer-events-none"
@@ -382,21 +382,12 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-7 gap-2 text-[10px] font-bold text-[#707971] px-2 pt-3 border-t border-[#EBE8E1]">
-                    @foreach ($grafik as $hari)
-                    <div class="flex flex-col items-center gap-0.5 text-center">
-                        <span>{{ $hari['label'] }}</span>
-                        @php
-                            $delta = $perubahanHarian[$loop->index] ?? null;
-                        @endphp
-                        @if ($delta === null)
-                        <span class="text-[#B0B7B0]">—</span>
-                        @else
-                        <span class="{{ $delta >= 0 ? 'text-[#0B4D2B]' : 'text-[#93000A]' }}">
-                            {{ $delta >= 0 ? '↑' : '↓' }} {{ number_format(abs($delta), 0, ',', '.') }}%
-                        </span>
+                <div class="relative mt-3 h-7 border-t border-[#EBE8E1] text-[10px] font-bold text-[#707971]">
+                    @foreach ($grafik as $i => $hari)
+                        @if (isset($labelSumbuX[$i]))
+                            <span class="absolute top-3 -translate-x-1/2 whitespace-nowrap"
+                                style="left: {{ round(($koordinat[$i][0] / 800) * 100, 2) }}%">{{ $hari['label'] }}</span>
                         @endif
-                    </div>
                     @endforeach
                 </div>
             </div>

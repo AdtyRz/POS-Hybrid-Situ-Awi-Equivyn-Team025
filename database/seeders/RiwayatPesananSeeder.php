@@ -68,7 +68,8 @@ class RiwayatPesananSeeder extends Seeder
             return;
         }
 
-        $tanggalTerisi = $this->tanggalYangSudahAda($mulai, $selesai);
+        $jumlahHarian = $this->jumlahPesananPerTanggal($mulai, $selesai);
+        $mulaiTopUp = $selesai->copy()->subDays(6)->startOfDay();
 
         $totalPesanan = 0;
         $totalDetail = 0;
@@ -78,15 +79,29 @@ class RiwayatPesananSeeder extends Seeder
 
         while ($hari->lessThanOrEqualTo($selesai)) {
             $tanggal = $hari->toDateString();
+            $jumlahAda = $jumlahHarian[$tanggal] ?? 0;
 
-            if (isset($tanggalTerisi[$tanggal])) {
-                $hariDilewati++;
-                $hari->addDay();
+            if ($hari->greaterThanOrEqualTo($mulaiTopUp)) {
+                $kekurangan = $this->targetHarian($hari) - $jumlahAda;
 
-                continue;
+                if ($kekurangan <= 0) {
+                    $hariDilewati++;
+                    $hari->addDay();
+
+                    continue;
+                }
+
+                $hasil = DB::transaction(fn () => $this->buatHari($hari, $kekurangan));
+            } else {
+                if ($jumlahAda > 0) {
+                    $hariDilewati++;
+                    $hari->addDay();
+
+                    continue;
+                }
+
+                $hasil = DB::transaction(fn () => $this->buatHari($hari));
             }
-
-            $hasil = DB::transaction(fn () => $this->buatHari($hari));
 
             $totalPesanan += $hasil['pesanan'];
             $totalDetail += $hasil['detail'];
@@ -189,9 +204,9 @@ class RiwayatPesananSeeder extends Seeder
     /**
      * @return array{pesanan:int, detail:int, pembayaran:int}
      */
-    private function buatHari(Carbon $hari): array
+    private function buatHari(Carbon $hari, ?int $jumlah = null): array
     {
-        $jumlah = $this->jumlahPesananHariItu($hari);
+        $jumlah ??= $this->jumlahPesananHariItu($hari);
 
         if ($jumlah === 0) {
             return ['pesanan' => 0, 'detail' => 0, 'pembayaran' => 0];
@@ -733,17 +748,50 @@ class RiwayatPesananSeeder extends Seeder
     }
 
     /**
-     * @return array<string, true>
+     * @return array<string, int>
      */
-    private function tanggalYangSudahAda(Carbon $mulai, Carbon $selesai): array
+    private function jumlahPesananPerTanggal(Carbon $mulai, Carbon $selesai): array
     {
         return Pesanan::query()
             ->whereBetween('waktu_pesan', [$mulai->copy()->utc(), $selesai->copy()->utc()])
             ->pluck('waktu_pesan')
             ->map(fn ($waktu) => Carbon::parse($waktu)->timezone(self::ZONA)->toDateString())
-            ->unique()
-            ->flip()
+            ->countBy()
             ->all();
+    }
+
+    private function targetHarian(Carbon $hari): int
+    {
+        $dasarMingguan = match ((int) $hari->dayOfWeek) {
+            0 => 21, // Minggu
+            1 => 10, // Senin
+            2 => 12, // Selasa
+            3 => 13, // Rabu
+            4 => 14, // Kamis
+            5 => 18, // Jumat
+            6 => 25, // Sabtu
+        };
+
+        $musim = match ((int) $hari->month) {
+            2 => 0.85,
+            6, 7, 12 => 1.2,
+            default => 1.0,
+        };
+
+        // Hash tanggal membuat target stabil setiap kali seeder dijalankan ulang.
+        $hash = crc32($hari->toDateString());
+        $faktor = 0.65 + (($hash % 1000) / 1000) * 0.9;
+        $undian = ((int) floor($hash / 1000) % 1000) / 1000;
+
+        if ($undian < 0.06) {
+            $faktor *= 1.8;
+        } elseif ($undian < 0.16) {
+            $faktor *= 1.35;
+        } elseif ($undian < 0.30) {
+            $faktor *= 0.65;
+        }
+
+        return max(0, min(45, (int) round($dasarMingguan * $musim * $faktor)));
     }
 
     /**

@@ -94,6 +94,88 @@ class AdminController extends Controller
         );
     }
 
+    /**
+     * @return array<int, array{label:string, total:float, jumlah:int}>
+     */
+    private function grafikPeriode(Carbon $start, Carbon $end): array
+    {
+        if ($start->isSameDay($end)) {
+            return $this->grafikPerJam($start);
+        }
+
+        return $this->grafikPerHari($start, $end);
+    }
+
+    /**
+     * @return array<int, array{label:string, total:float, jumlah:int}>
+     */
+    private function grafikPerHari(Carbon $start, Carbon $end): array
+    {
+        $zona = "(waktu_pesan AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta')";
+        $data = $this->scopeTanggalLokal(
+            Pesanan::query()->selectRaw(
+                "{$zona}::date as tanggal,
+                COALESCE(SUM(CASE WHEN status_pembayaran = 'sudah_bayar' THEN total_bayar ELSE 0 END), 0) as total,
+                SUM(CASE WHEN status_pesanan <> 'dibatalkan' THEN 1 ELSE 0 END) as jumlah"
+            ),
+            $start->toDateString(),
+            $end->toDateString()
+        )
+            ->groupByRaw("{$zona}::date")
+            ->get()
+            ->keyBy(fn ($baris) => Carbon::parse($baris->tanggal)->toDateString());
+
+        $grafik = [];
+        $hari = $start->copy()->startOfDay();
+
+        while ($hari->lessThanOrEqualTo($end)) {
+            $baris = $data->get($hari->toDateString());
+            $grafik[] = [
+                'label' => $hari->format('d M'),
+                'total' => (float) ($baris?->total ?? 0),
+                'jumlah' => (int) ($baris?->jumlah ?? 0),
+            ];
+            $hari->addDay();
+        }
+
+        return $grafik;
+    }
+
+    /**
+     * @return array<int, array{label:string, total:float, jumlah:int}>
+     */
+    private function grafikPerJam(Carbon $hari): array
+    {
+        $tanggal = $hari->toDateString();
+        $zona = "(waktu_pesan AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta')";
+        $data = $this->scopeTanggalLokal(
+            Pesanan::query()->selectRaw(
+                "to_char({$zona}, 'HH24') as jam,
+                COALESCE(SUM(CASE WHEN status_pembayaran = 'sudah_bayar' THEN total_bayar ELSE 0 END), 0) as total,
+                SUM(CASE WHEN status_pesanan <> 'dibatalkan' THEN 1 ELSE 0 END) as jumlah"
+            ),
+            $tanggal,
+            $tanggal
+        )
+            ->groupByRaw("to_char({$zona}, 'HH24')")
+            ->get()
+            ->keyBy(fn ($baris) => (string) $baris->jam);
+
+        $grafik = [];
+
+        for ($jam = 8; $jam <= 22; $jam++) {
+            $kunci = str_pad((string) $jam, 2, '0', STR_PAD_LEFT);
+            $baris = $data->get($kunci);
+            $grafik[] = [
+                'label' => $kunci . ':00',
+                'total' => (float) ($baris?->total ?? 0),
+                'jumlah' => (int) ($baris?->jumlah ?? 0),
+            ];
+        }
+
+        return $grafik;
+    }
+
     public function dashboard(Request $request): View
     {
         [$periode, $start, $end, $labelPeriode] = $this->resolveAnalitikPeriode($request);
@@ -186,22 +268,14 @@ class AdminController extends Controller
             ->limit(5)
             ->get();
 
-        $grafik = [];
-        $hariIniLokal = Carbon::now('Asia/Jakarta')->startOfDay();
-        for ($i = 6; $i >= 0; $i--) {
-            $tanggal = $hariIniLokal->copy()->subDays($i);
-            $total = (float) $this->scopeTanggalLokal(Pesanan::query(), $tanggal->toDateString(), $tanggal->toDateString())
-                ->where('status_pembayaran', 'sudah_bayar')
-                ->sum('total_bayar');
-            $jumlahPesanan = $this->scopeTanggalLokal(Pesanan::query(), $tanggal->toDateString(), $tanggal->toDateString())
-                ->whereNotIn('status_pesanan', ['dibatalkan'])
-                ->count();
-            $grafik[] = [
-                'label' => $tanggal->format('d M'),
-                'total' => $total,
-                'jumlah' => $jumlahPesanan,
-            ];
-        }
+        $grafik = $this->grafikPeriode($start, $end);
+        $labelGrafik = match (true) {
+            $start->isSameDay($end) && $periode === 'hari_ini' => 'hari ini (per jam)',
+            $start->isSameDay($end) => $start->format('d M Y') . ' (per jam)',
+            $periode === 'mingguan' => '7 hari terakhir',
+            $periode === 'bulanan' => '30 hari terakhir',
+            default => $labelPeriode,
+        };
 
         $logAudit = $this->scopeTanggalLokal(
             Pesanan::with(['meja', 'kasir', 'detailPesanan.menu']),
@@ -242,7 +316,7 @@ class AdminController extends Controller
             'mejaTerisi', 'mejaTotal', 'stokMenipis', 'grafik',
             'rataMenit', 'qrisHariIni', 'tunaiHariIni', 'omzetQris', 'omzetTunai', 'terlaris',
             'putaran', 'menuMakananTersedia', 'menuMinumanTersedia', 'menuTersediaTotal', 'sesiAktif', 'logAudit',
-            'periode', 'labelPeriode', 'startDate', 'endDate'
+            'periode', 'labelPeriode', 'startDate', 'endDate', 'labelGrafik'
         ));
     }
 
