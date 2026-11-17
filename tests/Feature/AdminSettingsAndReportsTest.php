@@ -212,6 +212,43 @@ class AdminSettingsAndReportsTest extends TestCase
         $this->assertSame('17', Pengaturan::nilai('qris_expiry_minutes'));
     }
 
+    public function test_admin_dapat_mengubah_interval_polling_iot(): void
+    {
+        $response = $this->actingAs($this->admin())->postJson(route('admin.pengaturan-sistem.simpan'), [
+            'nama_resto' => 'Saung Situ Awi',
+            'qris_expiry_minutes' => 5,
+            'session_expiry_minutes' => 120,
+            'iot_polling_detik' => 25,
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('admin.pengaturan-sistem'));
+        $this->assertSame('25', Pengaturan::nilai('iot_polling_detik'));
+
+        $konfigurasi = app(IotStatusService::class)->statusSemuaMeja()['konfigurasi'];
+
+        $this->assertSame(25, $konfigurasi['polling_detik']);
+    }
+
+    public function test_interval_polling_iot_dibatasi_lima_sampai_seratus_dua_puluh_detik(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->postJson(route('admin.pengaturan-sistem.simpan'), [
+            'nama_resto' => 'Saung Situ Awi',
+            'qris_expiry_minutes' => 5,
+            'session_expiry_minutes' => 120,
+            'iot_polling_detik' => 4,
+        ])->assertJsonValidationErrors('iot_polling_detik');
+
+        $this->actingAs($admin)->postJson(route('admin.pengaturan-sistem.simpan'), [
+            'nama_resto' => 'Saung Situ Awi',
+            'qris_expiry_minutes' => 5,
+            'session_expiry_minutes' => 120,
+            'iot_polling_detik' => 121,
+        ])->assertJsonValidationErrors('iot_polling_detik');
+    }
+
     public function test_admin_dapat_menyimpan_panjang_kode_sesi_enam_digit(): void
     {
         $response = $this->actingAs($this->admin())->postJson(route('admin.pengaturan-sistem.simpan'), [

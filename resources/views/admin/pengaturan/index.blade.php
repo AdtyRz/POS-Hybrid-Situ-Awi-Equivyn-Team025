@@ -110,7 +110,7 @@
             <div class="flex items-center justify-between text-xs mt-2 gap-2">
                 <span class="text-[#404941] text-[10px] font-bold flex items-center gap-1.5 whitespace-nowrap">
                     <span class="w-2 h-2 rounded-full bg-[#0B4D2B] animate-pulse"></span>
-                    Polling: 30 dtk
+                    Polling: <span x-text="iotPolling"></span> dtk
                 </span>
                 <span class="font-mono text-[10px] font-bold text-[#707971] whitespace-nowrap shrink-0">{{ $mejaTerdaftar }} Meja</span>
             </div>
@@ -307,11 +307,11 @@
                     <div class="flex items-center gap-2.5">
                         <div class="bg-[#FCF9F2] rounded-lg px-3 py-1.5 border border-[#C0C9BF]/30">
                             <span class="text-[9px] font-bold text-[#707971] uppercase tracking-wider block">ENDPOINT HTTP</span>
-                            <span class="font-mono text-xs font-bold text-[#1C1C18]">/api/iot/status-meja</span>
+                            <span class="font-mono text-xs font-bold text-[#1C1C18]">/api/iot/meja/{kode_meja}</span>
                         </div>
                         <div class="bg-[#FCF9F2] rounded-lg px-3 py-1.5 border border-[#C0C9BF]/30">
                             <span class="text-[9px] font-bold text-[#707971] uppercase tracking-wider block">INTERVAL POLLING</span>
-                            <span class="font-mono text-xs font-bold text-[#00341A]">30 Detik</span>
+                            <span class="font-mono text-xs font-bold text-[#00341A]"><span x-text="iotPolling"></span> Detik</span>
                         </div>
                     </div>
                 </div>
@@ -342,7 +342,7 @@
                                     max="10"
                                     x-model="buzzerDuration"
                                     class="w-20 bg-[#FCF9F2] border border-[#C0C9BF]/40 rounded-xl px-3 py-2 text-center font-bold text-[#1C1C18] text-sm focus:outline-hidden focus:border-[#0B4D2B] shadow-inner">
-                                <span class="text-xs font-semibold text-[#707971]">Detik (2 - 4s)</span>
+                                <span class="text-xs font-semibold text-[#707971]">Detik (1 - 10s)</span>
                             </div>
                         </div>
 
@@ -364,6 +364,30 @@
                                     x-model="antiSpamCooldown"
                                     class="w-20 bg-[#FCF9F2] border border-[#C0C9BF]/40 rounded-xl px-3 py-2 text-center font-bold text-[#1C1C18] text-sm focus:outline-hidden focus:border-[#0B4D2B] shadow-inner">
                                 <span class="text-xs font-semibold text-[#707971]">Detik jeda proteksi</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl p-4 sm:p-5 border border-[#C0C9BF]/20 flex flex-col justify-between gap-3 shadow-2xs sm:col-span-2">
+                            <div class="flex items-center justify-between">
+                                <label class="text-xs font-bold text-[#1C1C18]">Interval Polling Perangkat ESP32</label>
+                                <svg class="w-4 h-4 text-[#707971]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                            </div>
+                            <p class="text-xs text-[#404941] leading-relaxed">
+                                Seberapa sering LCD meja memanggil server. Nilai ini ikut dikirim pada respons
+                                <span class="font-mono text-[11px] font-bold text-[#0B4D2B]">/api/iot/meja/{kode_meja}</span>,
+                                jadi perangkat menyesuaikan diri tanpa perlu di-flash ulang.
+                            </p>
+                            <div class="flex items-center gap-3 pt-1">
+                                <input
+                                    type="number"
+                                    min="5"
+                                    max="120"
+                                    step="1"
+                                    x-model.number="iotPolling"
+                                    class="w-20 bg-[#FCF9F2] border border-[#C0C9BF]/40 rounded-xl px-3 py-2 text-center font-bold text-[#1C1C18] text-sm focus:outline-hidden focus:border-[#0B4D2B] shadow-inner">
+                                <span class="text-xs font-semibold text-[#707971]">Detik (5 - 120s)</span>
                             </div>
                         </div>
                     </div>
@@ -1202,7 +1226,7 @@
                             </div>
                             <div class="flex items-center justify-between">
                                 <span class="text-[#707971]">Endpoint Status:</span>
-                                <span class="font-mono font-bold text-[#1C1C18]">/api/iot/status-meja</span>
+                                <span class="font-mono font-bold text-[#1C1C18]">/api/iot/meja/{kode_meja}</span>
                             </div>
                         </div>
                     </div>
@@ -1510,6 +1534,7 @@
             transferRekening: @js($profil['transfer_nomor_rekening'] ?? ''),
             transferAtasNama: @js($profil['transfer_atas_nama'] ?? ''),
             buzzerDuration: Number(@js($profil['buzzer_duration'] ?? 3)),
+            iotPolling: Number(@js($profil['iot_polling_detik'] ?? 10)),
             antiSpamCooldown: Number(@js($profil['anti_spam_cooldown'] ?? 5)),
             lcdMessage: @js($profil['lcd_message'] ?? 'Panggil Pelayan'),
             encryptionLevel: @js($profil['encryption_level'] ?? '4 Digit'),
@@ -1658,6 +1683,7 @@
                     struk_footer: this.receiptFooter,
                     qris_expiry_minutes: Number(this.qrisExpiry),
                     buzzer_duration: Number(this.buzzerDuration),
+                    iot_polling_detik: Number(this.iotPolling),
                     anti_spam_cooldown: Number(this.antiSpamCooldown),
                     lcd_message: (this.lcdMessage || '').slice(0, 16),
                     encryption_level: this.encryptionLevel,

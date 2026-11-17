@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\MidtransNotificationController;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -51,4 +52,19 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        $exceptions->render(function (ThrottleRequestsException $exception, Request $request) {
+            if ($request->expectsJson() || ! $request->routeIs('emenu.masuk', 'emenu.buka')) {
+                return null;
+            }
+
+            $retry = max(1, (int) ($exception->getHeaders()['Retry-After'] ?? 60));
+
+            return redirect()->back()
+                ->withInput()
+                ->with('batas_coba_lagi', $retry)
+                ->withErrors([
+                    'kode_unik' => "Terlalu banyak percobaan. Coba lagi dalam {$retry} detik.",
+                ]);
+        });
     })->create();

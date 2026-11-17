@@ -73,7 +73,7 @@
 
 <body class="min-h-screen bg-cream-50 text-stone-800 antialiased font-sans" data-sesi-berakhir="1">
     <div class="max-w-md mx-auto px-4 pt-8 pb-10"
-        x-data="kunciApp({{ $panjangKode }}, @js($errors->has('kode_unik')), @js($errors->first('kode_unik') ?? ''), @js(session('konflik_perangkat')))">
+        x-data="kunciApp({{ $panjangKode }}, @js($errors->has('kode_unik')), @js($errors->first('kode_unik') ?? ''), @js(session('konflik_perangkat')), {{ (int) session('batas_coba_lagi', 0) }})">
         <div class="text-center">
             <div class="w-20 h-20 mx-auto rounded-3xl bg-forest-900 flex items-center justify-center shadow-lg">
                 <svg class="w-10 h-10 text-gold-500" fill="none" stroke="currentColor" stroke-width="1.6"
@@ -111,10 +111,19 @@
                     </template>
                 </div>
 
+                <div x-show="sisaTunggu > 0" x-cloak x-transition role="status" aria-live="polite"
+                    class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-center">
+                    <p class="text-[11px] font-bold text-amber-800">Terlalu banyak percobaan kode.</p>
+                    <p class="mt-1 text-xs font-semibold text-amber-700">
+                        Coba lagi dalam
+                        <span class="font-mono text-sm font-extrabold" x-text="labelTunggu"></span>
+                    </p>
+                </div>
+
                 <p x-show="pesanError" x-cloak x-text="pesanError" aria-live="polite"
                     class="text-red-600 text-xs font-bold text-center mt-3"></p>
 
-                <button type="submit" :disabled="memproses || sukses"
+                <button type="submit" :disabled="memproses || sukses || sisaTunggu > 0"
                     class="w-full mt-5 py-3.5 rounded-xl bg-forest-900 hover:bg-forest-600 disabled:cursor-wait disabled:opacity-80 text-white font-extrabold text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-sm transition active:scale-95">
                     <svg x-show="!sukses" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5"
                         viewBox="0 0 24 24">
@@ -124,7 +133,7 @@
                         viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span x-text="sukses ? 'Kode Benar' : (memproses ? 'Memeriksa...' : 'Buka Menu')"></span>
+                    <span x-text="sukses ? 'Kode Benar' : (sisaTunggu > 0 ? 'Tunggu ' + labelTunggu : (memproses ? 'Memeriksa...' : 'Buka Menu'))"></span>
                 </button>
             </form>
         </div>
@@ -184,7 +193,7 @@
     </div>
 
     <script>
-        function kunciApp(panjang, salahAwal, pesanAwal, konflikAwal) {
+        function kunciApp(panjang, salahAwal, pesanAwal, konflikAwal, tungguAwal) {
             return {
                 panjang: panjang,
                 kode: Array(panjang).fill(''),
@@ -198,11 +207,22 @@
                 pesanKonflik: '',
                 timerKonflik: null,
                 batasKonflik: null,
+                sisaTunggu: 0,
+                timerTunggu: null,
                 init() {
                     this.$nextTick(() => this.focusKotak(0));
                     if (this.salah) {
                         this.getarkan();
                     }
+                    if (Number(tungguAwal) > 0) {
+                        this.mulaiTunggu(tungguAwal);
+                    }
+                },
+                get labelTunggu() {
+                    const menit = String(Math.floor(this.sisaTunggu / 60)).padStart(2, '0');
+                    const detik = String(this.sisaTunggu % 60).padStart(2, '0');
+
+                    return menit + ':' + detik;
                 },
                 daftarKotak() {
                     if (! this.$refs.wadahKode) {
@@ -382,8 +402,31 @@
                     this.menungguKonflik = false;
                     this.pesanKonflik = '';
                 },
+                hentikanTunggu() {
+                    if (this.timerTunggu) {
+                        clearInterval(this.timerTunggu);
+                        this.timerTunggu = null;
+                    }
+                },
+                mulaiTunggu(detik) {
+                    this.hentikanTunggu();
+                    this.sisaTunggu = Math.min(300, Math.max(1, Math.ceil(Number(detik) || 60)));
+                    this.salah = false;
+                    this.pesanError = '';
+
+                    this.timerTunggu = window.setInterval(() => {
+                        this.sisaTunggu -= 1;
+
+                        if (this.sisaTunggu <= 0) {
+                            this.hentikanTunggu();
+                            this.sisaTunggu = 0;
+                            this.kode = Array(this.panjang).fill('');
+                            this.$nextTick(() => this.focusKotak(0));
+                        }
+                    }, 1000);
+                },
                 async kirim() {
-                    if (this.memproses || this.sukses) return;
+                    if (this.memproses || this.sukses || this.sisaTunggu > 0) return;
 
                     const kosong = this.kode.findIndex(d => !d);
                     if (kosong !== -1) {
@@ -410,6 +453,13 @@
                         });
 
                         const data = await response.json().catch(() => ({}));
+
+                        if (response.status === 429) {
+                            const retry = Number(response.headers.get('Retry-After')) || 60;
+                            this.mulaiTunggu(retry);
+                            this.focusKotak(0);
+                            return;
+                        }
 
                         if (response.status === 409 && data.konflik) {
                             this.konflik = data.konflik;

@@ -32,6 +32,7 @@ class Pesanan extends Model
         return [
             'total_bayar' => 'decimal:2',
             'waktu_pesan' => 'datetime',
+            'qris_expires_at' => 'datetime',
             'void_at' => 'datetime',
             'printed_at' => 'datetime',
         ];

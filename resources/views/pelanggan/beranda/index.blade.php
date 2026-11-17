@@ -132,6 +132,12 @@
             @error('kode_unik')
                 <p class="text-gold-500 text-xs font-bold mt-2">{{ $message }}</p>
             @enderror
+            @php($batasCobaKode = (int) session('batas_coba_lagi', 0))
+            <p id="hitungMundurKode" @if ($batasCobaKode <= 0) hidden @endif
+                class="mt-2 rounded-xl bg-white/10 px-3 py-2 text-xs font-bold text-gold-500" aria-live="polite">
+                Terlalu banyak percobaan. Coba lagi dalam
+                <span id="sisaCobaKode" class="font-mono">{{ $batasCobaKode }}</span> detik.
+            </p>
         </div>
         <p class="text-center text-stone-400 text-xs mt-8">© 2026 Saung Situ Awi Ciwidey • RPL SMK Budi Bakti & Tim
             Equivyn</p>
@@ -435,6 +441,46 @@
             tampilPesanKamera('');
         }
 
+    </script>
+
+    <script>
+        (function () {
+            var sisa = {{ $batasCobaKode }};
+            var kotak = document.getElementById('hitungMundurKode');
+            var angka = document.getElementById('sisaCobaKode');
+            var input = document.getElementById('kodeKunci');
+            var tombol = input ? input.form.querySelector('button[type="submit"]') : null;
+
+            if (! kotak || sisa <= 0) {
+                return;
+            }
+
+            function kunci(aktif) {
+                if (input) input.disabled = aktif;
+                if (tombol) tombol.disabled = aktif;
+            }
+
+            kunci(true);
+
+            var timer = window.setInterval(function () {
+                sisa -= 1;
+
+                if (sisa <= 0) {
+                    window.clearInterval(timer);
+                    kotak.hidden = true;
+                    kunci(false);
+
+                    if (input) {
+                        input.value = '';
+                        input.focus({ preventScroll: true });
+                    }
+
+                    return;
+                }
+
+                if (angka) angka.textContent = sisa;
+            }, 1000);
+        })();
     </script>
 </body>
 

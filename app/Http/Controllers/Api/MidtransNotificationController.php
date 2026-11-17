@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Events\StatusPesananBerubah;
 use App\Http\Controllers\Controller;
+use App\Models\Pengaturan;
 use App\Models\Pesanan;
 use App\Services\MidtransService;
 use App\Services\PesananService;
@@ -77,12 +78,22 @@ class MidtransNotificationController extends Controller
                     );
                 } elseif (in_array($transactionStatus, ['deny', 'cancel', 'expire', 'failure'])) {
 
+                    $batalOtomatis = $transactionStatus === 'expire'
+                        && filter_var(Pengaturan::nilai('midtrans_auto_cancel', '0'), FILTER_VALIDATE_BOOLEAN);
 
-                    $pesanan->update([
-                        'status_pembayaran' => $pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR
-                            ? Pesanan::PAYMENT_SUDAH_BAYAR
-                            : Pesanan::PAYMENT_BELUM_BAYAR,
-                    ]);
+                    if ($batalOtomatis) {
+                        app(PesananService::class)->batalkan(
+                            $pesanan,
+                            null,
+                            'Dibatalkan otomatis: batas waktu pembayaran QRIS habis.',
+                        );
+                    } else {
+                        $pesanan->update([
+                            'status_pembayaran' => $pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR
+                                ? Pesanan::PAYMENT_SUDAH_BAYAR
+                                : Pesanan::PAYMENT_BELUM_BAYAR,
+                        ]);
+                    }
                 }
             });
         } catch (RuntimeException $exception) {

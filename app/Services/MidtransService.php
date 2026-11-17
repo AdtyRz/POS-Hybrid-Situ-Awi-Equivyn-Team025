@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Pengaturan;
 use App\Models\Pesanan;
 use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Midtrans\Config;
 use Midtrans\CoreApi;
@@ -54,12 +55,16 @@ class MidtransService
                     $qrUrl = $this->buildQrisUrl($status->transaction_id ?? null);
                 }
 
+                $this->catatBatasBayar($pesanan, $this->parseExpiryTime($status->expiry_time ?? null));
+
                 return [
                     'order_id' => $pesanan->kode_pesanan,
                     'transaction_id' => $status->transaction_id ?? null,
                     'qr_url' => $qrUrl,
                     'transaction_status' => 'pending',
                     'expiry_time' => $status->expiry_time ?? null,
+                    'expires_at' => $pesanan->qris_expires_at?->toIso8601String(),
+                    'expires_in' => $this->sisaDetikQris($pesanan),
                 ];
             }
 
@@ -71,6 +76,8 @@ class MidtransService
                     'qr_url' => null,
                     'transaction_status' => $trx,
                     'expiry_time' => $status->expiry_time ?? null,
+                    'expires_at' => $pesanan->qris_expires_at?->toIso8601String(),
+                    'expires_in' => 0,
                 ];
             }
 
@@ -99,17 +106,60 @@ class MidtransService
             $qrUrl = $this->extractQrUrl($response->actions ?? [])
                 ?: $this->buildQrisUrl($response->transaction_id ?? null);
 
+            $pesanan->forceFill([
+                'qris_expires_at' => now()->addMinutes($this->qrisExpiryMinutes()),
+            ])->save();
+
             return [
                 'order_id' => $pesanan->kode_pesanan,
                 'transaction_id' => $response->transaction_id ?? null,
                 'qr_url' => $qrUrl,
                 'transaction_status' => $response->transaction_status ?? 'pending',
                 'expiry_time' => $response->expiry_time ?? null,
+                'expires_at' => $pesanan->qris_expires_at?->toIso8601String(),
+                'expires_in' => $this->sisaDetikQris($pesanan),
             ];
         } catch (\Exception $e) {
             report($e);
             return null;
         }
+    }
+
+    private function catatBatasBayar(Pesanan $pesanan, ?Carbon $batas): void
+    {
+        if ($pesanan->qris_expires_at !== null) {
+            return;
+        }
+
+        $pesanan->forceFill([
+            'qris_expires_at' => $batas ?? now()->addMinutes($this->qrisExpiryMinutes()),
+        ])->save();
+    }
+
+    private function parseExpiryTime(mixed $expiry): ?Carbon
+    {
+        if (! is_string($expiry) || trim($expiry) === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::createFromFormat('Y-m-d H:i:s', trim($expiry), 'Asia/Jakarta')->utc();
+        } catch (\Throwable) {
+            try {
+                return Carbon::parse($expiry, 'Asia/Jakarta')->utc();
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+    }
+
+    private function sisaDetikQris(Pesanan $pesanan): int
+    {
+        if (! $pesanan->qris_expires_at) {
+            return $this->qrisExpiryMinutes() * 60;
+        }
+
+        return max(0, $pesanan->qris_expires_at->getTimestamp() - now()->getTimestamp());
     }
 
     public function qrisExpiryMinutes(): int
