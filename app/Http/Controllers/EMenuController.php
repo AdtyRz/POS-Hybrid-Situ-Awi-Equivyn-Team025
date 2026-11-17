@@ -379,6 +379,7 @@ class EMenuController extends Controller
             && $pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR
             && $pesanan->status_pesanan !== 'dibatalkan') {
             $qris = $midtrans->createQrisCharge($pesanan);
+            $qrisTtl = (int) ($qris['expires_in'] ?? $qrisTtl);
         }
 
         return view('pelanggan.pesanan.status', [
@@ -452,9 +453,13 @@ class EMenuController extends Controller
             return redirect()->to($this->urlStatusPesanan($pesanan, true));
         }
 
+        if ($pesanan->status_pesanan === Pesanan::STATUS_DIBATALKAN) {
+            return redirect()->to($this->urlStatusPesanan($pesanan, true));
+        }
+
         $midtrans = app(MidtransService::class);
         $qris = $midtrans->createQrisCharge($pesanan);
-        $qrisTtl = $midtrans->qrisExpiryMinutes() * 60;
+        $qrisTtl = (int) ($qris['expires_in'] ?? ($midtrans->qrisExpiryMinutes() * 60));
         $urlStatus = $this->urlStatusPesanan($pesanan, true);
         $urlQrisStatus = URL::temporarySignedRoute(
             'emenu.qris.status',
@@ -478,6 +483,16 @@ class EMenuController extends Controller
                 'lunas' => false,
                 'message' => 'Sesi meja sudah berakhir. Silakan buka kembali pesanan dari meja.',
             ], 403);
+        }
+
+        if ($pesanan->status_pesanan === Pesanan::STATUS_DIBATALKAN) {
+            return response()->json([
+                'lunas' => false,
+                'dibatalkan' => true,
+                'status_pesanan' => $pesanan->status_pesanan,
+                'status_pembayaran' => $pesanan->status_pembayaran,
+                'message' => $pesanan->alasan_void ?: 'Pesanan sudah dibatalkan.',
+            ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
         }
 
         if ($pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR) {
@@ -525,6 +540,8 @@ class EMenuController extends Controller
                     'status_pembayaran' => $pesanan->status_pembayaran,
                     'qr_url' => $qris['qr_url'] ?? null,
                     'expiry_time' => $qris['expiry_time'] ?? null,
+                    'expires_at' => $qris['expires_at'] ?? null,
+                    'expires_in' => $qris['expires_in'] ?? null,
                 ]);
             }
 

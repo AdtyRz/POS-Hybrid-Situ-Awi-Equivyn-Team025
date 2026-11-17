@@ -389,12 +389,19 @@
                             }
                             return;
                         }
+                        if (data.dibatalkan) {
+                            const s = document.getElementById('statusTeks');
+                            if (s) s.textContent = data.message || 'Pesanan dibatalkan.';
+                            const c = document.getElementById('countdown');
+                            if (c) c.textContent = '--:--';
+                            return;
+                        }
                         if (data.expired && data.qr_url) {
                             const img = document.querySelector('[data-qris-image]');
                             if (img) img.src = data.qr_url;
                             const s = document.getElementById('statusTeks');
                             if (s) s.textContent = 'Menunggu pembayaran...';
-                            remaining = qrTtl;
+                            remaining = Number(data.expires_in) > 0 ? Number(data.expires_in) : qrTtl;
                         }
                         if (checkCount < maxChecks) {
                             setTimeout(checkPaymentStatus, 3000);
