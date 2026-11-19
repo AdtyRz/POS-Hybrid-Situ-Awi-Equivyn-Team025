@@ -169,6 +169,16 @@
                         </a>
 
                         <a
+                            href="{{ url('/admin/arus-kas') }}"
+                            class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->is('admin/arus-kas*') ? 'bg-[#0B4D2B] text-white shadow-xs font-semibold' : 'text-[#404941] hover:bg-[#EAE4D7] hover:text-[#1C1C18]' }}">
+
+                            <svg class="w-4 h-4 flex-shrink-0 {{ request()->is('admin/arus-kas*') ? 'text-white' : 'text-[#404941]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            <span>Arus Kas</span>
+                        </a>
+
+                        <a
                             href="{{ url('/admin/manajemen-akun') }}"
                             class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->is('admin/manajemen-akun*') || request()->is('admin/akun*') ? 'bg-[#0B4D2B] text-white shadow-xs font-semibold' : 'text-[#404941] hover:bg-[#EAE4D7] hover:text-[#1C1C18]' }}">
 

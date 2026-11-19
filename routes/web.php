@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EMenuController;
 use App\Http\Controllers\KasirController;
 use App\Http\Controllers\KdsController;
+use App\Http\Controllers\LaporanKeuanganController;
 use App\Http\Controllers\LaporanPenjualanController;
 use App\Http\Controllers\PelayanController;
 use App\Http\Controllers\PembayaranController;
@@ -90,6 +91,18 @@ Route::get('/admin/analitik-laporan/ekspor-xlsx', [AdminController::class, 'eksp
     Route::get('/admin/laporan-penjualan/ekspor/{format}', [LaporanPenjualanController::class, 'ekspor'])
         ->whereIn('format', ['csv', 'xls'])
         ->name('admin.laporan-penjualan.ekspor');
+
+    Route::get('/admin/arus-kas', [LaporanKeuanganController::class, 'index'])->name('admin.arus-kas');
+    Route::get('/admin/arus-kas/cetak', [LaporanKeuanganController::class, 'cetak'])->name('admin.arus-kas.cetak');
+    Route::get('/admin/arus-kas/ekspor/{format}', [LaporanKeuanganController::class, 'ekspor'])
+        ->whereIn('format', ['csv', 'xls'])
+        ->name('admin.arus-kas.ekspor');
+    Route::post('/admin/arus-kas/pembelian', [LaporanKeuanganController::class, 'simpanPembelian'])->name('admin.arus-kas.pembelian.simpan');
+    Route::put('/admin/arus-kas/pembelian/{pembelian}', [LaporanKeuanganController::class, 'ubahPembelian'])->name('admin.arus-kas.pembelian.ubah');
+    Route::delete('/admin/arus-kas/pembelian/{pembelian}', [LaporanKeuanganController::class, 'hapusPembelian'])->name('admin.arus-kas.pembelian.hapus');
+    Route::post('/admin/arus-kas/pengeluaran', [LaporanKeuanganController::class, 'simpanPengeluaran'])->name('admin.arus-kas.pengeluaran.simpan');
+    Route::put('/admin/arus-kas/pengeluaran/{pengeluaran}', [LaporanKeuanganController::class, 'ubahPengeluaran'])->name('admin.arus-kas.pengeluaran.ubah');
+    Route::delete('/admin/arus-kas/pengeluaran/{pengeluaran}', [LaporanKeuanganController::class, 'hapusPengeluaran'])->name('admin.arus-kas.pengeluaran.hapus');
 
     Route::get('/admin/pengaturan-sistem', [PengaturanController::class, 'index'])->name('admin.pengaturan-sistem');
     Route::post('/admin/pengaturan-sistem', [PengaturanController::class, 'simpan'])->name('admin.pengaturan-sistem.simpan');
