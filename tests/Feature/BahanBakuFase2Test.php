@@ -152,6 +152,8 @@ class BahanBakuFase2Test extends TestCase
         $bahan = BahanBaku::firstOrFail();
         $this->assertSame('Beras Pandan', $bahan->nama);
         $this->assertSame('kg', $bahan->satuan);
+        $this->assertSame('gram', $bahan->satuan_resep);
+        $this->assertEquals(1000, (float) $bahan->faktor_resep);
         $this->assertEquals(12.5, (float) $bahan->stok);
         $this->assertTrue($bahan->is_aktif);
         $this->assertDatabaseHas('bahan_stok_mutasi', [
@@ -174,6 +176,8 @@ class BahanBakuFase2Test extends TestCase
 
         $bahan->refresh();
         $this->assertSame('Beras Pandan Wangi', $bahan->nama);
+        $this->assertSame('gram', $bahan->satuan_resep);
+        $this->assertEquals(1000, (float) $bahan->faktor_resep);
         $this->assertEquals(4, (float) $bahan->stok_minimum);
         $this->assertFalse($bahan->is_aktif);
 
@@ -686,13 +690,35 @@ class BahanBakuFase2Test extends TestCase
         $this->assertGreaterThan(0, $menu->hppSatuan());
         $this->assertLessThan((float) $menu->harga, $menu->hppSatuan());
 
+        $beras = BahanBaku::query()->where('nama', 'Beras')->firstOrFail();
+        $this->assertSame('gram', $beras->satuan_resep);
+        $this->assertSame(1000.0, (float) $beras->faktor_resep);
+
+        $resepBeras = $menu->resep->firstWhere('bahan_baku_id', $beras->id);
+        $this->assertNotNull($resepBeras);
+        $this->assertSame(150.0, (float) $resepBeras->jumlah * (float) $resepBeras->bahan->faktor_resep);
+
+        $resepTidakBulat = ResepMenu::query()->with('bahan')->get()->filter(function (ResepMenu $baris) {
+            $faktor = (float) ($baris->bahan?->faktor_resep ?: 1);
+            $tampil = (float) $baris->jumlah * $faktor;
+
+            return abs($tampil - round($tampil)) > 0.0001;
+        });
+
+        $this->assertCount(0, $resepTidakBulat, 'Semua jumlah resep demo harus tampil sebagai angka bulat.');
+
         $admin = User::query()->where('role', 'admin')->firstOrFail();
 
         $this->actingAs($admin)
             ->get(route('admin.bahan-baku'))
             ->assertOk()
             ->assertSee('Beras')
-            ->assertSee('Nasi Rempah Ayam Sambel Rica');
+            ->assertSee('Nasi Rempah Ayam Sambel Rica')
+            ->assertSee('Resep dalam gram')
+            ->assertSee('satuan_resep', false)
+            ->assertSee('faktor_resep', false)
+            ->assertSee("activeTab = 'bahan'", false)
+            ->assertSee("activeTab = 'resep'", false);
 
         $this->actingAs($admin)
             ->get(route('admin.arus-kas'))

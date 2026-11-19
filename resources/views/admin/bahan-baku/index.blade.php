@@ -88,7 +88,35 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl border border-[#C0C9BF]/30 shadow-xs overflow-hidden">
+    <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+        <button
+            type="button"
+            @click="activeTab = 'bahan'"
+            :class="activeTab === 'bahan' ? 'bg-[#00341A] text-white shadow-xs' : 'bg-[#F0EEE7] text-[#404941] hover:bg-[#E5E2DB]'"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+            <span>1. Stok Bahan Baku</span>
+            <span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
+                  :class="activeTab === 'bahan' ? 'bg-white/15 text-white' : 'bg-white text-[#404941]'">{{ number_format($ringkasan['total_bahan'], 0, ',', '.') }}</span>
+        </button>
+
+        <button
+            type="button"
+            @click="activeTab = 'resep'"
+            :class="activeTab === 'resep' ? 'bg-[#00341A] text-white shadow-xs' : 'bg-[#F0EEE7] text-[#404941] hover:bg-[#E5E2DB]'"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+            <span>2. Resep Menu &amp; HPP</span>
+            <span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
+                  :class="activeTab === 'resep' ? 'bg-white/15 text-white' : 'bg-white text-[#404941]'">{{ number_format($ringkasan['menu_beresep'], 0, ',', '.') }}</span>
+        </button>
+    </div>
+
+    <div x-show="activeTab === 'bahan'" x-transition class="bg-white rounded-2xl border border-[#C0C9BF]/30 shadow-xs overflow-hidden">
         <div class="p-5 flex items-center justify-between gap-3 border-b border-gray-100">
             <div>
                 <h2 class="font-bold text-base text-[#1C1C18]">Stok Bahan Baku</h2>
@@ -120,6 +148,11 @@
                                 <div class="text-[10px] text-[#707971] mt-0.5">
                                     Satuan {{ $baris->satuan }} · minimum {{ rtrim(rtrim(number_format((float) $baris->stok_minimum, 3, ',', '.'), '0'), ',') }} {{ $baris->satuan }}
                                 </div>
+                                @if ($baris->satuanResepEfektif() !== $baris->satuan)
+                                    <div class="text-[10px] text-[#0B4D2B] mt-0.5">
+                                        Resep dalam {{ $baris->satuanResepEfektif() }} · 1 {{ $baris->satuan }} = {{ rtrim(rtrim(number_format($baris->faktorResepEfektif(), 3, ',', '.'), '0'), ',') }} {{ $baris->satuanResepEfektif() }}
+                                    </div>
+                                @endif
                                 @if (! $baris->is_aktif)
                                     <span class="inline-flex mt-1 px-2 py-0.5 rounded-full bg-[#E5E2DB] text-[9px] font-bold text-[#707971] uppercase tracking-wide">Nonaktif</span>
                                 @endif
@@ -175,7 +208,7 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl border border-[#C0C9BF]/30 shadow-xs overflow-hidden">
+    <div x-show="activeTab === 'resep'" x-cloak x-transition class="bg-white rounded-2xl border border-[#C0C9BF]/30 shadow-xs overflow-hidden">
         <div class="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
                 <h2 class="font-bold text-base text-[#1C1C18]">Resep Menu & HPP Standar</h2>
@@ -263,6 +296,7 @@
                         <label class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">Satuan <span class="text-[#93000A]">*</span></label>
                         <input type="text" name="satuan" x-model="bahanForm.satuan" maxlength="20" required placeholder="kg / liter / pcs"
                                class="h-10 px-3 rounded-xl border border-[#C0C9BF]/50 bg-[#F6F3EC]/50 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0B4D2B]/30">
+                        <span class="text-[10px] text-[#707971] leading-snug">kg/liter otomatis tampil sebagai gram/ml di resep.</span>
                     </div>
                     <div class="flex flex-col gap-1.5">
                         <label class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">Stok Minimum</label>
@@ -407,7 +441,7 @@
                 <div class="flex items-center justify-between gap-3">
                     <div>
                         <h4 class="text-xs font-bold text-[#1C1C18]">Bahan Resep</h4>
-                        <p class="text-[10px] text-[#707971] mt-0.5">Jumlah pemakaian untuk satu porsi menu.</p>
+                        <p class="text-[10px] text-[#707971] mt-0.5">Jumlah pemakaian untuk satu porsi. Berat/volume otomatis memakai gram/ml.</p>
                     </div>
                     <button type="button" @click="tambahItemResep()"
                             class="h-8 px-3 rounded-lg bg-[#B1F1C2] hover:bg-[#9fe4b2] text-[#0B4D2B] text-[10px] font-bold flex items-center gap-1 cursor-pointer">
@@ -425,20 +459,27 @@
 
                     <template x-for="(item, index) in resepForm.items" :key="index">
                         <div class="grid grid-cols-12 gap-2 items-start bg-[#F6F3EC]/40 border border-[#C0C9BF]/30 rounded-xl p-2.5">
-                            <div class="col-span-7">
+                            <div class="col-span-12 sm:col-span-5">
                                 <select :name="`items[${index}][bahan_baku_id]`" x-model="item.bahan_baku_id" required
+                                        @change="item.jumlah_tampil = ''"
                                         class="w-full h-9 px-2.5 rounded-lg border border-[#C0C9BF]/50 bg-white text-[11px] font-semibold focus:outline-none focus:ring-2 focus:ring-[#0B4D2B]/30">
                                     <option value="">Pilih bahan</option>
                                     <template x-for="bahan in bahanData" :key="bahan.id">
-                                        <option :value="bahan.id" x-text="`${bahan.nama} (${bahan.satuan})`"></option>
+                                        <option :value="bahan.id" x-text="`${bahan.nama} (${bahan.satuan_resep || bahan.satuan})`"></option>
                                     </template>
                                 </select>
                             </div>
-                            <div class="col-span-3">
-                                <input type="number" :name="`items[${index}][jumlah]`" x-model="item.jumlah" min="0.001" step="0.001" required placeholder="Jumlah"
-                                       class="w-full h-9 px-2 rounded-lg border border-[#C0C9BF]/50 bg-white text-[11px] font-semibold focus:outline-none focus:ring-2 focus:ring-[#0B4D2B]/30">
+                            <div class="col-span-8 sm:col-span-5">
+                                <div class="flex items-center gap-1.5">
+                                    <input type="number" x-model="item.jumlah_tampil" required placeholder="Jumlah"
+                                           :min="faktorTampil(item) > 1 ? 1 : 0.001"
+                                           :step="faktorTampil(item) > 1 ? 1 : 0.001"
+                                           class="w-full h-9 px-2 rounded-lg border border-[#C0C9BF]/50 bg-white text-[11px] font-semibold focus:outline-none focus:ring-2 focus:ring-[#0B4D2B]/30">
+                                    <span class="min-w-[34px] text-[10px] font-bold text-[#707971]" x-text="satuanTampil(item)"></span>
+                                </div>
+                                <input type="hidden" :name="`items[${index}][jumlah]`" :value="jumlahDasar(item)">
                             </div>
-                            <div class="col-span-2 flex items-center justify-end">
+                            <div class="col-span-4 sm:col-span-2 flex items-center justify-end">
                                 <button type="button" @click="hapusItemResep(index)"
                                         class="w-8 h-9 rounded-lg bg-white border border-gray-200 text-[#93000A] hover:bg-[#FFDAD6]/60 flex items-center justify-center cursor-pointer" title="Hapus bahan">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -466,6 +507,7 @@ function bahanBakuApp() {
         modalStok: false,
         modalRiwayat: false,
         modalResep: false,
+        activeTab: 'bahan',
         bahanData: @json($bahanJson),
         menuData: @json($menuJson),
         bahanSimpanUrl: @js(route('admin.bahan-baku.simpan')),
@@ -479,6 +521,7 @@ function bahanBakuApp() {
         riwayat: { nama: '', satuan: '', stok: 0, rows: [], loading: false },
 
         bukaTambahBahan() {
+            this.activeTab = 'bahan';
             this.bahanForm = { id: null, nama: '', satuan: 'kg', stok_minimum: '', stok_awal: '', is_aktif: true };
             this.modalBahan = true;
         },
@@ -486,6 +529,7 @@ function bahanBakuApp() {
         bukaUbahBahan(id) {
             const baris = this.bahanData.find((item) => Number(item.id) === Number(id));
             if (!baris) return;
+            this.activeTab = 'bahan';
             this.bahanForm = {
                 id: baris.id,
                 nama: baris.nama,
@@ -500,6 +544,7 @@ function bahanBakuApp() {
         bukaStok(id) {
             const baris = this.bahanData.find((item) => Number(item.id) === Number(id));
             if (!baris) return;
+            this.activeTab = 'bahan';
             this.stokForm = {
                 id: baris.id,
                 nama: baris.nama,
@@ -513,6 +558,7 @@ function bahanBakuApp() {
 
         async bukaRiwayat(id) {
             const baris = this.bahanData.find((item) => Number(item.id) === Number(id));
+            this.activeTab = 'bahan';
             this.riwayat = {
                 nama: baris ? baris.nama : '',
                 satuan: baris ? baris.satuan : '',
@@ -543,30 +589,65 @@ function bahanBakuApp() {
         bukaResep(id) {
             const baris = this.menuData.find((item) => Number(item.id) === Number(id));
             if (!baris) return;
+            this.activeTab = 'resep';
             this.resepForm = {
                 menu_id: baris.id,
                 nama: baris.nama,
                 harga: baris.harga,
-                items: (baris.resep || []).map((item) => ({
-                    bahan_baku_id: item.bahan_baku_id,
-                    jumlah: item.jumlah,
-                })),
+                items: (baris.resep || []).map((item) => {
+                    const bahan = this.bahanUntuk(item);
+                    const faktor = this.faktorBahan(bahan);
+                    const tampil = (Number(item.jumlah) || 0) * faktor;
+                    return {
+                        bahan_baku_id: item.bahan_baku_id,
+                        jumlah_tampil: faktor > 1 ? Math.round(tampil) : this.bulatkanTampilan(tampil),
+                    };
+                }),
             };
             this.modalResep = true;
         },
 
         tambahItemResep() {
-            this.resepForm.items.push({ bahan_baku_id: '', jumlah: '' });
+            this.resepForm.items.push({ bahan_baku_id: '', jumlah_tampil: '' });
         },
 
         hapusItemResep(index) {
             this.resepForm.items.splice(index, 1);
         },
 
+        bahanUntuk(item) {
+            return this.bahanData.find((baris) => Number(baris.id) === Number(item.bahan_baku_id)) || null;
+        },
+
+        faktorBahan(bahan) {
+            return Math.max(1, Number(bahan?.faktor_resep) || 1);
+        },
+
+        faktorTampil(item) {
+            return this.faktorBahan(this.bahanUntuk(item));
+        },
+
+        satuanTampil(item) {
+            const bahan = this.bahanUntuk(item);
+            return bahan ? (bahan.satuan_resep || bahan.satuan) : 'satuan';
+        },
+
+        jumlahDasar(item) {
+            const nilai = (Number(item.jumlah_tampil) || 0) / this.faktorTampil(item);
+            return Math.round(nilai * 1000000) / 1000000;
+        },
+
+        bulatkanTampilan(nilai) {
+            const angka = Number(nilai) || 0;
+            return Math.abs(angka - Math.round(angka)) < 0.0005
+                ? Math.round(angka)
+                : Math.round(angka * 1000) / 1000;
+        },
+
         get hppResep() {
             return this.resepForm.items.reduce((total, item) => {
-                const bahan = this.bahanData.find((baris) => Number(baris.id) === Number(item.bahan_baku_id));
-                return total + ((parseFloat(item.jumlah) || 0) * (bahan ? Number(bahan.harga_rata_rata) || 0 : 0));
+                const bahan = this.bahanUntuk(item);
+                return total + (this.jumlahDasar(item) * (bahan ? Number(bahan.harga_rata_rata) || 0 : 0));
             }, 0);
         },
 

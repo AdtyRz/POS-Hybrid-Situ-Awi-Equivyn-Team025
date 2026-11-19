@@ -24,6 +24,8 @@ class BahanBakuController extends Controller
             'id' => $baris->id,
             'nama' => $baris->nama,
             'satuan' => $baris->satuan,
+            'satuan_resep' => $baris->satuanResepEfektif(),
+            'faktor_resep' => $baris->faktorResepEfektif(),
             'stok' => (float) $baris->stok,
             'stok_minimum' => (float) $baris->stok_minimum,
             'harga_rata_rata' => (float) $baris->harga_rata_rata,
@@ -62,10 +64,13 @@ class BahanBakuController extends Controller
         $stokAwal = (float) ($request->validate([
             'stok_awal' => ['nullable', 'numeric', 'min:0', 'max:99999999999.999'],
         ])['stok_awal'] ?? 0);
+        [$satuanResep, $faktorResep] = $this->konversiResep($data['satuan']);
 
         $bahan = BahanBaku::create([
             'nama' => $data['nama'],
             'satuan' => $data['satuan'],
+            'satuan_resep' => $satuanResep,
+            'faktor_resep' => $faktorResep,
             'stok_minimum' => $data['stok_minimum'] ?? 0,
             'is_aktif' => $data['is_aktif'] ?? true,
             'stok' => 0,
@@ -82,13 +87,20 @@ class BahanBakuController extends Controller
     public function ubah(Request $request, BahanBaku $bahan): RedirectResponse
     {
         $data = $this->validasiBahan($request, $bahan->id);
-
-        $bahan->update([
+        $atribut = [
             'nama' => $data['nama'],
             'satuan' => $data['satuan'],
             'stok_minimum' => $data['stok_minimum'] ?? 0,
             'is_aktif' => $data['is_aktif'] ?? true,
-        ]);
+        ];
+
+        if ($bahan->satuan !== $data['satuan'] || ! $bahan->satuan_resep) {
+            [$satuanResep, $faktorResep] = $this->konversiResep($data['satuan']);
+            $atribut['satuan_resep'] = $satuanResep;
+            $atribut['faktor_resep'] = $faktorResep;
+        }
+
+        $bahan->update($atribut);
 
         return back()->with('sukses', 'Bahan baku berhasil diperbarui.');
     }
@@ -194,6 +206,20 @@ class BahanBakuController extends Controller
         });
 
         return back()->with('sukses', 'Resep '.$menu->nama_menu.' berhasil disimpan.');
+    }
+
+    /**
+     * Satuan yang dipakai di form resep agar jumlah mudah dibaca.
+     *
+     * @return array{0: string, 1: float}
+     */
+    private function konversiResep(string $satuan): array
+    {
+        return match (strtolower(trim($satuan))) {
+            'kg', 'kilogram' => ['gram', 1000],
+            'liter', 'l' => ['ml', 1000],
+            default => [$satuan, 1],
+        };
     }
 
     private function validasiBahan(Request $request, ?int $id = null): array

@@ -17,8 +17,19 @@ class BahanBaku extends Model
             'stok' => 'decimal:3',
             'stok_minimum' => 'decimal:3',
             'harga_rata_rata' => 'decimal:2',
+            'faktor_resep' => 'decimal:3',
             'is_aktif' => 'boolean',
         ];
+    }
+
+    public function satuanResepEfektif(): string
+    {
+        return $this->satuan_resep ?: $this->satuan;
+    }
+
+    public function faktorResepEfektif(): float
+    {
+        return max(1, (float) ($this->faktor_resep ?: 1));
     }
 
     public function pembelianDetail(): HasMany

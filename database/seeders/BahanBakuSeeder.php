@@ -84,6 +84,25 @@ class BahanBakuSeeder extends Seeder
     ];
 
     /**
+     * Satuan kecil untuk input resep agar jumlah mudah dibaca (angka bulat).
+     *
+     * Format: nama bahan => [satuan resep, isi satuan resep per satuan stok]
+     */
+    private const KONVERSI_RESEP = [
+        'Tahu' => ['gram', 400],
+        'Tempe' => ['gram', 300],
+        'Oncom' => ['gram', 200],
+        'Sayur Asem' => ['gram', 200],
+        'Kangkung' => ['gram', 150],
+        'Bawang Daun' => ['gram', 100],
+        'Daun Kemangi' => ['gram', 50],
+        'Roti Tawar' => ['lembar', 10],
+        'Susu Kental Manis' => ['ml', 100],
+        'Pisang' => ['buah', 10],
+        'Kerupuk' => ['bungkus', 1],
+    ];
+
+    /**
      * Resep untuk seluruh menu yang dibuat SituAwiSeeder.
      *
      * Format: nama menu => [nama bahan => jumlah per porsi]
@@ -205,11 +224,11 @@ class BahanBakuSeeder extends Seeder
             'Roti Tawar' => 0.2, 'Selai Coklat' => 0.03, 'Gula Pasir' => 0.005,
         ],
         'Pisang Keju' => [
-            'Pisang' => 0.25, 'Keju Cheddar' => 0.02, 'Tepung Terigu' => 0.03,
+            'Pisang' => 0.2, 'Keju Cheddar' => 0.02, 'Tepung Terigu' => 0.03,
             'Minyak Goreng' => 0.02, 'Gula Pasir' => 0.01,
         ],
         'Pisang Keju Coklat' => [
-            'Pisang' => 0.25, 'Keju Cheddar' => 0.02, 'Selai Coklat' => 0.02,
+            'Pisang' => 0.2, 'Keju Cheddar' => 0.02, 'Selai Coklat' => 0.02,
             'Tepung Terigu' => 0.03, 'Minyak Goreng' => 0.02, 'Gula Pasir' => 0.01,
         ],
         'Cheese Roll' => [
@@ -332,7 +351,7 @@ class BahanBakuSeeder extends Seeder
     private function seedBahan(): void
     {
         foreach (self::BAHAN as $nama => [$satuan, $stokMinimum, $harga, $jumlahAwal]) {
-            BahanBaku::firstOrCreate(
+            $bahan = BahanBaku::firstOrCreate(
                 ['nama' => $nama],
                 [
                     'satuan' => $satuan,
@@ -342,7 +361,28 @@ class BahanBakuSeeder extends Seeder
                     'is_aktif' => true,
                 ]
             );
+
+            [$satuanResep, $faktorResep] = self::KONVERSI_RESEP[$nama] ?? $this->konversiResepDefault($satuan);
+
+            if ($bahan->satuan_resep !== $satuanResep || (float) $bahan->faktor_resep !== (float) $faktorResep) {
+                $bahan->update([
+                    'satuan_resep' => $satuanResep,
+                    'faktor_resep' => $faktorResep,
+                ]);
+            }
         }
+    }
+
+    /**
+     * @return array{0: string, 1: float}
+     */
+    private function konversiResepDefault(string $satuan): array
+    {
+        return match (strtolower(trim($satuan))) {
+            'kg', 'kilogram' => ['gram', 1000],
+            'liter', 'l' => ['ml', 1000],
+            default => [$satuan, 1],
+        };
     }
 
     private function seedResep(): void
