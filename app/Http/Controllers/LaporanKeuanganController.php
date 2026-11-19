@@ -3,15 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\BahanBaku;
-use App\Models\DetailPesanan;
-use App\Models\Menu;
-use App\Models\Pembayaran;
 use App\Models\PembelianBahan;
 use App\Models\Pengaturan;
 use App\Models\Pengeluaran;
-use App\Models\Pesanan;
 use App\Services\BahanStokService;
-use Illuminate\Database\Eloquent\Builder;
+use App\Services\LaporanArusKasService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -24,14 +20,15 @@ class LaporanKeuanganController extends Controller
     public function index(Request $request): View
     {
         $filter = $this->resolveFilter($request);
-        $hpp = $this->laporanHpp($filter);
-        $ringkasan = array_merge($this->ringkasan($filter), $this->angkaHpp($hpp));
+        $service = app(LaporanArusKasService::class);
+        $hpp = $service->laporanHpp($filter);
+        $ringkasan = array_merge($service->ringkasan($filter), $service->angkaHpp($hpp));
 
-        $pembelian = $this->pembelianQuery($filter)
+        $pembelian = $service->pembelianQuery($filter)
             ->paginate(10, ['*'], 'pembelian_page')
             ->withQueryString();
 
-        $pengeluaran = $this->pengeluaranQuery($filter)
+        $pengeluaran = $service->pengeluaranQuery($filter)
             ->paginate(10, ['*'], 'pengeluaran_page')
             ->withQueryString();
 
@@ -152,14 +149,15 @@ class LaporanKeuanganController extends Controller
     public function cetak(Request $request): View
     {
         $filter = $this->resolveFilter($request);
-        $hpp = $this->laporanHpp($filter);
-        $ringkasan = array_merge($this->ringkasan($filter), $this->angkaHpp($hpp));
+        $service = app(LaporanArusKasService::class);
+        $hpp = $service->laporanHpp($filter);
+        $ringkasan = array_merge($service->ringkasan($filter), $service->angkaHpp($hpp));
 
         return view('admin.arus-kas.cetak', array_merge($filter, [
             'ringkasan' => $ringkasan,
             'hpp' => $hpp,
-            'pembelian' => $this->pembelianQuery($filter)->get(),
-            'pengeluaran' => $this->pengeluaranQuery($filter)->get(),
+            'pembelian' => $service->pembelianQuery($filter)->get(),
+            'pengeluaran' => $service->pengeluaranQuery($filter)->get(),
             'namaResto' => Pengaturan::nilai('nama_resto'),
             'alamatResto' => Pengaturan::nilai('alamat_resto'),
             'teleponResto' => Pengaturan::nilai('telepon_resto'),
@@ -172,10 +170,11 @@ class LaporanKeuanganController extends Controller
     {
         $filter = $this->resolveFilter($request);
         $format = $format === 'csv' ? 'csv' : 'xls';
-        $hpp = $this->laporanHpp($filter);
-        $ringkasan = array_merge($this->ringkasan($filter), $this->angkaHpp($hpp));
-        $pembelian = $this->pembelianQuery($filter)->get();
-        $pengeluaran = $this->pengeluaranQuery($filter)->get();
+        $service = app(LaporanArusKasService::class);
+        $hpp = $service->laporanHpp($filter);
+        $ringkasan = array_merge($service->ringkasan($filter), $service->angkaHpp($hpp));
+        $pembelian = $service->pembelianQuery($filter)->get();
+        $pengeluaran = $service->pengeluaranQuery($filter)->get();
 
         $filename = 'laporan-arus-kas-'
             .$filter['mulai']->format('Ymd')
@@ -240,172 +239,6 @@ class LaporanKeuanganController extends Controller
                 ? $mulai->format('d M Y')
                 : $mulai->format('d M Y').' - '.$selesai->format('d M Y'),
         ];
-    }
-
-    private function ringkasan(array $filter): array
-    {
-        $mulaiUtc = $filter['mulai']->copy()->utc();
-        $selesaiUtc = $filter['selesai']->copy()->utc();
-        $mulaiTanggal = $filter['mulai']->toDateString();
-        $selesaiTanggal = $filter['selesai']->toDateString();
-
-        $pembayaran = Pembayaran::query()
-            ->join('pesanan', 'pesanan.id', '=', 'pembayaran.pesanan_id')
-            ->where('pembayaran.status_pembayaran', 'lunas')
-            ->whereBetween('pembayaran.waktu_bayar', [$mulaiUtc, $selesaiUtc])
-            ->where('pesanan.status_pesanan', '!=', Pesanan::STATUS_DIBATALKAN);
-
-        $pemasukan = (float) (clone $pembayaran)->sum('pesanan.total_bayar');
-        $jumlahTransaksi = (int) (clone $pembayaran)->count();
-
-        $perMetode = (clone $pembayaran)
-            ->selectRaw('pembayaran.metode_pembayaran, COUNT(*) as transaksi, COALESCE(SUM(pesanan.total_bayar), 0) as total')
-            ->groupBy('pembayaran.metode_pembayaran')
-            ->get()
-            ->keyBy('metode_pembayaran');
-
-        $pembelianQuery = PembelianBahan::query()
-            ->whereDate('tanggal', '>=', $mulaiTanggal)
-            ->whereDate('tanggal', '<=', $selesaiTanggal);
-        $pembelian = (float) (clone $pembelianQuery)->sum('total');
-        $jumlahPembelian = (int) (clone $pembelianQuery)->count();
-
-        $pengeluaranQuery = Pengeluaran::query()
-            ->whereDate('tanggal', '>=', $mulaiTanggal)
-            ->whereDate('tanggal', '<=', $selesaiTanggal);
-        $pengeluaran = (float) (clone $pengeluaranQuery)->sum('jumlah');
-        $jumlahPengeluaran = (int) (clone $pengeluaranQuery)->count();
-
-        $perKategori = (clone $pengeluaranQuery)
-            ->selectRaw('kategori, SUM(jumlah) as total')
-            ->groupBy('kategori')
-            ->pluck('total', 'kategori');
-
-        $metode = [];
-
-        foreach (['tunai', 'qris', 'transfer'] as $kode) {
-            $baris = $perMetode->get($kode);
-
-            $metode[$kode] = [
-                'total' => (float) ($baris->total ?? 0),
-                'transaksi' => (int) ($baris->transaksi ?? 0),
-            ];
-        }
-
-        return [
-            'pemasukan' => $pemasukan,
-            'jumlah_transaksi' => $jumlahTransaksi,
-            'pembelian' => $pembelian,
-            'jumlah_pembelian' => $jumlahPembelian,
-            'pengeluaran' => $pengeluaran,
-            'jumlah_pengeluaran' => $jumlahPengeluaran,
-            'total_keluar' => $pembelian + $pengeluaran,
-            'arus_kas' => $pemasukan - $pembelian - $pengeluaran,
-            'metode' => $metode,
-            'kategori' => $perKategori->map(fn ($total) => (float) $total)->all(),
-        ];
-    }
-
-    private function pembelianQuery(array $filter): Builder
-    {
-        return PembelianBahan::query()
-            ->whereDate('tanggal', '>=', $filter['mulai']->toDateString())
-            ->whereDate('tanggal', '<=', $filter['selesai']->toDateString())
-            ->with(['pencatat', 'detail.bahan'])
-            ->orderByDesc('tanggal')
-            ->orderByDesc('id');
-    }
-
-    /**
-     * HPP dihitung dari resep aktif dikali harga rata-rata bahan saat ini.
-     * Omzet dan jumlah terjual mengikuti basis kas: pembayaran lunas pada periode.
-     *
-     * @return array{baris: array<int, array<string, mixed>>, total_omzet: float, total_hpp: float, laba_kotor: float, margin: float}
-     */
-    private function laporanHpp(array $filter): array
-    {
-        $penjualan = DetailPesanan::query()
-            ->join('pesanan', 'pesanan.id', '=', 'detail_pesanan.pesanan_id')
-            ->join('pembayaran', 'pembayaran.pesanan_id', '=', 'pesanan.id')
-            ->where('pembayaran.status_pembayaran', 'lunas')
-            ->whereBetween('pembayaran.waktu_bayar', [
-                $filter['mulai']->copy()->utc(),
-                $filter['selesai']->copy()->utc(),
-            ])
-            ->where('pesanan.status_pesanan', '!=', Pesanan::STATUS_DIBATALKAN)
-            ->selectRaw('detail_pesanan.menu_id, SUM(detail_pesanan.jumlah) as jumlah, SUM(detail_pesanan.subtotal) as omzet')
-            ->groupBy('detail_pesanan.menu_id')
-            ->get();
-
-        $menu = Menu::query()
-            ->whereIn('id', $penjualan->pluck('menu_id')->unique()->all())
-            ->with(['resep.bahan'])
-            ->get()
-            ->keyBy('id');
-
-        $baris = [];
-        $totalOmzet = 0.0;
-        $totalHpp = 0.0;
-
-        foreach ($penjualan as $item) {
-            $dataMenu = $menu->get($item->menu_id);
-
-            if (! $dataMenu) {
-                continue;
-            }
-
-            $jumlah = (int) $item->jumlah;
-            $omzet = (float) $item->omzet;
-            $hppSatuan = $dataMenu->hppSatuan();
-            $totalHppMenu = $hppSatuan * $jumlah;
-            $labaKotor = $omzet - $totalHppMenu;
-
-            $baris[] = [
-                'menu_id' => $dataMenu->id,
-                'nama_menu' => $dataMenu->nama_menu,
-                'jumlah' => $jumlah,
-                'omzet' => $omzet,
-                'hpp_satuan' => $hppSatuan,
-                'total_hpp' => $totalHppMenu,
-                'laba_kotor' => $labaKotor,
-                'margin' => $omzet > 0 ? ($labaKotor / $omzet) * 100 : 0.0,
-                'jumlah_bahan' => $dataMenu->resep->count(),
-            ];
-
-            $totalOmzet += $omzet;
-            $totalHpp += $totalHppMenu;
-        }
-
-        usort($baris, fn (array $a, array $b) => $b['laba_kotor'] <=> $a['laba_kotor']);
-
-        $labaKotor = $totalOmzet - $totalHpp;
-
-        return [
-            'baris' => $baris,
-            'total_omzet' => $totalOmzet,
-            'total_hpp' => $totalHpp,
-            'laba_kotor' => $labaKotor,
-            'margin' => $totalOmzet > 0 ? ($labaKotor / $totalOmzet) * 100 : 0.0,
-        ];
-    }
-
-    private function angkaHpp(array $hpp): array
-    {
-        return [
-            'hpp' => $hpp['total_hpp'],
-            'laba_kotor' => $hpp['laba_kotor'],
-            'margin' => $hpp['margin'],
-        ];
-    }
-
-    private function pengeluaranQuery(array $filter): Builder
-    {
-        return Pengeluaran::query()
-            ->whereDate('tanggal', '>=', $filter['mulai']->toDateString())
-            ->whereDate('tanggal', '<=', $filter['selesai']->toDateString())
-            ->with('pencatat')
-            ->orderByDesc('tanggal')
-            ->orderByDesc('id');
     }
 
     private function validasiPembelian(Request $request): array

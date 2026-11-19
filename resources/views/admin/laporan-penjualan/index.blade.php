@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Laporan Penjualan, Rekonsiliasi & Shift Kerja')
+@section('title', $jenis === 'arus_kas' ? 'Laporan Arus Kas' : ($jenis === 'shift' ? 'Laporan Shift Kerja Staf' : 'Laporan Penjualan, Rekonsiliasi & Shift Kerja'))
 @section('page_category', 'Laporan & Ekspor')
 
 @section('content')
@@ -18,10 +18,12 @@
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pt-1">
             <div class="flex flex-col max-w-2xl">
                 <h1 class="font-display font-bold text-3xl sm:text-4xl text-[#00341A] tracking-tight leading-tight">
-                    Laporan Penjualan, Rekonsiliasi & Shift Kerja
+                    {{ $jenis === 'arus_kas' ? 'Laporan Arus Kas' : ($jenis === 'shift' ? 'Laporan Shift Kerja Staf' : 'Laporan Penjualan, Rekonsiliasi & Shift Kerja') }}
                 </h1>
                 <p class="text-xs sm:text-sm text-[#404941] mt-2 leading-relaxed">
-                    Rekap penjualan terpadu dengan rekonsiliasi Midtrans QRIS vs uang tunai, plus laporan shift kerja staf yang mencatat login, logout, dan durasi.
+                    {{ $jenis === 'arus_kas'
+                        ? 'Rekap pemasukan lunas, pembelian bahan, pengeluaran operasional, HPP, dan arus kas bersih pada periode terpilih.'
+                        : 'Rekap penjualan terpadu dengan rekonsiliasi Midtrans QRIS vs uang tunai, plus laporan shift kerja staf yang mencatat login, logout, dan durasi.' }}
                 </p>
             </div>
 
@@ -46,6 +48,7 @@
                     <span>Dataset Excel (.xlsx)</span>
                 </button>
 
+                @if ($jenis !== 'arus_kas')
                 <button
                     type="button"
                     @click="jenisLaporan === 'shift' ? cetakLaporan() : cetakShift()"
@@ -55,6 +58,7 @@
                     </svg>
                     <span x-text="jenisLaporan === 'shift' ? 'Cetak Laporan Shift' : 'Cetak Rekap Shift'">Cetak Rekap Shift</span>
                 </button>
+                @endif
             </div>
         </div>
     </div>
@@ -82,7 +86,7 @@
                 <span class="text-[10px] font-semibold text-[#707971]">Akumulasi seluruh sesi staf</span>
             </div>
         </div>
-    @else
+    @elseif ($jenis !== 'arus_kas')
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" data-live="laporan-ringkasan">
 
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[190px] relative overflow-hidden">
@@ -226,7 +230,7 @@
                         <select name="jenis" x-model="jenisLaporan" @change="ajukanFilter()" class="w-full h-11 pl-10 pr-8 rounded-xl bg-[#FCF9F2] border border-gray-200 text-xs font-semibold text-[#1C1C18] shadow-2xs focus:outline-hidden focus:border-[#0B4D2B] appearance-none">
                             <option value="rekonsiliasi">Laporan Penjualan &amp; Rekonsiliasi Midtrans vs Tunai</option>
                             <option value="shift">Laporan Shift Kerja Staf</option>
-                            <option value="void">Laporan Transaksi Void / Dibatalkan</option>
+                            <option value="arus_kas">Laporan Arus Kas</option>
                         </select>
                         <svg class="w-4 h-4 text-[#707971] absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -237,7 +241,7 @@
                     </div>
                 </div>
 
-                @if ($jenis !== 'shift')
+                @if (! in_array($jenis, ['shift', 'arus_kas'], true))
                 <div class="flex flex-col gap-1.5 flex-1 min-w-[200px]">
                     <label class="font-bold text-[10px] text-[#707971] uppercase tracking-wider">METODE PEMBAYARAN</label>
                     <div class="relative">
@@ -466,6 +470,16 @@
         </div>
 
     </div>
+    @elseif ($jenis === 'arus_kas')
+    @php
+        $ringkasan = $ringkasanArusKas;
+        $hpp = $hppArusKas;
+        $pembelian = $pembelianArusKas;
+        $pengeluaran = $pengeluaranArusKas;
+    @endphp
+    <div class="flex flex-col gap-6" data-live="laporan-arus-kas">
+        @include('admin.arus-kas.partials.laporan', ['modeLaporan' => true])
+    </div>
     @else
     <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
 
@@ -630,7 +644,7 @@
     </div>
     @endif
 
-    @if ($jenis !== 'shift')
+    @if (! in_array($jenis, ['shift', 'arus_kas'], true))
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch" data-live="laporan-rekonsiliasi">
 
         <div class="lg:col-span-8 bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/30 flex flex-col justify-between gap-5">
@@ -769,7 +783,7 @@
             },
 
             async refreshTransaksi() {
-                if (this.jenisLaporan === 'shift') return;
+                if (this.jenisLaporan === 'shift' || this.jenisLaporan === 'arus_kas') return;
 
                 if (this._refreshInFlight) {
                     this._refreshQueued = true;

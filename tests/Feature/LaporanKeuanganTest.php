@@ -365,4 +365,91 @@ class LaporanKeuanganTest extends TestCase
 
         $this->assertDatabaseCount('pembelian_bahan', 0);
     }
+
+    public function test_laporan_penjualan_menampilkan_arus_kas_dan_tanpa_opsi_void(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));
+        Pengaturan::simpanBanyak(['nama_resto' => 'Saung Situ Awi']);
+
+        $this->pesananLunas('AWI-AK-LAPORAN', 90000, 'tunai', '2026-11-10 08:00:00');
+
+        PembelianBahan::create([
+            'tanggal' => '2026-11-10',
+            'supplier' => 'Pasar Laporan',
+            'keterangan' => 'Bahan laporan arus kas',
+            'total' => 25000,
+        ]);
+
+        Pengeluaran::create([
+            'tanggal' => '2026-11-10',
+            'kategori' => 'listrik_air',
+            'keterangan' => 'Token listrik laporan',
+            'jumlah' => 5000,
+        ]);
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.laporan-penjualan', [
+                'jenis' => 'arus_kas',
+                'start' => '2026-11-10',
+                'end' => '2026-11-10',
+            ]))
+            ->assertOk()
+            ->assertSee('Laporan Arus Kas')
+            ->assertSee('PEMASUKAN KAS')
+            ->assertSee('ARUS KAS BERSIH')
+            ->assertSee('Pasar Laporan')
+            ->assertSee('Token listrik laporan')
+            ->assertDontSee('Laporan Transaksi Void / Dibatalkan')
+            ->assertDontSee('Pratinjau Rekap Transaksi');
+    }
+
+    public function test_ekspor_dan_cetak_arus_kas_dari_halaman_laporan_penjualan(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));
+        Pengaturan::simpanBanyak(['nama_resto' => 'Saung Situ Awi']);
+
+        $this->pesananLunas('AWI-AK-GABUNG', 90000, 'qris', '2026-11-10 08:00:00');
+
+        PembelianBahan::create([
+            'tanggal' => '2026-11-10',
+            'supplier' => 'Supplier Gabung',
+            'keterangan' => 'Bumbu gabung',
+            'total' => 25000,
+        ]);
+
+        $admin = $this->admin();
+
+        $csv = $this->actingAs($admin)
+            ->get(route('admin.laporan-penjualan.ekspor', [
+                'format' => 'csv',
+                'jenis' => 'arus_kas',
+                'start' => '2026-11-10',
+                'end' => '2026-11-10',
+            ]))
+            ->assertOk()
+            ->streamedContent();
+
+        $this->assertStringContainsString('Laporan Arus Kas', $csv);
+        $this->assertStringContainsString('Supplier Gabung', $csv);
+
+        $this->actingAs($admin)
+            ->get(route('admin.laporan-penjualan.cetak', [
+                'jenis' => 'arus_kas',
+                'start' => '2026-11-10',
+                'end' => '2026-11-10',
+            ]))
+            ->assertOk()
+            ->assertSee('LAPORAN ARUS KAS')
+            ->assertSee('Supplier Gabung');
+    }
+
+    public function test_halaman_arus_kas_tidak_lagi_menampilkan_tombol_ekspor(): void
+    {
+        $this->actingAs($this->admin())
+            ->get(route('admin.arus-kas'))
+            ->assertOk()
+            ->assertDontSee('Dataset CSV')
+            ->assertDontSee('Dataset Excel (.xls)')
+            ->assertDontSee('Cetak / PDF');
+    }
 }
