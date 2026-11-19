@@ -179,6 +179,16 @@
                         </a>
 
                         <a
+                            href="{{ url('/admin/bahan-baku') }}"
+                            class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->is('admin/bahan-baku*') ? 'bg-[#0B4D2B] text-white shadow-xs font-semibold' : 'text-[#404941] hover:bg-[#EAE4D7] hover:text-[#1C1C18]' }}">
+
+                            <svg class="w-4 h-4 flex-shrink-0 {{ request()->is('admin/bahan-baku*') ? 'text-white' : 'text-[#404941]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                            <span>Bahan Baku & Resep</span>
+                        </a>
+
+                        <a
                             href="{{ url('/admin/manajemen-akun') }}"
                             class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->is('admin/manajemen-akun*') || request()->is('admin/akun*') ? 'bg-[#0B4D2B] text-white shadow-xs font-semibold' : 'text-[#404941] hover:bg-[#EAE4D7] hover:text-[#1C1C18]' }}">
 

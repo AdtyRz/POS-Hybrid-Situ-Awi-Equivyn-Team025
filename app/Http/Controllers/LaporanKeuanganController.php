@@ -2,16 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BahanBaku;
+use App\Models\DetailPesanan;
+use App\Models\Menu;
 use App\Models\Pembayaran;
 use App\Models\PembelianBahan;
 use App\Models\Pengaturan;
 use App\Models\Pengeluaran;
 use App\Models\Pesanan;
+use App\Services\BahanStokService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class LaporanKeuanganController extends Controller
@@ -19,7 +24,8 @@ class LaporanKeuanganController extends Controller
     public function index(Request $request): View
     {
         $filter = $this->resolveFilter($request);
-        $ringkasan = $this->ringkasan($filter);
+        $hpp = $this->laporanHpp($filter);
+        $ringkasan = array_merge($this->ringkasan($filter), $this->angkaHpp($hpp));
 
         $pembelian = $this->pembelianQuery($filter)
             ->paginate(10, ['*'], 'pembelian_page')
@@ -36,6 +42,13 @@ class LaporanKeuanganController extends Controller
                 'supplier' => (string) ($baris->supplier ?? ''),
                 'keterangan' => (string) ($baris->keterangan ?? ''),
                 'total' => (float) $baris->total,
+                'items' => $baris->detail->map(fn ($item) => [
+                    'bahan_baku_id' => (int) $item->bahan_baku_id,
+                    'nama' => (string) ($item->bahan?->nama ?? ''),
+                    'satuan' => (string) ($item->bahan?->satuan ?? ''),
+                    'jumlah' => (float) $item->jumlah,
+                    'harga_satuan' => (float) $item->harga_satuan,
+                ])->values(),
             ])
             ->values();
 
@@ -49,37 +62,65 @@ class LaporanKeuanganController extends Controller
             ])
             ->values();
 
+        $bahanJson = BahanBaku::query()
+            ->where('is_aktif', true)
+            ->orderBy('nama')
+            ->get()
+            ->map(fn (BahanBaku $baris) => [
+                'id' => $baris->id,
+                'nama' => $baris->nama,
+                'satuan' => $baris->satuan,
+                'harga_rata_rata' => (float) $baris->harga_rata_rata,
+                'stok' => (float) $baris->stok,
+            ])
+            ->values();
+
         return view('admin.arus-kas.index', array_merge($filter, [
             'ringkasan' => $ringkasan,
+            'hpp' => $hpp,
             'pembelian' => $pembelian,
             'pengeluaran' => $pengeluaran,
             'pembelianJson' => $pembelianJson,
             'pengeluaranJson' => $pengeluaranJson,
+            'bahanJson' => $bahanJson,
             'daftarKategori' => Pengeluaran::KATEGORI,
             'namaResto' => Pengaturan::nilai('nama_resto'),
         ]));
     }
 
-    public function simpanPembelian(Request $request): RedirectResponse
+    public function simpanPembelian(Request $request, BahanStokService $stokService): RedirectResponse
     {
         $data = $this->validasiPembelian($request);
-        $data['created_by'] = auth()->id();
+        $items = $data['items'] ?? [];
+        unset($data['items']);
 
-        PembelianBahan::create($data);
+        $stokService->buatPembelian($data, $items, auth()->id());
 
         return back()->with('sukses', 'Pembelian bahan berhasil dicatat.');
     }
 
-    public function ubahPembelian(Request $request, PembelianBahan $pembelian): RedirectResponse
+    public function ubahPembelian(Request $request, PembelianBahan $pembelian, BahanStokService $stokService): RedirectResponse
     {
-        $pembelian->update($this->validasiPembelian($request));
+        $data = $this->validasiPembelian($request);
+        $items = $data['items'] ?? [];
+        unset($data['items']);
+
+        try {
+            $stokService->perbaruiPembelian($pembelian, $data, $items, auth()->id());
+        } catch (RuntimeException $exception) {
+            return back()->with('error', $exception->getMessage())->withInput();
+        }
 
         return back()->with('sukses', 'Pembelian bahan berhasil diperbarui.');
     }
 
-    public function hapusPembelian(PembelianBahan $pembelian): RedirectResponse
+    public function hapusPembelian(PembelianBahan $pembelian, BahanStokService $stokService): RedirectResponse
     {
-        $pembelian->delete();
+        try {
+            $stokService->hapusPembelian($pembelian);
+        } catch (RuntimeException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
 
         return back()->with('sukses', 'Pembelian bahan berhasil dihapus.');
     }
@@ -111,10 +152,12 @@ class LaporanKeuanganController extends Controller
     public function cetak(Request $request): View
     {
         $filter = $this->resolveFilter($request);
-        $ringkasan = $this->ringkasan($filter);
+        $hpp = $this->laporanHpp($filter);
+        $ringkasan = array_merge($this->ringkasan($filter), $this->angkaHpp($hpp));
 
         return view('admin.arus-kas.cetak', array_merge($filter, [
             'ringkasan' => $ringkasan,
+            'hpp' => $hpp,
             'pembelian' => $this->pembelianQuery($filter)->get(),
             'pengeluaran' => $this->pengeluaranQuery($filter)->get(),
             'namaResto' => Pengaturan::nilai('nama_resto'),
@@ -129,7 +172,8 @@ class LaporanKeuanganController extends Controller
     {
         $filter = $this->resolveFilter($request);
         $format = $format === 'csv' ? 'csv' : 'xls';
-        $ringkasan = $this->ringkasan($filter);
+        $hpp = $this->laporanHpp($filter);
+        $ringkasan = array_merge($this->ringkasan($filter), $this->angkaHpp($hpp));
         $pembelian = $this->pembelianQuery($filter)->get();
         $pengeluaran = $this->pengeluaranQuery($filter)->get();
 
@@ -150,14 +194,14 @@ class LaporanKeuanganController extends Controller
                 'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             ];
 
-        return response()->stream(function () use ($format, $filter, $ringkasan, $pembelian, $pengeluaran) {
+        return response()->stream(function () use ($format, $filter, $ringkasan, $pembelian, $pengeluaran, $hpp) {
             if ($format === 'csv') {
-                $this->streamCsv($filter, $ringkasan, $pembelian, $pengeluaran);
+                $this->streamCsv($filter, $ringkasan, $pembelian, $pengeluaran, $hpp);
 
                 return;
             }
 
-            $this->streamXls($filter, $ringkasan, $pembelian, $pengeluaran);
+            $this->streamXls($filter, $ringkasan, $pembelian, $pengeluaran, $hpp);
         }, 200, $headers);
     }
 
@@ -267,9 +311,91 @@ class LaporanKeuanganController extends Controller
         return PembelianBahan::query()
             ->whereDate('tanggal', '>=', $filter['mulai']->toDateString())
             ->whereDate('tanggal', '<=', $filter['selesai']->toDateString())
-            ->with('pencatat')
+            ->with(['pencatat', 'detail.bahan'])
             ->orderByDesc('tanggal')
             ->orderByDesc('id');
+    }
+
+    /**
+     * HPP dihitung dari resep aktif dikali harga rata-rata bahan saat ini.
+     * Omzet dan jumlah terjual mengikuti basis kas: pembayaran lunas pada periode.
+     *
+     * @return array{baris: array<int, array<string, mixed>>, total_omzet: float, total_hpp: float, laba_kotor: float, margin: float}
+     */
+    private function laporanHpp(array $filter): array
+    {
+        $penjualan = DetailPesanan::query()
+            ->join('pesanan', 'pesanan.id', '=', 'detail_pesanan.pesanan_id')
+            ->join('pembayaran', 'pembayaran.pesanan_id', '=', 'pesanan.id')
+            ->where('pembayaran.status_pembayaran', 'lunas')
+            ->whereBetween('pembayaran.waktu_bayar', [
+                $filter['mulai']->copy()->utc(),
+                $filter['selesai']->copy()->utc(),
+            ])
+            ->where('pesanan.status_pesanan', '!=', Pesanan::STATUS_DIBATALKAN)
+            ->selectRaw('detail_pesanan.menu_id, SUM(detail_pesanan.jumlah) as jumlah, SUM(detail_pesanan.subtotal) as omzet')
+            ->groupBy('detail_pesanan.menu_id')
+            ->get();
+
+        $menu = Menu::query()
+            ->whereIn('id', $penjualan->pluck('menu_id')->unique()->all())
+            ->with(['resep.bahan'])
+            ->get()
+            ->keyBy('id');
+
+        $baris = [];
+        $totalOmzet = 0.0;
+        $totalHpp = 0.0;
+
+        foreach ($penjualan as $item) {
+            $dataMenu = $menu->get($item->menu_id);
+
+            if (! $dataMenu) {
+                continue;
+            }
+
+            $jumlah = (int) $item->jumlah;
+            $omzet = (float) $item->omzet;
+            $hppSatuan = $dataMenu->hppSatuan();
+            $totalHppMenu = $hppSatuan * $jumlah;
+            $labaKotor = $omzet - $totalHppMenu;
+
+            $baris[] = [
+                'menu_id' => $dataMenu->id,
+                'nama_menu' => $dataMenu->nama_menu,
+                'jumlah' => $jumlah,
+                'omzet' => $omzet,
+                'hpp_satuan' => $hppSatuan,
+                'total_hpp' => $totalHppMenu,
+                'laba_kotor' => $labaKotor,
+                'margin' => $omzet > 0 ? ($labaKotor / $omzet) * 100 : 0.0,
+                'jumlah_bahan' => $dataMenu->resep->count(),
+            ];
+
+            $totalOmzet += $omzet;
+            $totalHpp += $totalHppMenu;
+        }
+
+        usort($baris, fn (array $a, array $b) => $b['laba_kotor'] <=> $a['laba_kotor']);
+
+        $labaKotor = $totalOmzet - $totalHpp;
+
+        return [
+            'baris' => $baris,
+            'total_omzet' => $totalOmzet,
+            'total_hpp' => $totalHpp,
+            'laba_kotor' => $labaKotor,
+            'margin' => $totalOmzet > 0 ? ($labaKotor / $totalOmzet) * 100 : 0.0,
+        ];
+    }
+
+    private function angkaHpp(array $hpp): array
+    {
+        return [
+            'hpp' => $hpp['total_hpp'],
+            'laba_kotor' => $hpp['laba_kotor'],
+            'margin' => $hpp['margin'],
+        ];
     }
 
     private function pengeluaranQuery(array $filter): Builder
@@ -289,12 +415,23 @@ class LaporanKeuanganController extends Controller
             'supplier' => ['nullable', 'string', 'max:100'],
             'keterangan' => ['nullable', 'string', 'max:255'],
             'total' => ['required', 'numeric', 'min:0.01', 'max:9999999999999.99'],
+            'items' => ['nullable', 'array'],
+            'items.*.bahan_baku_id' => ['required', 'integer', 'exists:bahan_baku,id'],
+            'items.*.jumlah' => ['required', 'numeric', 'min:0.001', 'max:99999999999.999'],
+            'items.*.harga_satuan' => ['required', 'numeric', 'min:0', 'max:9999999999999.99'],
         ], [
             'tanggal.required' => 'Tanggal pembelian wajib diisi.',
             'tanggal.date' => 'Tanggal pembelian tidak valid.',
             'total.required' => 'Total pembelian wajib diisi.',
             'total.numeric' => 'Total pembelian harus berupa angka.',
             'total.min' => 'Total pembelian harus lebih dari nol.',
+            'items.*.bahan_baku_id.required' => 'Bahan pada rincian pembelian wajib dipilih.',
+            'items.*.bahan_baku_id.exists' => 'Bahan pada rincian pembelian tidak ditemukan.',
+            'items.*.jumlah.required' => 'Jumlah bahan pada rincian pembelian wajib diisi.',
+            'items.*.jumlah.min' => 'Jumlah bahan pada rincian pembelian harus lebih dari nol.',
+            'items.*.harga_satuan.required' => 'Harga satuan pada rincian pembelian wajib diisi.',
+            'items.*.harga_satuan.numeric' => 'Harga satuan pada rincian pembelian harus berupa angka.',
+            'items.*.harga_satuan.min' => 'Harga satuan tidak boleh negatif.',
         ]);
     }
 
@@ -317,7 +454,7 @@ class LaporanKeuanganController extends Controller
         ]);
     }
 
-    private function streamCsv(array $filter, array $ringkasan, $pembelian, $pengeluaran): void
+    private function streamCsv(array $filter, array $ringkasan, $pembelian, $pengeluaran, array $hpp): void
     {
         $out = fopen('php://output', 'w');
         fwrite($out, "\xEF\xBB\xBF");
@@ -328,6 +465,9 @@ class LaporanKeuanganController extends Controller
         fputcsv($out, ['Pengeluaran Operasional', $ringkasan['pengeluaran']]);
         fputcsv($out, ['Total Kas Keluar', $ringkasan['total_keluar']]);
         fputcsv($out, ['Arus Kas Bersih', $ringkasan['arus_kas']]);
+        fputcsv($out, ['HPP (Standar Resep)', $ringkasan['hpp']]);
+        fputcsv($out, ['Laba Kotor', $ringkasan['laba_kotor']]);
+        fputcsv($out, ['Margin Laba Kotor (%)', round($ringkasan['margin'], 2)]);
         fputcsv($out, []);
         fputcsv($out, ['PEMBELIAN BAHAN']);
         fputcsv($out, ['Tanggal', 'Supplier', 'Keterangan', 'Total', 'Dicatat Oleh']);
@@ -340,6 +480,24 @@ class LaporanKeuanganController extends Controller
                 (float) $baris->total,
                 $this->safeCsv($baris->pencatat?->nama ?? '-'),
             ]);
+        }
+
+        fputcsv($out, []);
+        fputcsv($out, ['RINCIAN PEMBELIAN BAHAN']);
+        fputcsv($out, ['Tanggal', 'Supplier', 'Bahan', 'Jumlah', 'Satuan', 'Harga Satuan', 'Subtotal']);
+
+        foreach ($pembelian as $baris) {
+            foreach ($baris->detail as $item) {
+                fputcsv($out, [
+                    $baris->tanggal?->format('d/m/Y') ?? '-',
+                    $this->safeCsv((string) ($baris->supplier ?? '-')),
+                    $this->safeCsv((string) ($item->bahan?->nama ?? '-')),
+                    (float) $item->jumlah,
+                    $this->safeCsv((string) ($item->bahan?->satuan ?? '')),
+                    (float) $item->harga_satuan,
+                    (float) $item->subtotal,
+                ]);
+            }
         }
 
         fputcsv($out, []);
@@ -356,10 +514,29 @@ class LaporanKeuanganController extends Controller
             ]);
         }
 
+        fputcsv($out, []);
+        fputcsv($out, ['HPP & LABA KOTOR PER MENU']);
+        fputcsv($out, ['Menu', 'Jumlah Terjual', 'Omzet', 'HPP Satuan', 'Total HPP', 'Laba Kotor', 'Margin (%)', 'Jumlah Bahan Resep']);
+
+        foreach ($hpp['baris'] as $baris) {
+            fputcsv($out, [
+                $this->safeCsv($baris['nama_menu']),
+                $baris['jumlah'],
+                $baris['omzet'],
+                $baris['hpp_satuan'],
+                $baris['total_hpp'],
+                $baris['laba_kotor'],
+                round($baris['margin'], 2),
+                $baris['jumlah_bahan'],
+            ]);
+        }
+
+        fputcsv($out, ['TOTAL', '', $hpp['total_omzet'], '', $hpp['total_hpp'], $hpp['laba_kotor'], round($hpp['margin'], 2), '']);
+
         fclose($out);
     }
 
-    private function streamXls(array $filter, array $ringkasan, $pembelian, $pengeluaran): void
+    private function streamXls(array $filter, array $ringkasan, $pembelian, $pengeluaran, array $hpp): void
     {
         echo "\xEF\xBB\xBF";
         echo '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8">';
@@ -375,6 +552,13 @@ class LaporanKeuanganController extends Controller
             .'<td>Rp '.number_format($ringkasan['total_keluar'], 0, ',', '.').'</td>'
             .'<td>Rp '.number_format($ringkasan['arus_kas'], 0, ',', '.').'</td>'
             .'</tr>';
+        echo '<tr><th>HPP (STANDAR RESEP)</th><th>LABA KOTOR</th><th>MARGIN LABA KOTOR</th><th colspan="2"></th></tr>';
+        echo '<tr>'
+            .'<td>Rp '.number_format($ringkasan['hpp'], 0, ',', '.').'</td>'
+            .'<td>Rp '.number_format($ringkasan['laba_kotor'], 0, ',', '.').'</td>'
+            .'<td>'.number_format($ringkasan['margin'], 2, ',', '.').'%</td>'
+            .'<td colspan="2"></td>'
+            .'</tr>';
         echo '<tr><th colspan="5">PEMBELIAN BAHAN</th></tr>';
         echo '<tr><th>TANGGAL</th><th>SUPPLIER</th><th>KETERANGAN</th><th>TOTAL (Rp)</th><th>DICATAT OLEH</th></tr>';
 
@@ -386,6 +570,16 @@ class LaporanKeuanganController extends Controller
                 .'<td>'.(float) $baris->total.'</td>'
                 .'<td>'.e($baris->pencatat?->nama ?? '-').'</td>'
                 .'</tr>';
+
+            foreach ($baris->detail as $item) {
+                echo '<tr>'
+                    .'<td></td>'
+                    .'<td>Rincian</td>'
+                    .'<td>'.e(($item->bahan?->nama ?? '-').' · '.$this->formatAngka((float) $item->jumlah).' '.($item->bahan?->satuan ?? '')).'</td>'
+                    .'<td>'.(float) $item->subtotal.'</td>'
+                    .'<td></td>'
+                    .'</tr>';
+            }
         }
 
         echo '<tr><th colspan="5">PENGELUARAN OPERASIONAL</th></tr>';
@@ -401,7 +595,36 @@ class LaporanKeuanganController extends Controller
                 .'</tr>';
         }
 
+        echo '<tr><th colspan="8">HPP &amp; LABA KOTOR PER MENU</th></tr>';
+        echo '<tr><th>MENU</th><th>JUMLAH TERJUAL</th><th>OMZET (Rp)</th><th>HPP SATUAN (Rp)</th><th>TOTAL HPP (Rp)</th><th>LABA KOTOR (Rp)</th><th>MARGIN</th><th>JUMLAH BAHAN</th></tr>';
+
+        foreach ($hpp['baris'] as $baris) {
+            echo '<tr>'
+                .'<td>'.e($baris['nama_menu']).'</td>'
+                .'<td>'.$baris['jumlah'].'</td>'
+                .'<td>'.(float) $baris['omzet'].'</td>'
+                .'<td>'.(float) $baris['hpp_satuan'].'</td>'
+                .'<td>'.(float) $baris['total_hpp'].'</td>'
+                .'<td>'.(float) $baris['laba_kotor'].'</td>'
+                .'<td>'.number_format($baris['margin'], 2, ',', '.').'%</td>'
+                .'<td>'.$baris['jumlah_bahan'].'</td>'
+                .'</tr>';
+        }
+
+        echo '<tr>'
+            .'<th>TOTAL</th><th></th>'
+            .'<th>'.(float) $hpp['total_omzet'].'</th><th></th>'
+            .'<th>'.(float) $hpp['total_hpp'].'</th>'
+            .'<th>'.(float) $hpp['laba_kotor'].'</th>'
+            .'<th>'.number_format($hpp['margin'], 2, ',', '.').'%</th><th></th>'
+            .'</tr>';
+
         echo '</table></body></html>';
+    }
+
+    private function formatAngka(float $angka): string
+    {
+        return rtrim(rtrim(number_format($angka, 3, ',', '.'), '0'), ',');
     }
 
     private function safeCsv(string $value): string

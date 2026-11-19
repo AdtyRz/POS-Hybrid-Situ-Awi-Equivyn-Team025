@@ -250,6 +250,9 @@
                                 <td class="px-4 py-3">
                                     <div class="font-semibold text-[#1C1C18]">{{ $baris->supplier ?: 'Tanpa supplier' }}</div>
                                     <div class="text-[10px] text-[#707971] mt-0.5">{{ $baris->keterangan ?: '—' }}</div>
+                                    @if ($baris->detail->isNotEmpty())
+                                        <div class="text-[10px] font-semibold text-[#0B4D2B] mt-0.5">{{ $baris->detail->count() }} bahan baku tercatat</div>
+                                    @endif
                                     <div class="text-[10px] text-[#707971] mt-0.5">Dicatat: {{ $baris->pencatat?->nama ?? '-' }}</div>
                                 </td>
                                 <td class="px-4 py-3 text-right font-bold text-[#7A5900] whitespace-nowrap">Rp {{ number_format((float) $baris->total, 0, ',', '.') }}</td>
@@ -389,8 +392,97 @@
         </div>
     </div>
 
+    <div class="bg-white rounded-2xl border border-[#C0C9BF]/30 shadow-xs overflow-hidden">
+        <div class="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <h2 class="font-bold text-base text-[#1C1C18]">HPP & Laba Kotor</h2>
+                <p class="text-[11px] text-[#707971] mt-0.5">
+                    HPP dihitung dari resep aktif × harga rata-rata bahan saat ini, untuk penjualan lunas pada {{ $labelPeriode }}.
+                </p>
+            </div>
+            <a href="{{ route('admin.bahan-baku') }}"
+               class="h-9 px-3.5 rounded-xl bg-[#F0EEE7] hover:bg-[#ded9cf] text-[#404941] text-xs font-bold flex items-center gap-1.5 transition-all self-start">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                Atur Resep
+            </a>
+        </div>
+
+        <div class="p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="rounded-xl bg-[#F6F3EC] border border-[#C0C9BF]/20 p-4">
+                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">HPP Terjual</span>
+                <div class="font-display font-bold text-xl text-[#7A5900] mt-1">Rp {{ number_format($ringkasan['hpp'], 0, ',', '.') }}</div>
+                <span class="text-[10px] font-semibold text-[#707971]">{{ count($hpp['baris']) }} menu terjual</span>
+            </div>
+            <div class="rounded-xl bg-[#F6F3EC] border border-[#C0C9BF]/20 p-4">
+                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">Laba Kotor</span>
+                <div class="font-display font-bold text-xl mt-1 {{ $ringkasan['laba_kotor'] < 0 ? 'text-[#93000A]' : 'text-[#0B4D2B]' }}">Rp {{ number_format($ringkasan['laba_kotor'], 0, ',', '.') }}</div>
+                <span class="text-[10px] font-semibold text-[#707971]">Omzet − HPP</span>
+            </div>
+            <div class="rounded-xl bg-[#F6F3EC] border border-[#C0C9BF]/20 p-4">
+                <span class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">Margin Laba Kotor</span>
+                <div class="font-display font-bold text-xl mt-1 {{ $ringkasan['margin'] < 0 ? 'text-[#93000A]' : 'text-[#00341A]' }}">{{ number_format($ringkasan['margin'], 1, ',', '.') }}%</div>
+                <span class="text-[10px] font-semibold text-[#707971]">Dari omzet lunas</span>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto border-t border-gray-100">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-[#F6F3EC] text-[10px] uppercase tracking-wider text-[#707971]">
+                    <tr>
+                        <th class="px-4 py-3 font-bold">Menu</th>
+                        <th class="px-4 py-3 font-bold text-right">Terjual</th>
+                        <th class="px-4 py-3 font-bold text-right">Omzet</th>
+                        <th class="px-4 py-3 font-bold text-right">HPP / Unit</th>
+                        <th class="px-4 py-3 font-bold text-right">Total HPP</th>
+                        <th class="px-4 py-3 font-bold text-right">Laba Kotor</th>
+                        <th class="px-4 py-3 font-bold text-right">Margin</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse ($hpp['baris'] as $baris)
+                        <tr class="hover:bg-[#F6F3EC]/40 transition-colors">
+                            <td class="px-4 py-3">
+                                <div class="font-semibold text-[#1C1C18]">{{ $baris['nama_menu'] }}</div>
+                                <div class="text-[10px] mt-0.5 {{ $baris['jumlah_bahan'] > 0 ? 'text-[#707971]' : 'text-[#93000A] font-semibold' }}">
+                                    {{ $baris['jumlah_bahan'] > 0 ? $baris['jumlah_bahan'].' bahan resep' : 'Resep belum diatur' }}
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 text-right font-semibold text-[#1C1C18]">{{ number_format($baris['jumlah'], 0, ',', '.') }}</td>
+                            <td class="px-4 py-3 text-right font-semibold text-[#0B4D2B]">Rp {{ number_format($baris['omzet'], 0, ',', '.') }}</td>
+                            <td class="px-4 py-3 text-right text-[#7A5900]">Rp {{ number_format($baris['hpp_satuan'], 0, ',', '.') }}</td>
+                            <td class="px-4 py-3 text-right font-bold text-[#7A5900]">Rp {{ number_format($baris['total_hpp'], 0, ',', '.') }}</td>
+                            <td class="px-4 py-3 text-right font-bold {{ $baris['laba_kotor'] < 0 ? 'text-[#93000A]' : 'text-[#00341A]' }}">Rp {{ number_format($baris['laba_kotor'], 0, ',', '.') }}</td>
+                            <td class="px-4 py-3 text-right font-semibold {{ $baris['margin'] < 0 ? 'text-[#93000A]' : 'text-[#404941]' }}">{{ number_format($baris['margin'], 1, ',', '.') }}%</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-4 py-10 text-center text-[#707971]">
+                                <div class="flex flex-col items-center gap-2">
+                                    <svg class="w-8 h-8 text-[#C0C9BF]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                    <span class="text-xs font-semibold">Belum ada penjualan lunas pada periode ini.</span>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                @if (count($hpp['baris']) > 0)
+                    <tfoot class="bg-[#F6F3EC] text-[#1C1C18] font-bold">
+                        <tr>
+                            <td class="px-4 py-3" colspan="2">Total</td>
+                            <td class="px-4 py-3 text-right">Rp {{ number_format($hpp['total_omzet'], 0, ',', '.') }}</td>
+                            <td class="px-4 py-3"></td>
+                            <td class="px-4 py-3 text-right">Rp {{ number_format($hpp['total_hpp'], 0, ',', '.') }}</td>
+                            <td class="px-4 py-3 text-right {{ $hpp['laba_kotor'] < 0 ? 'text-[#93000A]' : 'text-[#0B4D2B]' }}">Rp {{ number_format($hpp['laba_kotor'], 0, ',', '.') }}</td>
+                            <td class="px-4 py-3 text-right">{{ number_format($hpp['margin'], 1, ',', '.') }}%</td>
+                        </tr>
+                    </tfoot>
+                @endif
+            </table>
+        </div>
+    </div>
+
     <div x-show="modalPembelian" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="modalPembelian = false">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[92vh] overflow-y-auto" @click.outside="modalPembelian = false">
             <div class="p-5 border-b border-gray-100 flex items-center justify-between gap-3">
                 <div>
                     <h3 class="font-bold text-base text-[#1C1C18]" x-text="pembelianForm.id ? 'Ubah Pembelian Bahan' : 'Tambah Pembelian Bahan'"></h3>
@@ -405,16 +497,18 @@
                 @csrf
                 <input type="hidden" name="_method" value="PUT" x-bind:disabled="!pembelianForm.id">
 
-                <div class="flex flex-col gap-1.5">
-                    <label class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">Tanggal <span class="text-[#93000A]">*</span></label>
-                    <input type="date" name="tanggal" x-model="pembelianForm.tanggal" required
-                           class="h-10 px-3 rounded-xl border border-[#C0C9BF]/50 bg-[#F6F3EC]/50 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0B4D2B]/30">
-                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">Tanggal <span class="text-[#93000A]">*</span></label>
+                        <input type="date" name="tanggal" x-model="pembelianForm.tanggal" required
+                               class="h-10 px-3 rounded-xl border border-[#C0C9BF]/50 bg-[#F6F3EC]/50 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0B4D2B]/30">
+                    </div>
 
-                <div class="flex flex-col gap-1.5">
-                    <label class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">Supplier</label>
-                    <input type="text" name="supplier" x-model="pembelianForm.supplier" maxlength="100" placeholder="Contoh: Pasar Induk"
-                           class="h-10 px-3 rounded-xl border border-[#C0C9BF]/50 bg-[#F6F3EC]/50 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0B4D2B]/30">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">Supplier</label>
+                        <input type="text" name="supplier" x-model="pembelianForm.supplier" maxlength="100" placeholder="Contoh: Pasar Induk"
+                               class="h-10 px-3 rounded-xl border border-[#C0C9BF]/50 bg-[#F6F3EC]/50 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0B4D2B]/30">
+                    </div>
                 </div>
 
                 <div class="flex flex-col gap-1.5">
@@ -423,10 +517,63 @@
                               class="px-3 py-2 rounded-xl border border-[#C0C9BF]/50 bg-[#F6F3EC]/50 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0B4D2B]/30"></textarea>
                 </div>
 
+                <div class="flex flex-col gap-2 border border-[#C0C9BF]/30 rounded-2xl p-4 bg-[#F6F3EC]/40">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <h4 class="text-xs font-bold text-[#1C1C18]">Rincian Bahan</h4>
+                            <p class="text-[10px] text-[#707971] mt-0.5">Isi bahan yang dibeli agar stok dan HPP ikut diperbarui.</p>
+                        </div>
+                        <button type="button" @click="tambahItemPembelian()"
+                                class="h-8 px-3 rounded-lg bg-[#B1F1C2] hover:bg-[#9fe4b2] text-[#0B4D2B] text-[10px] font-bold flex items-center gap-1 cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                            Tambah Bahan
+                        </button>
+                    </div>
+
+                    <template x-if="pembelianForm.items.length === 0">
+                        <div class="px-3 py-4 rounded-xl bg-white/70 border border-dashed border-[#C0C9BF] text-center text-[10px] font-semibold text-[#707971]">
+                            Belum ada rincian bahan. Pembelian tetap bisa disimpan sebagai catatan total saja.
+                        </div>
+                    </template>
+
+                    <div class="flex flex-col gap-2">
+                        <template x-for="(item, index) in pembelianForm.items" :key="index">
+                            <div class="grid grid-cols-12 gap-2 items-start bg-white/80 border border-[#C0C9BF]/30 rounded-xl p-2.5">
+                                <div class="col-span-12 sm:col-span-5">
+                                    <select :name="`items[${index}][bahan_baku_id]`" x-model="item.bahan_baku_id" @change="pilihBahanPembelian(index)" required
+                                            class="w-full h-9 px-2.5 rounded-lg border border-[#C0C9BF]/50 bg-white text-[11px] font-semibold focus:outline-none focus:ring-2 focus:ring-[#0B4D2B]/30">
+                                        <option value="">Pilih bahan</option>
+                                        <template x-for="bahan in bahanData" :key="bahan.id">
+                                            <option :value="bahan.id" x-text="`${bahan.nama} (${bahan.satuan})`"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="col-span-4 sm:col-span-2">
+                                    <input type="number" :name="`items[${index}][jumlah]`" x-model="item.jumlah" @input="hitungTotalPembelian()" min="0.001" step="0.001" required placeholder="Qty"
+                                           class="w-full h-9 px-2 rounded-lg border border-[#C0C9BF]/50 bg-white text-[11px] font-semibold focus:outline-none focus:ring-2 focus:ring-[#0B4D2B]/30">
+                                </div>
+                                <div class="col-span-5 sm:col-span-3">
+                                    <input type="number" :name="`items[${index}][harga_satuan]`" x-model="item.harga_satuan" @input="hitungTotalPembelian()" min="0" step="0.01" required placeholder="Harga satuan"
+                                           class="w-full h-9 px-2 rounded-lg border border-[#C0C9BF]/50 bg-white text-[11px] font-semibold focus:outline-none focus:ring-2 focus:ring-[#0B4D2B]/30">
+                                </div>
+                                <div class="col-span-3 sm:col-span-2 flex items-center justify-end gap-1.5">
+                                    <span class="text-[10px] font-bold text-[#7A5900] whitespace-nowrap" x-text="formatRupiah((parseFloat(item.jumlah) || 0) * (parseFloat(item.harga_satuan) || 0))"></span>
+                                    <button type="button" @click="hapusItemPembelian(index)"
+                                            class="w-8 h-9 rounded-lg bg-white border border-gray-200 text-[#93000A] hover:bg-[#FFDAD6]/60 flex items-center justify-center cursor-pointer flex-shrink-0" title="Hapus bahan">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
                 <div class="flex flex-col gap-1.5">
                     <label class="text-[10px] font-bold text-[#707971] uppercase tracking-wider">Total (Rp) <span class="text-[#93000A]">*</span></label>
-                    <input type="number" name="total" x-model="pembelianForm.total" min="0.01" step="0.01" required placeholder="0"
-                           class="h-10 px-3 rounded-xl border border-[#C0C9BF]/50 bg-[#F6F3EC]/50 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0B4D2B]/30">
+                    <input type="number" name="total" x-model="pembelianForm.total" :readonly="pembelianForm.items.length > 0" min="0.01" step="0.01" required placeholder="0"
+                           class="h-10 px-3 rounded-xl border border-[#C0C9BF]/50 bg-[#F6F3EC]/50 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0B4D2B]/30"
+                           :class="pembelianForm.items.length > 0 ? 'text-[#0B4D2B] font-bold' : ''">
+                    <span class="text-[10px] font-semibold text-[#707971]" x-show="pembelianForm.items.length > 0">Total dihitung otomatis dari rincian bahan.</span>
                 </div>
 
                 <div class="flex items-center justify-end gap-2 pt-1">
@@ -500,15 +647,23 @@ function arusKasApp() {
         hariIni: @js($hariIni),
         pembelianData: @json($pembelianJson),
         pengeluaranData: @json($pengeluaranJson),
+        bahanData: @json($bahanJson),
         pembelianSimpanUrl: @js(route('admin.arus-kas.pembelian.simpan')),
         pembelianUbahUrl: @js(route('admin.arus-kas.pembelian.ubah', ['pembelian' => '__ID__'])),
         pengeluaranSimpanUrl: @js(route('admin.arus-kas.pengeluaran.simpan')),
         pengeluaranUbahUrl: @js(route('admin.arus-kas.pengeluaran.ubah', ['pengeluaran' => '__ID__'])),
-        pembelianForm: { id: null, tanggal: '', supplier: '', keterangan: '', total: '' },
+        pembelianForm: { id: null, tanggal: '', supplier: '', keterangan: '', total: '', items: [] },
         pengeluaranForm: { id: null, tanggal: '', kategori: 'bahan_bakar', keterangan: '', jumlah: '' },
 
         bukaTambahPembelian() {
-            this.pembelianForm = { id: null, tanggal: this.hariIni, supplier: '', keterangan: '', total: '' };
+            this.pembelianForm = {
+                id: null,
+                tanggal: this.hariIni,
+                supplier: '',
+                keterangan: '',
+                total: '',
+                items: [],
+            };
             this.modalPembelian = true;
         },
 
@@ -521,8 +676,53 @@ function arusKasApp() {
                 supplier: baris.supplier || '',
                 keterangan: baris.keterangan || '',
                 total: baris.total,
+                items: (baris.items || []).map((item) => ({
+                    bahan_baku_id: item.bahan_baku_id,
+                    jumlah: item.jumlah,
+                    harga_satuan: item.harga_satuan,
+                })),
             };
             this.modalPembelian = true;
+        },
+
+        tambahItemPembelian() {
+            this.pembelianForm.items.push({
+                bahan_baku_id: '',
+                jumlah: '',
+                harga_satuan: '',
+            });
+        },
+
+        hapusItemPembelian(index) {
+            this.pembelianForm.items.splice(index, 1);
+            this.hitungTotalPembelian();
+        },
+
+        pilihBahanPembelian(index) {
+            const item = this.pembelianForm.items[index];
+            const bahan = this.bahanData.find((baris) => Number(baris.id) === Number(item.bahan_baku_id));
+
+            if (bahan && (item.harga_satuan === '' || Number(item.harga_satuan) === 0)) {
+                item.harga_satuan = bahan.harga_rata_rata || '';
+            }
+
+            this.hitungTotalPembelian();
+        },
+
+        hitungTotalPembelian() {
+            const total = this.pembelianForm.items.reduce((jumlah, item) => {
+                return jumlah + (parseFloat(item.jumlah) || 0) * (parseFloat(item.harga_satuan) || 0);
+            }, 0);
+
+            if (this.pembelianForm.items.length > 0) {
+                this.pembelianForm.total = total > 0 ? total.toFixed(2) : '';
+            }
+
+            return total;
+        },
+
+        formatRupiah(nilai) {
+            return 'Rp ' + new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(nilai) || 0);
         },
 
         bukaTambahPengeluaran() {

@@ -94,6 +94,12 @@ class StokService
                 ]);
             }
 
+            app(BahanStokService::class)->potongSaatPenjualan(
+                $terkunci,
+                $penggunaId ?? auth()->id(),
+                $keterangan
+            );
+
             DB::afterCommit(fn () => Realtime::emit(new MenuDiperbarui('stok')));
 
             return true;

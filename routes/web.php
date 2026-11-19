@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\BahanBakuController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EMenuController;
 use App\Http\Controllers\KasirController;
@@ -103,6 +104,14 @@ Route::get('/admin/analitik-laporan/ekspor-xlsx', [AdminController::class, 'eksp
     Route::post('/admin/arus-kas/pengeluaran', [LaporanKeuanganController::class, 'simpanPengeluaran'])->name('admin.arus-kas.pengeluaran.simpan');
     Route::put('/admin/arus-kas/pengeluaran/{pengeluaran}', [LaporanKeuanganController::class, 'ubahPengeluaran'])->name('admin.arus-kas.pengeluaran.ubah');
     Route::delete('/admin/arus-kas/pengeluaran/{pengeluaran}', [LaporanKeuanganController::class, 'hapusPengeluaran'])->name('admin.arus-kas.pengeluaran.hapus');
+
+    Route::get('/admin/bahan-baku', [BahanBakuController::class, 'index'])->name('admin.bahan-baku');
+    Route::post('/admin/bahan-baku', [BahanBakuController::class, 'simpan'])->name('admin.bahan-baku.simpan');
+    Route::put('/admin/bahan-baku/{bahan}', [BahanBakuController::class, 'ubah'])->name('admin.bahan-baku.ubah');
+    Route::delete('/admin/bahan-baku/{bahan}', [BahanBakuController::class, 'hapus'])->name('admin.bahan-baku.hapus');
+    Route::post('/admin/bahan-baku/{bahan}/stok', [BahanBakuController::class, 'sesuaikanStok'])->name('admin.bahan-baku.stok');
+    Route::get('/admin/bahan-baku/{bahan}/mutasi', [BahanBakuController::class, 'mutasi'])->name('admin.bahan-baku.mutasi');
+    Route::put('/admin/bahan-baku/{menu}/resep', [BahanBakuController::class, 'simpanResep'])->name('admin.bahan-baku.resep');
 
     Route::get('/admin/pengaturan-sistem', [PengaturanController::class, 'index'])->name('admin.pengaturan-sistem');
     Route::post('/admin/pengaturan-sistem', [PengaturanController::class, 'simpan'])->name('admin.pengaturan-sistem.simpan');

@@ -101,6 +101,24 @@
         </div>
     </div>
 
+    <div class="grid" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="card">
+            <div class="label">HPP (Standar Resep)</div>
+            <div class="value">Rp {{ number_format($ringkasan['hpp'], 0, ',', '.') }}</div>
+            <div class="note">Resep aktif × harga rata-rata bahan</div>
+        </div>
+        <div class="card">
+            <div class="label">Laba Kotor</div>
+            <div class="value {{ $ringkasan['laba_kotor'] < 0 ? 'negative' : '' }}">Rp {{ number_format($ringkasan['laba_kotor'], 0, ',', '.') }}</div>
+            <div class="note">Omzet lunas − HPP</div>
+        </div>
+        <div class="card">
+            <div class="label">Margin Laba Kotor</div>
+            <div class="value {{ $ringkasan['margin'] < 0 ? 'negative' : '' }}">{{ number_format($ringkasan['margin'], 1, ',', '.') }}%</div>
+            <div class="note">Dari omzet lunas</div>
+        </div>
+    </div>
+
     <h3>Rincian Pemasukan per Metode</h3>
     <table class="method-table">
         <thead>
@@ -148,6 +166,15 @@
                     <td>{{ $baris->pencatat?->nama ?? '-' }}</td>
                     <td class="num">Rp {{ number_format((float) $baris->total, 0, ',', '.') }}</td>
                 </tr>
+                @foreach ($baris->detail as $item)
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td>↳ {{ $item->bahan?->nama ?? '-' }} · {{ rtrim(rtrim(number_format((float) $item->jumlah, 3, ',', '.'), '0'), ',') }} {{ $item->bahan?->satuan ?? '' }}</td>
+                        <td></td>
+                        <td class="num">Rp {{ number_format((float) $item->subtotal, 0, ',', '.') }}</td>
+                    </tr>
+                @endforeach
             @empty
                 <tr><td colspan="5" class="empty">Belum ada pembelian bahan pada periode ini.</td></tr>
             @endforelse
@@ -197,6 +224,54 @@
         <span>Kas Keluar: <strong>Rp {{ number_format($ringkasan['total_keluar'], 0, ',', '.') }}</strong></span>
         <span>Arus Kas Bersih: <strong>Rp {{ number_format($ringkasan['arus_kas'], 0, ',', '.') }}</strong></span>
     </div>
+
+    <h3>HPP & Laba Kotor per Menu</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Menu</th>
+                <th class="num" style="width: 58px;">Terjual</th>
+                <th class="num" style="width: 90px;">Omzet</th>
+                <th class="num" style="width: 82px;">HPP / Unit</th>
+                <th class="num" style="width: 82px;">Total HPP</th>
+                <th class="num" style="width: 88px;">Laba Kotor</th>
+                <th class="num" style="width: 58px;">Margin</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse ($hpp['baris'] as $baris)
+                <tr>
+                    <td>
+                        {{ $baris['nama_menu'] }}
+                        @if ($baris['jumlah_bahan'] === 0)
+                            <span style="color: #93000A; font-size: 8px;">(resep belum diatur)</span>
+                        @endif
+                    </td>
+                    <td class="num">{{ number_format($baris['jumlah'], 0, ',', '.') }}</td>
+                    <td class="num">Rp {{ number_format($baris['omzet'], 0, ',', '.') }}</td>
+                    <td class="num">Rp {{ number_format($baris['hpp_satuan'], 0, ',', '.') }}</td>
+                    <td class="num">Rp {{ number_format($baris['total_hpp'], 0, ',', '.') }}</td>
+                    <td class="num">Rp {{ number_format($baris['laba_kotor'], 0, ',', '.') }}</td>
+                    <td class="num">{{ number_format($baris['margin'], 1, ',', '.') }}%</td>
+                </tr>
+            @empty
+                <tr><td colspan="7" class="empty">Belum ada penjualan lunas pada periode ini.</td></tr>
+            @endforelse
+        </tbody>
+        @if (count($hpp['baris']) > 0)
+            <tfoot>
+                <tr>
+                    <td>Total</td>
+                    <td></td>
+                    <td class="num">Rp {{ number_format($hpp['total_omzet'], 0, ',', '.') }}</td>
+                    <td></td>
+                    <td class="num">Rp {{ number_format($hpp['total_hpp'], 0, ',', '.') }}</td>
+                    <td class="num">Rp {{ number_format($hpp['laba_kotor'], 0, ',', '.') }}</td>
+                    <td class="num">{{ number_format($hpp['margin'], 1, ',', '.') }}%</td>
+                </tr>
+            </tfoot>
+        @endif
+    </table>
 
     <div class="signature">
         <div>

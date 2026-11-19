@@ -278,6 +278,8 @@ class PesananService
                 }
             }
 
+            app(BahanStokService::class)->kembalikanSaatPembatalan($terkunci, $userId, $alasan);
+
             $terkunci->update([
                 'status_pesanan' => Pesanan::STATUS_DIBATALKAN,
                 'void_by' => $userId,
