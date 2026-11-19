@@ -11,11 +11,14 @@ use App\Models\Menu;
 use App\Models\Pembayaran;
 use App\Models\PembelianBahan;
 use App\Models\Pengaturan;
+use App\Models\Pengeluaran;
 use App\Models\Pesanan;
 use App\Models\ResepMenu;
 use App\Models\User;
 use App\Services\BahanStokService;
 use App\Services\PesananService;
+use Database\Seeders\BahanBakuSeeder;
+use Database\Seeders\SituAwiSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use RuntimeException;
@@ -659,6 +662,43 @@ class BahanBakuFase2Test extends TestCase
             ->assertSee('Laba Kotor per Menu')
             ->assertSee($menuBerresep->nama_menu)
             ->assertSee('Rp 10.000');
+    }
+
+    public function test_seeder_bahan_baku_mengisi_master_resep_pembelian_dan_pengeluaran(): void
+    {
+        $this->seed(SituAwiSeeder::class);
+        $this->seed(BahanBakuSeeder::class);
+
+        $this->assertGreaterThan(0, BahanBaku::count());
+        $this->assertGreaterThan(0, ResepMenu::count());
+        $this->assertSame(0, Menu::doesntHave('resep')->count(), 'Semua menu harus punya resep.');
+        $this->assertSame(0, BahanBaku::where('stok', '<=', 0)->count(), 'Semua bahan harus punya stok.');
+        $this->assertSame(0, BahanBaku::where('harga_rata_rata', '<=', 0)->count(), 'Semua bahan harus punya harga rata-rata.');
+        $this->assertSame(0, BahanBaku::whereColumn('stok', '<=', 'stok_minimum')->count(), 'Stok awal harus di atas batas minimum.');
+        $this->assertGreaterThan(0, PembelianBahan::count());
+        $this->assertGreaterThan(0, (float) PembelianBahan::sum('total'));
+        $this->assertGreaterThan(0, Pengeluaran::count());
+
+        $menu = Menu::with('resep.bahan')
+            ->where('nama_menu', 'Nasi Rempah Ayam Sambel Rica')
+            ->firstOrFail();
+
+        $this->assertGreaterThan(0, $menu->hppSatuan());
+        $this->assertLessThan((float) $menu->harga, $menu->hppSatuan());
+
+        $admin = User::query()->where('role', 'admin')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('admin.bahan-baku'))
+            ->assertOk()
+            ->assertSee('Beras')
+            ->assertSee('Nasi Rempah Ayam Sambel Rica');
+
+        $this->actingAs($admin)
+            ->get(route('admin.arus-kas'))
+            ->assertOk()
+            ->assertSee('Pasar Induk Caringin')
+            ->assertSee('Sewa lahan dan bangunan saung');
     }
 
     public function test_pegawai_non_admin_tidak_bisa_mengakses_bahan_baku(): void
