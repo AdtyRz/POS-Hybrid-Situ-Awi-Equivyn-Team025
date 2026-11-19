@@ -82,7 +82,7 @@ class PesananService
                 $asal = $opsi['asal'] ?? 'api';
                 $metode = $opsi['metode'] ?? null;
 
-                if ($metode !== null && ! in_array($metode, ['tunai', 'qris'], true)) {
+                if ($metode !== null && ! in_array($metode, ['tunai', 'qris', 'transfer'], true)) {
                     throw new RuntimeException('Metode pembayaran tidak valid.');
                 }
 
@@ -124,6 +124,10 @@ class PesananService
                 }
 
                 $meja->update(['status_meja' => 'terisi']);
+
+                $pesanan->load('detailPesanan');
+
+                app(StokService::class)->potongSaatPesanan($pesanan, $opsi['kasir_id'] ?? auth()->id());
 
                 return $pesanan->load(['detailPesanan', 'meja']);
             });

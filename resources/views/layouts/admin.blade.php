@@ -248,17 +248,6 @@
 
                 <div class="flex items-center gap-2.5 sm:gap-4">
 
-                    <div class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#B1F1C2]/40 border border-[#B1F1C2] text-[10px] font-bold text-[#00341A]">
-                        <span class="w-2 h-2 rounded-full bg-[#0B4D2B] animate-pulse"></span>
-                        <span class="tracking-wide">HTTP API Online</span>
-                    </div>
-
-                    <div class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFDEA1]/50 border border-[#FFDEA1] text-[10px] font-bold text-[#261900]">
-                        <svg class="w-3.5 h-3.5 text-[#261900]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
-                        </svg>
-                        <span class="tracking-wide">{{ $totalNodeMeja }} Node Terdaftar</span>
-                    </div>
 
                     <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#F0EEE7] border border-[#C0C9BF]/20 text-xs font-semibold text-[#404941]">
                         <svg class="w-3.5 h-3.5 text-[#404941]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

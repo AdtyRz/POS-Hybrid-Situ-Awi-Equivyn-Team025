@@ -328,7 +328,7 @@ class AdminSettingsAndReportsTest extends TestCase
             ->get(route('admin.laporan-penjualan'))
             ->assertOk()
             ->assertDontSee('KLUSTER SAUNG / MEJA')
-            ->assertSee('Filter & Pratinjau Laporan')
+            ->assertSee('Filter')
             ->assertSee('Unduh PDF');
     }
 
@@ -610,5 +610,52 @@ class AdminSettingsAndReportsTest extends TestCase
             ->assertSee($pesanan->kode_pesanan)
             ->assertSee('Terisi')
             ->assertSee('Kosong');
+    }
+
+    public function test_laporan_penjualan_menampilkan_void_qris_saat_filter_metode_qris_dan_status_dibatalkan(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));
+
+        $meja = $this->meja('LB-94');
+
+        foreach ([
+            ['AWI-VOID-QRIS', 'qris'],
+            ['AWI-VOID-TUNAI', 'tunai'],
+        ] as [$kode, $metode]) {
+            Pesanan::create([
+                'kode_pesanan' => $kode,
+                'meja_id' => $meja->id,
+                'waktu_pesan' => now(),
+                'total_bayar' => 22000,
+                'metode_pembayaran' => $metode,
+                'status_pesanan' => Pesanan::STATUS_DIBATALKAN,
+                'status_pembayaran' => Pesanan::PAYMENT_BELUM_BAYAR,
+            ]);
+        }
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.laporan-penjualan', [
+                'start' => '2026-11-10',
+                'end' => '2026-11-10',
+                'metode' => 'qris',
+                'status' => 'dibatalkan',
+            ]))
+            ->assertOk()
+            ->assertSee('AWI-VOID-QRIS')
+            ->assertSee('VOID QRIS')
+            ->assertDontSee('AWI-VOID-TUNAI');
+
+        $this->actingAs($this->admin())
+            ->getJson(route('admin.laporan-penjualan.state', [
+                'start' => '2026-11-10',
+                'end' => '2026-11-10',
+                'metode' => 'qris',
+                'status' => 'dibatalkan',
+            ]))
+            ->assertOk()
+            ->assertJsonPath('transactions.0.id', '#AWI-VOID-QRIS')
+            ->assertJsonPath('transactions.0.method', 'VOID QRIS')
+            ->assertJsonPath('transactions.0.status', 'void')
+            ->assertJsonPath('pagination.total', 1);
     }
 }

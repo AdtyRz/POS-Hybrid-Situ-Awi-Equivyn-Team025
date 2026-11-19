@@ -94,18 +94,6 @@
             </div>
         </div>
 
-        <div class="hidden md:flex items-center">
-            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EBF5EE] border border-[#2E6A45]/30 shadow-xs">
-                <span class="relative flex h-2.5 w-2.5">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2E6A45] opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#2E6A45]"></span>
-                </span>
-                <span class="text-xs font-bold text-[#0B4D2B] tracking-wide">
-                    WebSocket Terhubung <span class="font-mono text-[11px] font-semibold text-[#0B4D2B]/80">(12ms)</span>
-                </span>
-            </div>
-        </div>
-
         <div class="flex items-center gap-4 sm:gap-6">
             <div class="text-right">
                 <div class="font-mono font-bold text-xl sm:text-2xl text-[#052E1B] tracking-tight leading-none" x-text="clock">

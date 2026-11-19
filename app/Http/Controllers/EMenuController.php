@@ -268,6 +268,7 @@ class EMenuController extends Controller
             'orderRef' => '#' . $inisial . '-' . $mejaMakan->id . '04',
             'punyaRiwayat' => count($riwayat) > 0 || $adaPesananSesi,
             'namaPelanggan' => (string) ($sesi->nama_pelanggan ?? ''),
+            'transfer' => $this->pengaturanTransfer(),
         ]);
     }
 
@@ -287,7 +288,7 @@ class EMenuController extends Controller
             'jumlah.*' => ['integer', 'min:0', 'max:99'],
             'catatan' => ['nullable', 'array'],
             'catatan.*' => ['nullable', 'string', 'max:255'],
-            'metode' => ['required', 'in:tunai,qris'],
+            'metode' => ['required', 'in:tunai,qris,transfer'],
             'nama_pelanggan' => [$namaTersimpan !== '' ? 'nullable' : 'required', 'string', 'max:100'],
             'idempotency_key' => ['nullable', 'string', 'max:64'],
         ], [
@@ -345,10 +346,13 @@ class EMenuController extends Controller
         if ($data['metode'] === 'qris') {
 
             return redirect()->route('emenu.verifikasi', $pesanan->kode_pesanan);
-        } else {
-
-            return redirect()->route('emenu.bayar-tunai', $pesanan->kode_pesanan);
         }
+
+        if ($data['metode'] === 'transfer') {
+            return redirect()->to($this->urlStatusPesanan($pesanan, true));
+        }
+
+        return redirect()->route('emenu.bayar-tunai', $pesanan->kode_pesanan);
     }
 
     public function status(Request $request, string $kode_pesanan): View|RedirectResponse
@@ -392,6 +396,12 @@ class EMenuController extends Controller
                 now()->addMinutes(self::MENIT_URL_STATUS),
                 ['kode_pesanan' => $pesanan->kode_pesanan],
             ),
+            'statusApiUrl' => URL::temporarySignedRoute(
+                'emenu.bayar-tunai.status',
+                now()->addMinutes(self::MENIT_URL_STATUS),
+                ['kode_pesanan' => $pesanan->kode_pesanan],
+            ),
+            'transfer' => $this->pengaturanTransfer(),
         ]);
     }
 
@@ -492,6 +502,7 @@ class EMenuController extends Controller
                 'status_pesanan' => $pesanan->status_pesanan,
                 'status_pembayaran' => $pesanan->status_pembayaran,
                 'message' => $pesanan->alasan_void ?: 'Pesanan sudah dibatalkan.',
+                'redirect' => $this->urlStatusPesanan($pesanan, true),
             ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
         }
 
@@ -569,6 +580,10 @@ class EMenuController extends Controller
             return redirect()->to($this->urlStatusPesanan($pesanan, true));
         }
 
+        if ($pesanan->status_pesanan === Pesanan::STATUS_DIBATALKAN) {
+            return redirect()->to($this->urlStatusPesanan($pesanan, true));
+        }
+
         if (! $this->pesananBolehDiakses($request, $pesanan)) {
             return $this->kunciRedirect($pesanan->meja, 'Sesi meja sudah berakhir. Masukkan kembali kode saung untuk membuka pesanan.');
         }
@@ -593,11 +608,15 @@ class EMenuController extends Controller
             ], 403);
         }
 
+        $dibatalkan = $pesanan->status_pesanan === Pesanan::STATUS_DIBATALKAN;
+
         return response()->json([
             'lunas' => $lunas,
+            'dibatalkan' => $dibatalkan,
             'status_pesanan' => $pesanan->status_pesanan,
             'status_pembayaran' => $pesanan->status_pembayaran,
-            'redirect' => $this->urlStatusPesanan($pesanan, $lunas),
+            'message' => $dibatalkan ? ($pesanan->alasan_void ?: 'Pesanan sudah dibatalkan.') : null,
+            'redirect' => $this->urlStatusPesanan($pesanan, true),
         ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }
 
@@ -985,6 +1004,15 @@ class EMenuController extends Controller
         $request->session()->forget('izin_ambil_alih_' . $meja->id);
 
         $this->klaimPerangkat($request, $sesi);
+    }
+
+    private function pengaturanTransfer(): array
+    {
+        return [
+            'bank' => (string) Pengaturan::nilai('transfer_bank', 'BCA'),
+            'nomor' => (string) Pengaturan::nilai('transfer_nomor_rekening', ''),
+            'atas_nama' => (string) Pengaturan::nilai('transfer_atas_nama', 'Saung Situ Awi'),
+        ];
     }
 
     private function cariMeja(string $meja): MejaMakan

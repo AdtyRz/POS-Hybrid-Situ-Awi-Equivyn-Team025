@@ -240,6 +240,20 @@
                         </button>
 
                         <button type="button"
+                                @click="activeFilter = 'waiting_transfer'"
+                                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition active:scale-95 shrink-0 min-h-[38px]"
+                                :class="activeFilter === 'waiting_transfer'
+                                    ? 'bg-[#EFF6FF] border border-[#93C5FD] text-[#1E40AF] font-bold shadow-xs'
+                                    : 'bg-[#F3EEDF] text-[#2B2A26] hover:bg-[#EAE4D3]'">
+                            <svg class="w-3.5 h-3.5 text-[#1E40AF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                            </svg>
+                            <span>Menunggu Transfer</span>
+                            <span class="inline-flex items-center px-1.5 py-0.2 rounded-full font-mono text-[10px] font-bold bg-[#DBEAFE] text-[#1E40AF] border border-[#93C5FD]" x-text="waitingTransferCount">
+                            </span>
+                        </button>
+
+                        <button type="button"
                                 @click="activeFilter = 'paid'"
                                 class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition active:scale-95 shrink-0 min-h-[38px]"
                                 :class="activeFilter === 'paid'
@@ -264,13 +278,6 @@
                             <span class="inline-flex items-center px-1.5 py-0.2 rounded-full font-mono text-[10px] font-bold bg-[#DFD7C4] text-[#6B6A63]" x-text="emptyCount">
                             </span>
                         </button>
-                    </div>
-
-                    <div class="hidden sm:flex items-center gap-1.5 text-[11px] text-[#6B6A63] shrink-0 pr-1">
-                        <svg class="w-3.5 h-3.5 text-[#0B4D2B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span>Pesanan via Scan QR Meja</span>
                     </div>
                     <a href="{{ route('kasir.pesanan.create') }}" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition active:scale-95 shrink-0 min-h-[38px] bg-[#F3EEDF] text-[#2B2A26] hover:bg-[#EAE4D3]">
                         <span>Tambah Pesanan</span>
@@ -314,10 +321,11 @@
                                   :class="{
                                       'bg-[#E0B24E]/20 text-[#C9982F] border border-[#E0B24E]/30': currentSaung.status === 'waiting_cash',
                                       'bg-[#E0B24E]/20 text-[#8A5A00] border border-[#E0B24E]/40': currentSaung.status === 'waiting_qris',
+                                      'bg-[#EFF6FF] text-[#1E40AF] border border-[#93C5FD]': currentSaung.status === 'waiting_transfer',
                                       'bg-[#ECFDF5] text-[#065F46] border border-[#6EE7B7]': currentSaung.status === 'paid',
                                       'bg-[#EAE4D3] text-[#6B6A63]': currentSaung.status === 'empty'
                                   }"
-                                  x-text="currentSaung.status === 'empty' ? 'Kosong' : (currentSaung.status === 'paid' ? 'Lunas' : (currentSaung.status === 'waiting_qris' ? 'QRIS' : 'Aktif'))">
+                                  x-text="currentSaung.status === 'empty' ? 'Kosong' : (currentSaung.status === 'paid' ? 'Lunas' : (currentSaung.status === 'waiting_qris' ? 'QRIS' : (currentSaung.status === 'waiting_transfer' ? 'Transfer' : 'Aktif')))">
                             </span>
                         </div>
 
@@ -371,18 +379,22 @@
                                          ? 'bg-[#FBF3DD] border-[#E0B24E]/40 text-[#C9982F]'
                                          : (currentSaung.status === 'waiting_qris'
                                              ? 'bg-[#FFF7E0] border-[#E0B24E]/50 text-[#8A5A00]'
-                                             : (currentSaung.status === 'paid'
-                                                 ? 'bg-[#ECFDF5] border-[#6EE7B7] text-[#065F46]'
-                                                 : 'bg-[#E8F0E9] border-[#A7C4AB] text-[#0B4D2B]'))">
+                                             : (currentSaung.status === 'waiting_transfer'
+                                                 ? 'bg-[#EFF6FF] border-[#93C5FD] text-[#1E40AF]'
+                                                 : (currentSaung.status === 'paid'
+                                                     ? 'bg-[#ECFDF5] border-[#6EE7B7] text-[#065F46]'
+                                                     : 'bg-[#E8F0E9] border-[#A7C4AB] text-[#0B4D2B]')))">
                                     <span class="w-2 h-2 rounded-full"
-                                          :class="currentSaung.status === 'waiting_cash' || currentSaung.status === 'waiting_qris' ? 'bg-[#E0B24E] animate-pulse' : (currentSaung.status === 'paid' ? 'bg-[#059669]' : 'bg-[#0B4D2B]')"></span>
+                                          :class="currentSaung.status === 'waiting_cash' || currentSaung.status === 'waiting_qris' ? 'bg-[#E0B24E] animate-pulse' : (currentSaung.status === 'waiting_transfer' ? 'bg-[#2563EB] animate-pulse' : (currentSaung.status === 'paid' ? 'bg-[#059669]' : 'bg-[#0B4D2B]'))"></span>
                                     <span x-text="currentSaung.status === 'waiting_cash'
                                         ? 'WAITING_CASH (Opsi Bayar Tunai di Kasir)'
                                         : (currentSaung.status === 'waiting_qris'
                                             ? 'MENUNGGU PEMBAYARAN QRIS'
-                                            : (currentSaung.status === 'paid'
-                                                ? 'SUDAH LUNAS (Transaksi Terverifikasi)'
-                                                : 'PESANAN SEDANG DIPROSES'))"></span>
+                                            : (currentSaung.status === 'waiting_transfer'
+                                                ? 'MENUNGGU KONFIRMASI TRANSFER BANK'
+                                                : (currentSaung.status === 'paid'
+                                                    ? 'SUDAH LUNAS (Transaksi Terverifikasi)'
+                                                    : 'PESANAN SEDANG DIPROSES')))"></span>
                                 </div>
                             </div>
                         </template>
@@ -598,6 +610,38 @@
                         </div>
                     </template>
 
+                    <template x-if="currentSaung.status === 'waiting_transfer'">
+                        <div class="space-y-2 pt-1 border-t border-[#C8C2B3]/30">
+                            <div class="bg-[#EFF6FF] border border-[#93C5FD] rounded-xl p-3 space-y-2">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-[11px] font-extrabold uppercase tracking-wide text-[#1E40AF]">Transfer Bank</span>
+                                    <span class="px-2 py-0.5 rounded-full bg-white border border-[#93C5FD] text-[9px] font-extrabold text-[#1E40AF]">Menunggu Konfirmasi</span>
+                                </div>
+                                <div class="space-y-1 text-xs">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="text-[#6B6A63]">Bank</span>
+                                        <strong class="text-[#00341A]" x-text="transferSettings.bank || '-'"></strong>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="text-[#6B6A63]">Nomor Rekening</span>
+                                        <strong class="font-mono text-[#00341A]" x-text="transferSettings.nomor || 'Belum diatur'"></strong>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="text-[#6B6A63]">Atas Nama</span>
+                                        <strong class="text-[#00341A]" x-text="transferSettings.atas_nama || '-'"></strong>
+                                    </div>
+                                </div>
+                                <div class="bg-white rounded-lg border border-[#BFDBFE] p-2 text-center">
+                                    <p class="text-[9px] font-bold uppercase tracking-wider text-[#1E40AF]">Nominal Transfer</p>
+                                    <p class="font-extrabold text-lg text-[#00341A]" x-text="formatRupiah(currentSaung.total)"></p>
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-[#6B6A63] leading-relaxed">
+                                Pastikan dana sudah masuk ke rekening resto sebelum menekan tombol konfirmasi transfer.
+                            </p>
+                        </div>
+                    </template>
+
                     <div class="space-y-2 pt-1">
 
                         <template x-if="currentSaung.status === 'paid'">
@@ -608,7 +652,7 @@
                                     </svg>
                                     <span>TRANSAKSI SELESAI — SUDAH LUNAS</span>
                                 </div>
-                                <p class="text-[11px] text-[#047857]" x-text="'Metode: ' + (currentSaung.paymentType === 'qris' ? 'QRIS Midtrans' : (currentSaung.paymentType === 'campuran' ? 'Campuran' : 'Tunai Kasir'))"></p>
+                                <p class="text-[11px] text-[#047857]" x-text="'Metode: ' + (currentSaung.paymentType === 'qris' ? 'QRIS Midtrans' : (currentSaung.paymentType === 'transfer' ? 'Transfer Bank' : (currentSaung.paymentType === 'campuran' ? 'Campuran' : 'Tunai Kasir')))"></p>
                                 <p class="text-[11px] text-[#6B6A63]"
                                    x-text="currentTable && currentTable.orderCount === 0
                                        ? 'Semua pesanan sesi ini sudah selesai. Tekan Akhiri Sesi Meja untuk menutup sesi.'
@@ -616,15 +660,31 @@
                             </div>
                         </template>
 
-                        <button type="button"
-                                @click="confirmPayment()"
-                                :disabled="currentSaung.status === 'empty' || currentSaung.status === 'paid' || (currentSaung.status === 'waiting_cash' && cashReceived < currentSaung.total)"
-                                class="w-full py-3.5 px-4 rounded-xl bg-[#0B4D2B] hover:bg-[#0A4A28] disabled:bg-gray-400 disabled:cursor-not-allowed text-[#FBF3DD] font-extrabold text-xs tracking-wider uppercase flex items-center justify-center gap-2 shadow-sm transition active:scale-98 min-h-[48px]">
-                            <svg class="w-4 h-4 text-[#FBF3DD]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span x-text="currentSaung.status === 'paid' ? 'SUDAH LUNAS' : 'KONFIRMASI LUNAS (ENTER)'"></span>
-                        </button>
+                        <template x-if="currentSaung.status === 'waiting_qris'">
+                            <div class="bg-[#FFF7E0] border-2 border-[#E0B24E] rounded-xl p-4 text-center space-y-1">
+                                <div class="flex items-center justify-center gap-2 text-[#8A5A00] font-extrabold text-sm">
+                                    <svg class="w-5 h-5 text-[#C9982F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <span>MENUNGGU PEMBAYARAN QRIS</span>
+                                </div>
+                                <p class="text-[11px] text-[#8A5A00]/80 leading-relaxed">
+                                    Konfirmasi pembayaran QRIS dilakukan otomatis oleh Midtrans. Tombol konfirmasi manual hanya tersedia untuk pembayaran Tunai dan Transfer.
+                                </p>
+                            </div>
+                        </template>
+
+                        <template x-if="currentSaung.status === 'waiting_cash' || currentSaung.status === 'waiting_transfer'">
+                            <button type="button"
+                                    @click="confirmPayment()"
+                                    :disabled="currentSaung.status === 'waiting_cash' && cashReceived < currentSaung.total"
+                                    class="w-full py-3.5 px-4 rounded-xl bg-[#0B4D2B] hover:bg-[#0A4A28] disabled:bg-gray-400 disabled:cursor-not-allowed text-[#FBF3DD] font-extrabold text-xs tracking-wider uppercase flex items-center justify-center gap-2 shadow-sm transition active:scale-98 min-h-[48px]">
+                                <svg class="w-4 h-4 text-[#FBF3DD]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span x-text="currentSaung.status === 'waiting_transfer' ? 'KONFIRMASI TRANSFER DITERIMA' : 'KONFIRMASI LUNAS (ENTER)'"></span>
+                            </button>
+                        </template>
 
                         <div class="grid grid-cols-2 gap-2">
                             <button type="button"
@@ -663,21 +723,6 @@
 
     </main>
 
-    <form id="formBayar" method="POST" action="{{ route('kasir.pembayaran.store') }}" class="hidden">
-        @csrf
-        <input type="hidden" name="kode_pesanan" :value="currentSaung.kodePesanan">
-        <input type="hidden" name="metode_pembayaran" value="tunai">
-        <input type="hidden" name="jumlah_bayar" :value="cashReceived">
-    </form>
-    <form id="formSelesaikanSesi" method="POST" :action="sesiTutupTemplate.replace('__MEJA__', currentSaung.id)" class="hidden">
-        @csrf
-        @method('PATCH')
-    </form>
-    <form id="formBatal" method="POST" :action="statusUrl" class="hidden">
-        @csrf
-        @method('PATCH')
-        <input type="hidden" name="status_pesanan" value="dibatalkan">
-    </form>
     <form id="formLock" method="POST" action="{{ route('kasir.lock') }}" class="hidden">
         @csrf
     </form>
@@ -865,7 +910,7 @@
 
                                     <div class="mt-1.5 flex items-center justify-between text-[9px] text-[#6B6A63]">
                                         <span x-text="'Subtotal: ' + formatRupiah(order.subtotal)"></span>
-                                        <span x-text="order.metode_pembayaran === 'qris' ? 'QRIS Midtrans' : 'Tunai Kasir'"></span>
+                                        <span x-text="order.metode_pembayaran === 'qris' ? 'QRIS Midtrans' : (order.metode_pembayaran === 'transfer' ? 'Transfer Bank' : 'Tunai Kasir')"></span>
                                     </div>
                                 </div>
                             </div>
@@ -926,6 +971,9 @@
                 cashReceived: 0,
                 _lastNumpadTime: 0,
                 _stateLoading: false,
+                _voidLoading: false,
+                _paymentLoading: false,
+                _sessionLoading: false,
                 isPrinting: false,
                 isLocked: false,
                 stateUrl: @json(route('kasir.state')),
@@ -941,6 +989,7 @@
                 printLogo: @json($printLogo),
                 logoSrc: @json($logoSrc),
                 paperSize: @json($paperSize),
+                transferSettings: @json($transfer),
 
                 receiptModal: {
                     open: false,
@@ -1037,17 +1086,16 @@
                     return this.saungs.filter(s => s.status === 'waiting_cash').length;
                 },
 
+                get waitingTransferCount() {
+                    return this.saungs.filter(s => s.status === 'waiting_transfer').length;
+                },
+
                 get paidCount() {
                     return this.saungs.filter(s => s.status === 'paid').length;
                 },
 
                 get emptyCount() {
                     return this.saungs.filter(s => s.status === 'empty').length;
-                },
-
-                get statusUrl() {
-                    if (!this.currentSaung || !this.currentSaung.kodePesanan) return '#';
-                    return this.statusUrlTemplate.replace('__KODE__', this.currentSaung.kodePesanan);
                 },
 
                 getClusterSaungs(prefix) {
@@ -1082,6 +1130,7 @@
                 isSaungVisible(saung) {
                     if (this.activeFilter === 'all') return true;
                     if (this.activeFilter === 'waiting_cash') return saung.status === 'waiting_cash';
+                    if (this.activeFilter === 'waiting_transfer') return saung.status === 'waiting_transfer';
                     if (this.activeFilter === 'paid') return saung.status === 'paid';
                     if (this.activeFilter === 'empty') return saung.status === 'empty';
                     return true;
@@ -1382,14 +1431,83 @@
                 },
 
                 confirmPayment() {
-                    if (! this.currentSaung || this.currentSaung.status !== 'waiting_cash') return;
+                    if (! this.currentSaung) return;
+
+                    if (this.currentSaung.status === 'waiting_transfer') {
+                        this.prosesPembayaran('transfer');
+                        return;
+                    }
+
+                    if (this.currentSaung.status !== 'waiting_cash') return;
 
                     if (Number(this.cashReceived) < Number(this.currentSaung.total)) {
                         this.showToast('danger', 'Uang Kurang', 'Uang diterima belum mencukupi total tagihan.');
                         return;
                     }
 
-                    document.getElementById('formBayar').requestSubmit();
+                    this.prosesPembayaran('tunai');
+                },
+
+                async prosesPembayaran(metode) {
+                    if (this._paymentLoading) return;
+
+                    const saung = this.currentSaung;
+
+                    if (! saung || ! saung.kodePesanan) return;
+
+                    const kodePesanan = saung.kodePesanan;
+                    const namaMeja = saung.name;
+                    const jumlahBayar = metode === 'transfer'
+                        ? Number(saung.total)
+                        : Number(this.cashReceived);
+
+                    this._paymentLoading = true;
+
+                    try {
+                        const response = await fetch(@json(route('kasir.pembayaran.store')), {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                            },
+                            credentials: 'same-origin',
+                            body: JSON.stringify({
+                                kode_pesanan: kodePesanan,
+                                metode_pembayaran: metode,
+                                jumlah_bayar: jumlahBayar,
+                            }),
+                        });
+
+                        const data = await response.json().catch(() => ({}));
+
+                        if (! response.ok) {
+                            this.showToast(
+                                'danger',
+                                'Pembayaran Gagal',
+                                data.message || 'Pembayaran tidak dapat dikonfirmasi.'
+                            );
+                            return;
+                        }
+
+                        this.cashReceived = 0;
+                        this.showToast(
+                            'success',
+                            'Pembayaran Lunas',
+                            data.message || `${namaMeja} • ${kodePesanan} berhasil dibayar.`
+                        );
+
+                        await this.refreshKasirState();
+                    } catch (error) {
+                        this.showToast(
+                            'danger',
+                            'Pembayaran Gagal',
+                            'Koneksi bermasalah. Pembayaran belum dikonfirmasi.'
+                        );
+                    } finally {
+                        this._paymentLoading = false;
+                    }
                 },
 
                 async tandaiStrukTercetak(saung, kodePesanan) {
@@ -1482,9 +1600,142 @@
                     this.confirmModal.open = false;
 
                     if (action === 'session') {
-                        document.getElementById('formSelesaikanSesi')?.requestSubmit();
+                        this.prosesAkhiriSesi();
                     } else if (action === 'void') {
-                        document.getElementById('formBatal')?.requestSubmit();
+                        this.prosesPembatalan();
+                    }
+                },
+
+                async prosesAkhiriSesi() {
+                    if (this._sessionLoading) return;
+
+                    const table = this.currentTable;
+
+                    if (! table) return;
+
+                    const kodeMeja = table.id;
+                    const namaMeja = table.name;
+
+                    this._sessionLoading = true;
+
+                    try {
+                        const response = await fetch(
+                            this.sesiTutupTemplate.replace('__MEJA__', encodeURIComponent(kodeMeja)), {
+                                method: 'PATCH',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                                },
+                                credentials: 'same-origin',
+                                body: JSON.stringify({}),
+                            }
+                        );
+
+                        const data = await response.json().catch(() => ({}));
+
+                        if (! response.ok) {
+                            this.showToast(
+                                'danger',
+                                'Gagal Mengakhiri Sesi',
+                                data.message || 'Sesi meja belum dapat diakhiri.'
+                            );
+                            return;
+                        }
+
+                        this.cashReceived = 0;
+                        this.showToast(
+                            'success',
+                            'Sesi Diakhiri',
+                            data.message || `${namaMeja} berhasil dikosongkan.`
+                        );
+
+                        await this.refreshKasirState();
+                    } catch (error) {
+                        this.showToast(
+                            'danger',
+                            'Gagal Mengakhiri Sesi',
+                            'Koneksi bermasalah. Sesi meja belum diakhiri.'
+                        );
+                    } finally {
+                        this._sessionLoading = false;
+                    }
+                },
+
+                async prosesPembatalan() {
+                    if (this._voidLoading) return;
+
+                    const saung = this.currentSaung;
+
+                    if (! saung || ! saung.kodePesanan) return;
+
+                    const kodePesanan = saung.kodePesanan;
+                    const namaMeja = saung.name;
+
+                    this._voidLoading = true;
+
+                    try {
+                        const response = await fetch(
+                            this.statusUrlTemplate.replace('__KODE__', encodeURIComponent(kodePesanan)), {
+                                method: 'PATCH',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                                },
+                                credentials: 'same-origin',
+                                body: JSON.stringify({
+                                    status_pesanan: 'dibatalkan',
+                                    alasan: 'Dibatalkan kasir dari terminal POS.',
+                                }),
+                            }
+                        );
+
+                        const data = await response.json().catch(() => ({}));
+
+                        if (! response.ok) {
+                            this.showToast(
+                                'danger',
+                                'Gagal Membatalkan',
+                                data.message || 'Pesanan tidak dapat dibatalkan.'
+                            );
+                            return;
+                        }
+
+                        const table = this.currentTable;
+
+                        if (table) {
+                            table.orders = (table.orders || []).filter(
+                                order => order.kodePesanan !== kodePesanan
+                            );
+                            table.orderCount = table.orders.length;
+                            table.unpaidOrderCount = table.orders.filter(
+                                order => order.status !== 'paid'
+                            ).length;
+                        }
+
+                        if (this.selectedOrderKode === kodePesanan) {
+                            this.selectedOrderKode = this.defaultOrderKode(table);
+                            this.cashReceived = 0;
+                        }
+
+                        this.showToast(
+                            'success',
+                            'Pesanan Dibatalkan',
+                            `${namaMeja} • ${kodePesanan} berhasil dibatalkan.`
+                        );
+
+                        await this.refreshKasirState();
+                    } catch (error) {
+                        this.showToast(
+                            'danger',
+                            'Gagal Membatalkan',
+                            'Koneksi bermasalah. Pesanan belum dibatalkan.'
+                        );
+                    } finally {
+                        this._voidLoading = false;
                     }
                 },
 
@@ -1513,7 +1764,7 @@
 
                     const isInputActive = e.target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
 
-                    if (e.key === 'Enter' && this.currentSaung.status === 'waiting_cash') {
+                    if (e.key === 'Enter' && ['waiting_cash', 'waiting_transfer'].includes(this.currentSaung.status)) {
                         e.preventDefault();
                         this.confirmPayment();
                         return;

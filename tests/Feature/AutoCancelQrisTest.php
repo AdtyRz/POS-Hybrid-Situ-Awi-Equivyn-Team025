@@ -2,9 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\Kategori;
 use App\Models\MejaMakan;
+use App\Models\Menu;
 use App\Models\Pengaturan;
 use App\Models\Pesanan;
+use App\Services\PesananService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -107,5 +110,49 @@ class AutoCancelQrisTest extends TestCase
             ->assertExitCode(0);
 
         $this->assertSame(Pesanan::STATUS_MENUNGGU_PEMBAYARAN, $pesanan->fresh()->status_pesanan);
+    }
+
+    public function test_auto_cancel_qris_mengembalikan_stok_yang_dipotong_saat_checkout(): void
+    {
+        Pengaturan::simpanBanyak(['midtrans_auto_cancel' => true]);
+
+        $kategori = Kategori::create([
+            'nama_kategori' => 'Makanan Auto Cancel',
+            'target_kds' => 'dapur',
+        ]);
+
+        $menu = Menu::create([
+            'kategori_id' => $kategori->id,
+            'nama_menu' => 'Nasi Auto Cancel',
+            'slug' => 'nasi-auto-cancel',
+            'harga' => 25000,
+            'stok_menu' => 10,
+            'is_aktif' => true,
+        ]);
+
+        $pesanan = app(PesananService::class)->buat(
+            $this->meja(),
+            [$menu->id => 2],
+            [],
+            ['asal' => 'emenu', 'metode' => 'qris', 'nama_pelanggan' => 'Tamu QRIS'],
+        );
+
+        $pesanan->update(['qris_expires_at' => now()->subMinute()]);
+
+        $this->assertSame(8, (int) $menu->fresh()->stok_menu);
+
+        $this->artisan('pesanan:batalkan-kedaluwarsa')
+            ->expectsOutputToContain('Dibatalkan: 1')
+            ->assertExitCode(0);
+
+        $pesanan->refresh();
+
+        $this->assertSame(Pesanan::STATUS_DIBATALKAN, $pesanan->status_pesanan);
+        $this->assertSame(10, (int) $menu->fresh()->stok_menu);
+        $this->assertDatabaseHas('stok_mutasi', [
+            'pesanan_id' => $pesanan->id,
+            'jenis' => 'pembatalan',
+            'jumlah_delta' => 2,
+        ]);
     }
 }

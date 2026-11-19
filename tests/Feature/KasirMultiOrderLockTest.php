@@ -275,6 +275,37 @@ class KasirMultiOrderLockTest extends TestCase
         $this->assertSame(Pesanan::STATUS_DIPROSES, $pesanan->status_pesanan);
     }
 
+    public function test_pembayaran_tunai_via_json_tidak_redirect_dan_melunasi_pesanan(): void
+    {
+        $kasir = $this->kasir();
+        $meja = $this->meja();
+        $menu = $this->menu();
+
+        $pesanan = $this->pesanan($meja, $menu, 1, [
+            'asal' => 'emenu',
+            'metode' => 'tunai',
+        ]);
+
+        $response = $this->actingAs($kasir)
+            ->postJson(route('kasir.pembayaran.store'), [
+                'kode_pesanan' => $pesanan->kode_pesanan,
+                'metode_pembayaran' => 'tunai',
+                'jumlah_bayar' => (float) $pesanan->total_bayar,
+            ])
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('kode_pesanan', $pesanan->kode_pesanan)
+            ->assertJsonPath('status_pembayaran', Pesanan::PAYMENT_SUDAH_BAYAR);
+
+        $this->assertNull($response->headers->get('Location'));
+
+        $pesanan->refresh();
+
+        $this->assertSame($kasir->id, $pesanan->kasir_id);
+        $this->assertSame(Pesanan::PAYMENT_SUDAH_BAYAR, $pesanan->status_pembayaran);
+        $this->assertSame(Pesanan::STATUS_DIPROSES, $pesanan->status_pesanan);
+    }
+
     public function test_tandai_struk_hanya_memilih_order_yang_dicentang_dan_mengisi_kasir(): void
     {
         $kasir = $this->kasir();
@@ -329,6 +360,29 @@ class KasirMultiOrderLockTest extends TestCase
 
         $this->assertSame(Pesanan::STATUS_DIPROSES, $pesanan->fresh()->status_pesanan);
         $this->assertNull($pesanan->fresh()->void_at);
+    }
+
+    public function test_pembatalan_pesanan_belum_lunas_via_json_tanpa_redirect(): void
+    {
+        $kasir = $this->kasir();
+        $meja = $this->meja();
+        $menu = $this->menu();
+        $pesanan = $this->pesanan($meja, $menu);
+
+        $response = $this->actingAs($kasir)
+            ->patchJson(route('pesanan.status', $pesanan->kode_pesanan), [
+                'status_pesanan' => 'dibatalkan',
+                'alasan' => 'Salah input kasir',
+            ])
+            ->assertOk()
+            ->assertJsonPath('status', 'ok')
+            ->assertJsonPath('pesanan.status_pesanan', Pesanan::STATUS_DIBATALKAN);
+
+        $this->assertNull($response->headers->get('Location'));
+        $this->assertSame(Pesanan::STATUS_DIBATALKAN, $pesanan->fresh()->status_pesanan);
+        $this->assertSame($kasir->id, $pesanan->fresh()->void_by);
+        $this->assertSame('Salah input kasir', $pesanan->fresh()->alasan_void);
+        $this->assertNotNull($pesanan->fresh()->void_at);
     }
 
     public function test_kartu_kasir_tetap_menampilkan_sesi_setelah_semua_pesanan_selesai(): void
@@ -474,5 +528,39 @@ class KasirMultiOrderLockTest extends TestCase
             ->json('version');
 
         $this->assertNotSame($awal, $akhir);
+    }
+
+    public function test_pesanan_qris_belum_bayar_memakai_status_menunggu_qris_di_kasir(): void
+    {
+        $this->withoutVite();
+
+        $kasir = $this->kasir();
+        $meja = $this->meja('LB-74');
+        $menu = $this->menu();
+
+        $pesanan = $this->pesanan($meja, $menu, 1, ['metode' => 'qris']);
+
+        $response = $this->actingAs($kasir)
+            ->get(route('kasir.dashboard'))
+            ->assertOk();
+
+        $saung = collect($response->viewData('saungsJson'))
+            ->firstWhere('id', $meja->kode_meja);
+
+        $this->assertSame('waiting_qris', $saung['status']);
+        $this->assertSame('qris', $saung['paymentType']);
+        $this->assertSame(
+            'waiting_qris',
+            $saung['orders']->firstWhere('kodePesanan', $pesanan->kode_pesanan)['status'],
+        );
+
+        $state = $this->actingAs($kasir)
+            ->getJson(route('kasir.state'))
+            ->assertOk()
+            ->json('saungs');
+
+        $saungState = collect($state)->firstWhere('id', $meja->kode_meja);
+
+        $this->assertSame('waiting_qris', $saungState['status']);
     }
 }

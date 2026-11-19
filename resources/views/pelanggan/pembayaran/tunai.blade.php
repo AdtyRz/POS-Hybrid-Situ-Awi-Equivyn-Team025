@@ -180,6 +180,16 @@
                         window.setTimeout(function () {
                             window.location.replace(data.redirect || statusPageUrl);
                         }, 500);
+                        return;
+                    }
+
+                    if (data.dibatalkan || data.status_pesanan === 'dibatalkan') {
+                        selesai = true;
+                        statusElement.className = 'mt-3 inline-flex items-center gap-2 rounded-full bg-red-100 px-3 py-1.5 text-xs font-bold text-red-700';
+                        statusElement.innerHTML = '<span class="h-2 w-2 rounded-full bg-red-600"></span>Pesanan dibatalkan, membuka status pesanan...';
+                        window.setTimeout(function () {
+                            window.location.replace(data.redirect || statusPageUrl);
+                        }, 500);
                     }
                 } catch (error) {
                     return;

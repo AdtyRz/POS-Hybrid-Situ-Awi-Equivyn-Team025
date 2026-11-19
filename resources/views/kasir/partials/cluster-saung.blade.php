@@ -54,7 +54,14 @@
                                 </span>
                             </template>
 
-                            <template x-if="!saung.hasAlert && !['waiting_cash', 'paid', 'empty'].includes(saung.status)">
+                            <template x-if="!saung.hasAlert && saung.status === 'waiting_transfer'">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#EFF6FF] border border-[#93C5FD] text-[#1E40AF]">
+                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                                    <span>Menunggu Transfer</span>
+                                </span>
+                            </template>
+
+                            <template x-if="!saung.hasAlert && !['waiting_cash', 'waiting_transfer', 'paid', 'empty'].includes(saung.status)">
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F0E9] border border-[#A7C4AB] text-[#0B4D2B]">
                                     <span class="w-1.5 h-1.5 rounded-full bg-[#0B4D2B]"></span>
                                     <span>Terisi</span>
@@ -64,7 +71,7 @@
                             <template x-if="!saung.hasAlert && saung.status === 'paid'">
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ECFDF5] border border-[#6EE7B7] text-[#065F46]">
                                     <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                    <span x-text="saung.paymentType === 'qris' ? 'Lunas (QRIS)' : (saung.paymentType === 'campuran' ? 'Lunas (Campuran)' : 'Lunas (Tunai)')"></span>
+                                    <span x-text="saung.paymentType === 'qris' ? 'Lunas (QRIS)' : (saung.paymentType === 'transfer' ? 'Lunas (Transfer)' : (saung.paymentType === 'campuran' ? 'Lunas (Campuran)' : 'Lunas (Tunai)'))"></span>
                                 </span>
                             </template>
 

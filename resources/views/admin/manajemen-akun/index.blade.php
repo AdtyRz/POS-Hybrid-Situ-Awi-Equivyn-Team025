@@ -13,11 +13,6 @@
                 <span>/</span>
                 <span class="text-[#0B4D2B]">Keamanan &amp; Staf</span>
             </div>
-
-            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0B4D2B] text-[10px] font-bold text-white shadow-2xs">
-                <span class="w-2 h-2 rounded-full bg-[#FFDEA1]"></span>
-                <span class="tracking-wide">FR-001 • PB-001 • LARAVEL BREEZE / SANCTUM GUARD</span>
-            </div>
         </div>
 
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pt-1">

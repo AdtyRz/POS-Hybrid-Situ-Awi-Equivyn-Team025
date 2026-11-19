@@ -479,7 +479,7 @@ class PelayanDashboardTest extends TestCase
         $this->assertSame(Pesanan::PAYMENT_PENDING_VERIFIKASI, $pesanan->status_pembayaran);
         $this->assertSame('qris', $pesanan->metode_pembayaran);
         $this->assertDatabaseMissing('pembayaran', ['pesanan_id' => $pesanan->id]);
-        $this->assertSame(6, (int) $menu->fresh()->stok_menu);
+        $this->assertSame(4, (int) $menu->fresh()->stok_menu);
 
 
         $this->assertFalse(

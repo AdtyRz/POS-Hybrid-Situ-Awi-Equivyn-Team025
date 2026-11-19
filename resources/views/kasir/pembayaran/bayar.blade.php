@@ -4,12 +4,14 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Pembayaran Pesanan</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
 </head>
 
-<body class="min-h-screen bg-[#FBF8F1] p-4">
+<body class="min-h-screen bg-[#FBF8F1] p-4" x-data="bayarPage()">
+    <style>[x-cloak] { display: none !important; }</style>
     <div class="max-w-md mx-auto">
         <header class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-3">
@@ -37,6 +39,37 @@
         <h1 class="font-display font-bold text-2xl text-[#052E1B] mb-2">Pembayaran Meja {{ $pesanan->meja->kode_meja }}</h1>
         <p class="text-stone-500 text-sm mb-6">Pemesan: <span class="font-bold text-stone-700">{{ $pesanan->nama_pelanggan ?: 'Tamu' }}</span> &middot; {{ $pesanan->meja->area }}</p>
 
+        <div x-show="sukses" x-cloak class="bg-[#ECFDF5] border border-[#6EE7B7] rounded-2xl p-6 mb-4">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl bg-forest-100 text-forest-700 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="font-bold text-forest-900">Pembayaran Berhasil</p>
+                    <p class="text-forest-700 text-sm mt-1" x-text="sukses"></p>
+                    <p class="text-forest-600 text-xs mt-1" x-show="kodePesanan">
+                        Kode pesanan: <span class="font-mono font-bold" x-text="kodePesanan"></span>
+                    </p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-4">
+                <a :href="cariUrl"
+                   class="px-3 py-2.5 rounded-xl bg-white border border-forest-200 text-forest-800 text-xs font-bold text-center hover:bg-forest-50 transition">
+                    Bayar Pesanan Lain
+                </a>
+                <a :href="dashboardUrl"
+                   class="px-3 py-2.5 rounded-xl bg-forest-900 text-white text-xs font-bold text-center hover:bg-[#042616] transition">
+                    Ke Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div x-show="galat" x-cloak class="bg-[#FEF2F2] border border-[#FCA5A5] text-[#991B1B] rounded-xl px-4 py-3 text-xs font-semibold mb-4">
+            <p x-text="galat"></p>
+        </div>
+
         <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 mb-6">
             <h2 class="font-bold text-forest-900 mb-4">Rincian Pesanan</h2>
             <div class="divide-y divide-stone-100">
@@ -60,7 +93,58 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('kasir.pembayaran.store') }}">
+        @if ($pesanan->metode_pembayaran === 'transfer')
+            @if ($pesanan->status_pembayaran === 'sudah_bayar')
+                <div class="bg-forest-50 border border-forest-200 rounded-2xl p-6 mb-4 text-center">
+                    <p class="font-bold text-forest-900">Pesanan sudah dibayar</p>
+                    <p class="text-forest-600 text-sm mt-1">Pembayaran transfer telah dikonfirmasi kasir.</p>
+                </div>
+            @else
+            <div class="bg-white rounded-2xl border border-sky-200 shadow-sm p-6 mb-4" x-show="!sukses">
+                <div class="flex items-center justify-between gap-3 mb-4">
+                    <h2 class="font-bold text-forest-900">Konfirmasi Transfer Bank</h2>
+                    <span class="px-2.5 py-1 rounded-full bg-sky-100 text-sky-800 border border-sky-300 text-[10px] font-extrabold uppercase">Menunggu Konfirmasi</span>
+                </div>
+                <div class="space-y-2 text-sm">
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-stone-500">Bank</span>
+                        <strong class="text-forest-900">{{ $transfer['bank'] ?: '-' }}</strong>
+                    </div>
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-stone-500">Nomor Rekening</span>
+                        <strong class="font-mono text-forest-900">{{ $transfer['nomor'] ?: 'Belum diatur' }}</strong>
+                    </div>
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-stone-500">Atas Nama</span>
+                        <strong class="text-forest-900">{{ $transfer['atas_nama'] ?: '-' }}</strong>
+                    </div>
+                    <div class="flex items-center justify-between gap-3 border-t border-stone-200 pt-3 mt-3">
+                        <span class="font-bold text-stone-700">Nominal Transfer</span>
+                        <strong class="text-xl font-extrabold text-forest-900">Rp{{ number_format($pesanan->total_bayar, 0, ',', '.') }}</strong>
+                    </div>
+                </div>
+                <p class="text-stone-500 text-xs mt-3">Pastikan dana sudah masuk ke rekening resto sebelum mengonfirmasi pembayaran ini.</p>
+            </div>
+
+            <form method="POST" action="{{ route('kasir.pembayaran.store') }}"
+                  x-show="!sukses"
+                  @submit.prevent="bayar($event)">
+                @csrf
+                <input type="hidden" name="kode_pesanan" value="{{ $pesanan->kode_pesanan }}">
+                <input type="hidden" name="metode_pembayaran" value="transfer">
+                <input type="hidden" name="jumlah_bayar" value="{{ $pesanan->total_bayar }}">
+
+                <button type="submit"
+                    :disabled="memproses"
+                    class="w-full bg-sky-700 hover:bg-sky-800 text-white font-bold py-4 rounded-xl text-lg shadow-sm transition disabled:opacity-60 disabled:cursor-wait">
+                    <span x-text="memproses ? 'Memproses...' : 'Konfirmasi Transfer Diterima'">Konfirmasi Transfer Diterima</span>
+                </button>
+            </form>
+            @endif
+        @else
+        <form method="POST" action="{{ route('kasir.pembayaran.store') }}"
+              x-show="!sukses"
+              @submit.prevent="bayar($event)">
             @csrf
             <input type="hidden" name="kode_pesanan" value="{{ $pesanan->kode_pesanan }}">
 
@@ -117,13 +201,71 @@
             </div>
 
             <button type="submit"
-                class="w-full bg-forest-900 hover:bg-[#042616] text-white font-bold py-4 rounded-xl text-lg shadow-sm transition">
-                Konfirmasi Pembayaran
+                :disabled="memproses"
+                class="w-full bg-forest-900 hover:bg-[#042616] text-white font-bold py-4 rounded-xl text-lg shadow-sm transition disabled:opacity-60 disabled:cursor-wait">
+                <span x-text="memproses ? 'Memproses...' : 'Konfirmasi Pembayaran'">Konfirmasi Pembayaran</span>
             </button>
         </form>
+        @endif
 
         <p class="text-center text-stone-400 text-xs mt-6">© 2026 Saung Situ Awi Ciwidey</p>
     </div>
+
+    <script>
+        function bayarPage() {
+            return {
+                memproses: false,
+                sukses: '',
+                galat: '',
+                kodePesanan: '',
+                cariUrl: @json(route('kasir.pembayaran.cari')),
+                dashboardUrl: @json(route('kasir.dashboard')),
+                async bayar(event) {
+                    if (this.memproses) return;
+
+                    const form = event.target;
+
+                    this.memproses = true;
+                    this.galat = '';
+
+                    try {
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+                        const respons = await fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': csrfToken,
+                            },
+                            body: new FormData(form),
+                            credentials: 'same-origin',
+                        });
+
+                        const payload = await respons.json().catch(() => null);
+
+                        if (respons.status === 419) {
+                            throw new Error('Sesi Anda sudah kedaluwarsa. Muat ulang halaman lalu coba lagi.');
+                        }
+
+                        if (!respons.ok || payload?.success !== true) {
+                            const pesanField = payload?.errors
+                                ? Object.values(payload.errors).flat()[0]
+                                : null;
+
+                            throw new Error(pesanField || payload?.message || 'Pembayaran gagal diproses.');
+                        }
+
+                        this.sukses = payload.message || 'Pembayaran berhasil diproses.';
+                        this.kodePesanan = payload.kode_pesanan || '';
+                    } catch (error) {
+                        this.galat = error.message || 'Pembayaran gagal diproses.';
+                    } finally {
+                        this.memproses = false;
+                    }
+                },
+            };
+        }
+    </script>
 </body>
 
 </html>

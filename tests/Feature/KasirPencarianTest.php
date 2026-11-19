@@ -129,4 +129,23 @@ class KasirPencarianTest extends TestCase
             ->assertOk()
             ->assertSee('Pesanan ini sudah dibayar');
     }
+
+    public function test_pencarian_pesanan_qris_tidak_menampilkan_form_konfirmasi_tunai(): void
+    {
+        $meja = $this->meja();
+        $menu = $this->menu();
+
+        $pesanan = $this->pesanan($meja, $menu, 'Budi QRIS', [
+            'status_pesanan' => Pesanan::STATUS_MENUNGGU_VERIFIKASI,
+            'status_pembayaran' => Pesanan::PAYMENT_PENDING_VERIFIKASI,
+            'metode_pembayaran' => 'qris',
+        ]);
+
+        $this->actingAs($this->kasir())
+            ->get(route('kasir.pembayaran.cari', ['kode_pembayaran' => $pesanan->kode_pesanan]))
+            ->assertOk()
+            ->assertSee('Menunggu Pembayaran QRIS')
+            ->assertSee('dikonfirmasi otomatis oleh Midtrans')
+            ->assertDontSee('Proses Pembayaran Tunai');
+    }
 }

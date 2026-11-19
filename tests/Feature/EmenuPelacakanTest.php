@@ -82,7 +82,7 @@ class EmenuPelacakanTest extends TestCase
             ->assertDontSee('images.pexels.com', false);
     }
 
-    public function test_checkout_menyimpan_riwayat_tanpa_memotong_stok(): void
+    public function test_checkout_menyimpan_riwayat_dan_memotong_stok(): void
     {
         [$meja, $menu] = $this->siapkanMejaDanMenu();
 
@@ -101,7 +101,7 @@ class EmenuPelacakanTest extends TestCase
         $this->assertSame('Budi Santoso', $pesanan->nama_pelanggan);
         $this->assertSame('Budi Santoso', SesiMeja::aktifUntuk($meja)->nama_pelanggan);
         $this->assertSame('terisi', $meja->fresh()->status_meja);
-        $this->assertSame(10, $menu->fresh()->stok_menu);
+        $this->assertSame(8, $menu->fresh()->stok_menu);
 
         $this->withSession($this->sesiTerverifikasi($meja))
             ->get(route('emenu.meja', $meja->id))
@@ -423,6 +423,132 @@ class EmenuPelacakanTest extends TestCase
             ->assertSee($pesanan->kode_pesanan);
     }
 
+    public function test_endpoint_status_tunai_menandai_pesanan_dibatalkan_dan_memberi_redirect_status(): void
+    {
+        [$meja, $menu] = $this->siapkanMejaDanMenu();
+        $sesi = $this->sesiTerverifikasi($meja);
+
+        $pesanan = app(PesananService::class)->buat(
+            $meja,
+            [$menu->id => 1],
+            [],
+            ['asal' => 'emenu', 'metode' => 'tunai', 'nama_pelanggan' => 'Budi Santoso']
+        );
+
+        app(PesananService::class)->batalkan($pesanan, null, 'Dibatalkan kasir.');
+
+        $response = $this->withSession($sesi)
+            ->getJson(route('emenu.bayar-tunai.status', $pesanan->kode_pesanan))
+            ->assertOk()
+            ->assertJsonPath('lunas', false)
+            ->assertJsonPath('dibatalkan', true)
+            ->assertJsonPath('status_pesanan', Pesanan::STATUS_DIBATALKAN);
+
+        $redirect = (string) $response->json('redirect');
+
+        $this->assertStringContainsString('signature=', $redirect);
+
+        $this->get($redirect)
+            ->assertOk()
+            ->assertSee($pesanan->kode_pesanan)
+            ->assertSee('Dibatalkan');
+    }
+
+    public function test_halaman_bayar_tunai_yang_dibatalkan_langsung_mengarah_ke_status(): void
+    {
+        [$meja, $menu] = $this->siapkanMejaDanMenu();
+        $sesi = $this->sesiTerverifikasi($meja);
+
+        $pesanan = app(PesananService::class)->buat(
+            $meja,
+            [$menu->id => 1],
+            [],
+            ['asal' => 'emenu', 'metode' => 'tunai', 'nama_pelanggan' => 'Budi Santoso']
+        );
+
+        app(PesananService::class)->batalkan($pesanan, null, 'Dibatalkan kasir.');
+
+        $response = $this->withSession($sesi)
+            ->get(route('emenu.bayar-tunai', $pesanan->kode_pesanan));
+
+        $response->assertRedirect();
+
+        $tujuan = (string) $response->headers->get('Location');
+
+        $this->assertStringContainsString('signature=', $tujuan);
+
+        $this->get($tujuan)
+            ->assertOk()
+            ->assertSee($pesanan->kode_pesanan)
+            ->assertSee('Dibatalkan');
+    }
+
+    public function test_endpoint_status_qris_yang_dibatalkan_memberi_redirect_status(): void
+    {        [$meja, $menu] = $this->siapkanMejaDanMenu();
+        $sesi = $this->sesiTerverifikasi($meja);
+
+        $pesanan = app(PesananService::class)->buat(
+            $meja,
+            [$menu->id => 1],
+            [],
+            ['asal' => 'emenu', 'metode' => 'qris', 'nama_pelanggan' => 'Budi Santoso']
+        );
+
+        app(PesananService::class)->batalkan($pesanan, null, 'Dibatalkan kasir.');
+
+        $response = $this->withSession($sesi)
+            ->getJson(route('emenu.qris.status', $pesanan->kode_pesanan))
+            ->assertOk()
+            ->assertJsonPath('lunas', false)
+            ->assertJsonPath('dibatalkan', true)
+            ->assertJsonPath('status_pesanan', Pesanan::STATUS_DIBATALKAN);
+
+        $redirect = (string) $response->json('redirect');
+
+        $this->assertStringContainsString('signature=', $redirect);
+
+        $this->get($redirect)
+            ->assertOk()
+            ->assertSee($pesanan->kode_pesanan)
+            ->assertSee('Dibatalkan');
+    }
+
+    public function test_pembatalan_pesanan_mengembalikan_stok_hanya_sekali(): void
+    {
+        [$meja, $menu] = $this->siapkanMejaDanMenu();
+
+        $service = app(PesananService::class);
+
+        $pesanan = $service->buat(
+            $meja,
+            [$menu->id => 2],
+            [],
+            ['asal' => 'emenu', 'metode' => 'tunai', 'nama_pelanggan' => 'Budi Santoso']
+        );
+
+        $this->assertSame(8, $menu->fresh()->stok_menu);
+
+        $service->batalkan($pesanan, null, 'Dibatalkan kasir.');
+
+        $this->assertSame(10, $menu->fresh()->stok_menu);
+        $this->assertSame(
+            1,
+            \App\Models\StokMutasi::where('pesanan_id', $pesanan->id)
+                ->where('jenis', 'pembatalan')
+                ->count()
+        );
+
+        $service->batalkan($pesanan->fresh(), null, 'Dibatalkan kasir.');
+
+        $this->assertSame(10, $menu->fresh()->stok_menu);
+        $this->assertSame(
+            1,
+            \App\Models\StokMutasi::where('pesanan_id', $pesanan->id)
+                ->where('jenis', 'pembatalan')
+                ->count()
+        );
+    }
+
     public function test_halaman_bayar_tunai_lunas_tetap_mengarah_ke_status_tanpa_cookie_sesi(): void
     {
         [$meja, $menu] = $this->siapkanMejaDanMenu();
@@ -688,7 +814,8 @@ class EmenuPelacakanTest extends TestCase
 
         $this->assertSame(1, Pesanan::count());
         $this->assertSame(1, Pesanan::firstOrFail()->detailPesanan()->count());
-        $this->assertSame(10, $menu->fresh()->stok_menu);
+        $this->assertSame(8, $menu->fresh()->stok_menu);
+        $this->assertSame(1, \App\Models\StokMutasi::where('jenis', 'penjualan')->count());
         $this->assertCount(1, session('riwayat_meja_' . $meja->id, []));
     }
 

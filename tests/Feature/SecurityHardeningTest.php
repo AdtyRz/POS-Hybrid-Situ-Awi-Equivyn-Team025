@@ -243,7 +243,7 @@ class SecurityHardeningTest extends TestCase
         $this->assertSame(Pesanan::PAYMENT_PENDING_VERIFIKASI, $pesanan->status_pembayaran);
         $this->assertSame(Pesanan::STATUS_MENUNGGU_VERIFIKASI, $pesanan->status_pesanan);
         $this->assertDatabaseMissing('pembayaran', ['pesanan_id' => $pesanan->id]);
-        $this->assertSame(10, (int) $menu->fresh()->stok_menu);
+        $this->assertSame(8, (int) $menu->fresh()->stok_menu);
     }
 
     public function test_kasir_bisa_menandai_qris_lunas_setelah_settlement_midtrans(): void
@@ -309,7 +309,7 @@ class SecurityHardeningTest extends TestCase
 
         $this->assertSame(Pesanan::PAYMENT_PENDING_VERIFIKASI, $pesanan->status_pembayaran);
         $this->assertDatabaseMissing('pembayaran', ['pesanan_id' => $pesanan->id]);
-        $this->assertSame(10, (int) $menu->fresh()->stok_menu);
+        $this->assertSame(9, (int) $menu->fresh()->stok_menu);
     }
 
     public function test_api_pembayaran_qris_menyimpan_id_transaksi_midtrans(): void
@@ -369,7 +369,7 @@ class SecurityHardeningTest extends TestCase
         $this->assertStringNotContainsString('token-remember-rahasia', $isi);
     }
 
-    public function test_pembayaran_kedua_ditolak_dan_stok_tidak_menjadi_negatif(): void
+    public function test_pesanan_melebihi_stok_ditolak_dan_pembayaran_tidak_memotong_stok_dua_kali(): void
     {
         $kasir = $this->pengguna('kasir');
         $meja = $this->meja();
@@ -382,12 +382,24 @@ class SecurityHardeningTest extends TestCase
             [],
             ['asal' => 'kasir', 'metode' => 'tunai', 'kasir_id' => $kasir->id]
         );
-        $kedua = $service->buat(
-            $meja,
-            [$menu->id => 4],
-            [],
-            ['asal' => 'kasir', 'metode' => 'tunai', 'kasir_id' => $kasir->id]
-        );
+
+        $this->assertSame(1, (int) $menu->fresh()->stok_menu);
+
+        try {
+            $service->buat(
+                $meja,
+                [$menu->id => 4],
+                [],
+                ['asal' => 'kasir', 'metode' => 'tunai', 'kasir_id' => $kasir->id]
+            );
+
+            $this->fail('Pesanan melebihi stok seharusnya ditolak.');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('tersisa 1 porsi', $exception->getMessage());
+        }
+
+        $this->assertSame(1, (int) $menu->fresh()->stok_menu);
+        $this->assertSame(1, Pesanan::count());
 
         $this->actingAs($kasir)
             ->post(route('kasir.pembayaran.store'), [
@@ -399,23 +411,20 @@ class SecurityHardeningTest extends TestCase
 
         $this->assertSame(1, (int) $menu->fresh()->stok_menu);
         $this->assertSame(Pesanan::PAYMENT_SUDAH_BAYAR, $pertama->fresh()->status_pembayaran);
+        $this->assertDatabaseCount('pembayaran', 1);
 
         $this->actingAs($kasir)
-            ->from(route('kasir.pembayaran.create', $kedua->kode_pesanan))
+            ->from(route('kasir.pembayaran.create', $pertama->kode_pesanan))
             ->post(route('kasir.pembayaran.store'), [
-                'kode_pesanan' => $kedua->kode_pesanan,
+                'kode_pesanan' => $pertama->kode_pesanan,
                 'metode_pembayaran' => 'tunai',
-                'jumlah_bayar' => (float) $kedua->total_bayar,
+                'jumlah_bayar' => (float) $pertama->total_bayar,
             ])
-            ->assertRedirect(route('kasir.pembayaran.create', $kedua->kode_pesanan))
+            ->assertRedirect(route('kasir.pembayaran.create', $pertama->kode_pesanan))
             ->assertSessionHasErrors('kode_pesanan');
 
-        $kedua->refresh();
-
         $this->assertSame(1, (int) $menu->fresh()->stok_menu);
-        $this->assertSame(Pesanan::PAYMENT_BELUM_BAYAR, $kedua->status_pembayaran);
-        $this->assertSame(Pesanan::STATUS_MENUNGGU, $kedua->status_pesanan);
-        $this->assertDatabaseMissing('pembayaran', ['pesanan_id' => $kedua->id]);
+        $this->assertDatabaseCount('pembayaran', 1);
     }
 
     public function test_seeder_menolak_password_default_di_luar_local_dan_testing(): void

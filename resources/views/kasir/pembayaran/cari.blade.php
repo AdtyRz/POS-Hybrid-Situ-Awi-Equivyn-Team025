@@ -3,7 +3,8 @@
 @section('title', 'Cari Pesanan - Kasir')
 
 @section('content')
-<div class="max-w-3xl mx-auto p-6">
+<div class="max-w-3xl mx-auto p-6" x-data="pembayaranCariPage()">
+    <style>[x-cloak] { display: none !important; }</style>
     <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 mb-6">
         <h2 class="font-bold text-2xl text-forest-900 mb-2">Cari Pesanan untuk Bayar</h2>
         <p class="text-sm text-stone-500 mb-4">Gunakan kode meja dan nama pemesan agar pesanan lebih mudah ditemukan.</p>
@@ -27,6 +28,21 @@
         @endif
     </div>
 
+    <div x-show="sukses" x-cloak class="mb-4 bg-[#ECFDF5] border border-[#6EE7B7] text-[#065F46] rounded-xl px-4 py-3 text-xs font-semibold flex items-start gap-2">
+        <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        <span x-text="sukses"></span>
+    </div>
+
+    <div x-show="galat" x-cloak class="mb-4 bg-[#FEF2F2] border border-[#FCA5A5] text-[#991B1B] rounded-xl px-4 py-3 text-xs font-semibold flex items-start gap-2">
+        <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        </svg>
+        <span x-text="galat"></span>
+    </div>
+
+    <div data-live="kasir-pembayaran-cari">
     @if(isset($daftarPesanan) && !isset($error))
         <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-6">
             <div class="flex items-center justify-between gap-3 mb-4">
@@ -57,7 +73,7 @@
         </div>
     @endif
 
-    @if(isset($pesanan) && !isset($error))
+    @if(isset($pesanan))
         <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-6">
             <div class="flex items-center justify-between mb-4">
                 <div>
@@ -72,7 +88,7 @@
             <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
                 <div><span class="text-stone-500">Kode Meja</span><p class="font-bold font-mono">{{ $pesanan->meja->kode_meja }}</p></div>
                 <div><span class="text-stone-500">Area</span><p class="font-bold">{{ $pesanan->meja->area }}</p></div>
-                <div><span class="text-stone-500">Metode</span><p class="font-bold">{{ ucfirst($pesanan->metode_pembayaran) }}</p></div>
+                <div><span class="text-stone-500">Metode</span><p class="font-bold">{{ $pesanan->metode_pembayaran === 'transfer' ? 'Transfer Bank' : ucfirst($pesanan->metode_pembayaran) }}</p></div>
                 <div><span class="text-stone-500">Status Pesanan</span><p class="font-bold">{{ ucfirst(str_replace('_', ' ', $pesanan->status_pesanan)) }}</p></div>
             </div>
 
@@ -95,8 +111,52 @@
                 <p class="font-extrabold text-2xl text-forest-600">Rp{{ number_format($pesanan->total_bayar, 0, ',', '.') }}</p>
             </div>
 
-            @if($pesanan->status_pembayaran === 'pending_pembayaran' || $pesanan->status_pembayaran === 'belum_bayar')
-                <form method="POST" action="{{ route('kasir.pembayaran.store') }}" class="mt-6 space-y-4">
+            @if(($pesanan->status_pembayaran === 'pending_pembayaran' || $pesanan->status_pembayaran === 'belum_bayar') && $pesanan->metode_pembayaran === 'transfer')
+                <div class="mt-6 rounded-xl border border-sky-200 bg-sky-50/70 p-4 space-y-2">
+                    <p class="text-xs font-bold uppercase tracking-wide text-sky-800">Rekening Tujuan Transfer</p>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-stone-500">Bank</span>
+                        <strong class="text-forest-900">{{ $transfer['bank'] ?: '-' }}</strong>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-stone-500">Nomor Rekening</span>
+                        <strong class="font-mono text-forest-900">{{ $transfer['nomor'] ?: 'Belum diatur' }}</strong>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-stone-500">Atas Nama</span>
+                        <strong class="text-forest-900">{{ $transfer['atas_nama'] ?: '-' }}</strong>
+                    </div>
+                    <div class="flex items-center justify-between border-t border-sky-200 pt-2 mt-2">
+                        <span class="text-sm font-bold text-sky-900">Nominal Transfer</span>
+                        <strong class="text-lg font-extrabold text-forest-900">Rp{{ number_format($pesanan->total_bayar, 0, ',', '.') }}</strong>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ route('kasir.pembayaran.store') }}" class="mt-4 space-y-4"
+                      data-no-ajax
+                      @submit.prevent="bayar($event)">
+                    @csrf
+                    <input type="hidden" name="kode_pesanan" value="{{ $pesanan->kode_pesanan }}">
+                    <input type="hidden" name="metode_pembayaran" value="transfer">
+                    <input type="hidden" name="jumlah_bayar" value="{{ $pesanan->total_bayar }}">
+
+                    <p class="text-xs text-stone-500">Pastikan dana sudah masuk ke rekening resto sebelum mengonfirmasi.</p>
+
+                    <button type="submit" :disabled="memproses"
+                            class="w-full bg-sky-700 hover:bg-sky-800 text-white font-bold py-4 rounded-xl text-lg shadow-sm transition disabled:opacity-60 disabled:cursor-wait">
+                        <span x-text="memproses ? 'Memproses...' : 'Konfirmasi Transfer Diterima'">Konfirmasi Transfer Diterima</span>
+                    </button>
+                </form>
+            @elseif(in_array($pesanan->status_pembayaran, ['pending_verifikasi', 'pending_pembayaran', 'belum_bayar'], true) && $pesanan->metode_pembayaran === 'qris')
+                <div class="mt-6 rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-center space-y-1">
+                    <p class="text-xs font-extrabold uppercase tracking-wide text-amber-800">Menunggu Pembayaran QRIS</p>
+                    <p class="text-sm text-amber-900">Pembayaran QRIS dikonfirmasi otomatis oleh Midtrans.</p>
+                    <p class="text-xs text-amber-700">Tombol konfirmasi manual di kasir hanya tersedia untuk pembayaran Tunai dan Transfer.</p>
+                </div>
+            @elseif($pesanan->status_pembayaran === 'pending_pembayaran' || $pesanan->status_pembayaran === 'belum_bayar')
+                <form method="POST" action="{{ route('kasir.pembayaran.store') }}" class="mt-6 space-y-4"
+                      data-no-ajax
+                      @submit.prevent="bayar($event)">
                     @csrf
                     <input type="hidden" name="kode_pesanan" value="{{ $pesanan->kode_pesanan }}">
                     <input type="hidden" name="metode_pembayaran" value="tunai">
@@ -111,8 +171,9 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full bg-forest-900 hover:bg-[#042616] text-white font-bold py-4 rounded-xl text-lg shadow-sm transition">
-                        Proses Pembayaran Tunai
+                    <button type="submit" :disabled="memproses"
+                            class="w-full bg-forest-900 hover:bg-[#042616] text-white font-bold py-4 rounded-xl text-lg shadow-sm transition disabled:opacity-60 disabled:cursor-wait">
+                        <span x-text="memproses ? 'Memproses...' : 'Proses Pembayaran Tunai'">Proses Pembayaran Tunai</span>
                     </button>
                 </form>
             @elseif($pesanan->status_pembayaran === 'sudah_bayar')
@@ -128,5 +189,67 @@
             @endif
         </div>
     @endif
+    </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    function pembayaranCariPage() {
+        return {
+            memproses: false,
+            sukses: '',
+            galat: '',
+            async bayar(event) {
+                if (this.memproses) return;
+
+                const form = event.target;
+
+                this.memproses = true;
+                this.galat = '';
+                this.sukses = '';
+
+                try {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+                    const respons = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': csrfToken,
+                        },
+                        body: new FormData(form),
+                        credentials: 'same-origin',
+                    });
+
+                    const payload = await respons.json().catch(() => null);
+
+                    if (respons.status === 419) {
+                        throw new Error('Sesi Anda sudah kedaluwarsa. Muat ulang halaman lalu coba lagi.');
+                    }
+
+                    if (!respons.ok || payload?.success !== true) {
+                        const pesanField = payload?.errors
+                            ? Object.values(payload.errors).flat()[0]
+                            : null;
+
+                        throw new Error(pesanField || payload?.message || 'Pembayaran gagal diproses.');
+                    }
+
+                    this.sukses = payload.message || 'Pembayaran berhasil diproses.';
+
+                    if (typeof window.refreshLiveRegions === 'function') {
+                        await window.refreshLiveRegions({ immediate: true });
+                    } else {
+                        window.location.reload();
+                    }
+                } catch (error) {
+                    this.galat = error.message || 'Pembayaran gagal diproses.';
+                } finally {
+                    this.memproses = false;
+                }
+            },
+        };
+    }
+</script>
+@endpush

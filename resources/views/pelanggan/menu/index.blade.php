@@ -879,7 +879,7 @@
                         form.appendChild(isi);
                     };
                     tambah('_token', token);
-                    tambah('metode', this.paymentMethod === 'cash' ? 'tunai' : 'qris');
+                    tambah('metode', this.paymentMethod === 'cash' ? 'tunai' : (this.paymentMethod === 'transfer' ? 'transfer' : 'qris'));
                     tambah('idempotency_key', this.checkoutKey);
                     tambah('nama_pelanggan', nama);
                     this.cartItems.forEach(item => {

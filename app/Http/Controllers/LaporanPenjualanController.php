@@ -565,7 +565,12 @@ class LaporanPenjualanController extends Controller
     private function metodeLabel(Pesanan $pesanan): string
     {
         if ($pesanan->status_pesanan === Pesanan::STATUS_DIBATALKAN) {
-            return 'VOID Kasir';
+            return 'VOID ' . match ($pesanan->metode_pembayaran) {
+                'qris' => 'QRIS',
+                'transfer' => 'Transfer',
+                'tunai' => 'Tunai',
+                default => 'Kasir',
+            };
         }
 
         return match ($pesanan->metode_pembayaran) {

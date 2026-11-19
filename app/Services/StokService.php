@@ -8,11 +8,30 @@ use App\Models\Pesanan;
 use App\Models\StokMutasi;
 use App\Support\Realtime;
 use Illuminate\Support\Facades\DB;
-use RuntimeException;
 
 class StokService
 {
+    /**
+     * Potong stok saat pesanan dibuat (checkout keranjang).
+     *
+     * Stok dikunci lebih awal agar pesanan yang sudah masuk tidak
+     * kehabisan stok saat pembayaran dilakukan.
+     */
+    public function potongSaatPesanan(Pesanan $pesanan, ?int $penggunaId = null): bool
+    {
+        return $this->potong($pesanan, $penggunaId, 'Stok dipotong saat pesanan dibuat ');
+    }
+
+    /**
+     * Kompatibilitas untuk alur pembayaran lama. Jika stok sudah dipotong
+     * saat pesanan dibuat, method ini tidak memotong dua kali.
+     */
     public function potongSetelahPembayaran(Pesanan $pesanan, ?int $penggunaId = null): bool
+    {
+        return $this->potong($pesanan, $penggunaId, 'Stok dipotong setelah pembayaran ');
+    }
+
+    private function potong(Pesanan $pesanan, ?int $penggunaId, string $keterangan): bool
     {
         $pesanan->loadMissing('detailPesanan');
 
@@ -20,9 +39,7 @@ class StokService
             return false;
         }
 
-        return DB::transaction(function () use ($pesanan, $penggunaId) {
-
-
+        return DB::transaction(function () use ($pesanan, $penggunaId, $keterangan) {
             $terkunci = Pesanan::query()->whereKey($pesanan->id)->lockForUpdate()->first();
 
             if (! $terkunci) {
@@ -55,9 +72,9 @@ class StokService
                 }
 
                 if ((int) $menu->stok_menu < $jumlah) {
-                    throw new RuntimeException(
+                    throw new \RuntimeException(
                         'Stok '.$menu->nama_menu.' tersisa '.max(0, (int) $menu->stok_menu)
-                        .' porsi, tidak cukup untuk '.$jumlah.' porsi. Pembayaran dibatalkan.'
+                        .' porsi, tidak cukup untuk '.$jumlah.' porsi.'
                     );
                 }
 
@@ -71,7 +88,7 @@ class StokService
                     'jenis' => 'penjualan',
                     'jumlah_delta' => -$jumlah,
                     'stok_akhir' => $stokAkhir,
-                    'keterangan' => 'Stok dipotong setelah pembayaran ' . $terkunci->kode_pesanan,
+                    'keterangan' => $keterangan . $terkunci->kode_pesanan,
                     'created_by' => $penggunaId ?? auth()->id(),
                     'created_at' => now(),
                 ]);
