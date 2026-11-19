@@ -54,6 +54,9 @@ Route::middleware('pesanan.no-store')->group(function () {
     Route::post('/meja/{meja}/checkout', [EMenuController::class, 'checkout'])
         ->middleware('throttle:20,1,checkout')
         ->name('emenu.checkout');
+    Route::post('/meja/{meja}/keranjang', [EMenuController::class, 'simpanKeranjang'])
+        ->middleware('throttle:120,1,keranjang')
+        ->name('emenu.keranjang.simpan');
     Route::get('/qris/status/{kode_pesanan}', [EMenuController::class, 'qrisStatus'])
         ->middleware('throttle:60,1,qris')
         ->name('emenu.qris.status');
@@ -82,8 +85,8 @@ Route::middleware(['auth', 'aktif'])->group(function () {
 Route::middleware(['auth', 'aktif', 'role:admin', 'admin.ajax'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/admin/analitik-laporan', [AdminController::class, 'dashboard'])->name('admin.analitik-laporan');
-Route::get('/admin/analitik-laporan/cetak-pdf', [AdminController::class, 'cetakAnalitikPdf'])->name('admin.analitik-laporan.cetak-pdf');
-Route::get('/admin/analitik-laporan/ekspor-xlsx', [AdminController::class, 'eksporAnalitikXlsx'])->name('admin.analitik-laporan.ekspor-xlsx');
+    Route::get('/admin/analitik-laporan/cetak-pdf', [AdminController::class, 'cetakAnalitikPdf'])->name('admin.analitik-laporan.cetak-pdf');
+    Route::get('/admin/analitik-laporan/ekspor-xlsx', [AdminController::class, 'eksporAnalitikXlsx'])->name('admin.analitik-laporan.ekspor-xlsx');
     Route::get('/admin/laporan', [LaporanPenjualanController::class, 'index'])->name('admin.laporan');
     Route::get('/admin/laporan-penjualan', [LaporanPenjualanController::class, 'index'])->name('admin.laporan-penjualan');
     Route::get('/admin/laporan-penjualan/state', [LaporanPenjualanController::class, 'state'])->name('admin.laporan-penjualan.state');

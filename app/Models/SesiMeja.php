@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\KeranjangService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -33,15 +34,6 @@ class SesiMeja extends Model
         return $query->where('status', 'aktif');
     }
 
-
-
-
-
-
-
-
-
-
     public static function aktifUntuk(MejaMakan $meja): self
     {
         $sesi = static::query()
@@ -59,9 +51,6 @@ class SesiMeja extends Model
             return static::bukaBaru($meja);
         }
 
-
-
-
         if (strlen((string) $sesi->kode_unik) !== static::panjangKode()) {
             $sesi->update([
                 'kode_unik' => static::kodeUnikBaru($sesi->kode_unik),
@@ -71,18 +60,10 @@ class SesiMeja extends Model
         return $sesi;
     }
 
-
-
-
     public static function panjangKode(): int
     {
         return Pengaturan::nilai('encryption_level') === '6 Digit' ? 6 : 4;
     }
-
-
-
-
-
 
     public static function tutupSesiLintasHari(): int
     {
@@ -141,11 +122,12 @@ class SesiMeja extends Model
     private static function tutupKarenaKedaluwarsa(self $sesi): void
     {
         DB::transaction(function () use ($sesi) {
+            app(KeranjangService::class)->lepasUntukSesi((int) $sesi->id);
+
             $sesi->update([
                 'status' => 'selesai',
                 'ditutup_pada' => now(),
             ]);
-
 
             Pesanan::query()
                 ->where('meja_id', $sesi->meja_id)
@@ -156,10 +138,6 @@ class SesiMeja extends Model
             $sesi->meja?->update(['status_meja' => 'kosong']);
         });
     }
-
-
-
-
 
     public static function bukaBaru(MejaMakan $meja): self
     {
@@ -176,13 +154,6 @@ class SesiMeja extends Model
         ]);
     }
 
-
-
-
-
-
-
-
     public static function putuskanSesi(MejaMakan $meja): self
     {
         return DB::transaction(function () use ($meja) {
@@ -196,7 +167,7 @@ class SesiMeja extends Model
 
             if ($belumDibayar->isNotEmpty()) {
                 throw new \RuntimeException(
-                    'Sesi belum dapat diakhiri karena masih ada ' . $belumDibayar->count() . ' pesanan yang belum dibayar.'
+                    'Sesi belum dapat diakhiri karena masih ada '.$belumDibayar->count().' pesanan yang belum dibayar.'
                 );
             }
 
@@ -204,12 +175,17 @@ class SesiMeja extends Model
                 'status_pesanan' => Pesanan::STATUS_SELESAI,
             ]);
 
-
             Pesanan::query()
                 ->where('meja_id', $meja->id)
                 ->where('status_pembayaran', Pesanan::PAYMENT_SUDAH_BAYAR)
                 ->whereNull('printed_at')
                 ->update(['printed_at' => now()]);
+
+            static::query()
+                ->where('meja_id', $meja->id)
+                ->where('status', 'aktif')
+                ->pluck('id')
+                ->each(fn ($sesiId) => app(KeranjangService::class)->lepasUntukSesi((int) $sesiId));
 
             $meja->update(['status_meja' => 'kosong']);
 
@@ -224,14 +200,6 @@ class SesiMeja extends Model
             return static::bukaBaru($meja);
         });
     }
-
-
-
-
-
-
-
-
 
     public static function sinkronkanStatusMeja(int $mejaId): void
     {
@@ -263,10 +231,6 @@ class SesiMeja extends Model
         ]);
     }
 
-
-
-
-
     public static function kodeUnikBaru(?string $kecuali = null): string
     {
         $digit = static::panjangKode();
@@ -288,7 +252,6 @@ class SesiMeja extends Model
                 return $kode;
             }
         }
-
 
         return str_pad((string) random_int(0, $maks), $digit, '0', STR_PAD_LEFT);
     }

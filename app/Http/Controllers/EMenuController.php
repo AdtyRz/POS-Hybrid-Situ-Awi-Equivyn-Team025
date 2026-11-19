@@ -4,15 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Events\PanggilanPelayan;
 use App\Events\PesananBaru;
-use App\Events\SesiMejaBerubah;
 use App\Events\StatusPesananBerubah;
 use App\Models\Kategori;
 use App\Models\LogPanggilPelayan;
 use App\Models\MejaMakan;
 use App\Models\Menu;
-use App\Models\Pesanan;
 use App\Models\Pengaturan;
+use App\Models\Pesanan;
 use App\Models\SesiMeja;
+use App\Services\KeranjangService;
 use App\Services\MidtransService;
 use App\Services\PesananService;
 use App\Support\AksesPesanan;
@@ -23,6 +23,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class EMenuController extends Controller
@@ -80,9 +81,6 @@ class EMenuController extends Controller
         return redirect()->to(route('emenu.meja', $sesi->meja->kode_meja));
     }
 
-
-
-
     public function kunci(Request $request, string $meja): View|RedirectResponse
     {
         $mejaMakan = $this->cariMeja($meja);
@@ -99,10 +97,6 @@ class EMenuController extends Controller
             'panjangKode' => strlen($sesi->kode_unik),
         ]);
     }
-
-
-
-
 
     public function buka(Request $request, string $meja): RedirectResponse|JsonResponse
     {
@@ -168,11 +162,6 @@ class EMenuController extends Controller
         return redirect()->to($tujuan);
     }
 
-
-
-
-
-
     public function keluar(Request $request): RedirectResponse
     {
         $perangkat = PerangkatPelanggan::id($request);
@@ -187,6 +176,7 @@ class EMenuController extends Controller
                     $sesi = SesiMeja::aktifUntuk($meja);
 
                     if (PerangkatPelanggan::cocok($sesi, $perangkat)) {
+                        app(KeranjangService::class)->lepasUntukSesiPerangkat($sesi->id, $perangkat);
                         $this->lepasPerangkat($sesi);
                     }
                 }
@@ -211,7 +201,7 @@ class EMenuController extends Controller
 
         if (! $this->sesiTerverifikasi($mejaMakan)) {
             $sesiAktif = SesiMeja::aktifUntuk($mejaMakan);
-            $kunciSesi = 'sesi_meja_' . $mejaMakan->id;
+            $kunciSesi = 'sesi_meja_'.$mejaMakan->id;
             $pernahTerverifikasi = $request->session()->has($kunciSesi);
 
             if ($this->perangkatLainAktif($sesiAktif, PerangkatPelanggan::id($request))) {
@@ -226,8 +216,16 @@ class EMenuController extends Controller
         }
 
         $sesi = SesiMeja::aktifUntuk($mejaMakan);
+        $perangkat = PerangkatPelanggan::id($request);
+        $keranjang = app(KeranjangService::class)->aktif($sesi, $perangkat);
+        $jumlahKeranjang = $keranjang
+            ? $keranjang->items->mapWithKeys(fn ($item) => [(int) $item->menu_id => (int) $item->jumlah])->all()
+            : [];
 
-        $menuJson = Menu::where('is_aktif', true)->orderBy('nama_menu')->get()->map(function ($menu) {
+        $menuJson = Menu::where('is_aktif', true)->orderBy('nama_menu')->get()->map(function ($menu) use ($jumlahKeranjang) {
+            $milikSendiri = $jumlahKeranjang[(int) $menu->id] ?? 0;
+            $stok = max(0, (int) $menu->stok_menu + $milikSendiri);
+
             return [
                 'id' => $menu->id,
                 'name' => $menu->nama_menu,
@@ -235,10 +233,10 @@ class EMenuController extends Controller
                 'desc' => $menu->deskripsi ?? '',
                 'category' => $menu->kategori_id,
                 'image' => $menu->foto_menu ? Storage::disk()->url($menu->foto_menu) : '',
-                'stock' => max(0, (int) $menu->stok_menu),
-                'isSoldOut' => $menu->stok_menu <= 0,
-                'badge' => $menu->stok_menu <= 0 ? 'Stok Habis' : '',
-                'badgeType' => $menu->stok_menu <= 0 ? 'soldout' : '',
+                'stock' => $stok,
+                'isSoldOut' => $stok <= 0,
+                'badge' => $stok <= 0 ? 'Stok Habis' : '',
+                'badgeType' => $stok <= 0 ? 'soldout' : '',
             ];
         })->values();
 
@@ -250,10 +248,33 @@ class EMenuController extends Controller
 
         $inisial = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $mejaMakan->kode_meja), 0, 2));
 
-        $riwayat = session('riwayat_meja_' . $mejaMakan->id, []);
+        $riwayat = session('riwayat_meja_'.$mejaMakan->id, []);
 
+        $petaMenu = $menuJson->keyBy('id');
 
+        $keranjangJson = $keranjang
+            ? $keranjang->items
+                ->map(function ($item) use ($petaMenu) {
+                    $menu = $petaMenu->get((int) $item->menu_id);
 
+                    if (! $menu) {
+                        return null;
+                    }
+
+                    return [
+                        'id' => (int) $item->menu_id,
+                        'name' => $menu['name'],
+                        'price' => $menu['price'],
+                        'qty' => (int) $item->jumlah,
+                        'stock' => $menu['stock'],
+                        'image' => $menu['image'],
+                        'note' => (string) ($item->catatan ?? ''),
+                    ];
+                })
+                ->filter()
+                ->values()
+                ->all()
+            : [];
 
         $adaPesananSesi = Pesanan::query()
             ->where('meja_id', $mejaMakan->id)
@@ -265,7 +286,8 @@ class EMenuController extends Controller
             'meja' => $mejaMakan,
             'menuJson' => $menuJson,
             'kategoriJson' => $kategoriJson,
-            'orderRef' => '#' . $inisial . '-' . $mejaMakan->id . '04',
+            'keranjangJson' => $keranjangJson,
+            'orderRef' => '#'.$inisial.'-'.$mejaMakan->id.'04',
             'punyaRiwayat' => count($riwayat) > 0 || $adaPesananSesi,
             'namaPelanggan' => (string) ($sesi->nama_pelanggan ?? ''),
             'transfer' => $this->pengaturanTransfer(),
@@ -306,6 +328,9 @@ class EMenuController extends Controller
             return back()->withErrors(['jumlah' => 'Pilih minimal satu menu.'])->withInput();
         }
 
+        $perangkat = PerangkatPelanggan::id($request);
+        $keranjang = app(KeranjangService::class)->aktif($sesi, $perangkat);
+
         try {
             $pesanan = app(PesananService::class)->buat(
                 $mejaMakan,
@@ -316,6 +341,7 @@ class EMenuController extends Controller
                     'metode' => $data['metode'],
                     'nama_pelanggan' => $namaPelanggan,
                     'idempotency_key' => $data['idempotency_key'] ?? null,
+                    'keranjang_id' => $keranjang?->id,
                 ],
             );
         } catch (\RuntimeException $exception) {
@@ -329,7 +355,7 @@ class EMenuController extends Controller
                 $sesi->update(['nama_pelanggan' => $namaPelanggan]);
             }
 
-            $request->session()->push('riwayat_meja_' . $mejaMakan->id, $pesanan->kode_pesanan);
+            $request->session()->push('riwayat_meja_'.$mejaMakan->id, $pesanan->kode_pesanan);
 
             Realtime::emit(new PesananBaru([
                 'kode_pesanan' => $pesanan->kode_pesanan,
@@ -342,7 +368,6 @@ class EMenuController extends Controller
             ]));
         }
 
-
         if ($data['metode'] === 'qris') {
 
             return redirect()->route('emenu.verifikasi', $pesanan->kode_pesanan);
@@ -353,6 +378,79 @@ class EMenuController extends Controller
         }
 
         return redirect()->route('emenu.bayar-tunai', $pesanan->kode_pesanan);
+    }
+
+    public function simpanKeranjang(Request $request, string $meja): JsonResponse
+    {
+        $mejaMakan = $this->cariMeja($meja);
+
+        if (! $this->sesiTerverifikasi($mejaMakan)) {
+            return response()->json([
+                'message' => 'Sesi meja tidak valid. Masukkan kembali kode saung.',
+            ], 403);
+        }
+
+        $data = $request->validate([
+            'menu_id' => ['required', 'integer', Rule::exists('menu', 'id')],
+            'jumlah' => ['required', 'integer', 'min:0', 'max:99'],
+            'catatan' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $sesi = SesiMeja::aktifUntuk($mejaMakan);
+        $perangkat = PerangkatPelanggan::id($request);
+        $service = app(KeranjangService::class);
+
+        try {
+            $keranjang = $service->setItem(
+                $mejaMakan,
+                $sesi,
+                $perangkat,
+                (int) $data['menu_id'],
+                (int) $data['jumlah'],
+                $data['catatan'] ?? null
+            );
+        } catch (\RuntimeException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'menu' => $this->ringkasanStokMenu((int) $data['menu_id'], $sesi, $perangkat),
+            ], 422);
+        }
+
+        $payload = $keranjang
+            ? $service->payload($keranjang, Menu::find((int) $data['menu_id']))
+            : [
+                'items' => [],
+                'count' => 0,
+                'subtotal' => 0,
+                'menu' => $this->ringkasanStokMenu((int) $data['menu_id'], $sesi, $perangkat),
+            ];
+
+        return response()->json(array_merge([
+            'message' => $keranjang
+                ? 'Keranjang diperbarui.'
+                : 'Keranjang kosong.',
+        ], $payload));
+    }
+
+    private function ringkasanStokMenu(int $menuId, SesiMeja $sesi, string $perangkat): ?array
+    {
+        $menu = Menu::find($menuId);
+
+        if (! $menu) {
+            return null;
+        }
+
+        $keranjang = app(KeranjangService::class)->aktif($sesi, $perangkat);
+        $milikSendiri = $keranjang
+            ? (int) ($keranjang->items->firstWhere('menu_id', $menuId)?->jumlah ?? 0)
+            : 0;
+        $stok = max(0, (int) $menu->stok_menu + $milikSendiri);
+
+        return [
+            'id' => $menu->id,
+            'stock' => $stok,
+            'isSoldOut' => $stok <= 0,
+        ];
     }
 
     public function status(Request $request, string $kode_pesanan): View|RedirectResponse
@@ -372,8 +470,6 @@ class EMenuController extends Controller
             'diantar' => 4,
             'selesai' => 5,
         ][$pesanan->status_pesanan] ?? 0;
-
-
 
         $qris = null;
         $midtrans = app(MidtransService::class);
@@ -413,12 +509,8 @@ class EMenuController extends Controller
             return $this->kunciRedirect($mejaMakan);
         }
 
-
-
-
-
         $sesi = SesiMeja::aktifUntuk($mejaMakan);
-        $kodeRiwayat = array_reverse(session('riwayat_meja_' . $mejaMakan->id, []));
+        $kodeRiwayat = array_reverse(session('riwayat_meja_'.$mejaMakan->id, []));
 
         $daftarPesanan = Pesanan::with(['detailPesanan.menu'])
             ->where('meja_id', $mejaMakan->id)
@@ -458,7 +550,6 @@ class EMenuController extends Controller
             return $this->kunciRedirect($pesanan->meja, 'Sesi meja sudah berakhir. Masukkan kembali kode saung untuk membuka pesanan.');
         }
 
-
         if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
             return redirect()->to($this->urlStatusPesanan($pesanan, true));
         }
@@ -479,10 +570,6 @@ class EMenuController extends Controller
 
         return view('pelanggan.pembayaran.verifikasi', compact('pesanan', 'qris', 'qrisTtl', 'urlStatus', 'urlQrisStatus'));
     }
-
-
-
-
 
     public function qrisStatus(Request $request, string $kode_pesanan): JsonResponse
     {
@@ -573,9 +660,6 @@ class EMenuController extends Controller
     {
         $pesanan = Pesanan::with('meja')->where('kode_pesanan', $kode_pesanan)->firstOrFail();
 
-
-
-
         if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
             return redirect()->to($this->urlStatusPesanan($pesanan, true));
         }
@@ -598,8 +682,6 @@ class EMenuController extends Controller
         $pesanan = Pesanan::with('meja')->where('kode_pesanan', $kode_pesanan)->firstOrFail();
 
         $lunas = $pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR;
-
-
 
         if (! $lunas && ! $this->pesananBolehDiakses($request, $pesanan)) {
             return response()->json([
@@ -661,7 +743,6 @@ class EMenuController extends Controller
             'waktu_panggil' => now(),
         ]);
 
-
         Realtime::emit(new PanggilanPelayan([
             'id' => $panggilan->id,
             'meja_id' => $mejaMakan->id,
@@ -680,7 +761,7 @@ class EMenuController extends Controller
         $mejaMakan = $this->cariMeja($meja);
         $sesi = SesiMeja::aktifUntuk($mejaMakan);
         $perangkat = PerangkatPelanggan::id($request);
-        $izin = $request->session()->get('izin_ambil_alih_' . $mejaMakan->id);
+        $izin = $request->session()->get('izin_ambil_alih_'.$mejaMakan->id);
 
         if (! is_array($izin)
             || (int) ($izin['sesi_id'] ?? 0) !== (int) $sesi->id
@@ -692,8 +773,8 @@ class EMenuController extends Controller
 
         if (! $this->perangkatLainAktif($sesi, $perangkat)) {
             $this->klaimPerangkat($request, $sesi);
-            $request->session()->put('sesi_meja_' . $mejaMakan->id, $sesi->id);
-            $request->session()->forget('izin_ambil_alih_' . $mejaMakan->id);
+            $request->session()->put('sesi_meja_'.$mejaMakan->id, $sesi->id);
+            $request->session()->forget('izin_ambil_alih_'.$mejaMakan->id);
 
             return response()->json([
                 'status' => 'disetujui',
@@ -742,11 +823,11 @@ class EMenuController extends Controller
         if ($aktif) {
             $this->sentuhPerangkat($sesi);
 
-            $kunciSesi = 'sesi_meja_' . $mejaMakan->id;
+            $kunciSesi = 'sesi_meja_'.$mejaMakan->id;
 
             if ((int) $request->session()->get($kunciSesi) !== (int) $sesi->id) {
                 $request->session()->put($kunciSesi, $sesi->id);
-                $request->session()->forget('izin_ambil_alih_' . $mejaMakan->id);
+                $request->session()->forget('izin_ambil_alih_'.$mejaMakan->id);
                 $redirect = route('emenu.meja', $mejaMakan->kode_meja);
             }
         }
@@ -852,7 +933,7 @@ class EMenuController extends Controller
 
     private function catatIzinAmbilAlih(Request $request, SesiMeja $sesi): void
     {
-        $request->session()->put('izin_ambil_alih_' . $sesi->meja_id, [
+        $request->session()->put('izin_ambil_alih_'.$sesi->meja_id, [
             'sesi_id' => $sesi->id,
             'waktu' => now()->timestamp,
         ]);
@@ -926,10 +1007,16 @@ class EMenuController extends Controller
 
     private function lupakanSesiPelanggan(Request $request, MejaMakan $meja): void
     {
+        $sesi = SesiMeja::aktifUntuk($meja);
+        app(KeranjangService::class)->lepasUntukSesiPerangkat(
+            $sesi->id,
+            PerangkatPelanggan::id($request)
+        );
+
         $request->session()->forget([
-            'sesi_meja_' . $meja->id,
-            'riwayat_meja_' . $meja->id,
-            'izin_ambil_alih_' . $meja->id,
+            'sesi_meja_'.$meja->id,
+            'riwayat_meja_'.$meja->id,
+            'izin_ambil_alih_'.$meja->id,
         ]);
     }
 
@@ -939,11 +1026,6 @@ class EMenuController extends Controller
             ->withErrors(['kode_unik' => $pesan ?? 'Kode kunci tidak valid atau sesi meja sudah berakhir.'])
             ->withInput();
     }
-
-
-
-
-
 
     private function mejaTerbuka(Request $request): ?MejaMakan
     {
@@ -990,18 +1072,16 @@ class EMenuController extends Controller
 
     private function tandaiSesiTerverifikasi(Request $request, MejaMakan $meja, SesiMeja $sesi): void
     {
-        $kunciSesi = 'sesi_meja_' . $meja->id;
+        $kunciSesi = 'sesi_meja_'.$meja->id;
         $sesiSebelumnya = $request->session()->get($kunciSesi);
 
-
         if ($sesiSebelumnya !== null && (int) $sesiSebelumnya !== (int) $sesi->id) {
-            $request->session()->forget('riwayat_meja_' . $meja->id);
+            $request->session()->forget('riwayat_meja_'.$meja->id);
         }
-
 
         $request->session()->regenerate();
         $request->session()->put($kunciSesi, $sesi->id);
-        $request->session()->forget('izin_ambil_alih_' . $meja->id);
+        $request->session()->forget('izin_ambil_alih_'.$meja->id);
 
         $this->klaimPerangkat($request, $sesi);
     }
@@ -1024,13 +1104,9 @@ class EMenuController extends Controller
         return MejaMakan::where('kode_meja', $meja)->firstOrFail();
     }
 
-
-
-
-
     private function sesiTerverifikasi(MejaMakan $meja): bool
     {
-        $sesiId = session('sesi_meja_' . $meja->id);
+        $sesiId = session('sesi_meja_'.$meja->id);
 
         if (! $sesiId) {
             return false;
@@ -1065,13 +1141,11 @@ class EMenuController extends Controller
             return false;
         }
 
-
-
         if ($request->hasValidSignature()) {
             return true;
         }
 
-        $riwayat = $request->session()->get('riwayat_meja_' . $pesanan->meja_id, []);
+        $riwayat = $request->session()->get('riwayat_meja_'.$pesanan->meja_id, []);
         if (is_array($riwayat) && in_array($pesanan->kode_pesanan, $riwayat, true)) {
             return true;
         }
@@ -1079,8 +1153,6 @@ class EMenuController extends Controller
         if (AksesPesanan::sesiCookieValid($request, $pesanan)) {
             return true;
         }
-
-
 
         return false;
     }

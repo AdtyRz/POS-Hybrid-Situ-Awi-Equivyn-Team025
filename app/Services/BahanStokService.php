@@ -4,6 +4,9 @@ namespace App\Services;
 
 use App\Models\BahanBaku;
 use App\Models\BahanStokMutasi;
+use App\Models\Keranjang;
+use App\Models\KeranjangItem;
+use App\Models\Menu;
 use App\Models\PembelianBahan;
 use App\Models\PembelianBahanDetail;
 use App\Models\Pesanan;
@@ -253,6 +256,170 @@ class BahanStokService
     }
 
     /**
+     * Sesuaikan reservasi bahan untuk satu baris keranjang.
+     *
+     * Stok bahan langsung dipotong saat item masuk keranjang. Reservasi
+     * disimpan sebagai mutasi berjenis "reservasi" agar dapat dipakai
+     * kembali saat checkout atau dilepas saat item dibatalkan.
+     *
+     * Method ini harus dipanggil di dalam transaksi pemanggil.
+     */
+    public function gantiReservasiKeranjang(
+        KeranjangItem $item,
+        Menu $menu,
+        int $jumlahBaru,
+        ?int $penggunaId = null
+    ): void {
+        $reservasiLama = BahanStokMutasi::query()
+            ->where('keranjang_item_id', $item->id)
+            ->where('jenis', 'reservasi')
+            ->get(['bahan_baku_id', 'jumlah_delta']);
+
+        $kebutuhanLama = [];
+
+        foreach ($reservasiLama as $baris) {
+            $bahanId = (int) $baris->bahan_baku_id;
+            $kebutuhanLama[$bahanId] = ($kebutuhanLama[$bahanId] ?? 0) + abs((float) $baris->jumlah_delta);
+        }
+
+        $kebutuhanBaru = [];
+
+        if ($jumlahBaru > 0) {
+            $resep = ResepMenu::query()
+                ->where('menu_id', $menu->id)
+                ->get(['bahan_baku_id', 'jumlah']);
+
+            foreach ($resep as $baris) {
+                $bahanId = (int) $baris->bahan_baku_id;
+                $butuh = (float) $baris->jumlah * $jumlahBaru;
+
+                if ($bahanId > 0 && $butuh > 0) {
+                    $kebutuhanBaru[$bahanId] = ($kebutuhanBaru[$bahanId] ?? 0) + $butuh;
+                }
+            }
+        }
+
+        $semuaBahan = array_values(array_unique(array_merge(
+            array_keys($kebutuhanLama),
+            array_keys($kebutuhanBaru)
+        )));
+        sort($semuaBahan);
+
+        BahanStokMutasi::query()
+            ->where('keranjang_item_id', $item->id)
+            ->where('jenis', 'reservasi')
+            ->delete();
+
+        if ($semuaBahan === []) {
+            return;
+        }
+
+        $daftarBahan = BahanBaku::query()
+            ->whereIn('id', $semuaBahan)
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get()
+            ->keyBy('id');
+
+        foreach ($semuaBahan as $bahanId) {
+            $bahan = $daftarBahan->get($bahanId);
+
+            if (! $bahan) {
+                continue;
+            }
+
+            $selisih = ($kebutuhanBaru[$bahanId] ?? 0) - ($kebutuhanLama[$bahanId] ?? 0);
+
+            if ($selisih > 0.0005 && (float) $bahan->stok + 0.0005 < $selisih) {
+                throw new RuntimeException(
+                    'Stok bahan '.$bahan->nama.' tersisa '.$this->formatJumlah((float) $bahan->stok)
+                    .' '.$bahan->satuan.', tidak cukup untuk '.$this->formatJumlah((float) $kebutuhanBaru[$bahanId])
+                    .' '.$bahan->satuan.'.'
+                );
+            }
+        }
+
+        foreach ($kebutuhanBaru as $bahanId => $butuh) {
+            if ($butuh <= 0) {
+                continue;
+            }
+
+            BahanStokMutasi::create([
+                'bahan_baku_id' => $bahanId,
+                'keranjang_item_id' => $item->id,
+                'jenis' => 'reservasi',
+                'jumlah_delta' => -$butuh,
+                'stok_akhir' => 0,
+                'keterangan' => 'Reservasi keranjang '.$menu->nama_menu,
+                'created_by' => $penggunaId,
+                'created_at' => now(),
+            ]);
+        }
+
+        $this->sinkronkanBahan($semuaBahan);
+    }
+
+    /**
+     * Lepas seluruh reservasi bahan milik satu keranjang.
+     *
+     * Harus dipanggil di dalam transaksi pemanggil sebelum baris keranjang
+     * dihapus agar jumlah reservasi masih dapat dibaca.
+     */
+    public function lepasReservasiKeranjang(Keranjang $keranjang): void
+    {
+        $itemIds = $keranjang->items()->pluck('id');
+
+        if ($itemIds->isEmpty()) {
+            return;
+        }
+
+        $bahanIds = BahanStokMutasi::query()
+            ->whereIn('keranjang_item_id', $itemIds)
+            ->where('jenis', 'reservasi')
+            ->pluck('bahan_baku_id')
+            ->unique()
+            ->values()
+            ->all();
+
+        BahanStokMutasi::query()
+            ->whereIn('keranjang_item_id', $itemIds)
+            ->where('jenis', 'reservasi')
+            ->delete();
+
+        if ($bahanIds !== []) {
+            $this->sinkronkanBahan($bahanIds);
+        }
+    }
+
+    /**
+     * Ubah reservasi bahan menjadi pemakaian penjualan saat checkout.
+     *
+     * Stok tidak berubah karena sudah dipotong ketika item masuk keranjang.
+     */
+    public function pakaiReservasiKeranjang(
+        Keranjang $keranjang,
+        Pesanan $pesanan,
+        ?int $penggunaId,
+        string $keterangan
+    ): void {
+        $itemIds = $keranjang->items()->pluck('id');
+
+        if ($itemIds->isEmpty()) {
+            return;
+        }
+
+        BahanStokMutasi::query()
+            ->whereIn('keranjang_item_id', $itemIds)
+            ->where('jenis', 'reservasi')
+            ->update([
+                'jenis' => 'penjualan',
+                'pesanan_id' => $pesanan->id,
+                'keterangan' => $keterangan.$pesanan->kode_pesanan,
+                'created_by' => $penggunaId,
+            ]);
+    }
+
+    /**
      * @param  array<int, array{bahan_baku_id?: mixed, jumlah?: mixed, harga_satuan?: mixed}>  $items
      * @return array<int, array{jumlah: float, nilai: float, harga_satuan: float}>
      */
@@ -342,7 +509,7 @@ class BahanStokService
         }
     }
 
-    private function sinkronkanBahan(array $bahanIds): void
+    public function sinkronkanBahan(array $bahanIds): void
     {
         $bahanIds = array_values(array_unique(array_map('intval', $bahanIds)));
         sort($bahanIds);

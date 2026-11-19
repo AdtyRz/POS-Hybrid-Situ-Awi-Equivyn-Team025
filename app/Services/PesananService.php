@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\DetailPesanan;
+use App\Models\Keranjang;
 use App\Models\MejaMakan;
 use App\Models\Menu;
 use App\Models\Pesanan;
@@ -15,18 +16,6 @@ use RuntimeException;
 
 class PesananService
 {
-
-
-
-
-
-
-
-
-
-
-
-
     public function buat(MejaMakan $meja, array $jumlahPerMenu, array $catatanPerMenu = [], array $opsi = []): Pesanan
     {
         $idempotencyKey = $this->normalisasiKunciIdempotensi($opsi['idempotency_key'] ?? null);
@@ -41,12 +30,42 @@ class PesananService
 
         try {
             return DB::transaction(function () use ($meja, $jumlahPerMenu, $catatanPerMenu, $opsi, $idempotencyKey) {
+                $keranjang = null;
+                $reservasi = [];
+
+                if (! empty($opsi['keranjang_id'])) {
+                    $keranjang = Keranjang::query()
+                        ->whereKey($opsi['keranjang_id'])
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (! $keranjang || (int) $keranjang->meja_id !== (int) $meja->id) {
+                        throw new RuntimeException('Keranjang pesanan tidak ditemukan. Silakan pilih menu kembali.');
+                    }
+
+                    if ($keranjang->kedaluwarsa()) {
+                        throw new RuntimeException('Keranjang sudah kedaluwarsa. Silakan pilih menu kembali.');
+                    }
+
+                    $reservasi = $keranjang->items()
+                        ->lockForUpdate()
+                        ->get(['menu_id', 'jumlah'])
+                        ->mapWithKeys(fn ($item) => [(int) $item->menu_id => (int) $item->jumlah])
+                        ->all();
+                }
+
                 $dipilih = collect($jumlahPerMenu)
                     ->filter(fn ($jumlah, $menuId) => is_numeric($menuId) && (int) $jumlah > 0)
                     ->map(fn ($jumlah) => (int) $jumlah);
 
                 if ($dipilih->isEmpty()) {
                     throw new RuntimeException('Minimal 1 item harus dipesan.');
+                }
+
+                if ($keranjang && ! $this->reservasiCocok($dipilih->all(), $reservasi)) {
+                    throw new RuntimeException(
+                        'Isi keranjang berubah. Muat ulang halaman lalu periksa kembali pesanan Anda.'
+                    );
                 }
 
                 $daftarMenu = Menu::whereIn('id', $dipilih->keys())
@@ -67,15 +86,16 @@ class PesananService
                         throw new RuntimeException('Menu '.$menu->nama_menu.' sedang tidak tersedia.');
                     }
 
-                    if ($menu->stok_menu < $jumlah) {
+                    $stokTersedia = (int) $menu->stok_menu + ($reservasi[(int) $menuId] ?? 0);
+
+                    if ($stokTersedia < $jumlah) {
                         throw new RuntimeException(
-                            'Stok '.$menu->nama_menu.' tersisa '.max(0, (int) $menu->stok_menu).' porsi.'
+                            'Stok '.$menu->nama_menu.' tersisa '.max(0, $stokTersedia).' porsi.'
                         );
                     }
 
                     $subtotal += (float) $menu->harga * $jumlah;
                 }
-
 
                 $totalBayar = $subtotal;
 
@@ -127,7 +147,17 @@ class PesananService
 
                 $pesanan->load('detailPesanan');
 
-                app(StokService::class)->potongSaatPesanan($pesanan, $opsi['kasir_id'] ?? auth()->id());
+                if ($keranjang) {
+                    app(StokService::class)->pakaiReservasi(
+                        $pesanan,
+                        $keranjang,
+                        $opsi['kasir_id'] ?? auth()->id()
+                    );
+
+                    app(KeranjangService::class)->hapusSetelahCheckout($keranjang);
+                } else {
+                    app(StokService::class)->potongSaatPesanan($pesanan, $opsi['kasir_id'] ?? auth()->id());
+                }
 
                 return $pesanan->load(['detailPesanan', 'meja']);
             });
@@ -142,6 +172,21 @@ class PesananService
 
             throw $exception;
         }
+    }
+
+    private function reservasiCocok(array $diminta, array $reservasi): bool
+    {
+        if (count($diminta) !== count($reservasi)) {
+            return false;
+        }
+
+        foreach ($diminta as $menuId => $jumlah) {
+            if ((int) ($reservasi[(int) $menuId] ?? 0) !== (int) $jumlah) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function normalisasiKunciIdempotensi(mixed $kunci): ?string
@@ -171,13 +216,6 @@ class PesananService
         return in_array($kode, ['23000', '23505'], true)
             || str_contains(strtolower($exception->getMessage()), 'unique');
     }
-
-
-
-
-
-
-
 
     public function lunasi(
         Pesanan $pesanan,
@@ -225,10 +263,6 @@ class PesananService
             return true;
         });
     }
-
-
-
-
 
     public function batalkan(Pesanan $pesanan, ?int $userId = null, string $alasan = 'Pesanan dibatalkan.'): void
     {
@@ -291,9 +325,6 @@ class PesananService
         });
     }
 
-
-
-
     private function statusAwal(string $asal, ?string $metode): array
     {
         if ($asal === 'emenu' && $metode === 'qris') {
@@ -323,5 +354,4 @@ class PesananService
 
         return $kode;
     }
-
 }
