@@ -120,6 +120,11 @@ Lalu isi **Ports Mappings** di Coolify dengan `1001:1001` (host:container).
 Jika memakai domain HTTPS, biarkan `PORT=80`, `APP_URL=https://DOMAIN-TIM-ANDA`,
 dan `SESSION_SECURE_COOKIE=true`.
 
+> Build pertama mengompilasi ekstensi PHP dan bisa 10–20 menit. Jika Coolify
+> memutus build karena timeout, naikkan **Build Timeout** menjadi 1800 detik.
+> Jika `DB_HOST` internal tidak bisa di-resolve dari container aplikasi,
+> aktifkan **Connect to Predefined Network** pada aplikasi.
+
 ### Environment Variables
 
 Gunakan `.env.coolify.example` sebagai daftar variabel. Nilai wajib:
@@ -194,6 +199,15 @@ php artisan migrate --force
 php artisan db:seed --force
 php artisan storage:link
 ```
+
+### Scheduled task (opsional, production)
+
+Aplikasi memiliki command kedaluwarsa keranjang/pesanan. Agar berjalan di
+produksi, tambahkan **Scheduled Task** di Coolify:
+
+- Command: `php artisan schedule:run`
+- Frekuensi: setiap menit
+- Container: service aplikasi
 
 ## Tugas 3 — CI/CD GitHub Actions
 
