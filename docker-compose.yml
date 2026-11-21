@@ -52,7 +52,7 @@ services:
       SERVER_IP: ${SERVER_IP:-}
     ports:
       - "1001:1001"
-      - "443:443"
+      - "555:555"
     volumes:
       - ./docker/nginx/templates:/etc/nginx/templates:ro
       - ./docker/nginx/snippets:/etc/nginx/snippets:ro
