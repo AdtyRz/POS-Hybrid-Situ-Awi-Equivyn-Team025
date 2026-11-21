@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-URL="${1:-http://127.0.0.1/aktif}"
+URL="${1:-http://127.0.0.1:1001/aktif}"
 REQUESTS="${2:-1000}"
 CONCURRENCY="${3:-50}"
 OUT_DIR="${OUT_DIR:-$ROOT_DIR/stress-results}"

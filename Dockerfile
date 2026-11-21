@@ -23,7 +23,7 @@ FROM php:8.4-apache
 ENV COMPOSER_ALLOW_SUPERUSER=1 \
     COMPOSER_NO_INTERACTION=1 \
     APACHE_DOCUMENT_ROOT=/var/www/html/public \
-    PORT=80
+    PORT=1001
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         $PHPIZE_DEPS \
@@ -102,7 +102,7 @@ COPY docker/php/php.ini /usr/local/etc/php/conf.d/zz-situawi.ini
 COPY docker/php/entrypoint-deploy.sh /usr/local/bin/entrypoint-deploy.sh
 RUN chmod +x /usr/local/bin/entrypoint-deploy.sh
 
-EXPOSE 80
+EXPOSE 1001 80
 
 ENTRYPOINT ["/usr/local/bin/entrypoint-deploy.sh"]
 CMD ["apache2-foreground"]

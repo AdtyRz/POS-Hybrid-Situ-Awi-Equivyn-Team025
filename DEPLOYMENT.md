@@ -28,7 +28,7 @@ docker compose up -d db redis
 
 # Jalankan aplikasi di port 1001
 docker run -d --name app-tim-025 \
-  -p 1001:80 \
+  -p 1001:1001 \
   --network situawi_default \
   --env-file .env \
   -e APP_ENV=production \
@@ -224,6 +224,11 @@ Repository → **Settings → Secrets and variables → Actions**:
 | `COOLIFY_WEBHOOK_URL` | **Deploy webhook URL** dari tab **Webhooks** aplikasi Coolify (bukan manual Git webhook) |
 | `COOLIFY_API_TOKEN` | API token Coolify dengan izin deploy |
 | `PRODUCTION_URL` | URL publik aplikasi, mis. `https://tim025.server.smkbudibakti.sch.id` |
+
+> Di Coolify ada dua jenis webhook. Untuk GitHub Actions gunakan **Deploy
+> webhook** (bukan **Manual Git webhook**). Manual Git webhook dipakai jika
+> Coolify menarik perubahan langsung dari GitHub tanpa Actions. Deploy webhook
+> dipanggil dengan `POST` dan header `Authorization: Bearer <token>`.
 
 Workflow akan:
 

@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-URL="${1:-http://127.0.0.1/aktif}"
+URL="${1:-http://127.0.0.1:1001/aktif}"
 FAILED=0
 
 echo "== Container =="

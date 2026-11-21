@@ -3,12 +3,15 @@ set -eu
 
 cd /var/www/html
 
-# Platform seperti Coolify kadang memberi PORT sendiri. Apache default 80.
-PORT="${PORT:-80}"
-if [ "$PORT" != "80" ]; then
-    echo "[deploy] Apache mendengarkan port ${PORT}..."
-    sed -ri "s/^Listen 80$/Listen ${PORT}/" /etc/apache2/ports.conf
-    sed -ri "s/<VirtualHost \*:80>/<VirtualHost *:${PORT}>/" /etc/apache2/sites-available/000-default.conf
+# Platform seperti Coolify kadang memberi PORT sendiri. Default 1001 (sesuai penugasan).
+PORT="${PORT:-1001}"
+echo "[deploy] Apache mendengarkan port ${PORT}..."
+if [ "$PORT" = "1001" ]; then
+    printf "Listen 1001\nListen 80\n" > /etc/apache2/ports.conf
+    sed -ri "s/<VirtualHost \*:[0-9]+>/<VirtualHost *:1001 *:80>/" /etc/apache2/sites-available/000-default.conf
+elif [ "$PORT" != "80" ]; then
+    sed -ri "s/^Listen .*/Listen ${PORT}/" /etc/apache2/ports.conf
+    sed -ri "s/<VirtualHost \*:[0-9]+>/<VirtualHost *:${PORT}>/" /etc/apache2/sites-available/000-default.conf
 fi
 
 wait_for_db() {
