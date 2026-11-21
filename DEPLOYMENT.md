@@ -225,6 +225,11 @@ Repository → **Settings → Secrets and variables → Actions**:
 | `COOLIFY_API_TOKEN` | API token Coolify dengan izin deploy |
 | `PRODUCTION_URL` | URL publik aplikasi, mis. `https://tim025.server.smkbudibakti.sch.id` |
 
+> Di Coolify ada dua jenis webhook. Untuk GitHub Actions gunakan **Deploy
+> webhook** (bukan **Manual Git webhook**). Manual Git webhook dipakai jika
+> Coolify menarik perubahan langsung dari GitHub tanpa Actions. Deploy webhook
+> dipanggil dengan `POST` dan header `Authorization: Bearer <token>`.
+
 Workflow akan:
 
 1. checkout kode;
