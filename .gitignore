@@ -53,3 +53,12 @@ Thumbs.db
 /public/asset/resto
 /postgres
 /esp32-iot/**/secrets.h
+
+# Docker runtime (workshop)
+/docker/nginx/certs/*.pem
+/docker/certbot/conf/*
+!/docker/certbot/conf/.gitkeep
+/docker/certbot/www/*
+!/docker/certbot/www/.gitkeep
+/backups/
+/stress-results/

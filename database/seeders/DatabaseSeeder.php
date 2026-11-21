@@ -11,6 +11,14 @@ class DatabaseSeeder extends Seeder
         $this->call(SituAwiSeeder::class);
         $this->call(BahanBakuSeeder::class);
         $this->call(SesiMejaSeeder::class);
-        $this->call(RiwayatPesananSeeder::class);
+
+        // Riwayat pesanan memakai Faker, yang hanya tersedia di require-dev.
+        // Di container produksi (composer install --no-dev) seeder ini dilewati
+        // agar `php artisan db:seed` tetap berhasil.
+        if (class_exists(\Faker\Generator::class)) {
+            $this->call(RiwayatPesananSeeder::class);
+        } else {
+            $this->command?->warn('RiwayatPesananSeeder dilewati: Faker tidak tersedia di mode production.');
+        }
     }
 }

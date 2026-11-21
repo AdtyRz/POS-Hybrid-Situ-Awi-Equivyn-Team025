@@ -1,0 +1,121 @@
+name: situawi
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: situawi-app:latest
+    env_file:
+      - .env
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: ${APP_URL_DOCKER:-http://localhost}
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: "5432"
+      REDIS_CLIENT: phpredis
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      QUEUE_CONNECTION: sync
+      BROADCAST_CONNECTION: log
+      LOG_LEVEL: ${LOG_LEVEL_DOCKER:-warning}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES_DOCKER:-172.16.0.0/12,10.0.0.0/8,192.168.0.0/16}
+      SESSION_SECURE_COOKIE: ${SESSION_SECURE_COOKIE_DOCKER:-false}
+      RUN_SEED: ${RUN_SEED:-false}
+    volumes:
+      - public:/var/www/html/public
+      - storage:/var/www/html/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 9000) ? 0 : 1);"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+    image: situawi-nginx:latest
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+      SERVER_IP: ${SERVER_IP:-}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/templates:/etc/nginx/templates:ro
+      - ./docker/nginx/snippets:/etc/nginx/snippets:ro
+      - ./docker/nginx/certs:/etc/nginx/certs
+      - ./docker/certbot/www:/var/www/certbot:ro
+      - public:/var/www/html/public:ro
+      - storage:/var/www/html/storage:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/aktif >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - allkeys-lru
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot:latest
+    profiles: ["ssl"]
+    volumes:
+      - ./docker/certbot/conf:/etc/letsencrypt
+      - ./docker/certbot/www:/var/www/certbot
+    entrypoint: ["certbot"]
+
+volumes:
+  pgdata:
+  redisdata:
+  public:
+  storage:
