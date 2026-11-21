@@ -212,7 +212,6 @@ void setup() {
     tulisLcd("Cek server...", "Mohon tunggu", true);
     fetchMejaStatus();
     lastStatusCheck = millis();
-    intervalPolling = STATUS_INTERVAL_MS;
     segeraPolling = false;
   }
 
@@ -253,7 +252,10 @@ void loop() {
   if (WiFi.status() == WL_CONNECTED && (segeraPolling || millis() - lastStatusCheck >= intervalPolling)) {
     segeraPolling = false;
     lastStatusCheck = millis();
-    intervalPolling = fetchMejaStatus() ? STATUS_INTERVAL_MS : RETRY_INTERVAL_MS;
+
+    if (! fetchMejaStatus()) {
+      intervalPolling = RETRY_INTERVAL_MS;
+    }
   }
 
   delay(5);
@@ -312,7 +314,6 @@ void handleTouch() {
         Serial.println("[TOUCH] Tap -> coba server lagi");
         tulisLcd("Mencoba server", "Mohon tunggu", true);
         segeraPolling = true;
-        intervalPolling = STATUS_INTERVAL_MS;
         return;
       }
 
@@ -584,6 +585,15 @@ bool fetchMejaStatus() {
     buzzerDuration = 10;
   }
 
+  int pollingDetik = konfigurasi["polling_detik"] | 10;
+  if (pollingDetik < 5) {
+    pollingDetik = 5;
+  }
+  if (pollingDetik > 120) {
+    pollingDetik = 120;
+  }
+  intervalPolling = (unsigned long)pollingDetik * 1000UL;
+
   totalBayar = data["total_bayar"].as<float>();
   jumlahPesanan = data["jumlah_pesanan"].as<int>();
   jumlahSelesai = data["jumlah_selesai"].as<int>();
@@ -775,6 +785,9 @@ void renderLayar() {
     } else if (metodePembayaran == "tunai") {
       baris1 = "Pembayaran";
       baris2 = "di Kasir";
+    } else if (metodePembayaran == "transfer") {
+      baris1 = "Verifikasi TF";
+      baris2 = "ke Kasir";
     } else {
       baris1 = "Pembayaran";
       baris2 = "TF / Kasir";

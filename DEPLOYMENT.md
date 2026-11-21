@@ -28,7 +28,7 @@ docker compose up -d db redis
 
 # Jalankan aplikasi di port 1001
 docker run -d --name app-tim-025 \
-  -p 1001:80 \
+  -p 1001:1001 \
   --network situawi_default \
   --env-file .env \
   -e APP_ENV=production \

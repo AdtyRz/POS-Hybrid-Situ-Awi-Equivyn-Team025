@@ -11,7 +11,7 @@ services:
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
-      APP_URL: ${APP_URL_DOCKER:-http://localhost}
+      APP_URL: ${APP_URL_DOCKER:-http://localhost:1001}
       DB_CONNECTION: pgsql
       DB_HOST: db
       DB_PORT: "5432"
@@ -51,7 +51,7 @@ services:
       DOMAIN: ${DOMAIN:-localhost}
       SERVER_IP: ${SERVER_IP:-}
     ports:
-      - "80:80"
+      - "1001:1001"
       - "443:443"
     volumes:
       - ./docker/nginx/templates:/etc/nginx/templates:ro
@@ -64,7 +64,7 @@ services:
       app:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/aktif >/dev/null || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:1001/aktif >/dev/null || wget -qO- http://127.0.0.1/aktif >/dev/null || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

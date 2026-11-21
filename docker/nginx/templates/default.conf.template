@@ -1,6 +1,7 @@
 # HTTP khusus domain: redirect ke HTTPS + melayani ACME challenge.
 server {
     listen 80;
+    listen 1001;
     server_name ${DOMAIN};
     server_tokens off;
 
@@ -16,6 +17,7 @@ server {
 # HTTP default: tetap melayani aplikasi untuk akses LAN/IP.
 server {
     listen 80 default_server;
+    listen 1001 default_server;
     server_name _;
     server_tokens off;
 

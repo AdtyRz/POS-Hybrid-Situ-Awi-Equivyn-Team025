@@ -4,3 +4,5 @@ RUN apk add --no-cache openssl
 
 COPY entrypoint.d/ /docker-entrypoint.d/
 RUN chmod +x /docker-entrypoint.d/*.sh
+
+EXPOSE 1001 80
