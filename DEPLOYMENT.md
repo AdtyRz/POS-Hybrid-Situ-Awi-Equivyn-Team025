@@ -221,7 +221,8 @@ Repository → **Settings → Secrets and variables → Actions**:
 
 | Secret | Isi |
 | --- | --- |
-| `COOLIFY_WEBHOOK_URL` | Webhook dari tab **Webhooks** aplikasi Coolify |
+| `COOLIFY_WEBHOOK_URL` | **Deploy webhook URL** dari tab **Webhooks** aplikasi Coolify (bukan manual Git webhook) |
+| `COOLIFY_API_TOKEN` | API token Coolify dengan izin deploy |
 | `PRODUCTION_URL` | URL publik aplikasi, mis. `https://tim025.server.smkbudibakti.sch.id` |
 
 Workflow akan:
@@ -229,18 +230,20 @@ Workflow akan:
 1. checkout kode;
 2. memastikan `Dockerfile` ada;
 3. `docker build` image;
-4. memanggil webhook Coolify;
+4. `POST` ke **Deploy webhook** Coolify dengan header
+   `Authorization: Bearer $COOLIFY_API_TOKEN`;
 5. menunggu `PRODUCTION_URL/aktif` merespons HTTP 200 (hingga 15 menit,
    karena build pertama bisa 10–20 menit).
 
-Jika `COOLIFY_WEBHOOK_URL` atau `PRODUCTION_URL` belum diisi, langkah deploy
-dilewati dengan peringatan dan workflow tetap hijau. Isi kedua secret tersebut
-agar deployment benar-benar berjalan.
+Jika `COOLIFY_WEBHOOK_URL`/`COOLIFY_API_TOKEN` atau `PRODUCTION_URL` belum
+diisi, langkah terkait dilewati dengan peringatan dan workflow tetap hijau.
+Isi kedua secret tersebut agar deployment benar-benar berjalan.
 
 Secret bisa diisi lewat UI atau `gh`:
 
 ```bash
-gh secret set COOLIFY_WEBHOOK_URL --body 'URL_WEBHOOK_DARI_COOLIFY'
+gh secret set COOLIFY_WEBHOOK_URL --body 'URL_DEPLOY_WEBHOOK_DARI_COOLIFY'
+gh secret set COOLIFY_API_TOKEN --body 'API_TOKEN_COOLIFY'
 gh secret set PRODUCTION_URL --body 'http://server.smkbudibakti.sch.id:1001'
 ```
 

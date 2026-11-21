@@ -51,22 +51,25 @@ jobs:
     runs-on: ubuntu-latest
     env:
       COOLIFY_WEBHOOK_URL: ${{ secrets.COOLIFY_WEBHOOK_URL }}
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
       PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
     steps:
       - name: 1. Cek Konfigurasi Deployment
         run: |
-          if [ -z "$COOLIFY_WEBHOOK_URL" ]; then
-            echo "::warning::COOLIFY_WEBHOOK_URL belum diatur; langkah deploy akan dilewati."
+          if [ -z "$COOLIFY_WEBHOOK_URL" ] || [ -z "$COOLIFY_API_TOKEN" ]; then
+            echo "::warning::COOLIFY_WEBHOOK_URL dan COOLIFY_API_TOKEN harus diisi; langkah deploy akan dilewati."
           fi
           if [ -z "$PRODUCTION_URL" ]; then
             echo "::warning::PRODUCTION_URL belum diatur; verifikasi health check akan dilewati."
           fi
 
       - name: 2. Trigger Deployment Coolify
-        if: env.COOLIFY_WEBHOOK_URL != ''
+        if: env.COOLIFY_WEBHOOK_URL != '' && env.COOLIFY_API_TOKEN != ''
         run: |
           echo "Mengirim sinyal deployment ke Coolify..."
           curl --fail --silent --show-error \
+            --request POST \
+            --header "Authorization: Bearer $COOLIFY_API_TOKEN" \
             --retry 3 --retry-delay 5 --max-time 60 \
             "$COOLIFY_WEBHOOK_URL"
           echo
