@@ -13,7 +13,9 @@ services:
       APP_DEBUG: "false"
       APP_URL: ${APP_URL_DOCKER:-http://localhost:1001}
       DB_CONNECTION: pgsql
-      DB_HOST: db
+      # Di Coolify, isi DB_HOST ke host Supabase agar tidak memakai db lokal.
+      # Di LAN, kosongkan DB_HOST atau set DB_HOST=db.
+      DB_HOST: ${DB_HOST:-db}
       DB_PORT: "5432"
       REDIS_CLIENT: phpredis
       REDIS_HOST: redis
@@ -38,8 +40,8 @@ services:
       test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 9000) ? 0 : 1);"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 40s
+      retries: 10
+      start_period: 120s
     restart: unless-stopped
 
   nginx:
