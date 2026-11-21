@@ -198,7 +198,8 @@ php artisan storage:link
 ## Tugas 3 — CI/CD GitHub Actions
 
 Workflow ada di `.github/workflows/deploy.yml` dan berjalan saat push ke
-`main` (atau manual dari tab Actions).
+`main`, saat pull request ke `main` (hanya job build), atau manual dari tab
+Actions.
 
 ### Secrets yang harus diisi
 
@@ -217,6 +218,10 @@ Workflow akan:
 4. memanggil webhook Coolify;
 5. menunggu `PRODUCTION_URL/aktif` merespons HTTP 200 (hingga 15 menit,
    karena build pertama bisa 10–20 menit).
+
+Jika `COOLIFY_WEBHOOK_URL` atau `PRODUCTION_URL` belum diisi, langkah deploy
+dilewati dengan peringatan dan workflow tetap hijau. Isi kedua secret tersebut
+agar deployment benar-benar berjalan.
 
 Secret bisa diisi lewat UI atau `gh`:
 
