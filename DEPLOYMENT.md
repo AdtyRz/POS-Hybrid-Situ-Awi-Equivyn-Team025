@@ -125,6 +125,45 @@ dan `SESSION_SECURE_COOKIE=true`.
 > Jika `DB_HOST` internal tidak bisa di-resolve dari container aplikasi,
 > aktifkan **Connect to Predefined Network** pada aplikasi.
 
+### Alternatif: Docker Compose (Nginx + PHP-FPM)
+
+Jika ingin memakai `docker-compose.yml` yang sama seperti stack LAN:
+
+1. Buat resource **Docker Compose** di Coolify.
+2. Repository dan branch sama (`main`).
+3. Docker Compose Location: `/docker-compose.yml`.
+4. Ports: `1001:1001` (sudah ada di service `nginx`).
+5. Isi environment:
+
+```env
+APP_KEY=base64:...
+APP_URL_DOCKER=http://100.86.161.155:1001
+DB_CONNECTION=pgsql
+DB_HOST=aws-0-ap-southeast-1.pooler.supabase.com
+DB_PORT=5432
+DB_DATABASE=postgres
+DB_USERNAME=postgres.bplbtqpvcfzuahxhwavr
+DB_PASSWORD=Zerobug-dev's Project
+DB_SSLMODE=require
+SESSION_SECURE_COOKIE_DOCKER=false
+TRUSTED_PROXIES_DOCKER=0.0.0.0/0,::/0
+RUN_SEED=false
+```
+
+Catatan:
+
+- `APP_URL_DOCKER` dan `SESSION_SECURE_COOKIE_DOCKER` diperlukan karena
+  `docker-compose.yml` memakai nama variabel tersebut.
+- `DB_HOST` diarahkan ke Supabase. Service `db` di compose tetap berjalan
+  tetapi tidak dipakai aplikasi.
+- Untuk memakai database lokal compose, set `DB_HOST=db`, lalu isi
+  `RUN_SEED=true` sekali pada database kosong. Jangan jalankan seeder dua kali
+  karena seeder menggunakan `insert`, bukan `updateOrCreate`.
+- Nginx menunggu service `app` **healthy**. Healthcheck `app` diberi waktu
+  120 detik agar migrasi pertama tidak dianggap gagal.
+- Jangan set `RUN_SEED=true` saat memakai Supabase yang sudah berisi user;
+  seeder akan gagal karena email duplikat.
+
 ### Environment Variables
 
 Gunakan `.env.coolify.example` sebagai daftar variabel. Nilai wajib:
