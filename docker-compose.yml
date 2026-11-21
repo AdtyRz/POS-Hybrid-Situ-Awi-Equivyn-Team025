@@ -56,10 +56,11 @@ services:
       - "1001:1001"
       - "555:555"
     volumes:
-      - ./docker/nginx/templates:/etc/nginx/templates:ro
-      - ./docker/nginx/snippets:/etc/nginx/snippets:ro
-      - ./docker/nginx/certs:/etc/nginx/certs
-      - ./docker/certbot/www:/var/www/certbot:ro
+      # Template dan snippet sudah di-bake ke image (docker/nginx/Dockerfile).
+      # Jangan pakai bind mount ./docker/... karena Coolify menjalankan compose
+      # dari /artifacts dan folder tersebut tidak tersedia.
+      - certs:/etc/nginx/certs
+      - certbot_www:/var/www/certbot:ro
       - public:/var/www/html/public:ro
       - storage:/var/www/html/storage:ro
     depends_on:
@@ -112,8 +113,8 @@ services:
     image: certbot/certbot:latest
     profiles: ["ssl"]
     volumes:
-      - ./docker/certbot/conf:/etc/letsencrypt
-      - ./docker/certbot/www:/var/www/certbot
+      - certbot_conf:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
     entrypoint: ["certbot"]
 
 volumes:
@@ -121,3 +122,6 @@ volumes:
   redisdata:
   public:
   storage:
+  certs:
+  certbot_conf:
+  certbot_www:
