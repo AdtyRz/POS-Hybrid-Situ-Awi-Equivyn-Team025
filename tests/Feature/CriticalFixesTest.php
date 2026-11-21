@@ -358,7 +358,7 @@ class CriticalFixesTest extends TestCase
         ])->assertStatus(201);
 
         $this->assertSame(1, Pesanan::count());
-        $this->assertSame(10, $menu->fresh()->stok_menu);
+        $this->assertSame(8, $menu->fresh()->stok_menu);
     }
 
     public function test_api_daftar_meja_tidak_membocorkan_qr_token(): void

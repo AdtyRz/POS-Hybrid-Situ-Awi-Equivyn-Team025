@@ -87,7 +87,7 @@ class BackendHardeningTest extends TestCase
         ])->assertNotFound();
     }
 
-    public function test_api_pesanan_memakai_kode_kanonik_tanpa_pajak_dan_stok_baru_dipotong_setelah_bayar(): void
+    public function test_api_pesanan_memakai_kode_kanonik_tanpa_pajak_dan_stok_langsung_dipotong(): void
     {
         $meja = $this->meja();
         $menu = $this->menu(10, 10000);
@@ -105,11 +105,12 @@ class BackendHardeningTest extends TestCase
         $this->assertSame(20000.0, (float) $data['total_bayar']);
         $this->assertSame(Pesanan::STATUS_MENUNGGU, $data['status_pesanan']);
         $this->assertSame(Pesanan::PAYMENT_BELUM_BAYAR, $data['status_pembayaran']);
-        $this->assertSame(10, $menu->fresh()->stok_menu);
+        $this->assertSame(8, $menu->fresh()->stok_menu);
         $this->assertSame('terisi', $meja->fresh()->status_meja);
-        $this->assertDatabaseMissing('stok_mutasi', [
+        $this->assertDatabaseHas('stok_mutasi', [
             'menu_id' => $menu->id,
             'jenis' => 'penjualan',
+            'jumlah_delta' => -2,
         ]);
     }
 
@@ -186,7 +187,7 @@ class BackendHardeningTest extends TestCase
             $this->assertSame(Pesanan::PAYMENT_BELUM_BAYAR, $belumBayar->fresh()->status_pembayaran);
             $this->assertNull($belumBayar->fresh()->void_at);
             $this->assertSame('terisi', $meja->fresh()->status_meja);
-            $this->assertSame(10, $menu->fresh()->stok_menu);
+            $this->assertSame(7, $menu->fresh()->stok_menu);
         }
     }
 

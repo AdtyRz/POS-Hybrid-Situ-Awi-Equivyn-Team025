@@ -82,25 +82,17 @@
                         </div>
                     </div>
                     @if ($daftarPesanan->count() > 0)
-                        <form method="POST" action="{{ route('kasir.session.tutup', $m->kode_meja) }}">
-                            @csrf
-                            @method('PATCH')
-                            <button type="button"
-                                @click="mintaKonfirmasi($el.closest('form'), 'Selesaikan sesi meja ini? Semua pesanan pada sesi ini akan ditutup dan kode unik baru akan dibuat.')"
-                                class="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm shadow-sm transition">
-                                Selesaikan Sesi
-                            </button>
-                        </form>
+                        <button type="button"
+                            @click="mintaKonfirmasi('{{ $m->kode_meja }}', true)"
+                            class="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm shadow-sm transition">
+                            Selesaikan Sesi
+                        </button>
                     @else
-                        <form method="POST" action="{{ route('kasir.session.tutup', $m->kode_meja) }}">
-                            @csrf
-                            @method('PATCH')
-                            <button type="button"
-                                @click="mintaKonfirmasi($el.closest('form'), 'Selesaikan sesi meja ini dan buat kode unik baru?')"
-                                class="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold text-sm shadow-sm transition">
-                                Selesaikan Sesi
-                            </button>
-                        </form>
+                        <button type="button"
+                            @click="mintaKonfirmasi('{{ $m->kode_meja }}', false)"
+                            class="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold text-sm shadow-sm transition">
+                            Selesaikan Sesi
+                        </button>
                     @endif
                 </div>
 
@@ -151,15 +143,35 @@
             </div>
             <div class="px-5 py-4 bg-[#FAF7F0] flex items-center justify-end gap-2">
                 <button type="button" @click="konfirmasi.open = false"
-                        class="px-4 py-2.5 rounded-xl border border-stone-300 bg-white text-stone-700 font-bold text-xs hover:bg-stone-50 transition">
+                        :disabled="konfirmasi.busy"
+                        class="px-4 py-2.5 rounded-xl border border-stone-300 bg-white text-stone-700 font-bold text-xs hover:bg-stone-50 transition disabled:opacity-60 disabled:cursor-wait">
                     Batal
                 </button>
                 <button type="button" @click="jalankanKonfirmasi()"
-                        class="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition">
-                    Ya, Selesaikan
+                        :disabled="konfirmasi.busy"
+                        class="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition disabled:opacity-60 disabled:cursor-wait">
+                    <span x-text="konfirmasi.busy ? 'Memproses...' : 'Ya, Selesaikan'">Ya, Selesaikan</span>
                 </button>
             </div>
         </div>
+    </div>
+
+    <div x-show="toast.open"
+         x-cloak
+         x-transition
+         role="status"
+         aria-live="polite"
+         class="fixed bottom-6 right-6 z-[60] max-w-sm px-5 py-3.5 rounded-2xl shadow-xl text-sm font-semibold text-white flex items-start gap-3 border border-white/10"
+         :class="toast.error ? 'bg-[#93000A]' : 'bg-[#00341A]'">
+        <span class="mt-0.5 shrink-0">
+            <svg x-show="toast.error" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            </svg>
+            <svg x-show="!toast.error" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+        </span>
+        <span x-text="toast.message"></span>
     </div>
 
     <script>
@@ -168,15 +180,74 @@
                 konfirmasi: {
                     open: false,
                     message: '',
-                    form: null,
+                    kodeMeja: null,
+                    busy: false,
                 },
-                mintaKonfirmasi(form, message) {
-                    this.konfirmasi = { open: true, message, form };
+                toast: {
+                    open: false,
+                    message: '',
+                    error: false,
                 },
-                jalankanKonfirmasi() {
-                    const form = this.konfirmasi.form;
-                    this.konfirmasi.open = false;
-                    form?.requestSubmit();
+                toastTimer: null,
+                mintaKonfirmasi(kodeMeja, adaPesanan) {
+                    this.konfirmasi = {
+                        open: true,
+                        kodeMeja,
+                        busy: false,
+                        message: adaPesanan
+                            ? 'Selesaikan sesi meja ini? Semua pesanan pada sesi ini akan ditutup dan kode unik baru akan dibuat.'
+                            : 'Selesaikan sesi meja ini dan buat kode unik baru?',
+                    };
+                },
+                tampilkanToast(message, error = false) {
+                    this.toast = { open: true, message, error };
+                    clearTimeout(this.toastTimer);
+                    this.toastTimer = setTimeout(() => {
+                        this.toast.open = false;
+                    }, 4000);
+                },
+                async jalankanKonfirmasi() {
+                    if (this.konfirmasi.busy || !this.konfirmasi.kodeMeja) return;
+
+                    this.konfirmasi.busy = true;
+                    const kodeMeja = this.konfirmasi.kodeMeja;
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+
+                    try {
+                        const respons = await fetch(
+                            @json(route('kasir.session.index')) + '/' + encodeURIComponent(kodeMeja),
+                            {
+                                method: 'PATCH',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'X-CSRF-TOKEN': csrfToken,
+                                },
+                                body: JSON.stringify({}),
+                                credentials: 'same-origin',
+                            }
+                        );
+
+                        const payload = await respons.json().catch(() => null);
+
+                        if (!respons.ok || payload?.status !== 'ok') {
+                            throw new Error(payload?.message || 'Sesi meja gagal diakhiri.');
+                        }
+
+                        this.konfirmasi = { open: false, message: '', kodeMeja: null, busy: false };
+                        this.tampilkanToast(payload.message || 'Sesi meja berhasil diakhiri.');
+
+                        if (typeof window.refreshLiveRegions === 'function') {
+                            await window.refreshLiveRegions({ immediate: true });
+                        } else {
+                            window.location.reload();
+                        }
+                    } catch (error) {
+                        this.tampilkanToast(error.message || 'Sesi meja gagal diakhiri.', true);
+                    } finally {
+                        this.konfirmasi.busy = false;
+                    }
                 },
             };
         }

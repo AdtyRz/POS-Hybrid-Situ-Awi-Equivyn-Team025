@@ -15,7 +15,7 @@ class PembayaranApiRequest extends FormRequest
     {
         return [
             'kode_pesanan' => ['required', 'string', 'exists:pesanan,kode_pesanan'],
-            'metode_pembayaran' => ['required', 'in:tunai,qris'],
+            'metode_pembayaran' => ['required', 'in:tunai,qris,transfer'],
             'jumlah_bayar' => ['required', 'numeric', 'min:0'],
         ];
     }
@@ -26,7 +26,7 @@ class PembayaranApiRequest extends FormRequest
             'kode_pesanan.required' => 'Kode pesanan wajib diisi.',
             'kode_pesanan.exists' => 'Pesanan tidak ditemukan.',
             'metode_pembayaran.required' => 'Metode pembayaran wajib dipilih.',
-            'metode_pembayaran.in' => 'Metode pembayaran harus tunai atau qris.',
+            'metode_pembayaran.in' => 'Metode pembayaran harus tunai, qris, atau transfer.',
             'jumlah_bayar.required' => 'Jumlah bayar wajib diisi.',
             'jumlah_bayar.numeric' => 'Jumlah bayar harus berupa angka.',
             'jumlah_bayar.min' => 'Jumlah bayar tidak boleh kurang dari 0.',

@@ -316,6 +316,51 @@
                     <p class="text-stone-500 text-xs mt-3">Pembayaran QRIS diproses otomatis melalui Midtrans.</p>
                 @endif
             </div>
+        @elseif ($pesanan->metode_pembayaran === 'transfer')
+            <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 mt-3">
+                <div class="flex items-center justify-between">
+                    <h2 class="font-bold">Pembayaran Transfer Bank</h2>
+                    <span class="text-[11px] font-bold rounded-full px-3 py-1 {{ $pesanan->status_pembayaran === 'sudah_bayar' ? 'bg-forest-100 text-forest-900' : ($pesanan->status_pesanan === 'dibatalkan' ? 'bg-red-100 text-red-700' : 'bg-sky-100 text-sky-800') }}">
+                        {{ $pesanan->status_pembayaran === 'sudah_bayar' ? 'Lunas' : ($pesanan->status_pesanan === 'dibatalkan' ? 'Dibatalkan' : 'Menunggu Konfirmasi') }}
+                    </span>
+                </div>
+                @if ($pesanan->status_pembayaran === 'sudah_bayar')
+                    <div class="bg-forest-100/60 rounded-2xl p-4 mt-3 text-center">
+                        <p class="font-bold text-forest-900">Pembayaran Transfer Lunas</p>
+                        <p class="text-forest-600 text-xs mt-1">Transfer sudah dikonfirmasi kasir. Pesanan diteruskan ke dapur.</p>
+                    </div>
+                @elseif ($pesanan->status_pesanan === 'dibatalkan')
+                    <div class="bg-red-50 rounded-2xl p-4 mt-3 text-center">
+                        <p class="font-bold text-red-700">Pesanan Dibatalkan</p>
+                        <p class="text-red-600 text-xs mt-1">Pesanan ini tidak lagi menunggu pembayaran transfer.</p>
+                    </div>
+                @else
+                    <div class="bg-sky-50 rounded-2xl p-4 mt-3 text-center">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-sky-700">Total Transfer</p>
+                        <p class="font-extrabold text-2xl text-forest-900 mt-1">
+                            Rp{{ number_format($pesanan->total_bayar, 0, ',', '.') }}</p>
+                        <p class="text-stone-500 text-xs mt-1">Transfer sesuai nominal, lalu tunjukkan bukti ke kasir.</p>
+                    </div>
+                    <div class="mt-3 rounded-2xl border border-sky-200 bg-sky-50/60 p-4 space-y-2 text-sm">
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="text-stone-500">Bank</span>
+                            <strong class="text-forest-900">{{ $transfer['bank'] ?: '-' }}</strong>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="text-stone-500">Nomor Rekening</span>
+                            <strong class="font-mono text-forest-900">{{ $transfer['nomor'] ?: 'Belum diatur' }}</strong>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="text-stone-500">Atas Nama</span>
+                            <strong class="text-forest-900">{{ $transfer['atas_nama'] ?: '-' }}</strong>
+                        </div>
+                    </div>
+                    @if (blank($transfer['nomor']))
+                        <p class="text-amber-700 text-xs font-semibold mt-3">Nomor rekening belum diatur. Silakan hubungi kasir untuk tujuan transfer.</p>
+                    @endif
+                    <p class="text-stone-500 text-xs mt-3">Pesanan diproses setelah kasir mengonfirmasi dana transfer diterima.</p>
+                @endif
+            </div>
         @elseif ($pesanan->status_pembayaran !== 'sudah_bayar' && $pesanan->status_pesanan !== 'dibatalkan')
             <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 mt-3">
                 <h2 class="font-bold">Pembayaran Tunai</h2>
@@ -424,11 +469,17 @@
                         if (data.dibatalkan) {
                             qrisDeadline = null;
                             const s = document.getElementById('statusTeks');
-                            if (s) s.textContent = data.message || 'Pesanan dibatalkan.';
+                            if (s) s.textContent = 'Pesanan dibatalkan.';
                             const c = document.getElementById('countdown');
                             if (c) c.textContent = '--:--';
                             const j = document.getElementById('countdownJam');
                             if (j) j.textContent = '--:--';
+
+                            if (typeof window.refreshLiveRegions === 'function') {
+                                window.refreshLiveRegions({ immediate: true });
+                            } else {
+                                window.location.reload();
+                            }
                             return;
                         }
                         if (data.expired && data.qr_url) {
@@ -452,6 +503,86 @@
 
             tickCountdown();
             checkPaymentStatus();
+        </script>
+    @endif
+
+    @if (
+        $pesanan->metode_pembayaran !== 'qris' &&
+            ! in_array($pesanan->status_pesanan, ['selesai', 'dibatalkan'], true))
+        <script>
+            (() => {
+                const statusApiUrl = @json($statusApiUrl);
+                let statusTerakhir = @json($pesanan->status_pesanan);
+                let timer = null;
+                let berhenti = false;
+
+                function jadwalkan() {
+                    if (berhenti) return;
+                    clearTimeout(timer);
+                    timer = setTimeout(periksaStatusPesanan, 3000);
+                }
+
+                async function periksaStatusPesanan() {
+                    if (berhenti) return;
+
+                    if (document.hidden) {
+                        jadwalkan();
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(statusApiUrl, {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            cache: 'no-store',
+                            credentials: 'same-origin',
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            const berubah = data.status_pesanan
+                                && data.status_pesanan !== statusTerakhir;
+                            const final = data.lunas
+                                || data.dibatalkan
+                                || data.status_pesanan === 'selesai';
+
+                            if (final) {
+                                berhenti = true;
+
+                                if (typeof window.refreshLiveRegions === 'function') {
+                                    await window.refreshLiveRegions({ immediate: true });
+                                } else {
+                                    window.location.reload();
+                                }
+                                return;
+                            }
+
+                            if (berubah) {
+                                statusTerakhir = data.status_pesanan;
+
+                                if (typeof window.refreshLiveRegions === 'function') {
+                                    await window.refreshLiveRegions({ immediate: true });
+                                } else {
+                                    window.location.reload();
+                                    return;
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        // Abaikan gangguan jaringan sementara, lalu coba lagi.
+                    }
+
+                    jadwalkan();
+                }
+
+                document.addEventListener('visibilitychange', () => {
+                    if (! document.hidden) periksaStatusPesanan();
+                });
+
+                jadwalkan();
+            })();
         </script>
     @endif
 </body>

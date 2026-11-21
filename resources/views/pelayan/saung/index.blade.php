@@ -278,9 +278,9 @@
                                 </div>
                             @endif
 
-                            @if ($table['session_active'])
+                            @if ($table['session_active'] && $table['session_occupied'])
                                 <div class="flex justify-end pt-1"
-                                     x-show="tables.find(item => item.id === {{ $table['id'] }})?.session_active ?? false">
+                                     x-show="tables.find(item => item.id === {{ $table['id'] }})?.session_active && tables.find(item => item.id === {{ $table['id'] }})?.session_occupied">
                                     <button @click="konfirmasiAkhiriSesi({{ $table['id'] }})" type="button"
                                             class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[#BA1A1A]/30 bg-[#FFDAD6]/40 text-[#93000A] font-bold text-[10px] tracking-[0.24px] transition-all active:scale-95 cursor-pointer hover:bg-[#FFDAD6]">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

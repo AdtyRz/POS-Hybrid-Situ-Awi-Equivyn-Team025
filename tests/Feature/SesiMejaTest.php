@@ -314,6 +314,30 @@ class SesiMejaTest extends TestCase
         $this->assertNotSame($kodeLama, SesiMeja::aktifUntuk($meja)->kode_unik);
     }
 
+    public function test_kasir_mengakhiri_sesi_via_json_tanpa_redirect(): void
+    {
+        $kasir = User::factory()->create([
+            'role' => 'kasir',
+            'is_aktif' => true,
+        ]);
+        $meja = $this->siapkanMeja();
+        $kodeLama = SesiMeja::aktifUntuk($meja)->kode_unik;
+
+        $response = $this->actingAs($kasir)
+            ->patchJson(route('kasir.session.tutup', $meja->kode_meja))
+            ->assertOk()
+            ->assertJsonPath('status', 'ok')
+            ->assertJsonPath('meja', $meja->kode_meja);
+
+        $this->assertNull($response->headers->get('Location'));
+
+        $kodeBaru = SesiMeja::aktifUntuk($meja)->kode_unik;
+
+        $this->assertNotSame($kodeLama, $kodeBaru);
+        $this->assertSame($kodeBaru, $response->json('kode_unik'));
+        $this->assertSame('kosong', $meja->fresh()->status_meja);
+    }
+
     public function test_kasir_melihat_penolakan_mengakhiri_sesi_dengan_pesanan_belum_lunas(): void
     {
         $kasir = User::factory()->create([

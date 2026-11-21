@@ -1,0 +1,98 @@
+name: CI/CD Build & Deploy UKK RPL 2026
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # JOB 1: CONTINUOUS INTEGRATION (validasi & build image)
+  build-and-test:
+    name: Build & Test Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: 2. Verifikasi Keberadaan Dockerfile
+        run: |
+          if [ ! -f Dockerfile ]; then
+            echo "::error::Dockerfile tidak ditemukan di root repositori."
+            exit 1
+          fi
+          echo "Dockerfile ditemukan."
+
+      - name: 3. Build Docker Image
+        run: |
+          docker build \
+            --tag "ukk-app-test:${GITHUB_SHA}" \
+            --tag "ukk-app-test:latest" \
+            .
+
+      - name: 4. Tampilkan Informasi Image
+        run: docker image inspect "ukk-app-test:${GITHUB_SHA}" --format '{{.Id}} {{.Size}} bytes'
+
+  # JOB 2: CONTINUOUS DEPLOYMENT (trigger Coolify)
+  deploy-production:
+    name: Deploy to Coolify
+    needs: build-and-test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      COOLIFY_WEBHOOK_URL: ${{ secrets.COOLIFY_WEBHOOK_URL }}
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+      PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+    steps:
+      - name: 1. Cek Konfigurasi Deployment
+        run: |
+          if [ -z "$COOLIFY_WEBHOOK_URL" ] || [ -z "$COOLIFY_API_TOKEN" ]; then
+            echo "::warning::COOLIFY_WEBHOOK_URL dan COOLIFY_API_TOKEN harus diisi; langkah deploy akan dilewati."
+          fi
+          if [ -z "$PRODUCTION_URL" ]; then
+            echo "::warning::PRODUCTION_URL belum diatur; verifikasi health check akan dilewati."
+          fi
+
+      - name: 2. Trigger Deployment Coolify
+        if: env.COOLIFY_WEBHOOK_URL != '' && env.COOLIFY_API_TOKEN != ''
+        run: |
+          echo "Mengirim sinyal deployment ke Coolify..."
+          curl --fail --silent --show-error \
+            --request POST \
+            --header "Authorization: Bearer $COOLIFY_API_TOKEN" \
+            --retry 3 --retry-delay 5 --max-time 60 \
+            "$COOLIFY_WEBHOOK_URL"
+          echo
+          echo "Sinyal deployment terkirim."
+
+      - name: 3. Tunggu Aplikasi Produksi Merespons
+        if: env.PRODUCTION_URL != ''
+        run: |
+          URL="${PRODUCTION_URL%/}/aktif"
+          echo "Menunggu $URL ..."
+
+          # Build pertama di Coolify bisa 10-20 menit (kompilasi ekstensi PHP).
+          for i in $(seq 1 60); do
+            CODE=$(curl -k -s -o /dev/null -w '%{http_code}' --max-time 15 "$URL" || true)
+            echo "Percobaan $i/60: HTTP $CODE"
+
+            if [ "$CODE" = "200" ]; then
+              echo "Aplikasi produksi sehat."
+              exit 0
+            fi
+
+            sleep 15
+          done
+
+          echo "::error::Aplikasi tidak merespons HTTP 200 di $URL setelah 15 menit."
+          exit 1

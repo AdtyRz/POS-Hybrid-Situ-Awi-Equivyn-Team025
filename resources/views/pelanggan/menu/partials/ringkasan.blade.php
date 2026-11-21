@@ -222,6 +222,41 @@
                 </label>
 
                 <label class="block p-3 rounded-xl border transition cursor-pointer"
+                       :class="paymentMethod === 'transfer'
+                           ? 'border-forest-600 bg-gold-50/40 ring-1 ring-forest-600/30'
+                           : 'border-forest-100 bg-white hover:bg-cream-50'">
+                    <div class="flex items-start gap-3">
+                        <div class="pt-0.5">
+                            <input type="radio"
+                                   name="payment_method"
+                                   value="transfer"
+                                   x-model="paymentMethod"
+                                   class="w-4 h-4 text-forest-600 focus:ring-forest-600">
+                        </div>
+                        <div class="space-y-1 flex-1">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs sm:text-sm font-bold text-forest-900">Transfer Bank</span>
+                                <span class="px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 text-[10px] font-bold border border-sky-300">Konfirmasi Kasir</span>
+                            </div>
+                            <p class="text-[11px] text-charcoal-500 leading-relaxed">
+                                Transfer ke {{ $transfer['bank'] ?: 'rekening resto' }}
+                                <span class="font-mono font-bold">{{ $transfer['nomor'] ?: '-' }}</span>
+                                a.n. {{ $transfer['atas_nama'] ?: 'Saung Situ Awi' }}, lalu tunjukkan bukti transfer ke kasir.
+                            </p>
+                            @if (blank($transfer['nomor']))
+                                <p class="text-[11px] font-semibold text-amber-700 leading-relaxed">
+                                    Nomor rekening belum diatur. Hubungi kasir untuk tujuan transfer.
+                                </p>
+                            @endif
+                            <div class="flex items-center gap-1.5 pt-1">
+                                <span class="px-1.5 py-0.5 rounded bg-sky-50 border border-sky-200 text-sky-700 text-[9px] font-bold uppercase">{{ $transfer['bank'] ?: 'Bank' }}</span>
+                                <span class="px-1.5 py-0.5 rounded bg-sky-50 border border-sky-200 text-sky-700 text-[9px] font-bold">Transfer Manual</span>
+                            </div>
+                        </div>
+                    </div>
+                </label>
+
+                <label class="block p-3 rounded-xl border transition cursor-pointer"
                        :class="paymentMethod === 'cash'
                            ? 'border-forest-600 bg-gold-50/40 ring-1 ring-forest-600/30'
                            : 'border-forest-100 bg-white hover:bg-cream-50'">
@@ -280,7 +315,7 @@
                         </div>
                         <div class="mt-3 flex items-center justify-between border-t border-white/10 pt-2.5 text-[10px]">
                             <span class="text-cream-100/60">Metode pembayaran</span>
-                            <span class="font-bold text-gold-300" x-text="paymentMethod === 'cash' ? 'Tunai di kasir' : 'QRIS Midtrans'"></span>
+                            <span class="font-bold text-gold-300" x-text="paymentMethod === 'cash' ? 'Tunai di kasir' : (paymentMethod === 'transfer' ? 'Transfer bank' : 'QRIS Midtrans')"></span>
                         </div>
                     </div>
 

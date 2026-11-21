@@ -25,12 +25,6 @@
                     <span>/</span>
                     <span class="text-[#00341A]">Master Data Meja/Saung</span>
                 </div>
-
-                <div
-                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F0EEE7] text-[10px] font-bold text-[#707971]">
-                    <span class="w-2 h-2 rounded-full bg-[#7A5900]"></span>
-                    <span class="tracking-wide">INFRASTRUKTUR SAUNG & IOT TABLE NODE</span>
-                </div>
             </div>
 
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pt-1">

@@ -60,7 +60,7 @@ class KasirController extends Controller
 
 
 
-    public function akhiriSession(Request $request, $meja): RedirectResponse
+    public function akhiriSession(Request $request, $meja): RedirectResponse|JsonResponse
     {
         if (is_numeric($meja)) {
             $mejaMakan = MejaMakan::findOrFail($meja);
@@ -69,8 +69,17 @@ class KasirController extends Controller
         }
 
         try {
-            SesiMeja::putuskanSesi($mejaMakan);
+            $sesiBaru = SesiMeja::putuskanSesi($mejaMakan);
         } catch (\RuntimeException $exception) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()
+                    ->json([
+                        'status' => 'error',
+                        'message' => $exception->getMessage(),
+                    ], 422)
+                    ->header('Cache-Control', 'no-store, max-age=0');
+            }
+
             return back()->with('error', $exception->getMessage());
         }
 
@@ -80,7 +89,21 @@ class KasirController extends Controller
             'selesai',
         ));
 
-        return back()->with('sukses', 'Sesi meja '.$mejaMakan->kode_meja.' berhasil diakhiri. Kode unik baru sudah dibuat.');
+        $pesan = 'Sesi meja '.$mejaMakan->kode_meja.' berhasil diakhiri. Kode unik baru sudah dibuat.';
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()
+                ->json([
+                    'status' => 'ok',
+                    'message' => $pesan,
+                    'meja' => $mejaMakan->kode_meja,
+                    'kode_unik' => $sesiBaru->kode_unik,
+                    'session_occupied' => false,
+                ])
+                ->header('Cache-Control', 'no-store, max-age=0');
+        }
+
+        return back()->with('sukses', $pesan);
     }
 
 

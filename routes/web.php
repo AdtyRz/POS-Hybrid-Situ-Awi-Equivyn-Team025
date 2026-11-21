@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\BahanBakuController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EMenuController;
 use App\Http\Controllers\KasirController;
 use App\Http\Controllers\KdsController;
+use App\Http\Controllers\LaporanKeuanganController;
 use App\Http\Controllers\LaporanPenjualanController;
 use App\Http\Controllers\PelayanController;
 use App\Http\Controllers\PembayaranController;
@@ -52,6 +54,9 @@ Route::middleware('pesanan.no-store')->group(function () {
     Route::post('/meja/{meja}/checkout', [EMenuController::class, 'checkout'])
         ->middleware('throttle:20,1,checkout')
         ->name('emenu.checkout');
+    Route::post('/meja/{meja}/keranjang', [EMenuController::class, 'simpanKeranjang'])
+        ->middleware('throttle:120,1,keranjang')
+        ->name('emenu.keranjang.simpan');
     Route::get('/qris/status/{kode_pesanan}', [EMenuController::class, 'qrisStatus'])
         ->middleware('throttle:60,1,qris')
         ->name('emenu.qris.status');
@@ -80,8 +85,8 @@ Route::middleware(['auth', 'aktif'])->group(function () {
 Route::middleware(['auth', 'aktif', 'role:admin', 'admin.ajax'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/admin/analitik-laporan', [AdminController::class, 'dashboard'])->name('admin.analitik-laporan');
-Route::get('/admin/analitik-laporan/cetak-pdf', [AdminController::class, 'cetakAnalitikPdf'])->name('admin.analitik-laporan.cetak-pdf');
-Route::get('/admin/analitik-laporan/ekspor-xlsx', [AdminController::class, 'eksporAnalitikXlsx'])->name('admin.analitik-laporan.ekspor-xlsx');
+    Route::get('/admin/analitik-laporan/cetak-pdf', [AdminController::class, 'cetakAnalitikPdf'])->name('admin.analitik-laporan.cetak-pdf');
+    Route::get('/admin/analitik-laporan/ekspor-xlsx', [AdminController::class, 'eksporAnalitikXlsx'])->name('admin.analitik-laporan.ekspor-xlsx');
     Route::get('/admin/laporan', [LaporanPenjualanController::class, 'index'])->name('admin.laporan');
     Route::get('/admin/laporan-penjualan', [LaporanPenjualanController::class, 'index'])->name('admin.laporan-penjualan');
     Route::get('/admin/laporan-penjualan/state', [LaporanPenjualanController::class, 'state'])->name('admin.laporan-penjualan.state');
@@ -90,6 +95,26 @@ Route::get('/admin/analitik-laporan/ekspor-xlsx', [AdminController::class, 'eksp
     Route::get('/admin/laporan-penjualan/ekspor/{format}', [LaporanPenjualanController::class, 'ekspor'])
         ->whereIn('format', ['csv', 'xls'])
         ->name('admin.laporan-penjualan.ekspor');
+
+    Route::get('/admin/arus-kas', [LaporanKeuanganController::class, 'index'])->name('admin.arus-kas');
+    Route::get('/admin/arus-kas/cetak', [LaporanKeuanganController::class, 'cetak'])->name('admin.arus-kas.cetak');
+    Route::get('/admin/arus-kas/ekspor/{format}', [LaporanKeuanganController::class, 'ekspor'])
+        ->whereIn('format', ['csv', 'xls'])
+        ->name('admin.arus-kas.ekspor');
+    Route::post('/admin/arus-kas/pembelian', [LaporanKeuanganController::class, 'simpanPembelian'])->name('admin.arus-kas.pembelian.simpan');
+    Route::put('/admin/arus-kas/pembelian/{pembelian}', [LaporanKeuanganController::class, 'ubahPembelian'])->name('admin.arus-kas.pembelian.ubah');
+    Route::delete('/admin/arus-kas/pembelian/{pembelian}', [LaporanKeuanganController::class, 'hapusPembelian'])->name('admin.arus-kas.pembelian.hapus');
+    Route::post('/admin/arus-kas/pengeluaran', [LaporanKeuanganController::class, 'simpanPengeluaran'])->name('admin.arus-kas.pengeluaran.simpan');
+    Route::put('/admin/arus-kas/pengeluaran/{pengeluaran}', [LaporanKeuanganController::class, 'ubahPengeluaran'])->name('admin.arus-kas.pengeluaran.ubah');
+    Route::delete('/admin/arus-kas/pengeluaran/{pengeluaran}', [LaporanKeuanganController::class, 'hapusPengeluaran'])->name('admin.arus-kas.pengeluaran.hapus');
+
+    Route::get('/admin/bahan-baku', [BahanBakuController::class, 'index'])->name('admin.bahan-baku');
+    Route::post('/admin/bahan-baku', [BahanBakuController::class, 'simpan'])->name('admin.bahan-baku.simpan');
+    Route::put('/admin/bahan-baku/{bahan}', [BahanBakuController::class, 'ubah'])->name('admin.bahan-baku.ubah');
+    Route::delete('/admin/bahan-baku/{bahan}', [BahanBakuController::class, 'hapus'])->name('admin.bahan-baku.hapus');
+    Route::post('/admin/bahan-baku/{bahan}/stok', [BahanBakuController::class, 'sesuaikanStok'])->name('admin.bahan-baku.stok');
+    Route::get('/admin/bahan-baku/{bahan}/mutasi', [BahanBakuController::class, 'mutasi'])->name('admin.bahan-baku.mutasi');
+    Route::put('/admin/bahan-baku/{menu}/resep', [BahanBakuController::class, 'simpanResep'])->name('admin.bahan-baku.resep');
 
     Route::get('/admin/pengaturan-sistem', [PengaturanController::class, 'index'])->name('admin.pengaturan-sistem');
     Route::post('/admin/pengaturan-sistem', [PengaturanController::class, 'simpan'])->name('admin.pengaturan-sistem.simpan');

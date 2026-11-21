@@ -228,11 +228,14 @@
                     if (data.dibatalkan) {
                         qrisDeadline = null;
                         const s = document.getElementById('statusTeks');
-                        if (s) s.textContent = data.message || 'Pesanan dibatalkan.';
+                        if (s) s.textContent = 'Pesanan dibatalkan. Membuka status pesanan...';
                         const c = document.getElementById('countdown');
                         if (c) c.textContent = '--:--';
                         const j = document.getElementById('countdownJam');
                         if (j) j.textContent = '--:--';
+                        window.setTimeout(function () {
+                            window.location.replace(data.redirect || statusUrl);
+                        }, 500);
                         return;
                     }
                     if (data.expired && data.qr_url) {
@@ -257,7 +260,14 @@
         tickCountdown();
         checkPaymentStatus();
 
-        window.addEventListener('realtime:status.berubah', () => {
+        window.addEventListener('realtime:status.berubah', (event) => {
+            const status = event.detail?.pesanan?.status_pesanan;
+
+            if (status === 'dibatalkan') {
+                window.location.replace(statusUrl);
+                return;
+            }
+
             fetch(qrisStatusUrl, {
                     headers: {
                         'Accept': 'application/json',
@@ -266,7 +276,9 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if (data.lunas) window.location.href = data.redirect || statusUrl;
+                    if (data.lunas || data.dibatalkan) {
+                        window.location.href = data.redirect || statusUrl;
+                    }
                 })
                 .catch(() => {});
         });

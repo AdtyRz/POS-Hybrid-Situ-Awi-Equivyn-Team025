@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Events\SesiMejaBerubah;
 use App\Events\StatusPesananBerubah;
 use App\Models\Pembayaran;
+use App\Models\Pengaturan;
 use App\Models\Pesanan;
 use App\Models\SesiMeja;
 use App\Services\MidtransService;
@@ -32,7 +33,11 @@ class PembayaranController extends Controller
             $kembalian = max(0, $jumlahBayar - (float) $pesanan->total_bayar);
         }
 
-        return view('kasir.pembayaran.bayar', compact('pesanan', 'kembalian'));
+        return view('kasir.pembayaran.bayar', [
+            'pesanan' => $pesanan,
+            'kembalian' => $kembalian,
+            'transfer' => $this->pengaturanTransfer(),
+        ]);
     }
 
     public function cari(Request $request): View
@@ -40,7 +45,7 @@ class PembayaranController extends Controller
         $kode = trim((string) ($request->input('kode_pembayaran') ?? $request->input('kode_pesanan')));
 
         if ($kode === '') {
-            return view('kasir.pembayaran.cari', ['error' => 'Masukkan kode meja, nama pemesan, kode pesanan, atau kode pembayaran.']);
+            return $this->tampilCari(['error' => 'Masukkan kode meja, nama pemesan, kode pesanan, atau kode pembayaran.']);
         }
 
         $kunci = mb_strtolower($kode);
@@ -54,10 +59,10 @@ class PembayaranController extends Controller
 
         if ($pesanan) {
             if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
-                return view('kasir.pembayaran.cari', ['error' => 'Pesanan ini sudah dibayar', 'pesanan' => $pesanan]);
+                return $this->tampilCari(['error' => 'Pesanan ini sudah dibayar', 'pesanan' => $pesanan]);
             }
 
-            return view('kasir.pembayaran.cari', compact('pesanan'));
+            return $this->tampilCari(compact('pesanan'));
         }
 
         $pola = '%' . $kunci . '%';
@@ -81,24 +86,24 @@ class PembayaranController extends Controller
             $pesanan = $daftarPesanan->first();
 
             if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
-                return view('kasir.pembayaran.cari', ['error' => 'Pesanan ini sudah dibayar', 'pesanan' => $pesanan]);
+                return $this->tampilCari(['error' => 'Pesanan ini sudah dibayar', 'pesanan' => $pesanan]);
             }
 
-            return view('kasir.pembayaran.cari', compact('pesanan'));
+            return $this->tampilCari(compact('pesanan'));
         }
 
         if ($daftarPesanan->count() > 1) {
-            return view('kasir.pembayaran.cari', compact('daftarPesanan', 'kode'));
+            return $this->tampilCari(compact('daftarPesanan', 'kode'));
         }
 
-        return view('kasir.pembayaran.cari', ['error' => 'Pesanan tidak ditemukan', 'kode' => $kode]);
+        return $this->tampilCari(['error' => 'Pesanan tidak ditemukan', 'kode' => $kode]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $data = $request->validate([
             'kode_pesanan' => ['required', 'exists:pesanan,kode_pesanan'],
-            'metode_pembayaran' => ['required', 'in:tunai,qris'],
+            'metode_pembayaran' => ['required', 'in:tunai,qris,transfer'],
             'jumlah_bayar' => ['required', 'numeric', 'min:0'],
             'selesaikan_sesi' => ['nullable', 'boolean'],
         ]);
@@ -106,15 +111,23 @@ class PembayaranController extends Controller
         $pesanan = Pesanan::where('kode_pesanan', $data['kode_pesanan'])->firstOrFail();
 
         if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR) {
-            return back()->withErrors(['kode_pesanan' => 'Pesanan ini sudah dibayar.']);
+            return $this->galatStore($request, 'kode_pesanan', 'Pesanan ini sudah dibayar.');
         }
 
         if ($pesanan->status_pesanan === Pesanan::STATUS_DIBATALKAN) {
-            return back()->withErrors(['kode_pesanan' => 'Pesanan ini sudah dibatalkan.']);
+            return $this->galatStore($request, 'kode_pesanan', 'Pesanan ini sudah dibatalkan.');
         }
 
-        if ($data['jumlah_bayar'] < (float) $pesanan->total_bayar) {
-            return back()->withErrors(['jumlah_bayar' => 'Uang yang dibayar kurang dari total tagihan.'])->withInput();
+        if ($data['metode_pembayaran'] === 'transfer' && $pesanan->metode_pembayaran !== 'transfer') {
+            return $this->galatStore($request, 'metode_pembayaran', 'Pesanan ini tidak memakai metode transfer.');
+        }
+
+        if ($data['metode_pembayaran'] !== 'transfer' && $pesanan->metode_pembayaran === 'transfer') {
+            return $this->galatStore($request, 'metode_pembayaran', 'Pembayaran transfer wajib dikonfirmasi dengan metode transfer.');
+        }
+
+        if ($data['metode_pembayaran'] !== 'transfer' && $data['jumlah_bayar'] < (float) $pesanan->total_bayar) {
+            return $this->galatStore($request, 'jumlah_bayar', 'Uang yang dibayar kurang dari total tagihan.');
         }
 
         $midtrans = app(MidtransService::class);
@@ -126,9 +139,11 @@ class PembayaranController extends Controller
             $statusMidtrans = $midtrans->getTransactionStatus($pesanan->kode_pesanan);
 
             if (! $midtrans->verifikasiQris($pesanan, $statusMidtrans)) {
-                return back()->withErrors([
-                    'metode_pembayaran' => 'Pembayaran QRIS belum terverifikasi oleh Midtrans. Minta tamu menyelesaikan pembayaran terlebih dahulu.',
-                ])->withInput();
+                return $this->galatStore(
+                    $request,
+                    'metode_pembayaran',
+                    'Pembayaran QRIS belum terverifikasi oleh Midtrans. Minta tamu menyelesaikan pembayaran terlebih dahulu.'
+                );
             }
         }
 
@@ -136,10 +151,10 @@ class PembayaranController extends Controller
             ? trim((string) data_get($statusMidtrans, 'transaction_id'))
             : null;
 
-        $jumlahBayar = $data['metode_pembayaran'] === 'qris'
+        $jumlahBayar = in_array($data['metode_pembayaran'], ['qris', 'transfer'], true)
             ? (float) $pesanan->total_bayar
             : (float) $data['jumlah_bayar'];
-        $kembalian = $data['metode_pembayaran'] === 'qris'
+        $kembalian = in_array($data['metode_pembayaran'], ['qris', 'transfer'], true)
             ? 0
             : $jumlahBayar - (float) $pesanan->total_bayar;
 
@@ -178,7 +193,7 @@ class PembayaranController extends Controller
                 ]);
             });
         } catch (RuntimeException $exception) {
-            return back()->withErrors(['kode_pesanan' => $exception->getMessage()])->withInput();
+            return $this->galatStore($request, 'kode_pesanan', $exception->getMessage());
         }
 
         $pesanan->refresh();
@@ -199,6 +214,16 @@ class PembayaranController extends Controller
             try {
                 SesiMeja::putuskanSesi($meja);
             } catch (\RuntimeException $exception) {
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()
+                        ->json([
+                            'success' => false,
+                            'message' => $exception->getMessage(),
+                            'errors' => ['sesi' => [$exception->getMessage()]],
+                        ], 422)
+                        ->header('Cache-Control', 'no-store, max-age=0');
+                }
+
                 return redirect()
                     ->route('kasir.dashboard', ['meja' => $meja->kode_meja])
                     ->with('error', $exception->getMessage());
@@ -211,9 +236,42 @@ class PembayaranController extends Controller
             ));
         }
 
+        $pesanSukses = $data['metode_pembayaran'] === 'transfer'
+            ? 'Transfer dikonfirmasi. Pesanan lunas dan diteruskan ke dapur.'
+            : 'Pembayaran lunas. Cetak struk dapat dilakukan dari tombol Cetak Struk.';
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()
+                ->json([
+                    'success' => true,
+                    'message' => $pesanSukses,
+                    'kode_pesanan' => $pesanan->kode_pesanan,
+                    'meja' => $pesanan->meja?->kode_meja,
+                    'status_pesanan' => $pesanan->status_pesanan,
+                    'status_pembayaran' => $pesanan->status_pembayaran,
+                    'metode_pembayaran' => $pesanan->metode_pembayaran,
+                ])
+                ->header('Cache-Control', 'no-store, max-age=0');
+        }
+
         return redirect()
             ->route('kasir.dashboard', $pesanan->meja ? ['meja' => $pesanan->meja->kode_meja] : [])
-            ->with('sukses', 'Pembayaran lunas. Cetak struk dapat dilakukan dari tombol Cetak Struk.');
+            ->with('sukses', $pesanSukses);
+    }
+
+    private function galatStore(Request $request, string $field, string $pesan): RedirectResponse|JsonResponse
+    {
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()
+                ->json([
+                    'success' => false,
+                    'message' => $pesan,
+                    'errors' => [$field => [$pesan]],
+                ], 422)
+                ->header('Cache-Control', 'no-store, max-age=0');
+        }
+
+        return back()->withErrors([$field => $pesan])->withInput();
     }
 
 
@@ -255,5 +313,21 @@ class PembayaranController extends Controller
             'success' => true,
             'jumlah' => $jumlah,
         ]);
+    }
+
+    private function tampilCari(array $data = []): View
+    {
+        return view('kasir.pembayaran.cari', array_merge([
+            'transfer' => $this->pengaturanTransfer(),
+        ], $data));
+    }
+
+    private function pengaturanTransfer(): array
+    {
+        return [
+            'bank' => (string) Pengaturan::nilai('transfer_bank', 'BCA'),
+            'nomor' => (string) Pengaturan::nilai('transfer_nomor_rekening', ''),
+            'atas_nama' => (string) Pengaturan::nilai('transfer_atas_nama', 'Saung Situ Awi'),
+        ];
     }
 }

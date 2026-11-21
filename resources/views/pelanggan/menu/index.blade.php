@@ -463,6 +463,7 @@
                 mejaArea: @json($meja->area),
                 orderRef: @json($orderRef),
                 checkoutUrl: @json(route('emenu.checkout', $meja->id)),
+                keranjangUrl: @json(route('emenu.keranjang.simpan', $meja->id)),
                 searchQuery: '',
                 activeCategory: 'semua',
                 showFilterModal: false,
@@ -487,7 +488,8 @@
                 },
                 categories: @json($kategoriJson),
                 menuItems: @json($menuJson),
-                cartItems: [],
+                cartItems: @json($keranjangJson ?? []),
+                menyimpanKeranjang: false,
                 sesiAktif: true,
                 konflikPerangkat: null,
                 memprosesKonflik: false,
@@ -712,9 +714,92 @@
                     if (nilai > maksimal) nilai = maksimal;
                     this.detailQty = nilai;
                 },
-                simpanDetailKeBon() {
+                async kirimKeranjang(menuId, jumlah, catatan = null) {
+                    if (this.menyimpanKeranjang) {
+                        return null;
+                    }
+
+                    this.menyimpanKeranjang = true;
+                    const csrf = document.querySelector('meta[name="csrf-token"]').content;
+
+                    try {
+                        const response = await fetch(this.keranjangUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrf
+                            },
+                            credentials: 'same-origin',
+                            body: JSON.stringify({
+                                menu_id: menuId,
+                                jumlah: jumlah,
+                                catatan: catatan
+                            })
+                        });
+
+                        const data = await response.json().catch(() => ({}));
+
+                        if (!response.ok) {
+                            this.showToast(
+                                'info',
+                                'Stok Tidak Cukup',
+                                data.message || 'Stok menu tidak mencukupi.'
+                            );
+                            if (data.menu) {
+                                this.perbaruiStokMenu(data.menu);
+                            }
+                            return null;
+                        }
+
+                        this.terapkanKeranjang(data);
+                        return data;
+                    } catch (error) {
+                        this.showToast('info', 'Koneksi Gagal', 'Periksa jaringan lalu coba lagi.');
+                        return null;
+                    } finally {
+                        this.menyimpanKeranjang = false;
+                    }
+                },
+                perbaruiStokMenu(menu) {
+                    const item = this.menuItems.find(i => i.id === menu.id);
+                    if (!item) return;
+
+                    item.stock = Math.max(0, Number(menu.stock) || 0);
+                    item.isSoldOut = Boolean(menu.isSoldOut) || item.stock <= 0;
+                    item.badge = item.isSoldOut ? 'Stok Habis' : '';
+                    item.badgeType = item.isSoldOut ? 'soldout' : '';
+
+                    if (this.selectedMenu && this.selectedMenu.id === menu.id) {
+                        this.selectedMenu = item;
+                        this.detailQty = Math.min(Math.max(1, this.detailQty), Math.max(1, item.stock));
+                    }
+                },
+                terapkanKeranjang(data) {
+                    if (Array.isArray(data.items)) {
+                        this.cartItems = data.items.map(item => ({
+                            id: Number(item.id),
+                            name: item.name,
+                            price: Number(item.price) || 0,
+                            qty: Number(item.qty) || 0,
+                            stock: Number(item.stock) || 0,
+                            image: item.image || '',
+                            note: item.note || ''
+                        }));
+                    }
+
+                    if (data.menu) {
+                        this.perbaruiStokMenu(data.menu);
+                    }
+
+                    if (this.cartItems.length === 0 && this.step === 2) {
+                        this.showToast('info', 'Keranjang Kosong', 'Silakan pilih menu terlebih dahulu.');
+                        this.goToStep(1);
+                    }
+                },
+                async simpanDetailKeBon() {
                     const menuItem = this.selectedMenu;
-                    if (!menuItem) return;
+                    if (!menuItem || this.menyimpanKeranjang) return;
 
                     const stok = Math.max(0, Number(menuItem.stock) || 0);
                     if (menuItem.isSoldOut || stok <= 0) {
@@ -724,21 +809,9 @@
 
                     const qty = Math.min(Math.max(1, parseInt(this.detailQty, 10) || 1), stok);
                     const existing = this.cartItems.find(i => i.id === menuItem.id);
+                    const data = await this.kirimKeranjang(menuItem.id, qty, existing?.note || '');
 
-                    if (existing) {
-                        existing.qty = qty;
-                        existing.stock = stok;
-                    } else {
-                        this.cartItems.push({
-                            id: menuItem.id,
-                            name: menuItem.name,
-                            price: menuItem.price,
-                            qty: qty,
-                            stock: stok,
-                            image: menuItem.image,
-                            note: ''
-                        });
-                    }
+                    if (!data) return;
 
                     this.closeMenu();
                     this.showToast(
@@ -747,9 +820,10 @@
                         `${menuItem.name} ${qty} porsi ${existing ? 'diperbarui di' : 'masuk ke'} bon pesanan.`
                     );
                 },
-                addToCart(menuItem) {
-                    const stok = Math.max(0, Number(menuItem.stock) || 0);
+                async addToCart(menuItem) {
+                    if (this.menyimpanKeranjang) return;
 
+                    const stok = Math.max(0, Number(menuItem.stock) || 0);
                     if (menuItem.isSoldOut || stok <= 0) {
                         this.showToast('info', 'Stok Habis', `${menuItem.name} sedang tidak tersedia.`);
                         return;
@@ -763,23 +837,14 @@
                         return;
                     }
 
-                    if (existing) {
-                        existing.qty++;
-                        existing.stock = stok;
-                    } else {
-                        this.cartItems.push({
-                            id: menuItem.id,
-                            name: menuItem.name,
-                            price: menuItem.price,
-                            qty: 1,
-                            stock: stok,
-                            image: menuItem.image,
-                            note: ''
-                        });
+                    const data = await this.kirimKeranjang(menuItem.id, jumlahSekarang + 1, existing?.note || '');
+                    if (data) {
+                        this.showToast('success', 'Menu Ditambahkan', `${menuItem.name} masuk ke bon pesanan.`);
                     }
-                    this.showToast('success', 'Menu Ditambahkan', `${menuItem.name} masuk ke bon pesanan.`);
                 },
-                increaseQty(id) {
+                async increaseQty(id) {
+                    if (this.menyimpanKeranjang) return;
+
                     const item = this.cartItems.find(i => i.id === id);
                     if (!item) return;
 
@@ -789,24 +854,24 @@
                         return;
                     }
 
-                    item.qty++;
+                    await this.kirimKeranjang(id, item.qty + 1, item.note || '');
                 },
-                decreaseQty(id) {
+                async decreaseQty(id) {
+                    if (this.menyimpanKeranjang) return;
+
                     const item = this.cartItems.find(i => i.id === id);
-                    if (item) {
-                        if (item.qty > 1) {
-                            item.qty--;
-                        } else {
-                            this.removeFromCart(id);
-                        }
+                    if (!item) return;
+
+                    if (item.qty > 1) {
+                        await this.kirimKeranjang(id, item.qty - 1, item.note || '');
+                    } else {
+                        await this.removeFromCart(id);
                     }
                 },
-                removeFromCart(id) {
-                    this.cartItems = this.cartItems.filter(i => i.id !== id);
-                    if (this.cartItems.length === 0 && this.step === 2) {
-                        this.showToast('info', 'Keranjang Kosong', 'Silakan pilih menu terlebih dahulu.');
-                        this.goToStep(1);
-                    }
+                async removeFromCart(id) {
+                    if (this.menyimpanKeranjang) return;
+
+                    await this.kirimKeranjang(id, 0);
                 },
                 goToStep(newStep) {
                     if (newStep === 2 && this.cartItems.length === 0) {
@@ -879,7 +944,7 @@
                         form.appendChild(isi);
                     };
                     tambah('_token', token);
-                    tambah('metode', this.paymentMethod === 'cash' ? 'tunai' : 'qris');
+                    tambah('metode', this.paymentMethod === 'cash' ? 'tunai' : (this.paymentMethod === 'transfer' ? 'transfer' : 'qris'));
                     tambah('idempotency_key', this.checkoutKey);
                     tambah('nama_pelanggan', nama);
                     this.cartItems.forEach(item => {

@@ -11,3 +11,7 @@ Artisan::command('inspire', function () {
 Schedule::command('pesanan:batalkan-kedaluwarsa')
     ->everyMinute()
     ->withoutOverlapping();
+
+Schedule::command('keranjang:bersihkan')
+    ->everyMinute()
+    ->withoutOverlapping();

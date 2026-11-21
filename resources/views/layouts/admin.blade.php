@@ -169,6 +169,26 @@
                         </a>
 
                         <a
+                            href="{{ url('/admin/arus-kas') }}"
+                            class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->is('admin/arus-kas*') ? 'bg-[#0B4D2B] text-white shadow-xs font-semibold' : 'text-[#404941] hover:bg-[#EAE4D7] hover:text-[#1C1C18]' }}">
+
+                            <svg class="w-4 h-4 flex-shrink-0 {{ request()->is('admin/arus-kas*') ? 'text-white' : 'text-[#404941]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            <span>Arus Kas</span>
+                        </a>
+
+                        <a
+                            href="{{ url('/admin/bahan-baku') }}"
+                            class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->is('admin/bahan-baku*') ? 'bg-[#0B4D2B] text-white shadow-xs font-semibold' : 'text-[#404941] hover:bg-[#EAE4D7] hover:text-[#1C1C18]' }}">
+
+                            <svg class="w-4 h-4 flex-shrink-0 {{ request()->is('admin/bahan-baku*') ? 'text-white' : 'text-[#404941]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                            <span>Bahan Baku & Resep</span>
+                        </a>
+
+                        <a
                             href="{{ url('/admin/manajemen-akun') }}"
                             class="flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->is('admin/manajemen-akun*') || request()->is('admin/akun*') ? 'bg-[#0B4D2B] text-white shadow-xs font-semibold' : 'text-[#404941] hover:bg-[#EAE4D7] hover:text-[#1C1C18]' }}">
 
@@ -248,17 +268,6 @@
 
                 <div class="flex items-center gap-2.5 sm:gap-4">
 
-                    <div class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#B1F1C2]/40 border border-[#B1F1C2] text-[10px] font-bold text-[#00341A]">
-                        <span class="w-2 h-2 rounded-full bg-[#0B4D2B] animate-pulse"></span>
-                        <span class="tracking-wide">HTTP API Online</span>
-                    </div>
-
-                    <div class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFDEA1]/50 border border-[#FFDEA1] text-[10px] font-bold text-[#261900]">
-                        <svg class="w-3.5 h-3.5 text-[#261900]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
-                        </svg>
-                        <span class="tracking-wide">{{ $totalNodeMeja }} Node Terdaftar</span>
-                    </div>
 
                     <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#F0EEE7] border border-[#C0C9BF]/20 text-xs font-semibold text-[#404941]">
                         <svg class="w-3.5 h-3.5 text-[#404941]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

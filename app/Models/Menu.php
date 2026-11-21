@@ -30,4 +30,16 @@ class Menu extends Model
     {
         return $this->hasMany(DetailPesanan::class, 'menu_id');
     }
+
+    public function resep(): HasMany
+    {
+        return $this->hasMany(ResepMenu::class, 'menu_id');
+    }
+
+    public function hppSatuan(): float
+    {
+        return (float) $this->resep->sum(
+            fn (ResepMenu $baris) => (float) $baris->jumlah * (float) ($baris->bahan?->harga_rata_rata ?? 0)
+        );
+    }
 }

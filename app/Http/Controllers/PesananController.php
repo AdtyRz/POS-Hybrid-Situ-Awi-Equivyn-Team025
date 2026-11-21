@@ -71,6 +71,11 @@ class PesananController extends Controller
             'restoAddress' => $nilai('alamat_resto', 'Jl. Raya Situ Awi Km. 4, Ciwidey, Kabupaten Bandung'),
             'restoPhone' => $nilai('telepon_resto', '0812-3456-7890'),
             'paperSize' => $nilai('paper_size', '80mm') === '58mm' ? '58mm' : '80mm',
+            'transfer' => [
+                'bank' => (string) $nilai('transfer_bank', 'BCA'),
+                'nomor' => (string) $nilai('transfer_nomor_rekening', ''),
+                'atas_nama' => (string) $nilai('transfer_atas_nama', 'Saung Situ Awi'),
+            ],
         ];
     }
 
@@ -254,11 +259,23 @@ class PesananController extends Controller
                 $payloadSesi = $this->payloadKasir($primarySesi);
                 $metodeSesi = $pesananSesi->pluck('metode_pembayaran')->filter()->unique();
 
-                $dasar['status'] = $dasar['allOrdersPaid']
-                    ? 'paid'
-                    : ($pesananSesi->contains(
-                        fn ($pesanan) => $pesanan->status_pembayaran === Pesanan::PAYMENT_PENDING_VERIFIKASI
-                    ) ? 'waiting_qris' : 'waiting_cash');
+                if ($dasar['allOrdersPaid']) {
+                    $dasar['status'] = 'paid';
+                } elseif ($pesananSesi->contains(
+                    fn ($pesanan) => $pesanan->metode_pembayaran === 'transfer'
+                        && $pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR
+                )) {
+                    $dasar['status'] = 'waiting_transfer';
+                } elseif ($pesananSesi->contains(
+                    fn ($pesanan) => $pesanan->metode_pembayaran === 'qris'
+                        && $pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR
+                ) || $pesananSesi->contains(
+                    fn ($pesanan) => $pesanan->status_pembayaran === Pesanan::PAYMENT_PENDING_VERIFIKASI
+                )) {
+                    $dasar['status'] = 'waiting_qris';
+                } else {
+                    $dasar['status'] = 'waiting_cash';
+                }
                 $dasar['paymentType'] = $metodeSesi->count() > 1
                     ? 'campuran'
                     : $metodeSesi->first();
@@ -333,14 +350,15 @@ class PesananController extends Controller
         }
 
         $statusPriority = [
-            'waiting_qris' => 1,
-            'waiting_cash' => 2,
-            'preparing' => 3,
-            'ready' => 4,
-            'delivering' => 5,
-            'completed' => 6,
-            'cancelled' => 7,
-            'empty' => 8,
+            'waiting_cash' => 1,
+            'waiting_transfer' => 2,
+            'waiting_qris' => 3,
+            'preparing' => 4,
+            'ready' => 5,
+            'delivering' => 6,
+            'completed' => 7,
+            'cancelled' => 8,
+            'empty' => 9,
         ];
 
         $pertama = $saungsJson->sortBy(fn ($s) => $statusPriority[$s['status']] ?? 99)->first();
@@ -424,6 +442,18 @@ class PesananController extends Controller
             Pesanan::STATUS_MENUNGGU_VERIFIKASI,
         ], true);
 
+        if ($masihMenunggu
+            && $pesanan->metode_pembayaran === 'transfer'
+            && $pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR) {
+            return 'waiting_transfer';
+        }
+
+        if ($pesanan->metode_pembayaran === 'qris'
+            && $pesanan->status_pembayaran !== Pesanan::PAYMENT_SUDAH_BAYAR
+            && $pesanan->status_pesanan !== Pesanan::STATUS_DIBATALKAN) {
+            return 'waiting_qris';
+        }
+
         if ($pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR && ! $masihMenunggu) {
             return 'paid';
         }
@@ -434,6 +464,7 @@ class PesananController extends Controller
     private function pilihOrderKasir($orders): array
     {
         return $orders->reverse()->first(fn ($order) => $order['status'] === 'waiting_cash')
+            ?? $orders->reverse()->first(fn ($order) => $order['status'] === 'waiting_transfer')
             ?? $orders->reverse()->first(fn ($order) => $order['status'] === 'waiting_qris')
             ?? $orders->reverse()->first(fn ($order) => $order['status'] !== 'paid')
             ?? $orders->last();
@@ -443,6 +474,10 @@ class PesananController extends Controller
     {
         if ($orders->contains(fn ($order) => $order['status'] === 'waiting_cash')) {
             return 'waiting_cash';
+        }
+
+        if ($orders->contains(fn ($order) => $order['status'] === 'waiting_transfer')) {
+            return 'waiting_transfer';
         }
 
         if ($orders->contains(fn ($order) => $order['status'] === 'waiting_qris')) {

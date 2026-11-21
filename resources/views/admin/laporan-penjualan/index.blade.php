@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Laporan Penjualan, Rekonsiliasi & Shift Kerja')
+@section('title', $jenis === 'arus_kas' ? 'Laporan Arus Kas' : ($jenis === 'shift' ? 'Laporan Shift Kerja Staf' : 'Laporan Penjualan, Rekonsiliasi & Shift Kerja'))
 @section('page_category', 'Laporan & Ekspor')
 
 @section('content')
@@ -13,22 +13,17 @@
                 <span>/</span>
                 <span class="text-[#0B4D2B]">LAPORAN & EKSPOR</span>
             </div>
-
-            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E5E2DB] text-[10px] font-bold text-[#0B4D2B]">
-                <svg class="w-3.5 h-3.5 text-[#334A00]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-                <span class="tracking-wide">AUDIT TRAIL</span>
-            </div>
         </div>
 
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pt-1">
             <div class="flex flex-col max-w-2xl">
                 <h1 class="font-display font-bold text-3xl sm:text-4xl text-[#00341A] tracking-tight leading-tight">
-                    Laporan Penjualan, Rekonsiliasi & Shift Kerja
+                    {{ $jenis === 'arus_kas' ? 'Laporan Arus Kas' : ($jenis === 'shift' ? 'Laporan Shift Kerja Staf' : 'Laporan Penjualan, Rekonsiliasi & Shift Kerja') }}
                 </h1>
                 <p class="text-xs sm:text-sm text-[#404941] mt-2 leading-relaxed">
-                    Rekap penjualan terpadu dengan rekonsiliasi Midtrans QRIS vs uang tunai, plus laporan shift kerja staf yang mencatat login, logout, dan durasi.
+                    {{ $jenis === 'arus_kas'
+                        ? 'Rekap pemasukan lunas, pembelian bahan, pengeluaran operasional, HPP, dan arus kas bersih pada periode terpilih.'
+                        : 'Rekap penjualan terpadu dengan rekonsiliasi Midtrans QRIS vs uang tunai, plus laporan shift kerja staf yang mencatat login, logout, dan durasi.' }}
                 </p>
             </div>
 
@@ -53,6 +48,7 @@
                     <span>Dataset Excel (.xlsx)</span>
                 </button>
 
+                @if ($jenis !== 'arus_kas')
                 <button
                     type="button"
                     @click="jenisLaporan === 'shift' ? cetakLaporan() : cetakShift()"
@@ -62,6 +58,7 @@
                     </svg>
                     <span x-text="jenisLaporan === 'shift' ? 'Cetak Laporan Shift' : 'Cetak Rekap Shift'">Cetak Rekap Shift</span>
                 </button>
+                @endif
             </div>
         </div>
     </div>
@@ -89,7 +86,7 @@
                 <span class="text-[10px] font-semibold text-[#707971]">Akumulasi seluruh sesi staf</span>
             </div>
         </div>
-    @else
+    @elseif ($jenis !== 'arus_kas')
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" data-live="laporan-ringkasan">
 
         <div class="bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/20 flex flex-col justify-between min-h-[190px] relative overflow-hidden">
@@ -197,8 +194,8 @@
             <input type="hidden" name="end" x-model="endDate">
             <input type="hidden" name="q" :value="searchQuery">
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-                <div class="flex flex-col gap-1.5">
+            <div class="flex flex-wrap items-end gap-4 text-xs">
+                <div class="flex flex-col gap-1.5 flex-1 min-w-[240px]">
                     <label class="font-bold text-[10px] text-[#707971] uppercase tracking-wider">RENTANG PERIODE</label>
                     <div class="relative" @click.outside="dateOpen = false">
                         <input
@@ -227,13 +224,13 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col gap-1.5">
+                <div class="flex flex-col gap-1.5 flex-1 min-w-[240px]">
                     <label class="font-bold text-[10px] text-[#707971] uppercase tracking-wider">TIPE REKAPITULASI</label>
                     <div class="relative">
                         <select name="jenis" x-model="jenisLaporan" @change="ajukanFilter()" class="w-full h-11 pl-10 pr-8 rounded-xl bg-[#FCF9F2] border border-gray-200 text-xs font-semibold text-[#1C1C18] shadow-2xs focus:outline-hidden focus:border-[#0B4D2B] appearance-none">
                             <option value="rekonsiliasi">Laporan Penjualan &amp; Rekonsiliasi Midtrans vs Tunai</option>
                             <option value="shift">Laporan Shift Kerja Staf</option>
-                            <option value="void">Laporan Transaksi Void / Dibatalkan</option>
+                            <option value="arus_kas">Laporan Arus Kas</option>
                         </select>
                         <svg class="w-4 h-4 text-[#707971] absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -244,8 +241,8 @@
                     </div>
                 </div>
 
-                @if ($jenis !== 'shift')
-                <div class="flex flex-col gap-1.5">
+                @if (! in_array($jenis, ['shift', 'arus_kas'], true))
+                <div class="flex flex-col gap-1.5 flex-1 min-w-[200px]">
                     <label class="font-bold text-[10px] text-[#707971] uppercase tracking-wider">METODE PEMBAYARAN</label>
                     <div class="relative">
                         <select name="metode" x-model="metodePembayaran" @change="ajukanFilter()" class="w-full h-11 pl-10 pr-8 rounded-xl bg-[#FCF9F2] border border-gray-200 text-xs font-semibold text-[#1C1C18] shadow-2xs focus:outline-hidden focus:border-[#0B4D2B] appearance-none">
@@ -263,7 +260,7 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col gap-1.5">
+                <div class="flex flex-col gap-1.5 flex-1 min-w-[200px]">
                     <label class="font-bold text-[10px] text-[#707971] uppercase tracking-wider">STATUS PESANAN</label>
                     <div class="relative">
                         <select name="status" x-model="statusPesanan" @change="ajukanFilter()" class="w-full h-11 pl-10 pr-8 rounded-xl bg-[#FCF9F2] border border-gray-200 text-xs font-semibold text-[#1C1C18] shadow-2xs focus:outline-hidden focus:border-[#0B4D2B] appearance-none">
@@ -281,8 +278,7 @@
                     </div>
                 </div>
                 @endif
-
-                <div class="flex flex-col gap-1.5">
+                <div class="flex flex-col gap-1.5 flex-1 min-w-[220px]">
                     <label class="font-bold text-[10px] text-[#707971] uppercase tracking-wider">FORMAT EKSPOR</label>
                     <div class="h-11 bg-[#FCF9F2] p-1 rounded-xl border border-gray-200 shadow-2xs flex items-center justify-between">
                         <button
@@ -311,26 +307,27 @@
                         </button>
                     </div>
                 </div>
-            </div>
 
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 pt-1">
-                <button
-                    type="submit"
-                    class="w-full sm:w-auto h-11 px-7 rounded-xl bg-[#0B4D2B] hover:bg-[#08381F] active:scale-95 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                    </svg>
-                    <span x-text="submitting ? 'Memuat...' : 'Filter & Pratinjau Laporan'">Filter &amp; Pratinjau Laporan</span>
-                </button>
-                <button
-                    type="button"
-                    @click="ekspor()"
-                    class="w-full sm:w-auto h-11 px-7 rounded-xl bg-[#FFDEA1] hover:bg-[#ebd055] active:scale-95 text-[#261900] font-bold text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer">
-                    <svg class="w-4 h-4 text-[#7A5900]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    <span x-text="exportFormat === 'pdf' ? 'Unduh PDF' : exportFormat === 'excel' ? 'Unduh Excel' : 'Unduh CSV'"></span>
-                </button>
+                <div class="flex items-center gap-2 ml-auto">
+                    <button
+                        type="submit"
+                        class="h-11 px-6 rounded-xl bg-[#0B4D2B] hover:bg-[#08381F] active:scale-95 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                        <span x-text="submitting ? 'Memuat...' : 'Filter'">Filter</span>
+                    </button>
+                    <button
+                        type="button"
+                        @click="ekspor()"
+                        class="h-11 px-6 rounded-xl bg-[#FFDEA1] hover:bg-[#ebd055] active:scale-95 text-[#261900] font-bold text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer">
+                        <svg class="w-4 h-4 text-[#7A5900]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span x-text="exportFormat === 'pdf' ? 'Unduh PDF' : exportFormat === 'excel' ? 'Unduh Excel' : 'Unduh CSV'">Unduh PDF</span>
+                    </button>
+                </div>
+
             </div>
         </form>
 
@@ -362,12 +359,6 @@
                     </svg>
                 </div>
 
-                <button type="button" @click="ajukanFilter()" class="h-9 px-3 rounded-lg bg-[#F0EEE7] hover:bg-gray-200 text-[#1C1C18] text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer">
-                    <svg class="w-3 h-3 text-[#1C1C18]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h18M6 8h12M8 12h8" />
-                    </svg>
-                    <span>Filter</span>
-                </button>
             </div>
         </div>
 
@@ -479,6 +470,16 @@
         </div>
 
     </div>
+    @elseif ($jenis === 'arus_kas')
+    @php
+        $ringkasan = $ringkasanArusKas;
+        $hpp = $hppArusKas;
+        $pembelian = $pembelianArusKas;
+        $pengeluaran = $pengeluaranArusKas;
+    @endphp
+    <div class="flex flex-col gap-6" data-live="laporan-arus-kas">
+        @include('admin.arus-kas.partials.laporan', ['modeLaporan' => true])
+    </div>
     @else
     <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
 
@@ -505,12 +506,6 @@
                     </svg>
                 </div>
 
-                <button type="button" @click="ajukanFilter()" class="h-9 px-3 rounded-lg bg-[#F0EEE7] hover:bg-gray-200 text-[#1C1C18] text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer">
-                    <svg class="w-3 h-3 text-[#1C1C18]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h18M6 8h12M8 12h8" />
-                    </svg>
-                    <span>Filter</span>
-                </button>
             </div>
         </div>
 
@@ -560,7 +555,7 @@
                                         'bg-[#FFDEA1]/50 text-[#7A5900]': t.method === 'QRIS Midtrans',
                                         'bg-[#E5E2DB] text-[#1C1C18]': t.method === 'Tunai Kasir',
                                         'bg-[#CBEF89]/60 text-[#334A00]': t.method === 'Transfer Bank',
-                                        'bg-[#FFDAD6] text-[#93000A]': t.method === 'VOID Kasir'
+                                        'bg-[#FFDAD6] text-[#93000A]': t.status === 'void'
                                     }">
                                     <span x-text="t.method"></span>
                                 </span>
@@ -649,7 +644,7 @@
     </div>
     @endif
 
-    @if ($jenis !== 'shift')
+    @if (! in_array($jenis, ['shift', 'arus_kas'], true))
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch" data-live="laporan-rekonsiliasi">
 
         <div class="lg:col-span-8 bg-[#F6F3EC] rounded-2xl p-6 shadow-xs border border-[#C0C9BF]/30 flex flex-col justify-between gap-5">
@@ -788,7 +783,7 @@
             },
 
             async refreshTransaksi() {
-                if (this.jenisLaporan === 'shift') return;
+                if (this.jenisLaporan === 'shift' || this.jenisLaporan === 'arus_kas') return;
 
                 if (this._refreshInFlight) {
                     this._refreshQueued = true;

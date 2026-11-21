@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\MejaMakan;
 use App\Models\Pengaturan;
+use App\Models\Pengeluaran;
 use App\Models\Pesanan;
 use App\Models\RiwayatShift;
+use App\Services\LaporanArusKasService;
 use App\Services\ShiftService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -19,6 +21,10 @@ class LaporanPenjualanController extends Controller
     public function index(Request $request): View
     {
         $filter = $this->resolveFilter($request);
+
+        if ($filter['jenis'] === 'arus_kas') {
+            return $this->halamanArusKas($filter);
+        }
 
         if ($filter['jenis'] === 'shift') {
             return $this->halamanShiftKerja($filter);
@@ -69,6 +75,15 @@ class LaporanPenjualanController extends Controller
     public function state(Request $request): JsonResponse
     {
         $filter = $this->resolveFilter($request);
+
+        if ($filter['jenis'] === 'arus_kas') {
+            return response()
+                ->json([
+                    'jenis' => 'arus_kas',
+                    'label_periode' => $filter['labelPeriode'],
+                ])
+                ->header('Cache-Control', 'no-store, private, max-age=0');
+        }
 
         if ($filter['jenis'] === 'shift') {
             ShiftService::tutupKedaluwarsa();
@@ -141,9 +156,43 @@ class LaporanPenjualanController extends Controller
         ]));
     }
 
+    private function halamanArusKas(array $filter): View
+    {
+        $service = app(LaporanArusKasService::class);
+        $hpp = $service->laporanHpp($filter);
+        $ringkasan = array_merge($service->ringkasan($filter), $service->angkaHpp($hpp));
+
+        $pembelian = $service->pembelianQuery($filter)
+            ->paginate(10, ['*'], 'pembelian_page')
+            ->withQueryString();
+
+        $pengeluaran = $service->pengeluaranQuery($filter)
+            ->paginate(10, ['*'], 'pengeluaran_page')
+            ->withQueryString();
+
+        return view('admin.laporan-penjualan.index', array_merge($filter, [
+            'ringkasanArusKas' => $ringkasan,
+            'hppArusKas' => $hpp,
+            'pembelianArusKas' => $pembelian,
+            'pengeluaranArusKas' => $pengeluaran,
+            'daftarKategori' => Pengeluaran::KATEGORI,
+            'ringkasan' => null,
+            'transaksi' => null,
+            'transaksiJson' => [],
+            'rekapHalaman' => ['total' => 0, 'valid' => 0, 'void' => 0],
+            'namaResto' => Pengaturan::nilai('nama_resto'),
+            'dicatatPada' => Carbon::now('Asia/Jakarta'),
+            'namaAdmin' => auth()->user()?->nama ?? 'Admin',
+        ]));
+    }
+
     public function cetak(Request $request): View
     {
         $filter = $this->resolveFilter($request);
+
+        if ($filter['jenis'] === 'arus_kas') {
+            return app(LaporanKeuanganController::class)->cetak($request);
+        }
 
         if ($filter['jenis'] === 'shift') {
             ShiftService::tutupKedaluwarsa();
@@ -187,8 +236,6 @@ class LaporanPenjualanController extends Controller
         $hariIni = Carbon::now($zona);
         $shift = $this->shiftSaatIni($hariIni);
 
-
-
         $tanggal = $filter['mulai']->isSameDay($filter['selesai'])
             ? $filter['mulai']->copy()->setTimezone($zona)
             : $hariIni->copy();
@@ -224,7 +271,7 @@ class LaporanPenjualanController extends Controller
             'alamatResto' => Pengaturan::nilai('alamat_resto'),
             'teleponResto' => Pengaturan::nilai('telepon_resto'),
             'namaShift' => $shift['nama'],
-            'jamShift' => $mulaiShift->format('H:i') . ' - ' . $selesaiShift->format('H:i') . ' WIB',
+            'jamShift' => $mulaiShift->format('H:i').' - '.$selesaiShift->format('H:i').' WIB',
             'tanggalShift' => $mulaiShift->copy()->locale('id')->translatedFormat('l, d F Y'),
             'area' => $filter['area'],
             'labelArea' => $filter['labelArea'],
@@ -255,6 +302,11 @@ class LaporanPenjualanController extends Controller
     {
         $filter = $this->resolveFilter($request);
         $format = $format === 'csv' ? 'csv' : 'xls';
+
+        if ($filter['jenis'] === 'arus_kas') {
+            return app(LaporanKeuanganController::class)->ekspor($request, $format);
+        }
+
         $shiftKerja = $filter['jenis'] === 'shift';
         $base = null;
         $riwayat = null;
@@ -263,21 +315,21 @@ class LaporanPenjualanController extends Controller
             ShiftService::tutupKedaluwarsa();
             $riwayat = $this->shiftQuery($filter);
             $ringkasan = $this->ringkasanShift($filter);
-            $filename = 'laporan-shift-kerja-' . $filter['mulai']->format('Ymd') . '-' . $filter['selesai']->format('Ymd') . '.' . $format;
+            $filename = 'laporan-shift-kerja-'.$filter['mulai']->format('Ymd').'-'.$filter['selesai']->format('Ymd').'.'.$format;
         } else {
             $base = $this->baseQuery($filter);
             $ringkasan = $this->ringkasan($base);
-            $filename = 'laporan-penjualan-' . $filter['mulai']->format('Ymd') . '-' . $filter['selesai']->format('Ymd') . '.' . $format;
+            $filename = 'laporan-penjualan-'.$filter['mulai']->format('Ymd').'-'.$filter['selesai']->format('Ymd').'.'.$format;
         }
 
         $headers = $format === 'csv'
             ? [
                 'Content-Type' => 'text/csv; charset=UTF-8',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             ]
             : [
                 'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             ];
 
         return response()->stream(function () use ($format, $filter, $ringkasan, $shiftKerja, $riwayat, $base) {
@@ -291,6 +343,7 @@ class LaporanPenjualanController extends Controller
 
             if ($format === 'csv') {
                 $this->streamCsv($base, $filter, $ringkasan);
+
                 return;
             }
 
@@ -347,7 +400,7 @@ class LaporanPenjualanController extends Controller
             $jenis = 'rekonsiliasi';
         }
 
-        if (! in_array($jenis, ['rekonsiliasi', 'shift', 'void'], true)) {
+        if (! in_array($jenis, ['rekonsiliasi', 'shift', 'arus_kas'], true)) {
             $jenis = 'rekonsiliasi';
         }
 
@@ -376,7 +429,7 @@ class LaporanPenjualanController extends Controller
             'daftarArea' => $daftarArea,
             'labelPeriode' => $mulai->isSameDay($selesai)
                 ? $mulai->format('d M Y')
-                : $mulai->format('d M Y') . ' - ' . $selesai->format('d M Y'),
+                : $mulai->format('d M Y').' - '.$selesai->format('d M Y'),
             'labelArea' => $area === 'semua' ? 'Semua Area Saung' : $area,
             'labelMetode' => match ($metode) {
                 'tunai' => 'Tunai',
@@ -392,7 +445,7 @@ class LaporanPenjualanController extends Controller
             },
             'labelJenis' => match ($jenis) {
                 'shift' => 'Laporan Shift Kerja Staf',
-                'void' => 'Transaksi Void / Dibatalkan',
+                'arus_kas' => 'Laporan Arus Kas',
                 default => 'Laporan Penjualan & Rekonsiliasi Midtrans vs Tunai',
             },
         ];
@@ -413,17 +466,13 @@ class LaporanPenjualanController extends Controller
         if ($filter['cari'] !== '') {
             $cari = $filter['cari'];
             $query->where(function (Builder $sub) use ($cari) {
-                $sub->where('kode_pesanan', 'like', '%' . $cari . '%')
+                $sub->where('kode_pesanan', 'like', '%'.$cari.'%')
                     ->orWhereHas('meja', function (Builder $meja) use ($cari) {
-                        $meja->where('kode_meja', 'like', '%' . $cari . '%')
-                            ->orWhere('area', 'like', '%' . $cari . '%');
+                        $meja->where('kode_meja', 'like', '%'.$cari.'%')
+                            ->orWhere('area', 'like', '%'.$cari.'%');
                     })
-                    ->orWhereHas('kasir', fn (Builder $kasir) => $kasir->where('nama', 'like', '%' . $cari . '%'));
+                    ->orWhereHas('kasir', fn (Builder $kasir) => $kasir->where('nama', 'like', '%'.$cari.'%'));
             });
-        }
-
-        if ($filter['jenis'] === 'void') {
-            $query->where('status_pesanan', Pesanan::STATUS_DIBATALKAN);
         }
 
         if ($filter['metode'] === 'tunai') {
@@ -503,9 +552,9 @@ class LaporanPenjualanController extends Controller
                 $filter['selesai']->copy()->utc(),
             ])
             ->when($cari !== '', function (Builder $query) use ($cari) {
-                $pola = '%' . mb_strtolower($cari) . '%';
+                $pola = '%'.mb_strtolower($cari).'%';
 
-                $query->where(function (Builder $sub) use ($pola, $cari) {
+                $query->where(function (Builder $sub) use ($pola) {
                     $sub->whereHas('user', fn (Builder $user) => $user->whereRaw('LOWER(nama) LIKE ?', [$pola]))
                         ->orWhereRaw('LOWER(nama_shift) LIKE ?', [$pola]);
                 });
@@ -535,21 +584,21 @@ class LaporanPenjualanController extends Controller
         $lunas = $pesanan->status_pembayaran === Pesanan::PAYMENT_SUDAH_BAYAR;
         $items = $pesanan->detailPesanan
             ->take(2)
-            ->map(fn ($detail) => (int) $detail->jumlah . '× ' . ($detail->menu?->nama_menu ?? 'Menu'))
+            ->map(fn ($detail) => (int) $detail->jumlah.'× '.($detail->menu?->nama_menu ?? 'Menu'))
             ->implode(', ');
         $jumlahItem = (int) ($pesanan->total_item ?? $pesanan->detailPesanan->sum('jumlah'));
 
         if ($items !== '') {
-            $items .= ' • ' . $jumlahItem . ' item';
+            $items .= ' • '.$jumlahItem.' item';
         } else {
-            $items = $jumlahItem . ' item';
+            $items = $jumlahItem.' item';
         }
 
         return [
-            'id' => '#' . $pesanan->kode_pesanan,
+            'id' => '#'.$pesanan->kode_pesanan,
             'time' => optional($pesanan->waktu_pesan)->timezone('Asia/Jakarta')->format('d M Y • H:i') ?? '-',
             'table' => $pesanan->meja
-                ? $pesanan->meja->area . ' (' . $pesanan->meja->kode_meja . ')'
+                ? $pesanan->meja->area.' ('.$pesanan->meja->kode_meja.')'
                 : '-',
             'area' => $pesanan->meja?->area ?? '-',
             'items' => $items,
@@ -565,7 +614,12 @@ class LaporanPenjualanController extends Controller
     private function metodeLabel(Pesanan $pesanan): string
     {
         if ($pesanan->status_pesanan === Pesanan::STATUS_DIBATALKAN) {
-            return 'VOID Kasir';
+            return 'VOID '.match ($pesanan->metode_pembayaran) {
+                'qris' => 'QRIS',
+                'transfer' => 'Transfer',
+                'tunai' => 'Tunai',
+                default => 'Kasir',
+            };
         }
 
         return match ($pesanan->metode_pembayaran) {
@@ -592,14 +646,14 @@ class LaporanPenjualanController extends Controller
             default => 'Tunai',
         };
 
-        return 'Belum Bayar ' . $metode;
+        return 'Belum Bayar '.$metode;
     }
 
     private function streamCsv(Builder $base, array $filter, array $ringkasan): void
     {
         $out = fopen('php://output', 'w');
         fwrite($out, "\xEF\xBB\xBF");
-        fputcsv($out, ['Laporan Penjualan - ' . Pengaturan::nilai('nama_resto')]);
+        fputcsv($out, ['Laporan Penjualan - '.Pengaturan::nilai('nama_resto')]);
         fputcsv($out, ['Periode', $filter['labelPeriode']]);
         fputcsv($out, ['Area', $filter['labelArea']]);
         fputcsv($out, ['Metode', $filter['labelMetode']]);
@@ -619,7 +673,7 @@ class LaporanPenjualanController extends Controller
                 foreach ($daftar as $pesanan) {
                     fputcsv($out, [
                         $this->safeCsv(optional($pesanan->waktu_pesan)->timezone('Asia/Jakarta')->format('d/m/Y H:i') ?? '-'),
-                        $this->safeCsv('#' . $pesanan->kode_pesanan),
+                        $this->safeCsv('#'.$pesanan->kode_pesanan),
                         $this->safeCsv($pesanan->meja?->kode_meja ?? '-'),
                         $this->safeCsv($pesanan->meja?->area ?? '-'),
                         $this->safeCsv($pesanan->kasir?->nama ?? '-'),
@@ -640,10 +694,10 @@ class LaporanPenjualanController extends Controller
         echo '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8">';
         echo '<style>table{border-collapse:collapse}th{background:#0B4D2B;color:#fff;font-weight:bold;border:1px solid #08381F;padding:6px}td{border:1px solid #C0C9BF;padding:6px}tr:nth-child(even){background:#F6F3EC}</style>';
         echo '</head><body><table>';
-        echo '<tr><th colspan="9">LAPORAN PENJUALAN ' . e(strtoupper((string) Pengaturan::nilai('nama_resto'))) . '</th></tr>';
-        echo '<tr><th colspan="9">PERIODE: ' . e($filter['labelPeriode']) . ' &middot; AREA: ' . e($filter['labelArea']) . '</th></tr>';
-        echo '<tr><th colspan="9">METODE: ' . e($filter['labelMetode']) . ' &middot; STATUS: ' . e($filter['labelStatus']) . '</th></tr>';
-        echo '<tr><th colspan="2">OMZET LUNAS: Rp ' . number_format($ringkasan['omzet'], 0, ',', '.') . '</th><th colspan="2">TRANSAKSI LUNAS: ' . $ringkasan['jumlah_lunas'] . '</th><th colspan="2">QRIS: Rp ' . number_format($ringkasan['omzet_qris'], 0, ',', '.') . '</th><th colspan="3">TUNAI: Rp ' . number_format($ringkasan['omzet_tunai'], 0, ',', '.') . '</th></tr>';
+        echo '<tr><th colspan="9">LAPORAN PENJUALAN '.e(strtoupper((string) Pengaturan::nilai('nama_resto'))).'</th></tr>';
+        echo '<tr><th colspan="9">PERIODE: '.e($filter['labelPeriode']).' &middot; AREA: '.e($filter['labelArea']).'</th></tr>';
+        echo '<tr><th colspan="9">METODE: '.e($filter['labelMetode']).' &middot; STATUS: '.e($filter['labelStatus']).'</th></tr>';
+        echo '<tr><th colspan="2">OMZET LUNAS: Rp '.number_format($ringkasan['omzet'], 0, ',', '.').'</th><th colspan="2">TRANSAKSI LUNAS: '.$ringkasan['jumlah_lunas'].'</th><th colspan="2">QRIS: Rp '.number_format($ringkasan['omzet_qris'], 0, ',', '.').'</th><th colspan="3">TUNAI: Rp '.number_format($ringkasan['omzet_tunai'], 0, ',', '.').'</th></tr>';
         echo '<tr><th>TANGGAL</th><th>KODE</th><th>MEJA</th><th>AREA</th><th>KASIR</th><th>METODE</th><th>STATUS</th><th>ITEM</th><th>TOTAL BAYAR (Rp)</th></tr>';
 
         (clone $base)
@@ -653,15 +707,15 @@ class LaporanPenjualanController extends Controller
             ->chunk(500, function ($daftar) {
                 foreach ($daftar as $pesanan) {
                     echo '<tr>';
-                    echo '<td>' . e(optional($pesanan->waktu_pesan)->timezone('Asia/Jakarta')->format('d/m/Y H:i') ?? '-') . '</td>';
-                    echo '<td>#' . e($pesanan->kode_pesanan) . '</td>';
-                    echo '<td>' . e($pesanan->meja?->kode_meja ?? '-') . '</td>';
-                    echo '<td>' . e($pesanan->meja?->area ?? '-') . '</td>';
-                    echo '<td>' . e($pesanan->kasir?->nama ?? '-') . '</td>';
-                    echo '<td>' . e($this->metodeLabel($pesanan)) . '</td>';
-                    echo '<td>' . e($this->statusLabel($pesanan)) . '</td>';
-                    echo '<td>' . (int) $pesanan->total_item . '</td>';
-                    echo '<td>' . (float) $pesanan->total_bayar . '</td>';
+                    echo '<td>'.e(optional($pesanan->waktu_pesan)->timezone('Asia/Jakarta')->format('d/m/Y H:i') ?? '-').'</td>';
+                    echo '<td>#'.e($pesanan->kode_pesanan).'</td>';
+                    echo '<td>'.e($pesanan->meja?->kode_meja ?? '-').'</td>';
+                    echo '<td>'.e($pesanan->meja?->area ?? '-').'</td>';
+                    echo '<td>'.e($pesanan->kasir?->nama ?? '-').'</td>';
+                    echo '<td>'.e($this->metodeLabel($pesanan)).'</td>';
+                    echo '<td>'.e($this->statusLabel($pesanan)).'</td>';
+                    echo '<td>'.(int) $pesanan->total_item.'</td>';
+                    echo '<td>'.(float) $pesanan->total_bayar.'</td>';
                     echo '</tr>';
                 }
             });
@@ -673,7 +727,7 @@ class LaporanPenjualanController extends Controller
     {
         $out = fopen('php://output', 'w');
         fwrite($out, "\xEF\xBB\xBF");
-        fputcsv($out, ['Laporan Shift Kerja - ' . Pengaturan::nilai('nama_resto')]);
+        fputcsv($out, ['Laporan Shift Kerja - '.Pengaturan::nilai('nama_resto')]);
         fputcsv($out, ['Periode', $filter['labelPeriode']]);
         fputcsv($out, ['Total Sesi', $ringkasan['total']]);
         fputcsv($out, ['Staf Terlibat', $ringkasan['staf']]);
@@ -707,23 +761,23 @@ class LaporanPenjualanController extends Controller
         echo '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8">';
         echo '<style>table{border-collapse:collapse}th{background:#0B4D2B;color:#fff;font-weight:bold;border:1px solid #08381F;padding:6px}td{border:1px solid #C0C9BF;padding:6px}tr:nth-child(even){background:#F6F3EC}</style>';
         echo '</head><body><table>';
-        echo '<tr><th colspan="9">LAPORAN SHIFT KERJA ' . e(strtoupper((string) Pengaturan::nilai('nama_resto'))) . '</th></tr>';
-        echo '<tr><th colspan="9">PERIODE: ' . e($filter['labelPeriode']) . '</th></tr>';
-        echo '<tr><th colspan="2">TOTAL SESI: ' . $ringkasan['total'] . '</th><th colspan="2">STAF: ' . $ringkasan['staf'] . '</th><th colspan="2">AKTIF: ' . $ringkasan['aktif'] . '</th><th colspan="3">DURASI: ' . e(ShiftService::durasiTeks($ringkasan['durasi'])) . '</th></tr>';
+        echo '<tr><th colspan="9">LAPORAN SHIFT KERJA '.e(strtoupper((string) Pengaturan::nilai('nama_resto'))).'</th></tr>';
+        echo '<tr><th colspan="9">PERIODE: '.e($filter['labelPeriode']).'</th></tr>';
+        echo '<tr><th colspan="2">TOTAL SESI: '.$ringkasan['total'].'</th><th colspan="2">STAF: '.$ringkasan['staf'].'</th><th colspan="2">AKTIF: '.$ringkasan['aktif'].'</th><th colspan="3">DURASI: '.e(ShiftService::durasiTeks($ringkasan['durasi'])).'</th></tr>';
         echo '<tr><th>STAF</th><th>PERAN</th><th>SHIFT</th><th>JADWAL</th><th>KEHADIRAN</th><th>LOGIN</th><th>LOGOUT</th><th>DURASI</th><th>STATUS</th></tr>';
 
         $query->chunk(500, function ($daftar) {
             foreach ($daftar as $baris) {
                 echo '<tr>';
-                echo '<td>' . e($baris->user?->nama ?? 'Staf') . '</td>';
-                echo '<td>' . e(ShiftService::ROLES[$baris->role] ?? ucfirst((string) $baris->role)) . '</td>';
-                echo '<td>' . e($baris->nama_shift ?: 'Luar Shift') . '</td>';
-                echo '<td>' . e($this->jadwalShift($baris)) . '</td>';
-                echo '<td>' . e($this->kehadiranShift($baris)) . '</td>';
-                echo '<td>' . e($baris->mulai_pada->timezone('Asia/Jakarta')->format('d/m/Y H:i:s')) . '</td>';
-                echo '<td>' . e($baris->selesai_pada?->timezone('Asia/Jakarta')->format('d/m/Y H:i:s') ?? '-') . '</td>';
-                echo '<td>' . e(ShiftService::durasiTeks($this->durasiShift($baris))) . '</td>';
-                echo '<td>' . e($this->statusShift($baris)) . '</td>';
+                echo '<td>'.e($baris->user?->nama ?? 'Staf').'</td>';
+                echo '<td>'.e(ShiftService::ROLES[$baris->role] ?? ucfirst((string) $baris->role)).'</td>';
+                echo '<td>'.e($baris->nama_shift ?: 'Luar Shift').'</td>';
+                echo '<td>'.e($this->jadwalShift($baris)).'</td>';
+                echo '<td>'.e($this->kehadiranShift($baris)).'</td>';
+                echo '<td>'.e($baris->mulai_pada->timezone('Asia/Jakarta')->format('d/m/Y H:i:s')).'</td>';
+                echo '<td>'.e($baris->selesai_pada?->timezone('Asia/Jakarta')->format('d/m/Y H:i:s') ?? '-').'</td>';
+                echo '<td>'.e(ShiftService::durasiTeks($this->durasiShift($baris))).'</td>';
+                echo '<td>'.e($this->statusShift($baris)).'</td>';
                 echo '</tr>';
             }
         });
@@ -747,9 +801,9 @@ class LaporanPenjualanController extends Controller
         }
 
         return substr((string) $baris->jadwal_mulai, 0, 5)
-            . ' - '
-            . substr((string) $baris->jadwal_selesai, 0, 5)
-            . ' WIB';
+            .' - '
+            .substr((string) $baris->jadwal_selesai, 0, 5)
+            .' WIB';
     }
 
     private function statusShift(RiwayatShift $baris): string
@@ -768,6 +822,6 @@ class LaporanPenjualanController extends Controller
 
     private function safeCsv(string $value): string
     {
-        return preg_match('/^[=+\-@]/', $value) ? "'" . $value : $value;
+        return preg_match('/^[=+\-@]/', $value) ? "'".$value : $value;
     }
 }
