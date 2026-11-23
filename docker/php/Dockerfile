@@ -70,7 +70,9 @@ RUN composer dump-autoload --no-dev --optimize --no-scripts \
         storage/logs \
         /opt/situawi \
     && php artisan package:discover --ansi \
+    && mkdir -p /opt/situawi/storage/app/public \
     && cp -a public /opt/situawi/public \
+    && cp -a storage/app/public/menu /opt/situawi/storage/app/public/ \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R ug+rwX storage bootstrap/cache
 

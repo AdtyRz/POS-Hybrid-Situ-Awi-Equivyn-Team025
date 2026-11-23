@@ -44,6 +44,14 @@ mkdir -p \
     /var/www/html/storage/framework/sessions \
     /var/www/html/storage/framework/views \
     /var/www/html/storage/logs
+
+# Volume `storage` juga persisten. Salin foto menu bawaan hanya jika belum ada,
+# agar file yang diunggah lewat aplikasi tidak tertimpa.
+if [ -d /opt/situawi/storage ]; then
+    echo "[entrypoint] Menyinkronkan foto menu..."
+    cp -an /opt/situawi/storage/. /var/www/html/storage/
+fi
+
 chown -R www-data:www-data /var/www/html/storage
 
 echo "[entrypoint] Menjalankan migrasi..."
